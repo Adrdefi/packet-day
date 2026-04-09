@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(mv:*)",
+      "Bash(npm install:*)",
+      "Bash(ls D:/Projects/packet-day/*.ts D:/Projects/packet-day/*.js D:/Projects/packet-day/*.mjs)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Colors */
+  --color-sage: #4A7C59;
+  --color-sage-light: #6A9E78;
+  --color-sage-dark: #2E5238;
+  --color-honey: #D4A843;
+  --color-honey-light: #E6C26B;
+  --color-honey-dark: #A67C1E;
+  --color-coral: #E07A5F;
+  --color-coral-light: #ECA08A;
+  --color-coral-dark: #B85540;
+  --color-cream: #FDFBF7;
+  --color-cream-dark: #F5F0E8;
+  --color-dark: #1A1A2E;
+  --color-dark-light: #2D2D4A;
+
+  /* Semantic aliases */
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-dark);
+  --color-primary: var(--color-sage);
+  --color-primary-hover: var(--color-sage-dark);
+  --color-accent: var(--color-honey);
+  --color-destructive: var(--color-coral);
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+
+  /* Typography */
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Radii */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-dark);
+  font-family: var(--font-sans);
+}
