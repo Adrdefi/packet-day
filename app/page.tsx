@@ -16,7 +16,7 @@ export const metadata: Metadata = {
       "Generate a full day of personalized, printable learning activities for your homeschooled child in 60 seconds. Free to start.",
     url: "https://packetday.com",
     siteName: "Packet Day",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day — AI-powered learning packets for homeschool families" }],
     type: "website",
     locale: "en_US",
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
     description:
       "Generate a full day of personalized, printable learning activities for your homeschooled child in 60 seconds. Free to start.",
-    images: ["/og-image.png"],
+    images: ["/og"],
   },
 };
 

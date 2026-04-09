@@ -18,18 +18,35 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Packet Day — Your backup plan for the hard days",
+  metadataBase: new URL("https://packetday.com"),
+
+  title: {
+    default: "Packet Day — Your backup plan for the hard days",
+    template: "%s | Packet Day",
+  },
   description:
     "Personalized, printable daily learning packets for homeschool families. AI-generated activities tailored to your child's age and interests.",
-  metadataBase: new URL("https://packetday.com"),
+
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+  },
+
   openGraph: {
-    title: "Packet Day — Your backup plan for the hard days",
-    description:
-      "Personalized, printable daily learning packets for homeschool families.",
-    url: "https://packetday.com",
     siteName: "Packet Day",
     locale: "en_US",
     type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    site: "@packetday",
   },
 };
 
