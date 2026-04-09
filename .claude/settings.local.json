@@ -5,7 +5,14 @@
       "Bash(mv:*)",
       "Bash(npm install:*)",
       "Bash(ls D:/Projects/packet-day/*.ts D:/Projects/packet-day/*.js D:/Projects/packet-day/*.mjs)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(supabase --version)",
+      "Bash(npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_4be4575d9d14a920653260532a81e1d6aa0b10d7 npx supabase migration repair --status reverted 20250101000000)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_4be4575d9d14a920653260532a81e1d6aa0b10d7 npx supabase migration list)",
+      "WebFetch(domain:packetday.com)",
+      "WebFetch(domain:legendary-malabi-3bc400.netlify.app)",
+      "Bash(curl -s http://localhost:3000)"
     ]
   }
 }

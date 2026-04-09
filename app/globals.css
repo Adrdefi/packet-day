@@ -37,8 +37,37 @@
   --radius-xl: 1rem;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-dark);
   font-family: var(--font-sans);
+}
+
+/* ─── Scrolling Ticker Animation ─────────────────────────────────────────── */
+
+@keyframes ticker-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes ticker-right {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-ticker-left {
+  animation: ticker-left 40s linear infinite;
+}
+
+.animate-ticker-right {
+  animation: ticker-right 40s linear infinite;
+}
+
+.animate-ticker-left:hover,
+.animate-ticker-right:hover {
+  animation-play-state: paused;
 }
