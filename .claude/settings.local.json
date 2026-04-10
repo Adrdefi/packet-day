@@ -14,7 +14,15 @@
       "WebFetch(domain:legendary-malabi-3bc400.netlify.app)",
       "Bash(curl -s http://localhost:3000)",
       "Bash(node -e \"require\\('sharp'\\); console.log\\('sharp OK'\\)\")",
-      "Bash(node scripts/generate-favicons.mjs)"
+      "Bash(node scripts/generate-favicons.mjs)",
+      "Bash(rm -f .next/build-manifest.json .next/BUILD_ID)",
+      "Bash(pkill -f \"next build\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(node -e \"require\\('@react-pdf/renderer'\\); console.log\\('ok'\\)\")",
+      "Bash(supabase status:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_4be4575d9d14a920653260532a81e1d6aa0b10d7 npx supabase:*)"
     ]
   }
 }

@@ -1,13 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-// Paths that require a logged-in user
-const PROTECTED = ["/dashboard", "/generate", "/account"];
-// Paths that should redirect logged-in users away (to dashboard)
-const AUTH_ONLY = ["/login", "/signup"];
+const PROTECTED = ["/onboarding", "/dashboard", "/generate"];
+const AUTH_ROUTES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/check-email",
+];
 
-export async function middleware(req: NextRequest) {
-  let response = NextResponse.next({ request: req });
+export async function proxy(req: NextRequest) {
+  const res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,47 +22,41 @@ export async function middleware(req: NextRequest) {
           return req.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            req.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request: req });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set(name, value);
+            res.cookies.set(name, value, options);
+          });
         },
       },
     }
   );
 
-  // Always call getUser() immediately after creating the client — do not
-  // interleave other logic, as this refreshes the session cookie.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = req.nextUrl;
+  const isProtected = PROTECTED.some((r) => pathname.startsWith(r));
+  const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
-  // Unauthenticated → redirect to /login, preserving destination
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (isProtected && !user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  // Authenticated → redirect away from auth pages
-  if (user && AUTH_ONLY.some((p) => pathname.startsWith(p))) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  // Authenticated users don't need to see auth pages
+  if (isAuthRoute && user) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  return response;
+  return res;
 }
 
 export const config = {
   matcher: [
-    // Run on all paths except static assets, images, and public files
-    "/((?!_next/static|_next/image|favicon|apple-touch|og|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Skip Next.js internals, static files, and known public assets
+    "/((?!_next/static|_next/image|favicon|api/|auth/|og|icon|apple-icon|.*\\.png$|.*\\.ico$).*)",
   ],
 };

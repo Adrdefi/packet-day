@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { PacketPDF } from "@/components/PacketPDF";
+import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity } from "@/components/PacketPDF";
 
 export const maxDuration = 60;
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────
-  let pdfBuffer: Buffer;
+  let pdfBuffer: Uint8Array;
   try {
     pdfBuffer = await renderToBuffer(
       createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>
@@ -134,12 +134,12 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Return PDF ────────────────────────────────────────────────────────────
-  return new NextResponse(pdfBuffer, {
+  return new Response(pdfBuffer.buffer as ArrayBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Content-Length": String(pdfBuffer.length),
+      "Content-Length": String(pdfBuffer.byteLength),
     },
   });
 }
