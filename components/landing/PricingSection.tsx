@@ -45,8 +45,9 @@ export default function PricingSection() {
         <div className="flex items-center justify-center gap-4 mb-12">
           <button
             onClick={() => setIsAnnual(true)}
+            aria-pressed={isAnnual}
             className={[
-              "text-sm font-bold px-5 py-2 rounded-full transition-colors",
+              "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[100px]",
               isAnnual
                 ? "bg-sage text-cream"
                 : "bg-transparent text-dark/60 hover:text-dark",
@@ -64,8 +65,9 @@ export default function PricingSection() {
           </button>
           <button
             onClick={() => setIsAnnual(false)}
+            aria-pressed={!isAnnual}
             className={[
-              "text-sm font-bold px-5 py-2 rounded-full transition-colors",
+              "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[100px]",
               !isAnnual
                 ? "bg-sage text-cream"
                 : "bg-transparent text-dark/60 hover:text-dark",

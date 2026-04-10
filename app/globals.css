@@ -47,6 +47,37 @@ body {
   font-family: var(--font-sans);
 }
 
+/*
+  Prevent iOS Safari from auto-zooming when tapping inputs.
+  iOS zooms when font-size < 16px; this overrides only on small screens
+  while preserving the visual text-sm size on desktop via Tailwind classes.
+*/
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
+  Global keyboard focus ring. Applies to any element that gains keyboard focus
+  and doesn't already have an explicit focus style (Tailwind focus:ring classes
+  use :focus which has higher specificity and will still win for inputs/buttons
+  that opt-in to ring-sage). This ensures nothing is completely invisible to
+  keyboard users.
+*/
+:focus-visible {
+  outline: 2px solid var(--color-sage);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* ─── Scrolling Ticker Animation ─────────────────────────────────────────── */
 
 @keyframes ticker-left {

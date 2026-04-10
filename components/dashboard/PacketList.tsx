@@ -58,14 +58,14 @@ function PacketRow({
             href={packet.pdf_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 px-3 py-1.5 rounded-lg transition-colors"
+            className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 px-3 py-2.5 rounded-lg transition-colors"
           >
             PDF ↓
           </a>
         )}
         <button
           onClick={copyShareLink}
-          className="text-xs font-semibold text-muted border border-border hover:border-sage/50 hover:text-sage px-3 py-1.5 rounded-lg transition-colors min-w-[60px]"
+          className="text-xs font-semibold text-muted border border-border hover:border-sage/50 hover:text-sage px-3 py-2.5 rounded-lg transition-colors min-w-[60px]"
         >
           {copied ? "Copied!" : "Share"}
         </button>

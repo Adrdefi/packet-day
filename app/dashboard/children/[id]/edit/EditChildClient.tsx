@@ -51,14 +51,14 @@ function DeleteDialog({
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 border border-border text-dark font-semibold py-2.5 rounded-xl hover:bg-cream transition-colors text-sm disabled:opacity-50"
+            className="flex-1 border border-border text-dark font-semibold py-3 rounded-xl hover:bg-cream transition-colors text-sm disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 bg-coral text-cream font-bold py-2.5 rounded-xl hover:bg-coral-dark transition-colors text-sm disabled:opacity-50"
+            className="flex-1 bg-coral text-cream font-bold py-3 rounded-xl hover:bg-coral-dark transition-colors text-sm disabled:opacity-50"
           >
             {loading ? "Deleting…" : "Yes, Delete"}
           </button>

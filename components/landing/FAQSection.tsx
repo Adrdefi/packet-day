@@ -57,12 +57,22 @@ export default function FAQSection() {
         <div className="divide-y divide-border">
           {FAQS.map((faq, i) => {
             const isOpen = openIndex === i;
+            const answerId = `faq-answer-${i}`;
+            const questionId = `faq-question-${i}`;
             return (
               <div key={i}>
                 <button
+                  id={questionId}
                   onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full flex items-start justify-between gap-4 py-5 text-left group"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setOpenIndex(isOpen ? null : i);
+                    }
+                  }}
+                  className="w-full flex items-start justify-between gap-4 py-5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-inset rounded-sm"
                   aria-expanded={isOpen}
+                  aria-controls={answerId}
                 >
                   <span className="font-semibold text-dark text-base leading-snug group-hover:text-sage transition-colors">
                     {faq.q}
@@ -77,11 +87,18 @@ export default function FAQSection() {
                     +
                   </span>
                 </button>
-                {isOpen && (
-                  <p className="pb-5 text-dark/70 text-sm leading-relaxed">
-                    {faq.a}
-                  </p>
-                )}
+                <div
+                  id={answerId}
+                  role="region"
+                  aria-labelledby={questionId}
+                  hidden={!isOpen}
+                >
+                  {isOpen && (
+                    <p className="pb-5 text-dark/70 text-sm leading-relaxed">
+                      {faq.a}
+                    </p>
+                  )}
+                </div>
               </div>
             );
           })}

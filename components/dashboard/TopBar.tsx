@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -98,13 +99,14 @@ export default function TopBar({
             aria-label="User menu"
             aria-expanded={menuOpen}
             aria-haspopup="true"
-            className="w-9 h-9 rounded-full bg-sage overflow-hidden flex items-center justify-center text-cream font-bold text-sm hover:bg-sage-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2"
+            className="w-11 h-11 rounded-full bg-sage overflow-hidden flex items-center justify-center text-cream font-bold text-sm hover:bg-sage-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2"
           >
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={avatarUrl}
                 alt={firstName}
+                width={44}
+                height={44}
                 className="w-full h-full object-cover"
               />
             ) : (

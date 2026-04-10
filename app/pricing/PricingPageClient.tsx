@@ -125,8 +125,9 @@ export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Pro
       <div className="flex items-center justify-center gap-2 mb-12 px-6">
         <button
           onClick={() => setIsAnnual(true)}
+          aria-pressed={isAnnual}
           className={[
-            "text-sm font-bold px-5 py-2.5 rounded-full transition-colors",
+            "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[110px]",
             isAnnual ? "bg-sage text-cream" : "bg-white text-dark/60 hover:text-dark border border-border",
           ].join(" ")}
         >
@@ -137,8 +138,9 @@ export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Pro
         </button>
         <button
           onClick={() => setIsAnnual(false)}
+          aria-pressed={!isAnnual}
           className={[
-            "text-sm font-bold px-5 py-2.5 rounded-full transition-colors",
+            "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[110px]",
             !isAnnual ? "bg-sage text-cream" : "bg-white text-dark/60 hover:text-dark border border-border",
           ].join(" ")}
         >

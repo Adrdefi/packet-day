@@ -294,13 +294,26 @@ function ResultView({
       if (!res.ok) throw new Error("PDF generation failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download =
+      const filename =
         res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ??
         "packet.pdf";
-      a.click();
-      URL.revokeObjectURL(url);
+
+      // iOS Safari doesn't support the `download` attribute on anchor tags.
+      // Detect iOS and fall back to opening the PDF in a new tab.
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+      if (isIOS) {
+        window.open(url, "_blank");
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+      }
+      // Delay revoke so the browser has time to open it
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch {
       toast.error("Couldn't build the PDF right now. Try again, or use the Print button as a backup.");
     } finally {
@@ -714,10 +727,14 @@ function GenerateContent() {
 
         {/* ── 2. Theme ───────────────────────────────────────────── */}
         <section className="space-y-3">
-          <h2 className="font-display text-xl font-bold text-dark">
+          <label
+            htmlFor="theme-input"
+            className="block font-display text-xl font-bold text-dark"
+          >
             2. What are they obsessed with right now?
-          </h2>
+          </label>
           <input
+            id="theme-input"
             type="text"
             placeholder="Dinosaurs, Minecraft, Taylor Swift, baking science..."
             value={theme}
@@ -787,11 +804,15 @@ function GenerateContent() {
 
         {/* ── 4. Today's note ────────────────────────────────────── */}
         <section className="space-y-3">
-          <h2 className="font-display text-xl font-bold text-dark">
+          <label
+            htmlFor="today-note"
+            className="block font-display text-xl font-bold text-dark"
+          >
             4. Anything else?{" "}
             <span className="text-muted font-normal text-lg">Optional</span>
-          </h2>
+          </label>
           <textarea
+            id="today-note"
             placeholder={`${selectedChild?.name ?? "Emma"} is tired and had a rough morning. Keep it gentle and fun.`}
             rows={3}
             value={todayNote}
