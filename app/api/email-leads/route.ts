@@ -2,12 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { NextRequest, NextResponse } from "next/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY!);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +32,7 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
 
     // Upsert — silently ignore duplicate emails
-    const { error: dbError } = await supabase
+    const { error: dbError } = await getSupabase()
       .from("email_leads")
       .upsert({ email: cleanEmail, source }, { onConflict: "email", ignoreDuplicates: true });
 
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send the sample packet email via Resend
-    const { error: emailError } = await resend.emails.send({
+    const { error: emailError } = await getResend().emails.send({
       from: "Natalie at Packet Day <hello@packetday.com>",
       to: cleanEmail,
       subject: "Your free Dinosaur Day packet is here 🦕",
