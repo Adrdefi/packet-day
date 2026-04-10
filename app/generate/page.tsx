@@ -1,6 +1,8 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { ToastContainer } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -281,6 +283,7 @@ function ResultView({
 }) {
   const [downloading, setDownloading] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const { toasts, toast, dismiss } = useToast();
 
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://packetday.com"}/packets/${packet.share_token}`;
 
@@ -299,7 +302,7 @@ function ResultView({
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // Silent fail — user can use Print as fallback
+      toast.error("Couldn't build the PDF right now. Try again, or use the Print button as a backup.");
     } finally {
       setDownloading(false);
     }
@@ -317,6 +320,7 @@ function ResultView({
 
   return (
     <div className="min-h-screen bg-cream">
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
       <TopBar />
 
       <div className="relative">
@@ -345,9 +349,19 @@ function ResultView({
             <button
               onClick={downloadPDF}
               disabled={downloading}
-              className="flex items-center gap-2 bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm disabled:opacity-60 disabled:cursor-wait"
+              className="flex items-center gap-2 bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm disabled:opacity-70 disabled:cursor-wait min-w-[180px] justify-center"
             >
-              {downloading ? "⏳ Building PDF…" : "📤 Download PDF"}
+              {downloading ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Preparing your PDF...
+                </>
+              ) : (
+                <>📤 Download PDF</>
+              )}
             </button>
             <button
               onClick={copyShareLink}

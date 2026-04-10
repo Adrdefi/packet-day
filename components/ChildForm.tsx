@@ -80,6 +80,17 @@ const AVATAR_EMOJIS = [
   "🐝", "🎹", "🐋", "🦴", "🐨",
 ];
 
+// ─── Inline field error ────────────────────────────────────────────────────────
+
+function FieldError({ message }: { message: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-coral font-medium mt-1.5">
+      <span aria-hidden="true">⚠</span>
+      {message}
+    </p>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChildForm({
@@ -98,9 +109,19 @@ export default function ChildForm({
   );
   const [notes, setNotes] = useState(defaultValues.special_notes ?? "");
   const [avatar, setAvatar] = useState(defaultValues.avatar_emoji ?? "🌟");
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function clearError(field: string) {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
 
   function toggleSubject(subject: string) {
+    clearError("subjects");
     setSubjects((prev) =>
       prev.includes(subject)
         ? prev.filter((s) => s !== subject)
@@ -110,23 +131,20 @@ export default function ChildForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
 
-    if (!name.trim()) {
-      return setError("What's your child's name?");
-    }
-    if (!gradeLevel) {
-      return setError("Pick a grade level to continue.");
-    }
-    if (!learningStyle) {
-      return setError(
-        "Choose a learning style — even Mixed works great!"
-      );
-    }
-    if (subjects.length === 0) {
-      return setError("Pick at least one favorite subject.");
+    // Validate all fields and collect errors
+    const errors: Record<string, string> = {};
+    if (!name.trim()) errors.name = "What's your child's name?";
+    if (!gradeLevel) errors.grade = "Pick a grade level to continue.";
+    if (!learningStyle) errors.style = "Choose a learning style — even Mixed works great!";
+    if (subjects.length === 0) errors.subjects = "Pick at least one favorite subject.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
     }
 
+    setFieldErrors({});
     await onSubmit({
       name: name.trim(),
       grade_level: gradeLevel,
@@ -168,7 +186,7 @@ export default function ChildForm({
       {/* ── Child's name ────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="child-name" className="text-sm font-semibold text-dark">
-          Child's name
+          Child&apos;s name
         </label>
         <input
           id="child-name"
@@ -176,9 +194,12 @@ export default function ChildForm({
           placeholder="Emma"
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border border-border bg-white px-4 py-3 text-dark text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage"
+          onChange={(e) => { setName(e.target.value); clearError("name"); }}
+          className={`w-full rounded-xl border bg-white px-4 py-3 text-dark text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage ${
+            fieldErrors.name ? "border-coral" : "border-border"
+          }`}
         />
+        {fieldErrors.name && <FieldError message={fieldErrors.name} />}
       </div>
 
       {/* ── Grade level ─────────────────────────────────────────────── */}
@@ -194,8 +215,10 @@ export default function ChildForm({
             id="grade-level"
             required
             value={gradeLevel}
-            onChange={(e) => setGradeLevel(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-border bg-white px-4 py-3 pr-10 text-dark text-sm focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage cursor-pointer"
+            onChange={(e) => { setGradeLevel(e.target.value); clearError("grade"); }}
+            className={`w-full appearance-none rounded-xl border bg-white px-4 py-3 pr-10 text-dark text-sm focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage cursor-pointer ${
+              fieldErrors.grade ? "border-coral" : "border-border"
+            }`}
           >
             <option value="" disabled>
               Select a grade…
@@ -224,6 +247,7 @@ export default function ChildForm({
             </svg>
           </div>
         </div>
+        {fieldErrors.grade && <FieldError message={fieldErrors.grade} />}
       </div>
 
       {/* ── Learning style ──────────────────────────────────────────── */}
@@ -236,12 +260,14 @@ export default function ChildForm({
             <button
               key={style.value}
               type="button"
-              onClick={() => setLearningStyle(style.value)}
+              onClick={() => { setLearningStyle(style.value); clearError("style"); }}
               className={`
                 flex flex-col gap-1.5 p-4 rounded-xl border-2 text-left transition-all duration-150
                 ${
                   learningStyle === style.value
                     ? "border-sage bg-sage/10 shadow-sm"
+                    : fieldErrors.style
+                    ? "border-coral/50 bg-coral/5 hover:border-coral/70"
                     : "border-border bg-white hover:border-sage/40"
                 }
               `}
@@ -256,6 +282,7 @@ export default function ChildForm({
             </button>
           ))}
         </div>
+        {fieldErrors.style && <FieldError message={fieldErrors.style} />}
       </div>
 
       {/* ── Favorite subjects ───────────────────────────────────────── */}
@@ -277,6 +304,8 @@ export default function ChildForm({
                   ${
                     selected
                       ? "bg-sage text-cream border-sage"
+                      : fieldErrors.subjects
+                      ? "bg-white text-dark border-coral/40 hover:border-coral"
                       : "bg-white text-dark border-border hover:border-sage/50"
                   }
                 `}
@@ -286,6 +315,7 @@ export default function ChildForm({
             );
           })}
         </div>
+        {fieldErrors.subjects && <FieldError message={fieldErrors.subjects} />}
       </div>
 
       {/* ── Special notes ───────────────────────────────────────────── */}
@@ -307,19 +337,18 @@ export default function ChildForm({
         />
       </div>
 
-      {/* ── Error ───────────────────────────────────────────────────── */}
-      {error && (
-        <p className="text-sm text-coral bg-coral/10 rounded-xl px-4 py-3 leading-snug">
-          {error}
-        </p>
-      )}
-
       {/* ── Submit ──────────────────────────────────────────────────── */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors disabled:opacity-60 text-sm"
+        className="w-full bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors disabled:opacity-60 text-sm flex items-center justify-center gap-2"
       >
+        {loading && (
+          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+        )}
         {loading ? "Saving…" : submitLabel}
       </button>
     </form>

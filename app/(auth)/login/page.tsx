@@ -31,7 +31,16 @@ function LoginForm() {
     });
 
     if (loginError) {
-      setError("Hmm, that doesn't match what we have. Try again?");
+      const msg = loginError.message ?? "";
+      let friendly = "Something went sideways. Let's try that again.";
+      if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
+        friendly = "Wrong email or password. Give it another try — or reset your password below.";
+      } else if (msg.includes("Email not confirmed") || msg.includes("email_not_confirmed")) {
+        friendly = "Check your inbox — you need to confirm your email before logging in.";
+      } else if (msg.includes("Too many requests") || msg.includes("rate")) {
+        friendly = "Too many attempts. Take a quick breather and try again in a minute.";
+      }
+      setError(friendly);
       setLoading(false);
     } else {
       router.push(next);

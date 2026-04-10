@@ -83,15 +83,26 @@ interface PacketListProps {
 
 export default function PacketList({ packets, children }: PacketListProps) {
   if (packets.length === 0) {
+    const firstChild = children[0];
     return (
       <div className="bg-white rounded-xl border border-border shadow-sm p-10 text-center">
-        <div className="text-5xl mb-4">📦</div>
+        <div className="text-5xl mb-4">☀️</div>
         <p className="font-display text-lg font-bold text-dark mb-2">
-          Your first packet is waiting!
+          Ready when you are!
         </p>
-        <p className="text-sm text-muted leading-relaxed">
-          Pick a child on the left to get started.
+        <p className="text-sm text-muted leading-relaxed mb-6">
+          {firstChild
+            ? <>Generate {firstChild.name}&apos;s first packet and it&apos;ll show up here.</>
+            : "Generate your first packet and it'll show up here."}
         </p>
+        {firstChild && (
+          <a
+            href={`/generate?child=${firstChild.id}`}
+            className="inline-block bg-sage text-cream font-bold text-sm py-3 px-6 rounded-xl hover:bg-sage-dark transition-colors"
+          >
+            Generate Today&apos;s Packet →
+          </a>
+        )}
       </div>
     );
   }

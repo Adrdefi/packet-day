@@ -62,9 +62,20 @@ export default async function DashboardPage({
           </h2>
 
           {childList.length === 0 && (
-            <div className="bg-white rounded-xl border border-dashed border-border p-8 text-center">
-              <div className="text-4xl mb-3">👧</div>
-              <p className="text-sm text-muted">No kids added yet.</p>
+            <div className="bg-white rounded-xl border border-dashed border-border p-10 text-center">
+              <div className="text-6xl mb-4">🌱</div>
+              <h3 className="font-display text-xl font-bold text-dark mb-2">
+                Your first learner is waiting!
+              </h3>
+              <p className="text-sm text-muted leading-relaxed mb-6 max-w-xs mx-auto">
+                Add a child profile to start generating personalized packets.
+              </p>
+              <Link
+                href="/dashboard/children/new"
+                className="inline-block bg-sage text-cream font-bold text-sm py-3 px-6 rounded-xl hover:bg-sage-dark transition-colors"
+              >
+                Add My First Child →
+              </Link>
             </div>
           )}
 

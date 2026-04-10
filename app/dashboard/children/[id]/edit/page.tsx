@@ -36,5 +36,10 @@ export default async function EditChildPage({ params }: Props) {
 
   if (!child) notFound();
 
-  return <EditChildClient child={child as Child} />;
+  const { count: packetCount } = await supabase
+    .from("packets")
+    .select("*", { count: "exact", head: true })
+    .eq("child_id", id);
+
+  return <EditChildClient child={child as Child} packetCount={packetCount ?? 0} />;
 }

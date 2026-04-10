@@ -5,17 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
+import { ToastContainer } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/useToast";
 import type { Child } from "@/types";
 
 // ─── Delete confirmation dialog ───────────────────────────────────────────────
 
 function DeleteDialog({
   childName,
+  packetCount,
   onConfirm,
   onCancel,
   loading,
 }: {
   childName: string;
+  packetCount: number;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
@@ -35,11 +39,13 @@ function DeleteDialog({
           id="delete-dialog-title"
           className="font-display text-xl font-bold text-dark text-center"
         >
-          Delete {childName}?
+          Delete {childName}&apos;s profile?
         </h2>
         <p className="text-sm text-muted text-center leading-relaxed">
-          This will permanently remove {childName}&apos;s profile and all their
-          past packets. There&apos;s no coming back from this one.
+          {packetCount > 0
+            ? <>This will also delete all <strong className="text-dark">{packetCount} packet{packetCount === 1 ? "" : "s"}</strong> you&apos;ve generated for them. This can&apos;t be undone.</>
+            : <>This will permanently remove {childName}&apos;s profile. This can&apos;t be undone.</>
+          }
         </p>
         <div className="flex gap-3 pt-2">
           <button
@@ -47,14 +53,14 @@ function DeleteDialog({
             disabled={loading}
             className="flex-1 border border-border text-dark font-semibold py-2.5 rounded-xl hover:bg-cream transition-colors text-sm disabled:opacity-50"
           >
-            Keep them
+            Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
             className="flex-1 bg-coral text-cream font-bold py-2.5 rounded-xl hover:bg-coral-dark transition-colors text-sm disabled:opacity-50"
           >
-            {loading ? "Deleting…" : "Yes, delete"}
+            {loading ? "Deleting…" : "Yes, Delete"}
           </button>
         </div>
       </div>
@@ -64,18 +70,23 @@ function DeleteDialog({
 
 // ─── Main client component ────────────────────────────────────────────────────
 
-export default function EditChildClient({ child }: { child: Child }) {
+export default function EditChildClient({
+  child,
+  packetCount,
+}: {
+  child: Child;
+  packetCount: number;
+}) {
   const router = useRouter();
   const supabase = createClient();
+  const { toasts, toast, dismiss } = useToast();
 
   const [saving, setSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState("");
 
   async function handleSubmit(data: ChildFormData) {
     setSaving(true);
-    setError("");
 
     const { error: updateError } = await supabase
       .from("children")
@@ -90,7 +101,7 @@ export default function EditChildClient({ child }: { child: Child }) {
       .eq("id", child.id);
 
     if (updateError) {
-      setError("Something went sideways. Let's try that again.");
+      toast.error("Something went sideways saving the profile. Let's try that again.");
       setSaving(false);
     } else {
       router.push("/dashboard");
@@ -100,16 +111,29 @@ export default function EditChildClient({ child }: { child: Child }) {
 
   async function handleDelete() {
     setDeleting(true);
-    await supabase.from("children").delete().eq("id", child.id);
-    router.push("/dashboard");
-    router.refresh();
+    const { error: deleteError } = await supabase
+      .from("children")
+      .delete()
+      .eq("id", child.id);
+
+    if (deleteError) {
+      toast.error("Couldn't delete the profile. Try again in a moment.");
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
   }
 
   return (
     <>
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+
       {showDeleteDialog && (
         <DeleteDialog
           childName={child.name}
+          packetCount={packetCount}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteDialog(false)}
           loading={deleting}
@@ -139,12 +163,6 @@ export default function EditChildClient({ child }: { child: Child }) {
             </div>
           </div>
         </div>
-
-        {error && (
-          <p className="text-sm text-coral bg-coral/10 rounded-xl px-4 py-3 mb-6 leading-snug">
-            {error}
-          </p>
-        )}
 
         {/* Form */}
         <div className="bg-white rounded-xl border border-border shadow-sm p-6 mb-6">

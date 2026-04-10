@@ -69,11 +69,18 @@ export default function SignupPage() {
     });
 
     if (signupError) {
-      setError(
-        signupError.message.includes("already registered")
-          ? "Looks like you already have an account. Try logging in instead."
-          : signupError.message
-      );
+      const msg = signupError.message ?? "";
+      let friendly = "Something went sideways. Let's try that again.";
+      if (msg.includes("already registered") || msg.includes("already been registered")) {
+        friendly = "Looks like you already have an account. Try logging in instead.";
+      } else if (msg.includes("Password should be at least") || msg.includes("weak_password") || msg.includes("password")) {
+        friendly = "Your password needs to be at least 6 characters — make it something you'll remember.";
+      } else if (msg.includes("Unable to validate email") || msg.includes("invalid email") || msg.includes("email_address_invalid")) {
+        friendly = "That email doesn't look right. Double-check for typos.";
+      } else if (msg.includes("Too many requests") || msg.includes("rate")) {
+        friendly = "Too many attempts. Take a quick break and try again.";
+      }
+      setError(friendly);
       setLoading(false);
     } else {
       router.push(`/check-email?email=${encodeURIComponent(email)}`);

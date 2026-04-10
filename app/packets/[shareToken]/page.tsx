@@ -156,7 +156,42 @@ export default async function SharePage({
     .eq("share_token", shareToken)
     .single();
 
-  if (!packet) notFound();
+  if (!packet) {
+    return (
+      <div className="min-h-screen bg-cream flex flex-col">
+        <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur border-b border-border">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
+            <Link href="/" className="font-display text-lg font-bold text-sage">
+              Packet Day
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-sage text-cream text-sm font-bold px-4 py-2 rounded-lg hover:bg-sage-dark transition-colors"
+            >
+              Try it free →
+            </Link>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-6">📭</div>
+            <h1 className="font-display text-2xl font-bold text-dark mb-3">
+              Hmm, this packet link has expired or doesn&apos;t exist.
+            </h1>
+            <p className="text-muted text-sm leading-relaxed mb-8">
+              The family who shared it may have removed it, or the link might have a typo. Either way — you can make your own!
+            </p>
+            <Link
+              href="/signup"
+              className="inline-block bg-sage text-cream font-bold py-3 px-8 rounded-xl hover:bg-sage-dark transition-colors"
+            >
+              Create your own free packet →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const p = packet as PacketData;
   const activities = p.generated_content.activities ?? [];
