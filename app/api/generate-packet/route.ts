@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import type { Child } from "@/types";
+import type { Child, PacketContent } from "@/types";
 
 // Allow up to 90 seconds — streaming generation can take ~60s
 export const maxDuration = 90;
@@ -19,7 +19,7 @@ const PACKET_LIMITS: Record<string, number> = {
   cancelled: 0,
 };
 
-// ─── System prompt (exact) ────────────────────────────────────────────────────
+// ─── System prompt ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a warm, imaginative, and experienced homeschool educator who specializes in creating engaging, theme-based learning packets for children in grades K-8. Your packets are joyful, rigorous, and deeply personalized. You believe that learning is most powerful when it connects to a child's genuine interests and curiosity. Every packet you create should feel like it was made specifically for THIS child, by someone who truly knows and loves teaching them.
 
@@ -38,28 +38,28 @@ K-1: Very simple, visual, oral instructions okay, 10-15 min activities max
 4-5: Multi-step problems, paragraph writing, more complex science
 6-8: Abstract thinking, essay prompts, algebra-level math, research skills
 
-Respond ONLY with valid JSON. No prose before or after.
+MASCOT CHARACTER:
+- Invent a unique, funny, expressive character that perfectly embodies the theme
+- Give them a memorable name the child will love (e.g. "Rex the Dino Detective", "Stella the Space Explorer", "Captain Coral the Mermaid Scientist")
+- The mascot should have a clear personality that comes through in their name and description
+- Write a vivid visual description suitable for AI image generation: pose, expression, clothing/accessories, art style
+- Description format: "A cute cartoon [character] [doing something expressive], [accessories that fit the theme], bright colors, simple clean lines, white background, kid-friendly illustration"
+
+COLORING PAGE:
+- Design a fun scene starring the mascot doing something hands-on related to the theme
+- Include the child's name in the coloring page title so it feels personal
+- Scene should have clear, interesting foreground elements that are fun to color without being overwhelming
 
 ACTIVITY COUNT BY LENGTH:
 half day: 4 activities (math, reading, one creative, one pe/movement)
-full day: 7 activities (math, reading, writing, science or history, art, pe/movement, independent afternoon activity)`;
+full day: 7 activities (math, reading, writing, science or history, art, pe/movement, independent afternoon activity)
+
+Respond ONLY with valid JSON. No prose before or after.`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface GeneratedActivity {
-  subject: string;
-  title: string;
-  description: string;
-  instructions: string[];
-  estimated_minutes: number;
-  materials?: string[];
-  answer_key?: string | null;
-}
-
-interface ParsedPacketContent {
-  title: string;
-  activities: GeneratedActivity[];
-}
+// Alias to the canonical shared type — ParsedPacketContent kept for local clarity
+type ParsedPacketContent = PacketContent;
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 
@@ -95,7 +95,11 @@ Create exactly ${activityCount} activities covering: ${subjectList}.
 
 Return a JSON object with this exact structure:
 {
-  "title": "${child.name}'s [Theme] Adventure Day",
+  "packet_title": "${child.name}'s [Theme] Adventure Day",
+  "greeting": "A short, warm, exciting 2-3 sentence welcome message directly to ${child.name}",
+  "mascot_name": "A fun name for the themed character (e.g. 'Rex the Dino Detective')",
+  "mascot_description": "Detailed cartoon description for image generation: 'A cute cartoon [character] [expressive pose], [theme-appropriate accessories], bright colors, simple clean lines, white background, kid-friendly illustration'",
+  "mascot_emoji_cluster": "5-6 emojis that represent the theme (e.g. '🦕 🔍 🌋 🦴 🌿')",
   "activities": [
     {
       "subject": "Math",
@@ -106,7 +110,14 @@ Return a JSON object with this exact structure:
       "materials": ["pencil", "paper"],
       "answer_key": "Complete answers for parent, or null if not applicable"
     }
-  ]
+  ],
+  "coloring_page": {
+    "title": "${child.name} and [Mascot Name] [Do Something Fun]",
+    "scene_description": "Detailed description of a fun coloring scene starring the mascot in a themed situation",
+    "instructions": "Simple, encouraging instructions for ${child.name} to color the page"
+  },
+  "daily_reflection": "A thoughtful, age-appropriate question for ${child.name} about what they learned today",
+  "parent_notes": "Helpful context for the parent about today's activities and how to support ${child.name}"
 }`;
 }
 
@@ -142,15 +153,32 @@ function parsePacketJSON(text: string): ParsedPacketContent {
 
   const parsed = JSON.parse(jsonMatch[0]);
 
-  if (
-    typeof parsed.title !== "string" ||
-    !Array.isArray(parsed.activities) ||
-    parsed.activities.length === 0
-  ) {
+  // Support "packet_title" (new) and "title" (legacy) — require one of them
+  const hasTitle =
+    typeof parsed.packet_title === "string" ||
+    typeof parsed.title === "string";
+
+  if (!hasTitle || !Array.isArray(parsed.activities) || parsed.activities.length === 0) {
     throw new Error("Invalid packet structure — missing title or activities");
   }
 
-  return parsed as ParsedPacketContent;
+  const result: ParsedPacketContent = {
+    // Preserve both field names so the UI can use whichever it finds
+    packet_title: parsed.packet_title,
+    title: parsed.title,
+    activities: parsed.activities,
+  };
+
+  // Attach new fields if present (backwards-compatible — old packets won't have them)
+  if (parsed.greeting) result.greeting = parsed.greeting;
+  if (parsed.mascot_name) result.mascot_name = parsed.mascot_name;
+  if (parsed.mascot_description) result.mascot_description = parsed.mascot_description;
+  if (parsed.mascot_emoji_cluster) result.mascot_emoji_cluster = parsed.mascot_emoji_cluster;
+  if (parsed.coloring_page) result.coloring_page = parsed.coloring_page;
+  if (parsed.daily_reflection) result.daily_reflection = parsed.daily_reflection;
+  if (parsed.parent_notes) result.parent_notes = parsed.parent_notes;
+
+  return result;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────

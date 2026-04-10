@@ -2,18 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Activity {
-  subject: string;
-  title: string;
-  description: string;
-  instructions: string[];
-  estimated_minutes: number;
-  materials?: string[];
-}
 
 interface PacketData {
   id: string;
@@ -22,10 +14,7 @@ interface PacketData {
   packet_length: "half" | "full";
   share_token: string;
   created_at: string;
-  generated_content: {
-    title: string;
-    activities: Activity[];
-  };
+  generated_content: PacketContent;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -240,7 +229,7 @@ export default async function SharePage({
                     </span>
                   </div>
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-dark leading-tight mb-2">
-                    {p.generated_content.title}
+                    {p.generated_content.packet_title ?? p.generated_content.title}
                   </h1>
                   <div className="flex flex-wrap gap-2 text-sm text-muted">
                     <span className="flex items-center gap-1">
@@ -381,7 +370,7 @@ export default async function SharePage({
 
 // ─── Activity preview card ────────────────────────────────────────────────────
 
-function ActivityPreviewCard({ activity }: { activity: Activity }) {
+function ActivityPreviewCard({ activity }: { activity: PacketContent["activities"][number] }) {
   return (
     <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-3 border-b border-border">

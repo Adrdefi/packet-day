@@ -38,6 +38,40 @@ export interface Child {
   created_at: string;
 }
 
+// ─── Packet content ───────────────────────────────────────────────────────────
+
+export interface PacketActivity {
+  subject: string;
+  title: string;
+  description: string;
+  instructions: string[];
+  estimated_minutes: number;
+  materials?: string[];
+  answer_key?: string | null;
+}
+
+export interface PacketColoringPage {
+  title: string;
+  scene_description: string;
+  instructions: string;
+}
+
+/** The structured JSON blob stored in packets.generated_content */
+export interface PacketContent {
+  // Legacy field name — some older packets use "title" at root
+  title?: string;
+  // New field name
+  packet_title?: string;
+  greeting?: string;
+  mascot_name?: string;
+  mascot_description?: string;
+  mascot_emoji_cluster?: string;
+  activities: PacketActivity[];
+  coloring_page?: PacketColoringPage;
+  daily_reflection?: string;
+  parent_notes?: string;
+}
+
 // ─── Packet ───────────────────────────────────────────────────────────────────
 
 export type PacketLength = "half" | "full";
@@ -51,7 +85,7 @@ export interface Packet {
   theme: string;
   packet_length: PacketLength;
   special_notes: string | null;
-  generated_content: Record<string, unknown> | null;
+  generated_content: PacketContent | null;
   pdf_url: string | null;
   share_token: string;
   view_count: number;

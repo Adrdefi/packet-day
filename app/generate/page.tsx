@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Child } from "@/types";
+import type { Child, PacketContent } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -45,15 +45,6 @@ const GRADE_LABELS: Record<string, string> = {
 
 type Phase = "form" | "generating" | "result";
 
-interface ActivityItem {
-  subject: string;
-  title: string;
-  description: string;
-  instructions: string[];
-  estimated_minutes: number;
-  materials?: string[];
-}
-
 interface SavedPacket {
   id: string;
   child_name: string;
@@ -62,10 +53,7 @@ interface SavedPacket {
   share_token: string;
   pdf_url: string | null;
   created_at: string;
-  generated_content: {
-    title: string;
-    activities: ActivityItem[];
-  };
+  generated_content: PacketContent;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -241,7 +229,7 @@ function ActivityCard({
   activity,
   index,
 }: {
-  activity: ActivityItem;
+  activity: PacketContent["activities"][number];
   index: number;
 }) {
   const color = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
@@ -396,7 +384,7 @@ function ResultView({
           <div className="text-center mb-10">
             <div className="text-5xl mb-4">{childEmoji}</div>
             <h1 className="font-display text-3xl md:text-4xl font-bold text-dark mb-1 leading-tight">
-              {packet.generated_content.title}
+              {packet.generated_content.packet_title ?? packet.generated_content.title}
             </h1>
             <p className="text-muted text-sm">
               {formatResultDate(packet.created_at)}
@@ -456,7 +444,7 @@ function ResultView({
                 f
               </a>
               <a
-                href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${packet.generated_content.title} — made with Packet Day`)}`}
+                href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${packet.generated_content.packet_title ?? packet.generated_content.title} — made with Packet Day`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-[#E60023]/10 hover:bg-[#E60023]/20 flex items-center justify-center font-bold text-[#E60023] transition-colors"
