@@ -70,17 +70,29 @@ interface SavedPacket {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function subjectBadgeClass(subject: string): string {
+// 5-color rotation matching the PDF design
+const ACTIVITY_COLORS = [
+  { bar: "#4A7C59", text: "#FDFBF7", bg: "#EFF6F1" }, // sage
+  { bar: "#D4A843", text: "#1A1A2E", bg: "#FDF8EC" }, // honey
+  { bar: "#E07A5F", text: "#FDFBF7", bg: "#FDF1EE" }, // coral
+  { bar: "#7B68EE", text: "#FFFFFF", bg: "#F4F2FF" }, // purple
+  { bar: "#5BC0EB", text: "#1A1A2E", bg: "#EBF8FE" }, // sky blue
+] as const;
+
+function subjectEmoji(subject: string): string {
   const s = subject.toLowerCase();
-  if (s.includes("math")) return "bg-honey/20 text-honey-dark";
-  if (s.includes("read") || s.includes("writ") || s.includes("creative"))
-    return "bg-sage/15 text-sage-dark";
-  if (s.includes("sci") || s.includes("nature") || s.includes("outdoor"))
-    return "bg-sage/10 text-sage-dark";
-  if (s.includes("hist") || s.includes("social")) return "bg-dark/10 text-dark";
-  if (s.includes("art") || s.includes("music")) return "bg-honey/15 text-honey-dark";
-  if (s.includes("pe") || s.includes("physical")) return "bg-coral/10 text-coral-dark";
-  return "bg-sage/10 text-sage-dark";
+  if (s.includes("math")) return "🔢";
+  if (s.includes("read")) return "📚";
+  if (s.includes("writ")) return "✏️";
+  if (s.includes("sci")) return "🔬";
+  if (s.includes("hist") || s.includes("social")) return "🌍";
+  if (s.includes("art")) return "🎨";
+  if (s.includes("music")) return "🎵";
+  if (s.includes("pe") || s.includes("physical") || s.includes("movement")) return "⚽";
+  if (s.includes("creative")) return "💡";
+  if (s.includes("nature") || s.includes("outdoor")) return "🌿";
+  if (s.includes("independent") || s.includes("afternoon")) return "⭐";
+  return "📖";
 }
 
 function formatResultDate(iso: string): string {
@@ -225,46 +237,86 @@ function LoadingView({
 
 // ─── Activity card ────────────────────────────────────────────────────────────
 
-function ActivityCard({ activity }: { activity: ActivityItem }) {
+function ActivityCard({
+  activity,
+  index,
+}: {
+  activity: ActivityItem;
+  index: number;
+}) {
+  const color = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
+
   return (
-    <div className="bg-white rounded-xl border border-border shadow-sm p-5 flex flex-col gap-3 print:break-inside-avoid print:shadow-none print:border-gray-200">
-      <span
-        className={`self-start text-xs font-bold px-2.5 py-1 rounded-full ${subjectBadgeClass(activity.subject)}`}
+    <div className="rounded-2xl border border-border shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none">
+      {/* Colored header bar */}
+      <div
+        className="px-5 py-4 flex items-center gap-3"
+        style={{ backgroundColor: color.bar }}
       >
-        {activity.subject}
-      </span>
-
-      <h3 className="font-display text-lg font-bold text-dark leading-snug">
-        {activity.title}
-      </h3>
-
-      <p className="text-sm text-dark/70 leading-relaxed">
-        {activity.description}
-      </p>
-
-      <div>
-        <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2.5">
-          How to do it
-        </p>
-        <ol className="space-y-2">
-          {activity.instructions.map((step, i) => (
-            <li key={i} className="flex gap-3 text-sm text-dark leading-snug">
-              <span className="w-5 h-5 rounded-full bg-sage/15 text-sage-dark font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
+        <span className="text-3xl leading-none shrink-0">
+          {subjectEmoji(activity.subject)}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p
+            className="text-xs font-bold uppercase tracking-wider mb-0.5"
+            style={{ color: color.text, opacity: 0.8 }}
+          >
+            {activity.subject}
+          </p>
+          <h3
+            className="font-display font-bold text-base leading-snug"
+            style={{ color: color.text }}
+          >
+            {activity.title}
+          </h3>
+        </div>
+        <span
+          className="text-xs font-semibold shrink-0 px-2.5 py-1 rounded-full"
+          style={{
+            color: color.text,
+            backgroundColor: "rgba(0,0,0,0.15)",
+          }}
+        >
+          ⏱ {activity.estimated_minutes} min
+        </span>
       </div>
 
-      <div className="pt-2.5 border-t border-border flex flex-wrap gap-4 mt-auto">
-        <span className="text-xs text-muted">⏱ {activity.estimated_minutes} min</span>
+      {/* Content */}
+      <div
+        className="p-5 flex flex-col gap-3"
+        style={{ backgroundColor: color.bg }}
+      >
+        <p className="text-sm text-dark/75 leading-relaxed">
+          {activity.description}
+        </p>
+
         {activity.materials && activity.materials.length > 0 && (
-          <span className="text-xs text-muted">
-            📎 {activity.materials.join(", ")}
-          </span>
+          <p className="text-xs text-muted">
+            📎 {activity.materials.join(" · ")}
+          </p>
         )}
+
+        <div>
+          <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2.5">
+            How to do it
+          </p>
+          <ol className="space-y-2">
+            {activity.instructions.map((step, i) => (
+              <li key={i} className="flex gap-3 text-sm text-dark leading-snug">
+                <span
+                  className="w-5 h-5 rounded-full font-bold text-xs flex items-center justify-center shrink-0 mt-0.5"
+                  style={{
+                    backgroundColor: color.bar + "25",
+                    color: color.bar,
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </div>
   );
@@ -425,7 +477,7 @@ function ResultView({
           {/* Activity cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
             {packet.generated_content.activities.map((activity, i) => (
-              <ActivityCard key={i} activity={activity} />
+              <ActivityCard key={i} activity={activity} index={i} />
             ))}
           </div>
 

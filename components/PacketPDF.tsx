@@ -3,9 +3,14 @@
 
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-// ─── Brand colors ─────────────────────────────────────────────────────────────
+// ─── Color palette ────────────────────────────────────────────────────────────
 
 const C = {
+  cream: "#FDFBF7",
+  dark: "#1A1A2E",
+  muted: "#6B7280",
+  border: "#E5E7EB",
+  white: "#FFFFFF",
   sage: "#4A7C59",
   sageDark: "#2E5238",
   sageBg: "#EFF6F1",
@@ -14,15 +19,16 @@ const C = {
   honeyBg: "#FDF8EC",
   coral: "#E07A5F",
   coralBg: "#FDF1EE",
-  cream: "#FDFBF7",
-  dark: "#1A1A2E",
-  muted: "#6B7280",
-  border: "#E5E7EB",
-  white: "#FFFFFF",
-  lightGray: "#F9FAFB",
 };
 
-const BAR_COLORS = [C.sage, C.honey, C.coral] as const;
+// 5-color activity rotation
+const ACTIVITY_COLORS = [
+  { bar: "#4A7C59", bg: "#EFF6F1", text: "#2E5238" }, // sage
+  { bar: "#D4A843", bg: "#FDF8EC", text: "#A67C1E" }, // honey
+  { bar: "#E07A5F", bg: "#FDF1EE", text: "#B85A40" }, // coral
+  { bar: "#7B68EE", bg: "#F4F2FF", text: "#5548CC" }, // purple
+  { bar: "#5BC0EB", bg: "#EBF8FE", text: "#2A8EAF" }, // sky blue
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,27 +84,52 @@ function parentNote(childName: string, theme: string): string {
   );
 }
 
+function subjectEmoji(subject: string): string {
+  const s = subject.toLowerCase();
+  if (s.includes("math")) return "🔢";
+  if (s.includes("read")) return "📚";
+  if (s.includes("writ")) return "✏️";
+  if (s.includes("sci")) return "🔬";
+  if (s.includes("hist") || s.includes("social")) return "🌍";
+  if (s.includes("art")) return "🎨";
+  if (s.includes("music")) return "🎵";
+  if (s.includes("pe") || s.includes("physical") || s.includes("movement")) return "⚽";
+  if (s.includes("creative")) return "💡";
+  if (s.includes("nature") || s.includes("outdoor")) return "🌿";
+  if (s.includes("independent") || s.includes("afternoon")) return "⭐";
+  return "📖";
+}
+
+function themeEmojis(theme: string): string {
+  const t = theme.toLowerCase();
+  if (t.includes("dino") || t.includes("prehistoric") || t.includes("megalodon")) return "🦕  🌋  🦖  🌿  🦴";
+  if (t.includes("space") || t.includes("planet") || t.includes("astro")) return "🚀  🌙  ⭐  🪐  🌌";
+  if (t.includes("ocean") || t.includes("sea") || t.includes("shark") || t.includes("underwater")) return "🌊  🦈  🐙  🐠  🐋";
+  if (t.includes("minecraft")) return "⛏️  🟫  🌲  💎  🗡️";
+  if (t.includes("volcano")) return "🌋  🔥  🪨  💥  🌡️";
+  if (t.includes("bug") || t.includes("insect") || t.includes("bee")) return "🐝  🦋  🐛  🌺  🍃";
+  if (t.includes("castle") || t.includes("knight") || t.includes("medieval")) return "🏰  ⚔️  🛡️  👑  🐉";
+  if (t.includes("bak") || t.includes("cook") || t.includes("food")) return "🍰  🧁  🥧  🥄  🍪";
+  if (t.includes("art") || t.includes("paint")) return "🎨  🖌️  ✏️  🖼️  🌈";
+  if (t.includes("music") || t.includes("song")) return "🎵  🎸  🥁  🎹  🎤";
+  if (t.includes("animal") || t.includes("wildlife") || t.includes("jungle")) return "🦁  🐘  🦒  🐼  🦓";
+  if (t.includes("egypt") || t.includes("pyramid") || t.includes("ancient")) return "🏺  🐫  👁️  🌙  🗝️";
+  if (t.includes("robot") || t.includes("tech") || t.includes("code")) return "🤖  💻  ⚙️  🔧  🚀";
+  if (t.includes("sport") || t.includes("soccer") || t.includes("baseball")) return "⚽  🏆  🎯  💪  🥇";
+  if (t.includes("fairy") || t.includes("magic") || t.includes("unicorn")) return "🦄  🌟  🧚  ✨  🌈";
+  return "⭐  📚  ✏️  🌟  🎉";
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // ── Pages ──────────────────────────────────────────────────────────────────
+  // ── Cover page ─────────────────────────────────────────────────────────────
   coverPage: {
     backgroundColor: C.cream,
     padding: 56,
     flexDirection: "column",
     justifyContent: "space-between",
   },
-  activityPage: {
-    backgroundColor: C.white,
-    flexDirection: "column",
-  },
-  notesPage: {
-    backgroundColor: C.white,
-    padding: 48,
-    flexDirection: "column",
-  },
-
-  // ── Cover: top wordmark ────────────────────────────────────────────────────
   wordmark: {
     fontFamily: "Helvetica-Bold",
     fontSize: 10,
@@ -106,38 +137,52 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
   },
-
-  // ── Cover: center block ────────────────────────────────────────────────────
   coverCenter: {
     flexDirection: "column",
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
-    paddingVertical: 32,
+    paddingVertical: 24,
   },
-  emojiText: {
-    fontSize: 64,
+  themeEmojiRow: {
+    fontSize: 28,
     textAlign: "center",
     marginBottom: 20,
+    letterSpacing: 4,
+  },
+  childAvatarCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: C.white,
+    borderWidth: 3,
+    borderColor: C.sage,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  childAvatarEmoji: {
+    fontSize: 44,
+    textAlign: "center",
   },
   packetTitle: {
     fontFamily: "Helvetica-Bold",
     fontSize: 26,
     color: C.dark,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 8,
     lineHeight: 1.35,
   },
   packetSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: C.muted,
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 28,
   },
   greetingBox: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: C.sage,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 18,
     backgroundColor: C.sageBg,
     width: "100%",
@@ -149,8 +194,6 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Oblique",
     textAlign: "center",
   },
-
-  // ── Cover: bottom ──────────────────────────────────────────────────────────
   coverFooter: {
     flexDirection: "row",
     justifyContent: "center",
@@ -166,13 +209,23 @@ const styles = StyleSheet.create({
     color: C.border,
   },
 
-  // ── Activity: colored top bar ──────────────────────────────────────────────
+  // ── Activity page ───────────────────────────────────────────────────────────
+  activityPage: {
+    flexDirection: "column",
+    // backgroundColor set dynamically
+  },
   activityBar: {
-    height: 50,
+    height: 80,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 28,
-    justifyContent: "space-between",
+    gap: 14,
+    // backgroundColor set dynamically
+  },
+  activityBarEmoji: {
+    fontSize: 34,
+    width: 42,
+    textAlign: "center",
   },
   activityBarLeft: {
     flexDirection: "column",
@@ -188,20 +241,19 @@ const styles = StyleSheet.create({
   },
   activityBarTitle: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 15,
+    fontSize: 16,
     color: C.white,
+    lineHeight: 1.3,
   },
   activityBarTime: {
     fontSize: 10,
-    color: "rgba(255,255,255,0.85)",
+    color: "rgba(255,255,255,0.9)",
     fontFamily: "Helvetica-Bold",
-    backgroundColor: "rgba(0,0,0,0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: "rgba(0,0,0,0.18)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
   },
-
-  // ── Activity: content area ─────────────────────────────────────────────────
   activityContent: {
     padding: 28,
     flex: 1,
@@ -210,12 +262,14 @@ const styles = StyleSheet.create({
 
   // Materials
   materialsBox: {
-    backgroundColor: C.lightGray,
-    borderRadius: 6,
+    backgroundColor: C.white,
+    borderRadius: 8,
     padding: 10,
     marginBottom: 14,
     flexDirection: "row",
     alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: C.border,
   },
   materialsLabel: {
     fontFamily: "Helvetica-Bold",
@@ -233,18 +287,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Description / intro box
+  // Description box — borderLeftColor set dynamically
   descriptionBox: {
-    backgroundColor: C.sageBg,
-    borderLeftWidth: 3,
-    borderLeftColor: C.sage,
-    borderRadius: 4,
+    borderLeftWidth: 4,
+    borderRadius: 6,
     padding: 12,
     marginBottom: 18,
+    // backgroundColor and borderLeftColor set dynamically
   },
   descriptionText: {
     fontSize: 10.5,
-    color: C.sageDark,
+    color: C.dark,
     fontFamily: "Helvetica-Oblique",
     lineHeight: 1.65,
   },
@@ -264,20 +317,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   instructionBullet: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: C.sageBg,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
     flexShrink: 0,
     marginTop: 1,
+    // backgroundColor set dynamically
   },
   instructionBulletText: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8,
-    color: C.sage,
+    fontSize: 9,
+    // color set dynamically
   },
   instructionText: {
     fontSize: 10.5,
@@ -286,7 +339,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Work area
+  // Work area — dotted lines
   workArea: {
     flex: 1,
     marginTop: 18,
@@ -294,31 +347,28 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   workLine: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: C.border,
-    marginBottom: 22,
+    borderBottomWidth: 1.5,
+    borderBottomStyle: "dotted",
+    borderBottomColor: "#D1D5DB",
+    marginBottom: 26,
   },
 
   // Answer key
   answerKeyBox: {
-    backgroundColor: C.lightGray,
-    borderRadius: 8,
+    backgroundColor: C.honeyBg,
+    borderRadius: 10,
     padding: 14,
     marginTop: 10,
-    borderWidth: 1,
-    borderColor: C.border,
+    borderWidth: 1.5,
+    borderColor: C.honey,
   },
   answerKeyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  answerKeyLabel: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8,
-    color: C.muted,
+    fontSize: 9,
+    color: C.honeyDark,
     textTransform: "uppercase",
     letterSpacing: 0.8,
+    marginBottom: 7,
   },
   answerKeyText: {
     fontSize: 10,
@@ -326,10 +376,15 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
   },
 
-  // ── Notes page ─────────────────────────────────────────────────────────────
+  // ── Notes page ──────────────────────────────────────────────────────────────
+  notesPage: {
+    backgroundColor: C.white,
+    padding: 48,
+    flexDirection: "column",
+  },
   notesPageTitle: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 20,
+    fontSize: 22,
     color: C.dark,
     marginBottom: 6,
   },
@@ -349,14 +404,15 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 7,
+    marginBottom: 8,
   },
-  summaryBullet: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 10,
-    color: C.sage,
-    marginRight: 8,
-    marginTop: 1,
+  summaryColorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
+    marginTop: 3,
+    flexShrink: 0,
   },
   summaryText: {
     fontSize: 10,
@@ -366,7 +422,7 @@ const styles = StyleSheet.create({
   },
   parentNoteBox: {
     backgroundColor: C.sageBg,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 14,
     marginBottom: 18,
   },
@@ -378,9 +434,9 @@ const styles = StyleSheet.create({
   },
   reflectionBox: {
     backgroundColor: C.honeyBg,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: C.honey,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 16,
     marginBottom: 22,
   },
@@ -405,9 +461,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   ruledLine: {
-    borderBottomWidth: 0.75,
-    borderBottomColor: C.border,
-    marginBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomStyle: "dotted",
+    borderBottomColor: "#D1D5DB",
+    marginBottom: 26,
   },
   notesFooter: {
     marginTop: "auto",
@@ -442,16 +499,21 @@ function CoverPage({
 
       {/* Center block */}
       <View style={styles.coverCenter}>
-        <Text style={styles.emojiText}>{childEmoji}</Text>
+        {/* Theme emoji collage */}
+        <Text style={styles.themeEmojiRow}>{themeEmojis(theme)}</Text>
+
+        {/* Child avatar circle */}
+        <View style={styles.childAvatarCircle}>
+          <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
+        </View>
 
         <Text style={styles.packetTitle}>{title}</Text>
 
         <Text style={styles.packetSubtitle}>
-          A day of learning made just for {childName} •{" "}
-          {formatPDFDate(createdAt)}
+          A day of learning made just for {childName}  •  {formatPDFDate(createdAt)}
         </Text>
 
-        {/* AI greeting box */}
+        {/* Greeting box */}
         <View style={styles.greetingBox}>
           <Text style={styles.greetingText}>
             {greetingMessage(childName, theme)}
@@ -459,9 +521,9 @@ function CoverPage({
         </View>
       </View>
 
-      {/* Bottom */}
+      {/* Footer */}
       <View style={styles.coverFooter}>
-        <Text style={styles.coverFooterText}>📦 Packet Day</Text>
+        <Text style={styles.coverFooterText}>Made with love by Packet Day</Text>
         <Text style={styles.coverFooterDot}>  •  </Text>
         <Text style={styles.coverFooterText}>packetday.com</Text>
       </View>
@@ -478,19 +540,35 @@ function ActivityPage({
   activity: PDFActivity;
   index: number;
 }) {
-  const barColor = BAR_COLORS[index % BAR_COLORS.length];
+  const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
   const workLines = activity.answer_key ? 4 : 6;
 
+  const pageStyle = [styles.activityPage, { backgroundColor: colors.bg }];
+  const barStyle = [styles.activityBar, { backgroundColor: colors.bar }];
+  const descBoxStyle = [
+    styles.descriptionBox,
+    { backgroundColor: C.white, borderLeftColor: colors.bar },
+  ];
+  const bulletBgStyle = [
+    styles.instructionBullet,
+    { backgroundColor: colors.bg + "CC" },
+  ];
+  const bulletTextStyle = [
+    styles.instructionBulletText,
+    { color: colors.bar },
+  ];
+
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={pageStyle}>
       {/* Colored top bar */}
-      <View style={[styles.activityBar, { backgroundColor: barColor }]}>
+      <View style={barStyle}>
+        <Text style={styles.activityBarEmoji}>{subjectEmoji(activity.subject)}</Text>
         <View style={styles.activityBarLeft}>
           <Text style={styles.activityBarSubject}>{activity.subject}</Text>
           <Text style={styles.activityBarTitle}>{activity.title}</Text>
         </View>
         <Text style={styles.activityBarTime}>
-          ⏱ {activity.estimated_minutes} min
+          {activity.estimated_minutes} min
         </Text>
       </View>
 
@@ -499,15 +577,15 @@ function ActivityPage({
         {/* Materials */}
         {activity.materials && activity.materials.length > 0 && (
           <View style={styles.materialsBox}>
-            <Text style={styles.materialsLabel}>Materials:</Text>
+            <Text style={styles.materialsLabel}>You'll need:</Text>
             <Text style={styles.materialsText}>
               {activity.materials.join("  ·  ")}
             </Text>
           </View>
         )}
 
-        {/* Description / intro */}
-        <View style={styles.descriptionBox}>
+        {/* Description */}
+        <View style={descBoxStyle}>
           <Text style={styles.descriptionText}>{activity.description}</Text>
         </View>
 
@@ -515,14 +593,14 @@ function ActivityPage({
         <Text style={styles.instructionsLabel}>How to do it</Text>
         {activity.instructions.map((step, i) => (
           <View key={i} style={styles.instructionRow}>
-            <View style={styles.instructionBullet}>
-              <Text style={styles.instructionBulletText}>{i + 1}</Text>
+            <View style={bulletBgStyle}>
+              <Text style={bulletTextStyle}>{i + 1}</Text>
             </View>
             <Text style={styles.instructionText}>{step}</Text>
           </View>
         ))}
 
-        {/* Work area — ruled lines for writing */}
+        {/* Work area — dotted lines */}
         <View style={styles.workArea}>
           {Array.from({ length: workLines }, (_, i) => (
             <View key={i} style={styles.workLine} />
@@ -532,11 +610,9 @@ function ActivityPage({
         {/* Answer key */}
         {activity.answer_key && (
           <View style={styles.answerKeyBox}>
-            <View style={styles.answerKeyHeader}>
-              <Text style={styles.answerKeyLabel}>
-                🔒  Answer Key — Parents Only
-              </Text>
-            </View>
+            <Text style={styles.answerKeyHeader}>
+              🔒  For Grown-Ups Only!
+            </Text>
             <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
           </View>
         )}
@@ -557,26 +633,31 @@ function ParentNotesPage({
     <Page size="LETTER" style={styles.notesPage}>
       <Text style={styles.notesPageTitle}>Today's Packet at a Glance</Text>
       <Text style={styles.notesPageSubtitle}>
-        {activities.length} activities •{" "}
+        {activities.length} activities  •  {" "}
         {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
       </Text>
 
-      {/* Activity summary */}
+      {/* Activity summary with color dots */}
       <Text style={styles.sectionLabel}>Activity Summary</Text>
-      {activities.map((activity, i) => (
-        <View key={i} style={styles.summaryRow}>
-          <Text style={styles.summaryBullet}>•</Text>
-          <Text style={styles.summaryText}>
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>
-              {activity.subject}:{" "}
+      {activities.map((activity, i) => {
+        const colors = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
+        return (
+          <View key={i} style={styles.summaryRow}>
+            <View
+              style={[styles.summaryColorDot, { backgroundColor: colors.bar }]}
+            />
+            <Text style={styles.summaryText}>
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>
+                {activity.subject}:{" "}
+              </Text>
+              {activity.title} — {activity.estimated_minutes} min
             </Text>
-            {activity.title} — {activity.estimated_minutes} min
-          </Text>
-        </View>
-      ))}
+          </View>
+        );
+      })}
 
       {/* Parent note */}
-      <View style={{ marginTop: 22, marginBottom: 6 }}>
+      <View style={{ marginTop: 24, marginBottom: 6 }}>
         <Text style={styles.sectionLabel}>A Note for You</Text>
       </View>
       <View style={styles.parentNoteBox}>
@@ -587,9 +668,7 @@ function ParentNotesPage({
 
       {/* Reflection question */}
       <View style={styles.reflectionBox}>
-        <Text style={styles.reflectionLabel}>
-          Daily Reflection Question
-        </Text>
+        <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
         <Text style={styles.reflectionText}>
           {reflectionQuestion(theme)}
         </Text>
@@ -603,9 +682,7 @@ function ParentNotesPage({
 
       {/* Footer */}
       <View style={styles.notesFooter}>
-        <Text style={styles.footerText}>
-          Made with love by Packet Day
-        </Text>
+        <Text style={styles.footerText}>Made with love by Packet Day</Text>
         <Text style={styles.footerText}>
           packetday.com  •  {formatPDFDate(createdAt)}
         </Text>
