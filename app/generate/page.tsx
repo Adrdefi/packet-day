@@ -470,22 +470,24 @@ function GenerateContent() {
     setPhase("generating");
 
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/generate-packet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          child_id: selectedChild.id,
+          childId: selectedChild.id,
           theme: theme.trim(),
-          packet_length: packetLength,
-          today_note: todayNote.trim() || undefined,
+          packetLength,
+          specialNotes: todayNote.trim() || undefined,
+          date: new Date().toISOString().split("T")[0],
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        // Quota error has a human-readable `message`; other errors use `error`
         throw new Error(
-          data.error ?? "Something went sideways generating your packet."
+          data.message ?? data.error ?? "Something went sideways generating your packet."
         );
       }
 
