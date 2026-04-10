@@ -1,15 +1,25 @@
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("Missing RESEND_API_KEY environment variable");
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const FROM_EMAIL = "Packet Day <hello@packetday.com>";
 
+// ─── Lazy client ──────────────────────────────────────────────────────────────
+
+let _resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("Missing RESEND_API_KEY environment variable");
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 export async function sendWelcomeEmail(to: string, name: string) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM_EMAIL,
     to,
     subject: "Welcome to Packet Day!",
@@ -26,7 +36,7 @@ export async function sendPacketReadyEmail(
   packetTitle: string,
   pdfUrl: string
 ) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM_EMAIL,
     to,
     subject: `Your packet is ready: ${packetTitle}`,

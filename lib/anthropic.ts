@@ -1,13 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child } from "@/types";
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("Missing ANTHROPIC_API_KEY environment variable");
-}
+// ─── Lazy client ──────────────────────────────────────────────────────────────
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+let _anthropic: Anthropic | null = null;
+
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("Missing ANTHROPIC_API_KEY environment variable");
+    }
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _anthropic;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -106,7 +112,7 @@ RULES
 - Materials: common household items only — no specialty supplies
 - Tone: warm and encouraging, like a fun aunt wrote this`;
 
-  const message = await anthropic.messages.create({
+  const message = await getAnthropic().messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],

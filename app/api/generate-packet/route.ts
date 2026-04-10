@@ -6,7 +6,10 @@ import type { Child } from "@/types";
 // Allow up to 90 seconds — streaming generation can take ~60s
 export const maxDuration = 90;
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+// Lazy — only instantiated when the route is actually called
+function getAnthropic() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
 // ─── Quota config ─────────────────────────────────────────────────────────────
 
@@ -110,7 +113,7 @@ Return a JSON object with this exact structure:
 // ─── Claude call (streaming for perceived speed + Vercel timeout safety) ───────
 
 async function callClaude(userPrompt: string): Promise<string> {
-  const stream = anthropic.messages.stream({
+  const stream = getAnthropic().messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: 4000,
     system: SYSTEM_PROMPT,
