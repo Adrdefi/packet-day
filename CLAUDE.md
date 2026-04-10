@@ -37,7 +37,8 @@ Packet Day generates personalized, printable daily learning packets for homescho
 | Tailwind CSS v4 | Styling (CSS-based config, no tailwind.config.ts) |
 | Supabase | Database, Auth, Storage |
 | Stripe | Payments & subscriptions |
-| Anthropic Claude API | Packet generation (model: claude-opus-4-6) |
+| Anthropic Claude API | Packet generation (model: claude-sonnet-4-6) |
+| Replicate (flux-schnell) | AI mascot image generation |
 | @react-pdf/renderer | PDF output |
 | Resend | Transactional email |
 | Vercel | Hosting |
@@ -102,6 +103,7 @@ See `.env.local.example` for all variables and where to find them.
 | `STRIPE_STARTER_PRICE_ID` | Yes | No | Monthly plan on /pricing |
 | `STRIPE_FAMILY_PRICE_ID` | Yes | No | Annual plan on /pricing |
 | `ANTHROPIC_API_KEY` | Yes | **No** — server only |
+| `REPLICATE_API_TOKEN` | Optional | **No** — server only |
 | `RESEND_API_KEY` | Yes | **No** — server only |
 | `NEXT_PUBLIC_APP_URL` | Yes | Yes |
 

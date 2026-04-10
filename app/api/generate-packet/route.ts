@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
+import { generateMascotImage } from "@/lib/generateMascotImage";
 
 // Allow up to 90 seconds — streaming generation can take ~60s
 export const maxDuration = 90;
@@ -331,13 +332,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Increment usage counter ───────────────────────────────────────────────
-    await supabase
-      .from("profiles")
-      .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
-      .eq("id", user.id);
+    // ── Generate mascot image + increment usage in parallel ───────────────────
+    // Image generation is fire-and-best-effort — never blocks the response.
+    const [mascotImageUrl] = await Promise.all([
+      generateMascotImage(generatedContent.mascot_description),
+      supabase
+        .from("profiles")
+        .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
+        .eq("id", user.id),
+    ]);
 
-    return NextResponse.json({ packet: savedPacket });
+    // Persist the image URL if we got one (fire-and-forget on failure)
+    if (mascotImageUrl) {
+      supabase
+        .from("packets")
+        .update({ mascot_image_url: mascotImageUrl })
+        .eq("id", savedPacket.id)
+        .then(() => {});
+    }
+
+    return NextResponse.json({
+      packet: { ...savedPacket, mascot_image_url: mascotImageUrl ?? null },
+    });
   } catch (err) {
     console.error("[generate-packet] Unhandled exception:", {
       message: err instanceof Error ? err.message : String(err),

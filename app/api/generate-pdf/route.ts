@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import PacketPDF from "@/components/PacketPDF";
-import type { PacketPDFProps, PDFActivity } from "@/components/PacketPDF";
+import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
+import type { PacketContent } from "@/types";
 
 export const maxDuration = 60;
 // @react-pdf/renderer is Node-only — force Node runtime
@@ -63,10 +64,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Build PDF props ───────────────────────────────────────────────────────
-  const content = packet.generated_content as {
-    title: string;
-    activities: PDFActivity[];
-  };
+  const content = packet.generated_content as PacketContent;
 
   const child = packet.children as
     | { avatar_emoji: string; special_notes: string | null }
@@ -82,10 +80,16 @@ export async function GET(req: NextRequest) {
     childEmoji: child?.avatar_emoji ?? "🌟",
     childGrade: gradeDisplay,
     theme: packet.theme,
-    title: content.title,
-    activities: content.activities,
+    title: content.packet_title ?? content.title ?? packet.theme,
+    activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
     specialNotes: packet.special_notes ?? null,
+    mascotImageUrl: (packet as { mascot_image_url?: string | null }).mascot_image_url ?? null,
+    mascotName: content.mascot_name ?? null,
+    mascotEmojiCluster: content.mascot_emoji_cluster ?? null,
+    coloringPage: content.coloring_page
+      ? (content.coloring_page as PDFColoringPage)
+      : null,
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────

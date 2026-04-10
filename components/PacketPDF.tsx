@@ -1,7 +1,7 @@
 // Server-side only — do not import from client components.
 // Used exclusively by app/api/generate-pdf/route.ts via createElement().
 
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 
@@ -42,6 +42,12 @@ export interface PDFActivity {
   answer_key?: string | null;
 }
 
+export interface PDFColoringPage {
+  title: string;
+  scene_description: string;
+  instructions: string;
+}
+
 export interface PacketPDFProps {
   childName: string;
   childEmoji: string;
@@ -51,6 +57,10 @@ export interface PacketPDFProps {
   activities: PDFActivity[];
   createdAt: string;
   specialNotes?: string | null;
+  mascotImageUrl?: string | null;
+  mascotName?: string | null;
+  mascotEmojiCluster?: string | null;
+  coloringPage?: PDFColoringPage | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -479,6 +489,90 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: C.muted,
   },
+
+  // ── Mascot image ────────────────────────────────────────────────────────────
+  mascotImageCover: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    marginBottom: 16,
+    alignSelf: "center",
+  },
+  mascotImageCorner: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.6)",
+  },
+  mascotNameText: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: C.sage,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  mascotEmojiText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
+    letterSpacing: 4,
+  },
+
+  // ── Coloring page ───────────────────────────────────────────────────────────
+  coloringPage: {
+    backgroundColor: C.cream,
+    padding: 48,
+    flexDirection: "column",
+  },
+  coloringTitle: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 28,
+    color: C.dark,
+    textAlign: "center",
+    marginBottom: 10,
+    lineHeight: 1.25,
+  },
+  coloringSubtitle: {
+    fontSize: 11,
+    color: C.muted,
+    textAlign: "center",
+    marginBottom: 22,
+    fontFamily: "Helvetica-Oblique",
+    lineHeight: 1.6,
+  },
+  coloringBox: {
+    flex: 1,
+    borderWidth: 2.5,
+    borderStyle: "dashed",
+    borderColor: "#A3C4B0",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    padding: 16,
+  },
+  coloringBoxImage: {
+    width: 340,
+    height: 340,
+    objectFit: "contain",
+  },
+  coloringBoxPlaceholder: {
+    fontSize: 13,
+    color: "#A3C4B0",
+    textAlign: "center",
+    fontFamily: "Helvetica-Oblique",
+    lineHeight: 1.7,
+  },
+  coloringNote: {
+    fontSize: 11,
+    color: C.muted,
+    textAlign: "center",
+    fontFamily: "Helvetica-Oblique",
+  },
 });
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
@@ -489,6 +583,9 @@ function CoverPage({
   title,
   theme,
   createdAt,
+  mascotImageUrl,
+  mascotName,
+  mascotEmojiCluster,
 }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.coverPage}>
@@ -499,13 +596,25 @@ function CoverPage({
 
       {/* Center block */}
       <View style={styles.coverCenter}>
-        {/* Theme emoji collage */}
-        <Text style={styles.themeEmojiRow}>{themeEmojis(theme)}</Text>
-
-        {/* Child avatar circle */}
-        <View style={styles.childAvatarCircle}>
-          <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
-        </View>
+        {mascotImageUrl ? (
+          // Mascot image — circular crop
+          <>
+            <Image src={mascotImageUrl} style={styles.mascotImageCover} />
+            {mascotName && (
+              <Text style={styles.mascotNameText}>{mascotName}</Text>
+            )}
+          </>
+        ) : (
+          // Fallback: emoji collage + child avatar
+          <>
+            <Text style={styles.themeEmojiRow}>
+              {mascotEmojiCluster ?? themeEmojis(theme)}
+            </Text>
+            <View style={styles.childAvatarCircle}>
+              <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
+            </View>
+          </>
+        )}
 
         <Text style={styles.packetTitle}>{title}</Text>
 
@@ -536,9 +645,11 @@ function CoverPage({
 function ActivityPage({
   activity,
   index,
+  mascotImageUrl,
 }: {
   activity: PDFActivity;
   index: number;
+  mascotImageUrl?: string | null;
 }) {
   const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
   const workLines = activity.answer_key ? 4 : 6;
@@ -563,6 +674,10 @@ function ActivityPage({
       {/* Colored top bar */}
       <View style={barStyle}>
         <Text style={styles.activityBarEmoji}>{subjectEmoji(activity.subject)}</Text>
+        {/* Small mascot in top-right corner of bar */}
+        {mascotImageUrl && (
+          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
+        )}
         <View style={styles.activityBarLeft}>
           <Text style={styles.activityBarSubject}>{activity.subject}</Text>
           <Text style={styles.activityBarTitle}>{activity.title}</Text>
@@ -691,6 +806,46 @@ function ParentNotesPage({
   );
 }
 
+// ─── Coloring page ────────────────────────────────────────────────────────────
+
+function ColoringPage({
+  coloringPage,
+  mascotImageUrl,
+}: {
+  coloringPage: PDFColoringPage;
+  mascotImageUrl?: string | null;
+}) {
+  return (
+    <Page size="LETTER" style={styles.coloringPage}>
+      {/* Title */}
+      <Text style={styles.coloringTitle}>{coloringPage.title}</Text>
+
+      {/* Scene description / instructions */}
+      <Text style={styles.coloringSubtitle}>
+        {coloringPage.scene_description}
+      </Text>
+
+      {/* Coloring area */}
+      <View style={styles.coloringBox}>
+        {mascotImageUrl ? (
+          <Image src={mascotImageUrl} style={styles.coloringBoxImage} />
+        ) : (
+          <Text style={styles.coloringBoxPlaceholder}>
+            {coloringPage.instructions}
+          </Text>
+        )}
+      </View>
+
+      {/* Instructions at bottom */}
+      <Text style={styles.coloringNote}>
+        {mascotImageUrl
+          ? coloringPage.instructions
+          : "Draw and color your own scene here!"}
+      </Text>
+    </Page>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function PacketPDF(props: PacketPDFProps) {
@@ -703,9 +858,20 @@ export default function PacketPDF(props: PacketPDFProps) {
     >
       <CoverPage {...props} />
       {props.activities.map((activity, i) => (
-        <ActivityPage key={i} activity={activity} index={i} />
+        <ActivityPage
+          key={i}
+          activity={activity}
+          index={i}
+          mascotImageUrl={props.mascotImageUrl}
+        />
       ))}
       <ParentNotesPage {...props} />
+      {props.coloringPage && (
+        <ColoringPage
+          coloringPage={props.coloringPage}
+          mascotImageUrl={props.mascotImageUrl}
+        />
+      )}
     </Document>
   );
 }

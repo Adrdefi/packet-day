@@ -52,6 +52,7 @@ interface SavedPacket {
   packet_length: string;
   share_token: string;
   pdf_url: string | null;
+  mascot_image_url: string | null;
   created_at: string;
   generated_content: PacketContent;
 }
@@ -382,7 +383,37 @@ function ResultView({
         <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 py-10">
           {/* Header */}
           <div className="text-center mb-10">
-            <div className="text-5xl mb-4">{childEmoji}</div>
+            {packet.mascot_image_url ? (
+              // Mascot hero image
+              <div className="flex flex-col items-center gap-3 mb-4">
+                <img
+                  src={packet.mascot_image_url}
+                  alt={packet.generated_content.mascot_name ?? "Today's mascot"}
+                  className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+                {packet.generated_content.mascot_name && (
+                  <p className="text-sm font-bold text-sage">
+                    {packet.generated_content.mascot_name}
+                  </p>
+                )}
+                {packet.generated_content.mascot_emoji_cluster && (
+                  <p className="text-xl tracking-widest">
+                    {packet.generated_content.mascot_emoji_cluster}
+                  </p>
+                )}
+              </div>
+            ) : (
+              // Fallback: emoji cluster or child avatar
+              <div className="mb-4">
+                {packet.generated_content.mascot_emoji_cluster ? (
+                  <p className="text-3xl tracking-widest mb-2">
+                    {packet.generated_content.mascot_emoji_cluster}
+                  </p>
+                ) : (
+                  <div className="text-5xl mb-2">{childEmoji}</div>
+                )}
+              </div>
+            )}
             <h1 className="font-display text-3xl md:text-4xl font-bold text-dark mb-1 leading-tight">
               {packet.generated_content.packet_title ?? packet.generated_content.title}
             </h1>

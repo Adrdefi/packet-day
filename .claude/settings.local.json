@@ -25,7 +25,9 @@
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_4be4575d9d14a920653260532a81e1d6aa0b10d7 npx supabase:*)",
       "Bash(npx tsc:*)",
       "Bash(node -e \"const s = require\\('stripe'\\); console.log\\(require\\('stripe/package.json'\\).version\\)\")",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(node -e ':*)",
+      "Bash(node:*)"
     ]
   }
 }
