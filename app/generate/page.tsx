@@ -280,6 +280,28 @@ function ResultView({
   onGenerateAnother: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  async function downloadPDF() {
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/generate-pdf?packetId=${packet.id}`);
+      if (!res.ok) throw new Error("PDF generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ??
+        "packet.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Silent fail — user can use Print as fallback
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function copyShareLink() {
     const url = `${window.location.origin}/packets/${packet.share_token}`;
@@ -320,10 +342,11 @@ function ResultView({
               🖨️ Print This Packet
             </button>
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm"
+              onClick={downloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-2 bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm disabled:opacity-60 disabled:cursor-wait"
             >
-              📤 Download PDF
+              {downloading ? "⏳ Building PDF…" : "📤 Download PDF"}
             </button>
             <button
               onClick={copyShareLink}
