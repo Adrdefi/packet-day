@@ -4,11 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import ChildCard from "@/components/dashboard/ChildCard";
 import PacketList from "@/components/dashboard/PacketList";
 import UsageBanner from "@/components/dashboard/UsageBanner";
+import UpgradeCelebration from "@/components/UpgradeCelebration";
 import type { Child, Packet } from "@/types";
 
 export const metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
+  const params = await searchParams;
+  const showCelebration = params.upgraded === "true";
   const supabase = await createClient();
 
   const {
@@ -45,6 +52,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {showCelebration && <UpgradeCelebration />}
       {/* ── Two-column grid ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* ── Left: My Kids ──────────────────────────────────────────── */}
