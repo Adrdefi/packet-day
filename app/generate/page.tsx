@@ -279,8 +279,10 @@ function ResultView({
   childEmoji: string;
   onGenerateAnother: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
+
+  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://packetday.com"}/packets/${packet.share_token}`;
 
   async function downloadPDF() {
     setDownloading(true);
@@ -304,11 +306,10 @@ function ResultView({
   }
 
   async function copyShareLink() {
-    const url = `${window.location.origin}/packets/${packet.share_token}`;
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(shareUrl);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 3500);
     } catch {
       // fallback: ignore
     }
@@ -334,7 +335,7 @@ function ResultView({
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-3 justify-center mb-10 print:hidden">
+          <div className="flex flex-wrap gap-3 justify-center mb-6 print:hidden">
             <button
               onClick={() => window.print()}
               className="flex items-center gap-2 bg-sage text-cream font-bold px-6 py-3 rounded-xl hover:bg-sage-dark transition-colors text-sm"
@@ -352,8 +353,46 @@ function ResultView({
               onClick={copyShareLink}
               className="flex items-center gap-2 border border-border bg-white text-dark font-semibold px-6 py-3 rounded-xl hover:border-sage/50 transition-colors text-sm min-w-[180px] justify-center"
             >
-              🔗 {copied ? "Link copied!" : "Share This Packet"}
+              🔗 {shareToast ? "Link copied!" : "Copy Share Link"}
             </button>
+          </div>
+
+          {/* Share toast + social icons */}
+          <div className="flex flex-col items-center gap-3 mb-10 print:hidden">
+            {shareToast && (
+              <div className="flex items-center gap-2 bg-sage text-cream text-sm font-semibold px-5 py-2.5 rounded-full shadow-md animate-fade-in">
+                <span>📦</span>
+                <span>Link copied! Share it with your homeschool friends.</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <span>Share:</span>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-[#1877F2]/10 hover:bg-[#1877F2]/20 flex items-center justify-center font-bold text-[#1877F2] transition-colors"
+                aria-label="Share on Facebook"
+              >
+                f
+              </a>
+              <a
+                href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${packet.generated_content.title} — made with Packet Day`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-[#E60023]/10 hover:bg-[#E60023]/20 flex items-center justify-center font-bold text-[#E60023] transition-colors"
+                aria-label="Share on Pinterest"
+              >
+                P
+              </a>
+              <a
+                href={`sms:?body=${encodeURIComponent(`Check out this learning packet I made with Packet Day! ${shareUrl}`)}`}
+                className="w-8 h-8 rounded-full bg-sage/10 hover:bg-sage/20 flex items-center justify-center transition-colors"
+                aria-label="Share via text message"
+              >
+                💬
+              </a>
+            </div>
           </div>
 
           {/* Activity cards */}
