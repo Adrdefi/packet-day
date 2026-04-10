@@ -71,3 +71,23 @@ body {
 .animate-ticker-right:hover {
   animation-play-state: paused;
 }
+
+/* ─── Confetti Animation ──────────────────────────────────────────────────── */
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(320px) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti-fall 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
