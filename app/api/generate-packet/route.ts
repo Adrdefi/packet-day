@@ -238,7 +238,13 @@ export async function POST(req: NextRequest) {
       const responseText = await callClaude(userPrompt);
       generatedContent = parsePacketJSON(responseText);
     } catch (firstErr) {
-      console.warn("[generate-packet] First attempt failed, retrying:", firstErr);
+      console.error("[generate-packet] First attempt failed:", {
+        message: firstErr instanceof Error ? firstErr.message : String(firstErr),
+        stack: firstErr instanceof Error ? firstErr.stack : undefined,
+        childId,
+        theme: theme.trim(),
+        packetLength,
+      });
 
       // Retry once with a stricter prompt that reinforces JSON-only output
       const stricterPrompt =
@@ -249,7 +255,10 @@ export async function POST(req: NextRequest) {
         const responseText = await callClaude(stricterPrompt);
         generatedContent = parsePacketJSON(responseText);
       } catch (retryErr) {
-        console.error("[generate-packet] Retry failed:", retryErr);
+        console.error("[generate-packet] Retry also failed:", {
+          message: retryErr instanceof Error ? retryErr.message : String(retryErr),
+          stack: retryErr instanceof Error ? retryErr.stack : undefined,
+        });
         return NextResponse.json(
           {
             error:
@@ -277,7 +286,14 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (insertError || !savedPacket) {
-      console.error("[generate-packet] Failed to save packet:", insertError);
+      console.error("[generate-packet] Failed to save packet to DB:", {
+        message: insertError?.message,
+        code: insertError?.code,
+        details: insertError?.details,
+        hint: insertError?.hint,
+        userId: user.id,
+        childId: child.id,
+      });
       return NextResponse.json(
         {
           error:
@@ -295,7 +311,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ packet: savedPacket });
   } catch (err) {
-    console.error("[generate-packet] Unexpected error:", err);
+    console.error("[generate-packet] Unhandled exception:", {
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      name: err instanceof Error ? err.name : undefined,
+    });
     return NextResponse.json(
       { error: "Something went sideways. Let's try that again." },
       { status: 500 }
