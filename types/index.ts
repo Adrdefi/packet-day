@@ -1,109 +1,61 @@
-// ─── User ────────────────────────────────────────────────────────────────────
+// ─── Profile ──────────────────────────────────────────────────────────────────
 
-export interface User {
+export type SubscriptionStatus = "free" | "pro" | "cancelled";
+
+export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  stripe_customer_id: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_period_end: string | null;
+  packets_used_this_month: number;
+  packets_reset_date: string;
+  onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
 }
 
 // ─── Child ────────────────────────────────────────────────────────────────────
 
-export type LearningStyle = "visual" | "auditory" | "kinesthetic" | "reading";
-export type GradeLevel =
-  | "preschool"
-  | "kindergarten"
-  | "1st"
-  | "2nd"
-  | "3rd"
-  | "4th"
-  | "5th"
-  | "6th"
-  | "7th"
-  | "8th";
+// Values match the DB check constraint on children.grade_level
+export type GradeLevel = "K" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
+
+// Values match the DB check constraint on children.learning_style
+export type LearningStyle = "visual" | "hands-on" | "reader" | "mixed";
 
 export interface Child {
   id: string;
   user_id: string;
   name: string;
-  age: number;
   grade_level: GradeLevel;
-  interests: string[]; // e.g. ["dinosaurs", "drawing", "minecraft"]
-  learning_style: LearningStyle | null;
-  notes: string | null; // special needs, parent notes, etc.
+  learning_style: LearningStyle;
+  favorite_subjects: string[];
+  special_notes: string | null;
+  avatar_emoji: string;
+  display_order: number;
   created_at: string;
-  updated_at: string;
 }
 
 // ─── Packet ───────────────────────────────────────────────────────────────────
 
-export type PacketStatus = "generating" | "ready" | "error";
-
-export type SubjectArea =
-  | "math"
-  | "reading"
-  | "writing"
-  | "science"
-  | "history"
-  | "art"
-  | "music"
-  | "geography"
-  | "life_skills";
-
-export interface PacketActivity {
-  subject: SubjectArea;
-  title: string;
-  description: string;
-  instructions: string[];
-  estimated_minutes: number;
-  materials?: string[];
-}
+export type PacketLength = "half" | "full";
 
 export interface Packet {
   id: string;
   user_id: string;
-  child_id: string;
-  child?: Child;
-  title: string;
-  theme: string; // e.g. "space", "ocean", "fairy tales"
-  date: string; // ISO date string
-  subjects: SubjectArea[];
-  activities: PacketActivity[];
-  status: PacketStatus;
-  pdf_url: string | null; // Supabase Storage URL
-  generation_prompt: string | null; // stored for debugging/regeneration
+  child_id: string | null;
+  child_name: string; // denormalized — survives child deletion
+  grade_level: GradeLevel;
+  theme: string;
+  packet_length: PacketLength;
+  special_notes: string | null;
+  generated_content: Record<string, unknown> | null;
+  pdf_url: string | null;
+  share_token: string;
+  view_count: number;
   created_at: string;
-  updated_at: string;
-}
-
-// ─── Subscription ─────────────────────────────────────────────────────────────
-
-export type SubscriptionStatus =
-  | "active"
-  | "trialing"
-  | "past_due"
-  | "canceled"
-  | "unpaid"
-  | "incomplete";
-
-export type PlanId = "free" | "starter" | "family";
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  stripe_subscription_id: string | null;
-  stripe_customer_id: string | null;
-  plan_id: PlanId;
-  status: SubscriptionStatus;
-  current_period_start: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-  packets_used_this_month: number;
-  packets_limit: number; // -1 = unlimited
-  created_at: string;
-  updated_at: string;
 }
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
