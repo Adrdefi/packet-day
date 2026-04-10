@@ -99,10 +99,8 @@ See `.env.local.example` for all variables and where to find them.
 | `STRIPE_SECRET_KEY` | Yes | **No** — server only |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Yes | Yes |
 | `STRIPE_WEBHOOK_SECRET` | Yes | **No** — server only |
-| `STRIPE_STARTER_PRICE_ID` | Yes | No |
-| `STRIPE_FAMILY_PRICE_ID` | Yes | No |
-| `STRIPE_MONTHLY_PRICE_ID` | Yes | No |
-| `STRIPE_ANNUAL_PRICE_ID` | Yes | No |
+| `STRIPE_STARTER_PRICE_ID` | Yes | No | Monthly plan on /pricing |
+| `STRIPE_FAMILY_PRICE_ID` | Yes | No | Annual plan on /pricing |
 | `ANTHROPIC_API_KEY` | Yes | **No** — server only |
 | `RESEND_API_KEY` | Yes | **No** — server only |
 | `NEXT_PUBLIC_APP_URL` | Yes | Yes |

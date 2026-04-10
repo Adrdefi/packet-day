@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  const annualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID ?? "";
-  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID ?? "";
+  const annualPriceId = process.env.STRIPE_FAMILY_PRICE_ID ?? "";
+  const monthlyPriceId = process.env.STRIPE_STARTER_PRICE_ID ?? "";
 
   return (
     <PricingPageClient
