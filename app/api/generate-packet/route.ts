@@ -127,7 +127,7 @@ Return a JSON object with this exact structure:
 async function callClaude(userPrompt: string): Promise<string> {
   const stream = getAnthropic().messages.stream({
     model: "claude-sonnet-4-6",
-    max_tokens: 4000,
+    max_tokens: 8000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
@@ -140,6 +140,40 @@ async function callClaude(userPrompt: string): Promise<string> {
   return content.text;
 }
 
+// ─── JSON extraction (balanced-brace, respects string literals) ──────────────
+//
+// The greedy regex /\{[\s\S]*\}/ takes the *last* } in the text, which can be
+// a } inside a string value (mascot descriptions, scene descriptions, etc.).
+// That gives a malformed fragment and JSON.parse throws "Unexpected token 'A'".
+// Walk character-by-character so we stop at the real closing brace instead.
+
+function extractFirstJSON(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escaped) { escaped = false; continue; }
+    if (ch === "\\") { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+
+    if (!inString) {
+      if (ch === "{") depth++;
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0) return text.slice(start, i + 1);
+      }
+    }
+  }
+
+  return null; // unterminated — truncated response
+}
+
 // ─── JSON parser ──────────────────────────────────────────────────────────────
 
 function parsePacketJSON(text: string): ParsedPacketContent {
@@ -149,10 +183,10 @@ function parsePacketJSON(text: string): ParsedPacketContent {
     .replace(/```\s*$/m, "")
     .trim();
 
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON object found in response");
+  const jsonString = extractFirstJSON(cleaned);
+  if (!jsonString) throw new Error("No JSON object found in response");
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(jsonString);
 
   // Support "packet_title" (new) and "title" (legacy) — require one of them
   const hasTitle =

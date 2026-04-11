@@ -41,7 +41,6 @@ export async function generateMascotImage(
         aspect_ratio: "1:1",
         output_format: "webp",
         output_quality: 80,
-        go_fast: true,
       },
     });
 
@@ -50,7 +49,12 @@ export async function generateMascotImage(
     if (!first) return null;
 
     const url = String(first);
-    return url || null;
+    // Validate it looks like a URL before storing
+    if (!url.startsWith("http")) {
+      console.error("[generateMascotImage] Unexpected output format:", url.slice(0, 100));
+      return null;
+    }
+    return url;
   } catch (err) {
     console.error(
       "[generateMascotImage] Failed:",
