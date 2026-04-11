@@ -326,6 +326,45 @@ function ResultView({
   const [shareToast, setShareToast] = useState(false);
   const { toasts, toast, dismiss } = useToast();
 
+  // Poll for mascot image until it's ready (generated async after packet save)
+  const [mascotImageUrl, setMascotImageUrl] = useState<string | null>(
+    packet.mascot_image_url
+  );
+  const [mascotLoading, setMascotLoading] = useState(!packet.mascot_image_url);
+
+  useEffect(() => {
+    if (mascotImageUrl) return; // already have it
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20; // 60s total
+
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await fetch(`/api/packets/${packet.id}/mascot`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.mascot_image_url) {
+            setMascotImageUrl(data.mascot_image_url);
+            setMascotLoading(false);
+            clearInterval(interval);
+            return;
+          }
+        }
+      } catch {
+        // network error — keep polling
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        setMascotLoading(false);
+        clearInterval(interval);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://packetday.com"}/packets/${packet.share_token}`;
 
   async function downloadPDF() {
@@ -383,11 +422,11 @@ function ResultView({
         <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 py-10">
           {/* Header */}
           <div className="text-center mb-10">
-            {packet.mascot_image_url ? (
+            {mascotImageUrl ? (
               // Mascot hero image
               <div className="flex flex-col items-center gap-3 mb-4">
                 <img
-                  src={packet.mascot_image_url}
+                  src={mascotImageUrl}
                   alt={packet.generated_content.mascot_name ?? "Today's mascot"}
                   className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg"
                 />
@@ -402,8 +441,24 @@ function ResultView({
                   </p>
                 )}
               </div>
+            ) : mascotLoading ? (
+              // Mascot generating — pulsing placeholder
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <div className="w-36 h-36 rounded-full bg-sage/10 border-4 border-sage/20 flex items-center justify-center animate-pulse">
+                  {packet.generated_content.mascot_emoji_cluster ? (
+                    <span className="text-3xl">
+                      {packet.generated_content.mascot_emoji_cluster.split(" ")[0]}
+                    </span>
+                  ) : (
+                    <span className="text-4xl">{childEmoji}</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted animate-pulse">
+                  Creating your mascot...
+                </p>
+              </div>
             ) : (
-              // Fallback: emoji cluster or child avatar
+              // Fallback: emoji cluster or child avatar (mascot gen failed or skipped)
               <div className="mb-4">
                 {packet.generated_content.mascot_emoji_cluster ? (
                   <p className="text-3xl tracking-widest mb-2">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextRequest, NextResponse } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse, after } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateMascotImage } from "@/lib/generateMascotImage";
@@ -366,27 +367,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Generate mascot image + increment usage in parallel ───────────────────
-    // Image generation is fire-and-best-effort — never blocks the response.
-    const [mascotImageUrl] = await Promise.all([
-      generateMascotImage(generatedContent.mascot_description),
-      supabase
-        .from("profiles")
-        .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
-        .eq("id", user.id),
-    ]);
+    // ── Increment usage counter ───────────────────────────────────────────────
+    await supabase
+      .from("profiles")
+      .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
+      .eq("id", user.id);
 
-    // Persist the image URL if we got one (fire-and-forget on failure)
-    if (mascotImageUrl) {
-      supabase
+    // ── Schedule mascot generation after response is sent ─────────────────────
+    // Uses after() so Replicate's slow image generation never blocks the client.
+    // Service role client is required here — request cookie context is gone.
+    const packetId = savedPacket.id;
+    const mascotDescription = generatedContent.mascot_description;
+
+    after(async () => {
+      const mascotImageUrl = await generateMascotImage(mascotDescription);
+      if (!mascotImageUrl) return;
+
+      const serviceClient = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      await serviceClient
         .from("packets")
         .update({ mascot_image_url: mascotImageUrl })
-        .eq("id", savedPacket.id)
-        .then(() => {});
-    }
+        .eq("id", packetId);
+    });
 
     return NextResponse.json({
-      packet: { ...savedPacket, mascot_image_url: mascotImageUrl ?? null },
+      packet: { ...savedPacket, mascot_image_url: null },
     });
   } catch (err) {
     console.error("[generate-packet] Unhandled exception:", {
