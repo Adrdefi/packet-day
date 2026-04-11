@@ -31,7 +31,7 @@ MASCOT: Invent a fun character name (e.g. "Rex the Dino Detective"). Write a sho
 
 COLORING PAGE: A simple scene with the mascot doing something theme-related. Include the child's name in the title.
 
-Respond ONLY with valid JSON. No prose before or after.`;
+CRITICAL: Your entire response must be a single raw JSON object. Do NOT wrap in markdown code fences. Do NOT use \`\`\`json or \`\`\`. Do NOT include any text before or after the JSON. Start your response with { and end with }.`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
