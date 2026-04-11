@@ -697,20 +697,53 @@ function GenerateContent() {
         }),
       });
 
-      const data = await res.json();
-
+      // Non-streaming error (auth, quota, validation) — normal JSON response
       if (!res.ok) {
-        // Quota error has a human-readable `message`; other errors use `error`
+        const data = await res.json();
         throw new Error(
           data.message ?? data.error ?? "Something went sideways generating your packet."
         );
       }
 
-      // Snap to 100% then show result
-      setProgress(100);
-      await new Promise((r) => setTimeout(r, 700));
-      setResult(data.packet as SavedPacket);
-      setPhase("result");
+      // Read SSE stream — keeps connection alive during ~60s Claude generation
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          let event: { type: string; message?: string; packet?: SavedPacket };
+          try {
+            event = JSON.parse(line.slice(6));
+          } catch {
+            continue;
+          }
+
+          if (event.type === "complete" && event.packet) {
+            setProgress(100);
+            await new Promise((r) => setTimeout(r, 700));
+            setResult(event.packet);
+            setPhase("result");
+            return;
+          }
+
+          if (event.type === "error") {
+            throw new Error(event.message ?? "Something went sideways. Let's try that again.");
+          }
+
+          // "progress" events keep the connection warm — no UI action needed
+        }
+      }
+
+      throw new Error("Something went sideways. Let's try that again.");
     } catch (err) {
       setError(
         err instanceof Error

@@ -63,6 +63,12 @@ Respond ONLY with valid JSON. No prose before or after.`;
 // Alias to the canonical shared type — ParsedPacketContent kept for local clarity
 type ParsedPacketContent = PacketContent;
 
+// SSE event types sent to the client
+type SSEEvent =
+  | { type: "progress"; message: string }
+  | { type: "complete"; packet: Record<string, unknown> }
+  | { type: "error"; message: string };
+
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 
 function buildUserPrompt(
@@ -123,22 +129,37 @@ Return a JSON object with this exact structure:
 }`;
 }
 
-// ─── Claude call (streaming for perceived speed + Vercel timeout safety) ───────
+// ─── Claude call — streams tokens, returns full accumulated text ──────────────
+// Streams tokens to the SSE controller so the connection stays alive,
+// preventing Vercel from timing out on long generations.
 
-async function callClaude(userPrompt: string): Promise<string> {
+async function callClaude(
+  userPrompt: string,
+  packetLength: "half" | "full",
+  onToken: (text: string) => void
+): Promise<string> {
+  const maxTokens = packetLength === "half" ? 4000 : 6000;
+
   const stream = getAnthropic().messages.stream({
     model: "claude-sonnet-4-6",
-    max_tokens: 8000,
+    max_tokens: maxTokens,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
 
-  const message = await stream.finalMessage();
-  const content = message.content[0];
-  if (content.type !== "text") {
-    throw new Error("Unexpected response type from Claude");
+  let fullText = "";
+
+  for await (const chunk of stream) {
+    if (
+      chunk.type === "content_block_delta" &&
+      chunk.delta.type === "text_delta"
+    ) {
+      fullText += chunk.delta.text;
+      onToken(chunk.delta.text);
+    }
   }
-  return content.text;
+
+  return fullText;
 }
 
 // ─── JSON extraction (balanced-brace, respects string literals) ──────────────
@@ -217,194 +238,246 @@ function parsePacketJSON(text: string): ParsedPacketContent {
   return result;
 }
 
+// ─── SSE helper ───────────────────────────────────────────────────────────────
+
+function encodeSSE(event: SSEEvent): Uint8Array {
+  return new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  try {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
-    // ── Auth ──────────────────────────────────────────────────────────────────
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "You need to be logged in to generate a packet." },
-        { status: 401 }
-      );
-    }
-
-    // ── Validate body ─────────────────────────────────────────────────────────
-    const body = await req.json();
-    const { childId, theme, packetLength, specialNotes, date } = body;
-
-    if (
-      !childId ||
-      typeof theme !== "string" ||
-      !theme.trim() ||
-      !["half", "full"].includes(packetLength)
-    ) {
-      return NextResponse.json(
-        { error: "Missing required fields." },
-        { status: 400 }
-      );
-    }
-
-    // ── Quota check ───────────────────────────────────────────────────────────
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("subscription_status, packets_used_this_month")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found." }, { status: 404 });
-    }
-
-    const limit = PACKET_LIMITS[profile.subscription_status] ?? 3;
-
-    if (profile.packets_used_this_month >= limit) {
-      return NextResponse.json(
-        {
-          error: "limit_reached",
-          message: "You've used all 3 free packets this month.",
-          upgradeUrl: "/pricing",
-        },
-        { status: 403 }
-      );
-    }
-
-    // ── Fetch child (ownership enforced by RLS + explicit filter) ─────────────
-    const { data: child } = await supabase
-      .from("children")
-      .select("*")
-      .eq("id", childId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (!child) {
-      return NextResponse.json({ error: "Child not found." }, { status: 404 });
-    }
-
-    // ── Generate via Claude (with one retry on malformed JSON) ────────────────
-    const userPrompt = buildUserPrompt(
-      child as Child,
-      theme.trim(),
-      packetLength,
-      specialNotes?.trim(),
-      date
-    );
-
-    let generatedContent: ParsedPacketContent;
-
-    try {
-      const responseText = await callClaude(userPrompt);
-      generatedContent = parsePacketJSON(responseText);
-    } catch (firstErr) {
-      console.error("[generate-packet] First attempt failed:", {
-        message: firstErr instanceof Error ? firstErr.message : String(firstErr),
-        stack: firstErr instanceof Error ? firstErr.stack : undefined,
-        childId,
-        theme: theme.trim(),
-        packetLength,
-      });
-
-      // Retry once with a stricter prompt that reinforces JSON-only output
-      const stricterPrompt =
-        userPrompt +
-        "\n\nCRITICAL: Return ONLY the raw JSON object. No markdown, no code fences, no text before or after. Just the JSON.";
-
-      try {
-        const responseText = await callClaude(stricterPrompt);
-        generatedContent = parsePacketJSON(responseText);
-      } catch (retryErr) {
-        console.error("[generate-packet] Retry also failed:", {
-          message: retryErr instanceof Error ? retryErr.message : String(retryErr),
-          stack: retryErr instanceof Error ? retryErr.stack : undefined,
-        });
-        return NextResponse.json(
-          {
-            error:
-              "Something went wrong generating your packet. Please try again.",
-          },
-          { status: 500 }
-        );
-      }
-    }
-
-    // ── Save to DB — share_token is auto-generated by the DB default ──────────
-    const { data: savedPacket, error: insertError } = await supabase
-      .from("packets")
-      .insert({
-        user_id: user.id,
-        child_id: child.id,
-        child_name: child.name,
-        grade_level: child.grade_level,
-        theme: theme.trim(),
-        packet_length: packetLength,
-        special_notes: specialNotes?.trim() || null,
-        generated_content: generatedContent,
-      })
-      .select()
-      .single();
-
-    if (insertError || !savedPacket) {
-      console.error("[generate-packet] Failed to save packet to DB:", {
-        message: insertError?.message,
-        code: insertError?.code,
-        details: insertError?.details,
-        hint: insertError?.hint,
-        userId: user.id,
-        childId: child.id,
-      });
-      return NextResponse.json(
-        {
-          error:
-            "Your packet was generated but couldn't be saved. Please try again.",
-        },
-        { status: 500 }
-      );
-    }
-
-    // ── Increment usage counter ───────────────────────────────────────────────
-    await supabase
-      .from("profiles")
-      .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
-      .eq("id", user.id);
-
-    // ── Schedule mascot generation after response is sent ─────────────────────
-    // Uses after() so Replicate's slow image generation never blocks the client.
-    // Service role client is required here — request cookie context is gone.
-    const packetId = savedPacket.id;
-    const mascotDescription = generatedContent.mascot_description;
-
-    after(async () => {
-      const mascotImageUrl = await generateMascotImage(mascotDescription);
-      if (!mascotImageUrl) return;
-
-      const serviceClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-      await serviceClient
-        .from("packets")
-        .update({ mascot_image_url: mascotImageUrl })
-        .eq("id", packetId);
-    });
-
-    return NextResponse.json({
-      packet: { ...savedPacket, mascot_image_url: null },
-    });
-  } catch (err) {
-    console.error("[generate-packet] Unhandled exception:", {
-      message: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
-      name: err instanceof Error ? err.name : undefined,
-    });
+  if (!user) {
     return NextResponse.json(
-      { error: "Something went sideways. Let's try that again." },
-      { status: 500 }
+      { error: "You need to be logged in to generate a packet." },
+      { status: 401 }
     );
   }
+
+  // ── Validate body ──────────────────────────────────────────────────────────
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const { childId, theme, packetLength, specialNotes, date } = body as {
+    childId?: string;
+    theme?: string;
+    packetLength?: string;
+    specialNotes?: string;
+    date?: string;
+  };
+
+  if (
+    !childId ||
+    typeof theme !== "string" ||
+    !theme.trim() ||
+    !["half", "full"].includes(packetLength ?? "")
+  ) {
+    return NextResponse.json(
+      { error: "Missing required fields." },
+      { status: 400 }
+    );
+  }
+
+  const typedPacketLength = packetLength as "half" | "full";
+
+  // ── Quota check ────────────────────────────────────────────────────────────
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status, packets_used_this_month")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    return NextResponse.json({ error: "Profile not found." }, { status: 404 });
+  }
+
+  const limit = PACKET_LIMITS[profile.subscription_status] ?? 3;
+
+  if (profile.packets_used_this_month >= limit) {
+    return NextResponse.json(
+      {
+        error: "limit_reached",
+        message: "You've used all 3 free packets this month.",
+        upgradeUrl: "/pricing",
+      },
+      { status: 403 }
+    );
+  }
+
+  // ── Fetch child (ownership enforced by RLS + explicit filter) ───────────────
+  const { data: child } = await supabase
+    .from("children")
+    .select("*")
+    .eq("id", childId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!child) {
+    return NextResponse.json({ error: "Child not found." }, { status: 404 });
+  }
+
+  // ── Build prompt ────────────────────────────────────────────────────────────
+  const userPrompt = buildUserPrompt(
+    child as Child,
+    theme.trim(),
+    typedPacketLength,
+    specialNotes?.trim(),
+    date
+  );
+
+  // ── Stream response — keeps Vercel connection alive during generation ────────
+  // Auth, quota, and validation are done above as normal JSON responses.
+  // From here on, all results (success and error) are sent as SSE events.
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(event: SSEEvent) {
+        controller.enqueue(encodeSSE(event));
+      }
+
+      try {
+        send({ type: "progress", message: `Creating ${child.name}'s packet...` });
+
+        // ── Claude generation (with one retry on malformed JSON) ────────────
+        let generatedContent: ParsedPacketContent;
+        let tokenCount = 0;
+
+        const onToken = () => {
+          tokenCount++;
+          // Send a progress ping every 200 tokens so the connection stays warm
+          if (tokenCount % 200 === 0) {
+            send({ type: "progress", message: "Crafting your activities..." });
+          }
+        };
+
+        try {
+          const responseText = await callClaude(userPrompt, typedPacketLength, onToken);
+          generatedContent = parsePacketJSON(responseText);
+        } catch (firstErr) {
+          console.error("[generate-packet] First attempt failed:", {
+            message: firstErr instanceof Error ? firstErr.message : String(firstErr),
+            childId,
+            theme: theme.trim(),
+            packetLength: typedPacketLength,
+          });
+
+          send({ type: "progress", message: "Polishing your packet..." });
+
+          const stricterPrompt =
+            userPrompt +
+            "\n\nCRITICAL: Return ONLY the raw JSON object. No markdown, no code fences, no text before or after. Just the JSON.";
+
+          try {
+            const responseText = await callClaude(stricterPrompt, typedPacketLength, onToken);
+            generatedContent = parsePacketJSON(responseText);
+          } catch (retryErr) {
+            console.error("[generate-packet] Retry also failed:", {
+              message: retryErr instanceof Error ? retryErr.message : String(retryErr),
+            });
+            send({
+              type: "error",
+              message: "Something went wrong generating your packet. Please try again.",
+            });
+            controller.close();
+            return;
+          }
+        }
+
+        // ── Save to DB ──────────────────────────────────────────────────────
+        const { data: savedPacket, error: insertError } = await supabase
+          .from("packets")
+          .insert({
+            user_id: user.id,
+            child_id: child.id,
+            child_name: child.name,
+            grade_level: child.grade_level,
+            theme: theme.trim(),
+            packet_length: typedPacketLength,
+            special_notes: specialNotes?.trim() || null,
+            generated_content: generatedContent,
+          })
+          .select()
+          .single();
+
+        if (insertError || !savedPacket) {
+          console.error("[generate-packet] Failed to save packet to DB:", {
+            message: insertError?.message,
+            code: insertError?.code,
+            details: insertError?.details,
+            userId: user.id,
+            childId: child.id,
+          });
+          send({
+            type: "error",
+            message: "Your packet was generated but couldn't be saved. Please try again.",
+          });
+          controller.close();
+          return;
+        }
+
+        // ── Increment usage ─────────────────────────────────────────────────
+        await supabase
+          .from("profiles")
+          .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
+          .eq("id", user.id);
+
+        // ── Schedule mascot generation after response is sent ───────────────
+        const packetId = savedPacket.id;
+        const mascotDescription = generatedContent.mascot_description;
+
+        after(async () => {
+          const mascotImageUrl = await generateMascotImage(mascotDescription);
+          if (!mascotImageUrl) return;
+
+          const serviceClient = createServiceClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          await serviceClient
+            .from("packets")
+            .update({ mascot_image_url: mascotImageUrl })
+            .eq("id", packetId);
+        });
+
+        // ── Send complete ───────────────────────────────────────────────────
+        send({
+          type: "complete",
+          packet: { ...savedPacket, mascot_image_url: null },
+        });
+        controller.close();
+      } catch (err) {
+        console.error("[generate-packet] Unhandled exception in stream:", {
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+        });
+        try {
+          controller.enqueue(
+            encodeSSE({ type: "error", message: "Something went sideways. Let's try that again." })
+          );
+          controller.close();
+        } catch {
+          // controller may already be closed
+        }
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
