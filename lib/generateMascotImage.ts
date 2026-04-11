@@ -84,8 +84,21 @@ export async function generateMascotImage(
       return null;
     }
 
-    console.log("[generateMascotImage] Success", { url, elapsedMs });
-    return url;
+    console.log("[generateMascotImage] Success — fetching as base64", { url, elapsedMs });
+
+    try {
+      const imgResponse = await fetch(url);
+      const arrayBuffer = await imgResponse.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      const contentType = imgResponse.headers.get("content-type") ?? "image/webp";
+      console.log("[generateMascotImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
+      return `data:${contentType};base64,${base64}`;
+    } catch (fetchErr) {
+      console.error("[generateMascotImage] Failed to fetch image as base64 — returning original URL", {
+        message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+      });
+      return url;
+    }
   } catch (err) {
     const elapsedMs = Date.now() - startMs;
     console.error("[generateMascotImage] Exception after", elapsedMs, "ms", {
