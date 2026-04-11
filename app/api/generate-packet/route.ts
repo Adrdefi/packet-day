@@ -179,8 +179,10 @@ function parsePacketJSON(text: string): ParsedPacketContent {
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
     .trim();
+  console.log("[parsePacketJSON] Cleaned text preview:", cleaned.slice(0, 100), "| length:", cleaned.length);
 
   const jsonString = extractFirstJSON(cleaned);
+  console.log("[parsePacketJSON] extractFirstJSON result:", jsonString ? jsonString.slice(0, 100) : "NULL");
   if (!jsonString) throw new Error("No JSON object found in response");
 
   const parsed = JSON.parse(jsonString);
