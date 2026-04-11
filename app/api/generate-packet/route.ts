@@ -176,9 +176,8 @@ function extractFirstJSON(text: string): string | null {
 
 function parsePacketJSON(text: string): ParsedPacketContent {
   const cleaned = text
-    .replace(/^```json\s*/m, "")
-    .replace(/^```\s*/m, "")
-    .replace(/```\s*$/m, "")
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/gi, "")
     .trim();
 
   const jsonString = extractFirstJSON(cleaned);
