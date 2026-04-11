@@ -50,7 +50,7 @@ export async function generateMascotImage(
         prompt,
         num_outputs: 1,
         aspect_ratio: "1:1",
-        output_format: "jpeg",
+        output_format: "png",
         output_quality: 80,
       },
     });
@@ -90,7 +90,7 @@ export async function generateMascotImage(
       const imgResponse = await fetch(url);
       const arrayBuffer = await imgResponse.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const contentType = imgResponse.headers.get("content-type") ?? "image/jpeg";
+      const contentType = imgResponse.headers.get("content-type") ?? "image/png";
       const dataUrl = `data:${contentType};base64,${base64}`;
       console.log("[generateMascotImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
       console.log("[generateMascotImage] Base64 data URL created", { length: dataUrl.length, preview: dataUrl.slice(0, 50) });
