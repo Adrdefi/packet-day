@@ -117,7 +117,7 @@ async function callClaude(
   packetLength: "half" | "full",
   onToken: (text: string) => void
 ): Promise<string> {
-  const maxTokens = packetLength === "half" ? 3000 : 4500;
+  const maxTokens = packetLength === "half" ? 4500 : 6000;
 
   const stream = getAnthropic().messages.stream({
     model: "claude-sonnet-4-6",
