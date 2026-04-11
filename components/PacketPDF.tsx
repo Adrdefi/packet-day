@@ -130,6 +130,16 @@ function themeEmojis(theme: string): string {
   return "⭐  📚  ✏️  🌟  🎉";
 }
 
+function bonusChallenge(subject: string, title: string): string {
+  const s = subject.toLowerCase();
+  if (s.includes("math")) return `Try making up your own math problem inspired by "${title}"! Can you solve it too?`;
+  if (s.includes("read") || s.includes("writ")) return `Write 2–3 sentences about what "${title}" makes you think of. Use your best descriptive words!`;
+  if (s.includes("sci")) return `What's one experiment you could do at home related to "${title}"? Describe it step by step!`;
+  if (s.includes("art")) return `Draw something inspired by "${title}" using only 3 colors. See what you can create!`;
+  if (s.includes("hist") || s.includes("social")) return `If you could time-travel to learn more about "${title}", where would you go? Write 2 sentences about it!`;
+  return `Can you teach someone else what you learned about "${title}" today? Try explaining it in 3 sentences!`;
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -154,10 +164,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 24,
   },
-  themeEmojiRow: {
-    fontSize: 28,
+  // Emoji cluster above mascot (shown always on cover)
+  coverEmojiCluster: {
+    fontSize: 24,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 14,
+    letterSpacing: 4,
+  },
+  // Fallback emoji row (when no mascot image)
+  themeEmojiRow: {
+    fontSize: 24,
+    textAlign: "center",
+    marginBottom: 14,
     letterSpacing: 4,
   },
   childAvatarCircle: {
@@ -175,19 +193,57 @@ const styles = StyleSheet.create({
     fontSize: 44,
     textAlign: "center",
   },
+  // Mascot image — 300x300 square with contain fit
+  mascotImageCover: {
+    width: 300,
+    height: 300,
+    objectFit: "contain",
+    marginBottom: 16,
+    alignSelf: "center",
+  },
+  mascotNameText: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: C.sage,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  // Title banner strip
+  titleBanner: {
+    backgroundColor: C.sage,
+    width: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    marginBottom: 6,
+    alignItems: "center",
+  },
   packetTitle: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 26,
-    color: C.dark,
+    fontSize: 32,
+    color: C.white,
     textAlign: "center",
-    marginBottom: 8,
-    lineHeight: 1.35,
+    lineHeight: 1.25,
   },
   packetSubtitle: {
     fontSize: 11,
     color: C.muted,
     textAlign: "center",
-    marginBottom: 28,
+    marginBottom: 20,
+    marginTop: 6,
+  },
+  // Speech bubble arrow (triangle pointing up toward mascot)
+  speechBubbleArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderBottomWidth: 16,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderBottomColor: C.sage,
+    alignSelf: "center",
+    marginBottom: 0,
   },
   greetingBox: {
     borderWidth: 2,
@@ -225,7 +281,7 @@ const styles = StyleSheet.create({
     // backgroundColor set dynamically
   },
   activityBar: {
-    height: 80,
+    height: 96,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 28,
@@ -264,8 +320,36 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
   },
+  // Mascot in top-right corner of activity bar — 80x80
+  mascotImageCorner: {
+    position: "absolute",
+    top: 8,
+    right: 14,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.6)",
+  },
+  // Speech bubble below activity bar
+  mascotSpeechBubble: {
+    marginHorizontal: 36,
+    marginTop: 10,
+    marginBottom: 4,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: C.white,
+    // borderColor set dynamically
+  },
+  mascotSpeechText: {
+    fontSize: 11,
+    color: C.dark,
+    fontFamily: "Helvetica-Oblique",
+    textAlign: "center",
+  },
   activityContent: {
-    padding: 28,
+    padding: 36,
     flex: 1,
     flexDirection: "column",
   },
@@ -306,7 +390,7 @@ const styles = StyleSheet.create({
     // backgroundColor and borderLeftColor set dynamically
   },
   descriptionText: {
-    fontSize: 10.5,
+    fontSize: 11.5,
     color: C.dark,
     fontFamily: "Helvetica-Oblique",
     lineHeight: 1.65,
@@ -326,24 +410,35 @@ const styles = StyleSheet.create({
     marginBottom: 9,
     alignItems: "flex-start",
   },
+  // Checkbox before bullet number
+  instructionCheckbox: {
+    width: 14,
+    height: 14,
+    borderWidth: 1.5,
+    borderColor: "#9CA3AF",
+    borderRadius: 2,
+    marginRight: 8,
+    flexShrink: 0,
+    marginTop: 4,
+  },
   instructionBullet: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
     flexShrink: 0,
-    marginTop: 1,
+    marginTop: 0,
     // backgroundColor set dynamically
   },
   instructionBulletText: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 9,
+    fontSize: 11,
     // color set dynamically
   },
   instructionText: {
-    fontSize: 10.5,
+    fontSize: 11.5,
     color: C.dark,
     lineHeight: 1.55,
     flex: 1,
@@ -356,11 +451,44 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "flex-end",
   },
+  workAreaLabel: {
+    fontSize: 8,
+    color: C.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 10,
+  },
   workLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: "dotted",
     borderBottomColor: "#D1D5DB",
-    marginBottom: 26,
+    marginBottom: 36,
+  },
+
+  // Bonus challenge box
+  bonusChallengeBox: {
+    backgroundColor: C.honeyBg,
+    borderWidth: 2,
+    borderColor: C.honey,
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  bonusChallengeHeader: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    color: C.honeyDark,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  bonusChallengeText: {
+    fontSize: 11,
+    color: C.dark,
+    lineHeight: 1.5,
+    fontFamily: "Helvetica-Oblique",
   },
 
   // Answer key
@@ -403,6 +531,15 @@ const styles = StyleSheet.create({
     color: C.muted,
     marginBottom: 24,
   },
+  // Mascot in top-right corner of notes page
+  mascotImageNotes: {
+    position: "absolute",
+    top: 40,
+    right: 40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
   sectionLabel: {
     fontFamily: "Helvetica-Bold",
     fontSize: 8,
@@ -430,6 +567,13 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     flex: 1,
   },
+  summaryCheckboxes: {
+    fontSize: 10,
+    color: C.muted,
+    marginLeft: 8,
+    marginTop: 1,
+    flexShrink: 0,
+  },
   parentNoteBox: {
     backgroundColor: C.sageBg,
     borderRadius: 10,
@@ -444,24 +588,24 @@ const styles = StyleSheet.create({
   },
   reflectionBox: {
     backgroundColor: C.honeyBg,
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: C.honey,
-    borderRadius: 10,
-    padding: 16,
+    borderRadius: 12,
+    padding: 22,
     marginBottom: 22,
   },
   reflectionLabel: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8,
+    fontSize: 9,
     color: C.honeyDark,
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   reflectionText: {
-    fontSize: 11,
+    fontSize: 13,
     color: C.dark,
-    lineHeight: 1.7,
+    lineHeight: 1.75,
     fontFamily: "Helvetica-Oblique",
   },
   observationsLabel: {
@@ -490,31 +634,7 @@ const styles = StyleSheet.create({
     color: C.muted,
   },
 
-  // ── Mascot image ────────────────────────────────────────────────────────────
-  mascotImageCover: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    marginBottom: 16,
-    alignSelf: "center",
-  },
-  mascotImageCorner: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.6)",
-  },
-  mascotNameText: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: C.sage,
-    textAlign: "center",
-    marginBottom: 4,
-  },
+  // ── Mascot emoji cluster (cover, no-image fallback) ──────────────────────────
   mascotEmojiText: {
     fontSize: 18,
     textAlign: "center",
@@ -527,25 +647,25 @@ const styles = StyleSheet.create({
     backgroundColor: C.cream,
     padding: 48,
     flexDirection: "column",
+    alignItems: "center",
+  },
+  colorMeText: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 26,
+    color: C.sage,
+    textAlign: "center",
+    marginBottom: 10,
+    letterSpacing: 1,
   },
   coloringTitle: {
     fontFamily: "Helvetica-Bold",
     fontSize: 28,
     color: C.dark,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 14,
     lineHeight: 1.25,
   },
-  coloringSubtitle: {
-    fontSize: 11,
-    color: C.muted,
-    textAlign: "center",
-    marginBottom: 22,
-    fontFamily: "Helvetica-Oblique",
-    lineHeight: 1.6,
-  },
   coloringBox: {
-    flex: 1,
     borderWidth: 2.5,
     borderStyle: "dashed",
     borderColor: "#A3C4B0",
@@ -553,11 +673,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    padding: 16,
+    padding: 12,
+    width: "100%",
   },
   coloringBoxImage: {
-    width: 340,
-    height: 340,
+    width: 420,
+    height: 420,
     objectFit: "contain",
   },
   coloringBoxPlaceholder: {
@@ -566,12 +687,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Helvetica-Oblique",
     lineHeight: 1.7,
+    width: 420,
+    height: 420,
   },
-  coloringNote: {
-    fontSize: 11,
-    color: C.muted,
+  coloringInstructionBubble: {
+    borderWidth: 2,
+    borderColor: "#A3C4B0",
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: C.white,
+    width: "100%",
+    marginTop: 4,
+  },
+  coloringInstructionText: {
+    fontSize: 12,
+    color: C.sageDark,
     textAlign: "center",
     fontFamily: "Helvetica-Oblique",
+    lineHeight: 1.6,
   },
 });
 
@@ -587,6 +720,8 @@ function CoverPage({
   mascotName,
   mascotEmojiCluster,
 }: PacketPDFProps) {
+  const emojiCluster = mascotEmojiCluster ?? themeEmojis(theme);
+
   return (
     <Page size="LETTER" style={styles.coverPage}>
       {/* Top wordmark */}
@@ -597,30 +732,35 @@ function CoverPage({
       {/* Center block */}
       <View style={styles.coverCenter}>
         {mascotImageUrl ? (
-          // Mascot image — circular crop
           <>
+            {/* Emoji cluster above mascot */}
+            <Text style={styles.coverEmojiCluster}>{emojiCluster}</Text>
+            {/* Mascot — 300x300 square, contain fit */}
             <Image src={mascotImageUrl} style={styles.mascotImageCover} />
             {mascotName && (
               <Text style={styles.mascotNameText}>{mascotName}</Text>
             )}
           </>
         ) : (
-          // Fallback: emoji collage + child avatar
           <>
-            <Text style={styles.themeEmojiRow}>
-              {mascotEmojiCluster ?? themeEmojis(theme)}
-            </Text>
+            <Text style={styles.themeEmojiRow}>{emojiCluster}</Text>
             <View style={styles.childAvatarCircle}>
               <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
             </View>
           </>
         )}
 
-        <Text style={styles.packetTitle}>{title}</Text>
+        {/* Title banner strip */}
+        <View style={styles.titleBanner}>
+          <Text style={styles.packetTitle}>{title}</Text>
+        </View>
 
         <Text style={styles.packetSubtitle}>
           A day of learning made just for {childName}  •  {formatPDFDate(createdAt)}
         </Text>
+
+        {/* Speech bubble arrow pointing up toward mascot */}
+        <View style={styles.speechBubbleArrow} />
 
         {/* Greeting box */}
         <View style={styles.greetingBox}>
@@ -645,14 +785,16 @@ function CoverPage({
 function ActivityPage({
   activity,
   index,
+  childName,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
   index: number;
+  childName: string;
   mascotImageUrl?: string | null;
 }) {
   const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
-  const workLines = activity.answer_key ? 4 : 6;
+  const workLines = activity.answer_key ? 3 : 5;
 
   const pageStyle = [styles.activityPage, { backgroundColor: colors.bg }];
   const barStyle = [styles.activityBar, { backgroundColor: colors.bar }];
@@ -674,10 +816,6 @@ function ActivityPage({
       {/* Colored top bar */}
       <View style={barStyle}>
         <Text style={styles.activityBarEmoji}>{subjectEmoji(activity.subject)}</Text>
-        {/* Small mascot in top-right corner of bar */}
-        {mascotImageUrl && (
-          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
-        )}
         <View style={styles.activityBarLeft}>
           <Text style={styles.activityBarSubject}>{activity.subject}</Text>
           <Text style={styles.activityBarTitle}>{activity.title}</Text>
@@ -685,7 +823,20 @@ function ActivityPage({
         <Text style={styles.activityBarTime}>
           {activity.estimated_minutes} min
         </Text>
+        {/* Mascot — 80x80 circle in top-right of bar */}
+        {mascotImageUrl && (
+          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
+        )}
       </View>
+
+      {/* Mascot speech bubble */}
+      {mascotImageUrl && (
+        <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
+          <Text style={styles.mascotSpeechText}>
+            Let&apos;s go, {childName}! You&apos;ve got this 🦉
+          </Text>
+        </View>
+      )}
 
       {/* Content area */}
       <View style={styles.activityContent}>
@@ -708,6 +859,9 @@ function ActivityPage({
         <Text style={styles.instructionsLabel}>How to do it</Text>
         {activity.instructions.map((step, i) => (
           <View key={i} style={styles.instructionRow}>
+            {/* Checkbox */}
+            <View style={styles.instructionCheckbox} />
+            {/* Numbered bullet */}
             <View style={bulletBgStyle}>
               <Text style={bulletTextStyle}>{i + 1}</Text>
             </View>
@@ -717,9 +871,18 @@ function ActivityPage({
 
         {/* Work area — dotted lines */}
         <View style={styles.workArea}>
+          <Text style={styles.workAreaLabel}>Write your answer here:</Text>
           {Array.from({ length: workLines }, (_, i) => (
             <View key={i} style={styles.workLine} />
           ))}
+        </View>
+
+        {/* Bonus challenge */}
+        <View style={styles.bonusChallengeBox}>
+          <Text style={styles.bonusChallengeHeader}>⭐ BONUS CHALLENGE</Text>
+          <Text style={styles.bonusChallengeText}>
+            {bonusChallenge(activity.subject, activity.title)}
+          </Text>
         </View>
 
         {/* Answer key */}
@@ -743,16 +906,22 @@ function ParentNotesPage({
   theme,
   activities,
   createdAt,
+  mascotImageUrl,
 }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.notesPage}>
+      {/* Mascot — 120x120 top-right corner */}
+      {mascotImageUrl && (
+        <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
+      )}
+
       <Text style={styles.notesPageTitle}>Today's Packet at a Glance</Text>
       <Text style={styles.notesPageSubtitle}>
         {activities.length} activities  •  {" "}
         {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
       </Text>
 
-      {/* Activity summary with color dots */}
+      {/* Activity summary with color dots + star checkboxes */}
       <Text style={styles.sectionLabel}>Activity Summary</Text>
       {activities.map((activity, i) => {
         const colors = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
@@ -767,6 +936,7 @@ function ParentNotesPage({
               </Text>
               {activity.title} — {activity.estimated_minutes} min
             </Text>
+            <Text style={styles.summaryCheckboxes}>☐ ☐ ☐ ☐ ☐</Text>
           </View>
         );
       })}
@@ -817,31 +987,29 @@ function ColoringPage({
 }) {
   return (
     <Page size="LETTER" style={styles.coloringPage}>
+      {/* "Color me!" heading */}
+      <Text style={styles.colorMeText}>Color me!</Text>
+
       {/* Title */}
       <Text style={styles.coloringTitle}>{coloringPage.title}</Text>
 
-      {/* Scene description / instructions */}
-      <Text style={styles.coloringSubtitle}>
-        {coloringPage.scene_description}
-      </Text>
-
-      {/* Coloring area */}
+      {/* Coloring area — mascot fills most of the page */}
       <View style={styles.coloringBox}>
         {mascotImageUrl ? (
           <Image src={mascotImageUrl} style={styles.coloringBoxImage} />
         ) : (
           <Text style={styles.coloringBoxPlaceholder}>
-            {coloringPage.instructions}
+            Draw your scene here!
           </Text>
         )}
       </View>
 
-      {/* Instructions at bottom */}
-      <Text style={styles.coloringNote}>
-        {mascotImageUrl
-          ? coloringPage.instructions
-          : "Draw and color your own scene here!"}
-      </Text>
+      {/* Instructions as speech bubble at bottom */}
+      <View style={styles.coloringInstructionBubble}>
+        <Text style={styles.coloringInstructionText}>
+          {coloringPage.instructions}
+        </Text>
+      </View>
     </Page>
   );
 }
@@ -862,6 +1030,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           key={i}
           activity={activity}
           index={i}
+          childName={props.childName}
           mascotImageUrl={props.mascotImageUrl}
         />
       ))}
