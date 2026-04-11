@@ -94,41 +94,6 @@ function parentNote(childName: string, theme: string): string {
   );
 }
 
-function subjectEmoji(subject: string): string {
-  const s = subject.toLowerCase();
-  if (s.includes("math")) return "🔢";
-  if (s.includes("read")) return "📚";
-  if (s.includes("writ")) return "✏️";
-  if (s.includes("sci")) return "🔬";
-  if (s.includes("hist") || s.includes("social")) return "🌍";
-  if (s.includes("art")) return "🎨";
-  if (s.includes("music")) return "🎵";
-  if (s.includes("pe") || s.includes("physical") || s.includes("movement")) return "⚽";
-  if (s.includes("creative")) return "💡";
-  if (s.includes("nature") || s.includes("outdoor")) return "🌿";
-  if (s.includes("independent") || s.includes("afternoon")) return "⭐";
-  return "📖";
-}
-
-function themeEmojis(theme: string): string {
-  const t = theme.toLowerCase();
-  if (t.includes("dino") || t.includes("prehistoric") || t.includes("megalodon")) return "🦕  🌋  🦖  🌿  🦴";
-  if (t.includes("space") || t.includes("planet") || t.includes("astro")) return "🚀  🌙  ⭐  🪐  🌌";
-  if (t.includes("ocean") || t.includes("sea") || t.includes("shark") || t.includes("underwater")) return "🌊  🦈  🐙  🐠  🐋";
-  if (t.includes("minecraft")) return "⛏️  🟫  🌲  💎  🗡️";
-  if (t.includes("volcano")) return "🌋  🔥  🪨  💥  🌡️";
-  if (t.includes("bug") || t.includes("insect") || t.includes("bee")) return "🐝  🦋  🐛  🌺  🍃";
-  if (t.includes("castle") || t.includes("knight") || t.includes("medieval")) return "🏰  ⚔️  🛡️  👑  🐉";
-  if (t.includes("bak") || t.includes("cook") || t.includes("food")) return "🍰  🧁  🥧  🥄  🍪";
-  if (t.includes("art") || t.includes("paint")) return "🎨  🖌️  ✏️  🖼️  🌈";
-  if (t.includes("music") || t.includes("song")) return "🎵  🎸  🥁  🎹  🎤";
-  if (t.includes("animal") || t.includes("wildlife") || t.includes("jungle")) return "🦁  🐘  🦒  🐼  🦓";
-  if (t.includes("egypt") || t.includes("pyramid") || t.includes("ancient")) return "🏺  🐫  👁️  🌙  🗝️";
-  if (t.includes("robot") || t.includes("tech") || t.includes("code")) return "🤖  💻  ⚙️  🔧  🚀";
-  if (t.includes("sport") || t.includes("soccer") || t.includes("baseball")) return "⚽  🏆  🎯  💪  🥇";
-  if (t.includes("fairy") || t.includes("magic") || t.includes("unicorn")) return "🦄  🌟  🧚  ✨  🌈";
-  return "⭐  📚  ✏️  🌟  🎉";
-}
 
 function bonusChallenge(subject: string, title: string): string {
   const s = subject.toLowerCase();
@@ -718,10 +683,7 @@ function CoverPage({
   createdAt,
   mascotImageUrl,
   mascotName,
-  mascotEmojiCluster,
 }: PacketPDFProps) {
-  const emojiCluster = mascotEmojiCluster ?? themeEmojis(theme);
-
   return (
     <Page size="LETTER" style={styles.coverPage}>
       {/* Top wordmark */}
@@ -733,8 +695,6 @@ function CoverPage({
       <View style={styles.coverCenter}>
         {mascotImageUrl ? (
           <>
-            {/* Emoji cluster above mascot */}
-            <Text style={styles.coverEmojiCluster}>{emojiCluster}</Text>
             {/* Mascot — 300x300 square, contain fit */}
             <Image src={mascotImageUrl} style={styles.mascotImageCover} />
             {mascotName && (
@@ -742,12 +702,9 @@ function CoverPage({
             )}
           </>
         ) : (
-          <>
-            <Text style={styles.themeEmojiRow}>{emojiCluster}</Text>
-            <View style={styles.childAvatarCircle}>
-              <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
-            </View>
-          </>
+          <View style={styles.childAvatarCircle}>
+            <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
+          </View>
         )}
 
         {/* Title banner strip */}
@@ -815,7 +772,7 @@ function ActivityPage({
     <Page size="LETTER" style={pageStyle}>
       {/* Colored top bar */}
       <View style={barStyle}>
-        <Text style={styles.activityBarEmoji}>{subjectEmoji(activity.subject)}</Text>
+        <Text style={styles.activityBarEmoji}>{""}</Text>
         <View style={styles.activityBarLeft}>
           <Text style={styles.activityBarSubject}>{activity.subject}</Text>
           <Text style={styles.activityBarTitle}>{activity.title}</Text>
@@ -833,7 +790,7 @@ function ActivityPage({
       {mascotImageUrl && (
         <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
           <Text style={styles.mascotSpeechText}>
-            Let&apos;s go, {childName}! You&apos;ve got this 🦉
+            Let&apos;s go, {childName}! You&apos;ve got this!
           </Text>
         </View>
       )}
@@ -879,7 +836,7 @@ function ActivityPage({
 
         {/* Bonus challenge */}
         <View style={styles.bonusChallengeBox}>
-          <Text style={styles.bonusChallengeHeader}>⭐ BONUS CHALLENGE</Text>
+          <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
           <Text style={styles.bonusChallengeText}>
             {bonusChallenge(activity.subject, activity.title)}
           </Text>
@@ -889,7 +846,7 @@ function ActivityPage({
         {activity.answer_key && (
           <View style={styles.answerKeyBox}>
             <Text style={styles.answerKeyHeader}>
-              🔒  For Grown-Ups Only!
+              FOR GROWN-UPS ONLY
             </Text>
             <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
           </View>

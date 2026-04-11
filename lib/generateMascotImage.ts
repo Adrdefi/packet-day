@@ -50,7 +50,7 @@ export async function generateMascotImage(
         prompt,
         num_outputs: 1,
         aspect_ratio: "1:1",
-        output_format: "webp",
+        output_format: "jpeg",
         output_quality: 80,
       },
     });
