@@ -697,16 +697,29 @@ function GenerateContent() {
         }),
       });
 
-      // Non-streaming error (auth, quota, validation) — normal JSON response
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(
-          data.message ?? data.error ?? "Something went sideways generating your packet."
-        );
+      // Detect response type by Content-Type, not status code.
+      // If Vercel returns a non-200 mid-stream, the body is still SSE —
+      // calling res.json() on it throws "Unexpected token 'd'...".
+      const isSSE = (res.headers.get("content-type") ?? "").includes("text/event-stream");
+
+      if (!isSSE) {
+        // Plain JSON error (auth 401, quota 403, validation 400, etc.)
+        let message = "Something went sideways. Let's try that again.";
+        try {
+          const data = await res.json();
+          message = data.message ?? data.error ?? message;
+        } catch {
+          // Body isn't valid JSON — use the default message
+        }
+        throw new Error(message);
+      }
+
+      if (!res.body) {
+        throw new Error("Something went sideways. Let's try that again.");
       }
 
       // Read SSE stream — keeps connection alive during ~60s Claude generation
-      const reader = res.body!.getReader();
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
@@ -715,14 +728,19 @@ function GenerateContent() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
+        // Split on \n; handle \r\n by trimming each line
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
 
-        for (const line of lines) {
+        for (const rawLine of lines) {
+          const line = rawLine.trimEnd(); // strip any trailing \r
           if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
           let event: { type: string; message?: string; packet?: SavedPacket };
           try {
-            event = JSON.parse(line.slice(6));
+            event = JSON.parse(jsonStr) as typeof event;
           } catch {
             continue;
           }
