@@ -339,6 +339,7 @@ export async function POST(req: NextRequest) {
 
         try {
           const responseText = await callClaude(userPrompt, typedPacketLength, onToken);
+          console.log("[generate-packet] Raw Claude response (first 500 chars):", responseText.slice(0, 500));
           generatedContent = parsePacketJSON(responseText);
         } catch (err) {
           console.error("[generate-packet] Generation failed:", {
