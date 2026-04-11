@@ -7,7 +7,6 @@ import type { Child, PacketContent } from "@/types";
 import { generateMascotImage } from "@/lib/generateMascotImage";
 
 // Allow up to 90 seconds — streaming generation can take ~60s
-export const maxDuration = 90;
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
