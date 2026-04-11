@@ -23,17 +23,28 @@ function getReplicate(): Replicate {
 export async function generateMascotImage(
   mascotDescription: string | null | undefined
 ): Promise<string | null> {
-  if (!mascotDescription?.trim()) return null;
+  if (!mascotDescription?.trim()) {
+    console.log("[generateMascotImage] Skipping — no mascot description provided");
+    return null;
+  }
   if (!process.env.REPLICATE_API_TOKEN) {
     console.warn("[generateMascotImage] REPLICATE_API_TOKEN not set — skipping image generation");
     return null;
   }
 
-  try {
-    const prompt =
-      `${mascotDescription.trim()}, whimsical cartoon style, bright vibrant colors, ` +
-      `simple clean lines, perfect for children's worksheet, white background, no text`;
+  const prompt =
+    `${mascotDescription.trim()}, whimsical cartoon style, bright vibrant colors, ` +
+    `simple clean lines, perfect for children's worksheet, white background, no text`;
 
+  console.log("[generateMascotImage] Starting generation", {
+    promptLength: prompt.length,
+    promptPreview: prompt.slice(0, 120),
+    tokenPresent: !!process.env.REPLICATE_API_TOKEN,
+  });
+
+  const startMs = Date.now();
+
+  try {
     const output = await getReplicate().run("black-forest-labs/flux-schnell", {
       input: {
         prompt,
@@ -44,22 +55,47 @@ export async function generateMascotImage(
       },
     });
 
+    const elapsedMs = Date.now() - startMs;
+
+    console.log("[generateMascotImage] Replicate raw output", {
+      elapsedMs,
+      outputType: typeof output,
+      isArray: Array.isArray(output),
+      arrayLength: Array.isArray(output) ? output.length : undefined,
+      // Log the raw value safely — truncate if it's an unexpected giant string
+      rawValue: Array.isArray(output)
+        ? output.map((v) => String(v).slice(0, 200))
+        : String(output).slice(0, 200),
+    });
+
     // SDK v1 returns FileOutput[] for image models. FileOutput.toString() returns the URL.
     const first = Array.isArray(output) ? output[0] : output;
-    if (!first) return null;
-
-    const url = String(first);
-    // Validate it looks like a URL before storing
-    if (!url.startsWith("http")) {
-      console.error("[generateMascotImage] Unexpected output format:", url.slice(0, 100));
+    if (!first) {
+      console.error("[generateMascotImage] Output was empty or null", { output });
       return null;
     }
+
+    const url = String(first);
+
+    if (!url.startsWith("http")) {
+      console.error("[generateMascotImage] Output is not a URL", {
+        urlPreview: url.slice(0, 200),
+      });
+      return null;
+    }
+
+    console.log("[generateMascotImage] Success", { url, elapsedMs });
     return url;
   } catch (err) {
-    console.error(
-      "[generateMascotImage] Failed:",
-      err instanceof Error ? err.message : String(err)
-    );
+    const elapsedMs = Date.now() - startMs;
+    console.error("[generateMascotImage] Exception after", elapsedMs, "ms", {
+      name: err instanceof Error ? err.name : undefined,
+      message: err instanceof Error ? err.message : String(err),
+      status: (err as { status?: number }).status,
+      // Replicate ApiError has a response body
+      responseBody: (err as { response?: { body?: unknown } }).response?.body,
+      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join("\n") : undefined,
+    });
     return null;
   }
 }
