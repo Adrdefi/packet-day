@@ -1,3 +1,4 @@
+export const maxDuration = 300;
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse, after } from "next/server";
