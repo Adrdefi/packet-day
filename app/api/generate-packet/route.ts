@@ -23,38 +23,13 @@ const PACKET_LIMITS: Record<string, number> = {
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a warm, imaginative, and experienced homeschool educator who specializes in creating engaging, theme-based learning packets for children in grades K-8. Your packets are joyful, rigorous, and deeply personalized. You believe that learning is most powerful when it connects to a child's genuine interests and curiosity. Every packet you create should feel like it was made specifically for THIS child, by someone who truly knows and loves teaching them.
+const SYSTEM_PROMPT = `You are a homeschool educator creating theme-based learning packets for children K-8. Be warm, specific, and fun. Use the child's name. Weave the theme into every activity. Match grade level precisely.
 
-DESIGN PRINCIPLES:
-- Use the child's name throughout the packet
-- Weave the theme into EVERY activity
-- Match complexity and vocabulary precisely to the grade level
-- Hands-on and kinesthetic activities are always preferred
-- Include genuine humor, wonder, and delight
-- Answer keys should be complete and easy for a parent to check
-- Supply lists should only include household items
+GRADE CALIBRATION: K-1: very simple, visual, 10-15 min max. 2-3: concrete math, simple sentences. 4-5: multi-step problems, paragraph writing. 6-8: abstract thinking, essay prompts, algebra.
 
-GRADE CALIBRATION:
-K-1: Very simple, visual, oral instructions okay, 10-15 min activities max
-2-3: Simple sentences, concrete math, beginning reading comprehension
-4-5: Multi-step problems, paragraph writing, more complex science
-6-8: Abstract thinking, essay prompts, algebra-level math, research skills
+MASCOT: Invent a fun character name (e.g. "Rex the Dino Detective"). Write a short image-gen description: "A cute cartoon [character] [expressive pose], [theme accessories], bright colors, simple lines, white background, kid-friendly."
 
-MASCOT CHARACTER:
-- Invent a unique, funny, expressive character that perfectly embodies the theme
-- Give them a memorable name the child will love (e.g. "Rex the Dino Detective", "Stella the Space Explorer", "Captain Coral the Mermaid Scientist")
-- The mascot should have a clear personality that comes through in their name and description
-- Write a vivid visual description suitable for AI image generation: pose, expression, clothing/accessories, art style
-- Description format: "A cute cartoon [character] [doing something expressive], [accessories that fit the theme], bright colors, simple clean lines, white background, kid-friendly illustration"
-
-COLORING PAGE:
-- Design a fun scene starring the mascot doing something hands-on related to the theme
-- Include the child's name in the coloring page title so it feels personal
-- Scene should have clear, interesting foreground elements that are fun to color without being overwhelming
-
-ACTIVITY COUNT BY LENGTH:
-half day: 4 activities (math, reading, one creative, one pe/movement)
-full day: 7 activities (math, reading, writing, science or history, art, pe/movement, independent afternoon activity)
+COLORING PAGE: A simple scene with the mascot doing something theme-related. Include the child's name in the title.
 
 Respond ONLY with valid JSON. No prose before or after.`;
 
@@ -80,11 +55,11 @@ function buildUserPrompt(
 ): string {
   const gradeDisplay =
     child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
-  const activityCount = packetLength === "half" ? 4 : 7;
+  const activityCount = packetLength === "half" ? 3 : 5;
   const subjectList =
     packetLength === "half"
-      ? "math, reading, one creative activity, one PE/movement break"
-      : "math, reading, writing, science or history, art, PE/movement, one independent afternoon activity";
+      ? "math, reading, one creative or PE activity"
+      : "math, reading, writing, science or history, one creative or PE activity";
 
   return `Create a ${packetLength === "half" ? "half day" : "full day"} learning packet for ${child.name}.
 
@@ -138,11 +113,12 @@ async function callClaude(
   packetLength: "half" | "full",
   onToken: (text: string) => void
 ): Promise<string> {
-  const maxTokens = packetLength === "half" ? 4000 : 6000;
+  const maxTokens = packetLength === "half" ? 3000 : 4500;
 
   const stream = getAnthropic().messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
+    temperature: 0.7,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
@@ -349,7 +325,7 @@ export async function POST(req: NextRequest) {
       try {
         send({ type: "progress", message: `Creating ${child.name}'s packet...` });
 
-        // ── Claude generation (with one retry on malformed JSON) ────────────
+        // ── Claude generation ───────────────────────────────────────────────
         let generatedContent: ParsedPacketContent;
         let tokenCount = 0;
 
@@ -364,34 +340,19 @@ export async function POST(req: NextRequest) {
         try {
           const responseText = await callClaude(userPrompt, typedPacketLength, onToken);
           generatedContent = parsePacketJSON(responseText);
-        } catch (firstErr) {
-          console.error("[generate-packet] First attempt failed:", {
-            message: firstErr instanceof Error ? firstErr.message : String(firstErr),
+        } catch (err) {
+          console.error("[generate-packet] Generation failed:", {
+            message: err instanceof Error ? err.message : String(err),
             childId,
             theme: theme.trim(),
             packetLength: typedPacketLength,
           });
-
-          send({ type: "progress", message: "Polishing your packet..." });
-
-          const stricterPrompt =
-            userPrompt +
-            "\n\nCRITICAL: Return ONLY the raw JSON object. No markdown, no code fences, no text before or after. Just the JSON.";
-
-          try {
-            const responseText = await callClaude(stricterPrompt, typedPacketLength, onToken);
-            generatedContent = parsePacketJSON(responseText);
-          } catch (retryErr) {
-            console.error("[generate-packet] Retry also failed:", {
-              message: retryErr instanceof Error ? retryErr.message : String(retryErr),
-            });
-            send({
-              type: "error",
-              message: "Something went wrong generating your packet. Please try again.",
-            });
-            controller.close();
-            return;
-          }
+          send({
+            type: "error",
+            message: "Something went wrong generating your packet. Please try again.",
+          });
+          controller.close();
+          return;
         }
 
         // ── Save to DB ──────────────────────────────────────────────────────
