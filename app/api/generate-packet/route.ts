@@ -101,7 +101,11 @@ Return a JSON object with this exact structure:
   },
   "daily_reflection": "A thoughtful, age-appropriate question for ${child.name} about what they learned today",
   "parent_notes": "Helpful context for the parent about today's activities and how to support ${child.name}"
-}`;
+}
+
+INSTRUCTIONS ARRAY RULES:
+- Each individual math problem or question must be its own separate entry in the instructions array — never combine multiple problems into one step.
+- Do NOT include "Write your answer here", "Bonus Challenge", or "For Grown-Ups Only" text inside the instructions array — these are handled by the PDF layout automatically.`;
 }
 
 // ─── Claude call — streams tokens, returns full accumulated text ──────────────

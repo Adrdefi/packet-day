@@ -78,7 +78,7 @@ function greetingMessage(childName: string, theme: string): string {
   return (
     `Today is all about ${theme}! ${childName} is in for a wonderful day of discovery. ` +
     `Gather your supplies, find a comfortable spot, and let's make something great together. ` +
-    `Every activity was made just for ${childName} — dive in whenever you're ready.`
+    `Every activity was made just for ${childName} - dive in whenever you're ready.`
   );
 }
 
@@ -98,7 +98,7 @@ function parentNote(childName: string, theme: string): string {
 function bonusChallenge(subject: string, title: string): string {
   const s = subject.toLowerCase();
   if (s.includes("math")) return `Try making up your own math problem inspired by "${title}"! Can you solve it too?`;
-  if (s.includes("read") || s.includes("writ")) return `Write 2–3 sentences about what "${title}" makes you think of. Use your best descriptive words!`;
+  if (s.includes("read") || s.includes("writ")) return `Write 2-3 sentences about what "${title}" makes you think of. Use your best descriptive words!`;
   if (s.includes("sci")) return `What's one experiment you could do at home related to "${title}"? Describe it step by step!`;
   if (s.includes("art")) return `Draw something inspired by "${title}" using only 3 colors. See what you can create!`;
   if (s.includes("hist") || s.includes("social")) return `If you could time-travel to learn more about "${title}", where would you go? Write 2 sentences about it!`;
@@ -713,11 +713,8 @@ function CoverPage({
         </View>
 
         <Text style={styles.packetSubtitle}>
-          A day of learning made just for {childName}  •  {formatPDFDate(createdAt)}
+          A day of learning made just for {childName}  |  {formatPDFDate(createdAt)}
         </Text>
-
-        {/* Speech bubble arrow pointing up toward mascot */}
-        <View style={styles.speechBubbleArrow} />
 
         {/* Greeting box */}
         <View style={styles.greetingBox}>
@@ -730,7 +727,7 @@ function CoverPage({
       {/* Footer */}
       <View style={styles.coverFooter}>
         <Text style={styles.coverFooterText}>Made with love by Packet Day</Text>
-        <Text style={styles.coverFooterDot}>  •  </Text>
+        <Text style={styles.coverFooterDot}>  |  </Text>
         <Text style={styles.coverFooterText}>packetday.com</Text>
       </View>
     </Page>
@@ -790,7 +787,7 @@ function ActivityPage({
       {mascotImageUrl && (
         <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
           <Text style={styles.mascotSpeechText}>
-            Let&apos;s go, {childName}! You&apos;ve got this!
+            Let's go, {childName}! You've got this!
           </Text>
         </View>
       )}
@@ -802,7 +799,7 @@ function ActivityPage({
           <View style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
             <Text style={styles.materialsText}>
-              {activity.materials.join("  ·  ")}
+              {activity.materials.join("  /  ")}
             </Text>
           </View>
         )}
@@ -874,7 +871,7 @@ function ParentNotesPage({
 
       <Text style={styles.notesPageTitle}>Today's Packet at a Glance</Text>
       <Text style={styles.notesPageSubtitle}>
-        {activities.length} activities  •  {" "}
+        {activities.length} activities  |  {" "}
         {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
       </Text>
 
@@ -891,9 +888,9 @@ function ParentNotesPage({
               <Text style={{ fontFamily: "Helvetica-Bold" }}>
                 {activity.subject}:{" "}
               </Text>
-              {activity.title} — {activity.estimated_minutes} min
+              {activity.title} - {activity.estimated_minutes} min
             </Text>
-            <Text style={styles.summaryCheckboxes}>☐ ☐ ☐ ☐ ☐</Text>
+            <Text style={styles.summaryCheckboxes}>[ ] [ ] [ ] [ ] [ ]</Text>
           </View>
         );
       })}
@@ -926,7 +923,7 @@ function ParentNotesPage({
       <View style={styles.notesFooter}>
         <Text style={styles.footerText}>Made with love by Packet Day</Text>
         <Text style={styles.footerText}>
-          packetday.com  •  {formatPDFDate(createdAt)}
+          packetday.com  |  {formatPDFDate(createdAt)}
         </Text>
       </View>
     </Page>
