@@ -1,13 +1,14 @@
 // Server-side only — do not import from client components.
 // Used exclusively by app/api/generate-pdf/route.ts via createElement().
 
+import path from 'path';
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 Font.register({
   family: 'Nunito',
   fonts: [
-    { src: '/fonts/Nunito-Regular.ttf', fontWeight: 400 },
-    { src: '/fonts/Nunito-Bold.ttf', fontWeight: 700 },
+    { src: path.join(process.cwd(), 'public/fonts/Nunito-Regular.ttf'), fontWeight: 400 },
+    { src: path.join(process.cwd(), 'public/fonts/Nunito-Bold.ttf'), fontWeight: 700 },
   ],
 });
 
