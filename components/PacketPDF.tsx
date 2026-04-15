@@ -1,7 +1,16 @@
 // Server-side only — do not import from client components.
 // Used exclusively by app/api/generate-pdf/route.ts via createElement().
 
-import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+
+Font.register({
+  family: 'Nunito',
+  fonts: [
+    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2', fontWeight: 400 },
+    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTo3j6zbXWjgeg.woff2', fontWeight: 700 },
+    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2', fontWeight: 400, fontStyle: 'italic' },
+  ]
+});
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 
@@ -116,7 +125,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   wordmark: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 10,
     color: C.sage,
     letterSpacing: 2,
@@ -168,7 +178,8 @@ const styles = StyleSheet.create({
   },
   mascotNameText: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     color: C.sage,
     textAlign: "center",
     marginBottom: 4,
@@ -184,7 +195,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   packetTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 32,
     color: C.white,
     textAlign: "center",
@@ -222,7 +234,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: C.sageDark,
     lineHeight: 1.75,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
     textAlign: "center",
   },
   coverFooter: {
@@ -268,10 +281,12 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.75)",
     textTransform: "uppercase",
     letterSpacing: 1,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
   },
   activityBarTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 16,
     color: C.white,
     lineHeight: 1.3,
@@ -279,7 +294,8 @@ const styles = StyleSheet.create({
   activityBarTime: {
     fontSize: 10,
     color: "rgba(255,255,255,0.9)",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     backgroundColor: "rgba(0,0,0,0.18)",
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -310,7 +326,8 @@ const styles = StyleSheet.create({
   mascotSpeechText: {
     fontSize: 11,
     color: C.dark,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
     textAlign: "center",
   },
   activityContent: {
@@ -331,7 +348,8 @@ const styles = StyleSheet.create({
     borderColor: C.border,
   },
   materialsLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 8,
     color: C.muted,
     textTransform: "uppercase",
@@ -357,13 +375,15 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 11.5,
     color: C.dark,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
     lineHeight: 1.65,
   },
 
   // Instructions
   instructionsLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 8,
     color: C.muted,
     textTransform: "uppercase",
@@ -398,7 +418,8 @@ const styles = StyleSheet.create({
     // backgroundColor set dynamically
   },
   instructionBulletText: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 11,
     // color set dynamically
   },
@@ -421,7 +442,8 @@ const styles = StyleSheet.create({
     color: C.muted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     marginBottom: 10,
   },
   workLine: {
@@ -442,7 +464,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   bonusChallengeHeader: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 10,
     color: C.honeyDark,
     textTransform: "uppercase",
@@ -453,7 +476,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: C.dark,
     lineHeight: 1.5,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
   },
 
   // Answer key
@@ -466,7 +490,8 @@ const styles = StyleSheet.create({
     borderColor: C.honey,
   },
   answerKeyHeader: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 9,
     color: C.honeyDark,
     textTransform: "uppercase",
@@ -486,7 +511,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   notesPageTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 22,
     color: C.dark,
     marginBottom: 6,
@@ -506,7 +532,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
   },
   sectionLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 8,
     color: C.muted,
     textTransform: "uppercase",
@@ -549,7 +576,8 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: C.sageDark,
     lineHeight: 1.7,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
   },
   reflectionBox: {
     backgroundColor: C.honeyBg,
@@ -560,7 +588,8 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   reflectionLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 9,
     color: C.honeyDark,
     textTransform: "uppercase",
@@ -571,10 +600,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: C.dark,
     lineHeight: 1.75,
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
   },
   observationsLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 12,
     color: C.dark,
     marginBottom: 18,
@@ -615,7 +646,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   colorMeText: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 26,
     color: C.sage,
     textAlign: "center",
@@ -623,7 +655,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   coloringTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Nunito",
+    fontWeight: 700,
     fontSize: 28,
     color: C.dark,
     textAlign: "center",
@@ -650,7 +683,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#A3C4B0",
     textAlign: "center",
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
     lineHeight: 1.7,
     width: 420,
     height: 420,
@@ -668,7 +702,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: C.sageDark,
     textAlign: "center",
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Nunito",
+    fontStyle: 'italic',
     lineHeight: 1.6,
   },
 });
@@ -885,7 +920,7 @@ function ParentNotesPage({
               style={[styles.summaryColorDot, { backgroundColor: colors.bar }]}
             />
             <Text style={styles.summaryText}>
-              <Text style={{ fontFamily: "Helvetica-Bold" }}>
+              <Text style={{ fontFamily: "Nunito", fontWeight: 700 }}>
                 {activity.subject}:{" "}
               </Text>
               {activity.title} - {activity.estimated_minutes} min
