@@ -6,10 +6,9 @@ import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/
 Font.register({
   family: 'Nunito',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTo3j6zbXWjgeg.woff2', fontWeight: 700 },
-    { src: 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2', fontWeight: 400, fontStyle: 'italic' },
-  ]
+    { src: '/fonts/Nunito-Regular.ttf', fontWeight: 400 },
+    { src: '/fonts/Nunito-Bold.ttf', fontWeight: 700 },
+  ],
 });
 
 // ─── Color palette ────────────────────────────────────────────────────────────
