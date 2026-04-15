@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     fontSize: 10,
     color: C.sage,
-    letterSpacing: 2,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   coverCenter: {
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     borderBottomStyle: "dotted",
     borderBottomColor: "#D1D5DB",
-    marginBottom: 36,
+    marginBottom: 54,
   },
 
   // Bonus challenge box
@@ -833,7 +833,7 @@ function ActivityPage({
       <View style={styles.activityContent}>
         {/* Materials */}
         {activity.materials && activity.materials.length > 0 && (
-          <View style={styles.materialsBox}>
+          <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
             <Text style={styles.materialsText}>
               {activity.materials.join("  /  ")}
@@ -842,14 +842,14 @@ function ActivityPage({
         )}
 
         {/* Description */}
-        <View style={descBoxStyle}>
+        <View wrap={false} style={descBoxStyle}>
           <Text style={styles.descriptionText}>{activity.description}</Text>
         </View>
 
         {/* Instructions */}
         <Text style={styles.instructionsLabel}>How to do it</Text>
         {activity.instructions.map((step, i) => (
-          <View key={i} style={styles.instructionRow}>
+          <View wrap={false} key={i} style={styles.instructionRow}>
             {/* Checkbox */}
             <View style={styles.instructionCheckbox} />
             {/* Numbered bullet */}
@@ -861,7 +861,7 @@ function ActivityPage({
         ))}
 
         {/* Work area — dotted lines */}
-        <View style={styles.workArea}>
+        <View wrap={false} style={styles.workArea}>
           <Text style={styles.workAreaLabel}>Write your answer here:</Text>
           {Array.from({ length: workLines }, (_, i) => (
             <View key={i} style={styles.workLine} />
@@ -869,7 +869,7 @@ function ActivityPage({
         </View>
 
         {/* Bonus challenge */}
-        <View style={styles.bonusChallengeBox}>
+        <View wrap={false} style={styles.bonusChallengeBox}>
           <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
           <Text style={styles.bonusChallengeText}>
             {bonusChallenge(activity.subject, activity.title)}
@@ -878,7 +878,7 @@ function ActivityPage({
 
         {/* Answer key */}
         {activity.answer_key && (
-          <View style={styles.answerKeyBox}>
+          <View wrap={false} style={styles.answerKeyBox}>
             <Text style={styles.answerKeyHeader}>
               FOR GROWN-UPS ONLY
             </Text>
@@ -927,7 +927,21 @@ function ParentNotesPage({
               </Text>
               {activity.title} - {activity.estimated_minutes} min
             </Text>
-            <Text style={styles.summaryCheckboxes}>[ ] [ ] [ ] [ ] [ ]</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 0 }}>
+              {[0, 1, 2, 3, 4].map((j) => (
+                <View
+                  key={j}
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderWidth: 1.5,
+                    borderColor: colors.bar,
+                    borderRadius: 2,
+                    marginLeft: 6,
+                  }}
+                />
+              ))}
+            </View>
           </View>
         );
       })}
@@ -1016,6 +1030,7 @@ export default function PacketPDF(props: PacketPDFProps) {
       creator="packetday.com"
     >
       <CoverPage {...props} />
+      <ParentNotesPage {...props} />
       {props.activities.map((activity, i) => (
         <ActivityPage
           key={i}
@@ -1025,7 +1040,6 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
         />
       ))}
-      <ParentNotesPage {...props} />
       {props.coloringPage && (
         <ColoringPage
           coloringPage={props.coloringPage}
