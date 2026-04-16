@@ -411,6 +411,8 @@ export async function POST(req: NextRequest) {
             generateColoringImage(mascotDescription),
           ]);
 
+          console.log("COLORING IMAGE URL:", coloringImageUrl ?? "FAILED");
+
           const updates: Record<string, string> = {};
           if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
           if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
@@ -420,10 +422,11 @@ export async function POST(req: NextRequest) {
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
           );
-          await serviceClient
+          const { error: updateError } = await serviceClient
             .from("packets")
             .update(updates)
             .eq("id", packetId);
+          console.log("SUPABASE COLORING UPDATE:", updateError ?? "ok");
         });
 
         // ── Send complete ───────────────────────────────────────────────────

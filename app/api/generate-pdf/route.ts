@@ -90,6 +90,8 @@ export async function GET(req: NextRequest) {
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────
+  console.log("PDF PROPS coloringImageUrl:", props.coloringImageUrl);
+
   let pdfBuffer: Uint8Array;
   try {
     pdfBuffer = await renderToBuffer(
