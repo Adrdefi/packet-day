@@ -27,8 +27,15 @@ function stripColors(description: string): string {
 
 /**
  * Generates a B&W coloring page image from a mascot description.
- * Strips color words and uses a coloring-book-specific prompt.
- * Returns a public image URL, or null if generation fails.
+ *
+ * Uses recraft-ai/recraft-v3 with style="vector_illustration" instead of
+ * flux-schnell. Flux Schnell does not reliably produce true B&W line art —
+ * it tends to output shaded, colored illustrations regardless of prompt wording.
+ * Recraft v3's vector_illustration style is purpose-built for clean outline art
+ * and responds well to coloring-book prompts.
+ *
+ * Note: recraft-v3 uses width/height (not aspect_ratio) and does not accept
+ * a negative_prompt parameter.
  */
 export async function generateColoringImage(
   mascotDescription: string | null | undefined
@@ -44,13 +51,12 @@ export async function generateColoringImage(
 
   const stripped = stripColors(mascotDescription.trim());
   const prompt =
-    `${stripped}, black and white coloring book page for children, bold clean outlines only, ` +
-    `no color fills, no shading, no gray tones, pure white background, thick simple cartoon lines, ` +
-    `printable coloring page style`;
-  const negativePrompt =
-    "color, shading, gray, shadows, blur, photorealistic, detailed texture, gradient";
+    `coloring book page, black and white line art only, thick bold outlines, no color, no shading, ` +
+    `no gray fills, pure white background, simple cute cartoon ${stripped}, ` +
+    `printable children's coloring page, clean vector style`;
 
   console.log("[generateColoringImage] Starting generation", {
+    model: "recraft-ai/recraft-v3",
     promptLength: prompt.length,
     promptPreview: prompt.slice(0, 120),
   });
@@ -58,14 +64,13 @@ export async function generateColoringImage(
   const startMs = Date.now();
 
   try {
-    const output = await getReplicate().run("black-forest-labs/flux-schnell", {
+    const output = await getReplicate().run("recraft-ai/recraft-v3", {
       input: {
         prompt,
-        negative_prompt: negativePrompt,
+        style: "vector_illustration",
+        width: 1024,
+        height: 1024,
         num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "png",
-        output_quality: 80,
       },
     });
 
