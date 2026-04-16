@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   packetTitle: {
     fontFamily: "Nunito",
     fontWeight: 700,
-    fontSize: 32,
+    fontSize: 28,
     color: C.white,
     textAlign: "center",
     lineHeight: 1.25,
@@ -753,7 +753,7 @@ function CoverPage({
 
         {/* Title banner strip */}
         <View style={styles.titleBanner}>
-          <Text style={styles.packetTitle}>{title}</Text>
+          <Text style={styles.packetTitle} adjustsFontSizeToFit={true}>{title}</Text>
         </View>
 
         <Text style={styles.packetSubtitle}>
