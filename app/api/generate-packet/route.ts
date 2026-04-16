@@ -33,6 +33,10 @@ COLORING PAGE: A simple scene with the mascot doing something theme-related. Inc
 
 EMOJI RULE: Never use emoji characters anywhere in the instructions array. Instructions must contain plain text only. Emoji may only appear in the 'emoji' field, the 'title' field, and the 'introduction' field.
 
+CRITICAL: The greeting field must contain zero emoji characters — no emoji whatsoever. Plain text only. No unicode symbols, no emoji, no special characters beyond standard punctuation.
+
+CRITICAL: The reading passage text must appear as a plain instruction step with NO dashes, NO separator lines, NO markdown formatting, NO --- characters anywhere. Do not write --- PASSAGE --- or any variation. Just write the passage text directly as the instruction content.
+
 CRITICAL: Your entire response must be a single raw JSON object. Do NOT wrap in markdown code fences. Do NOT use \`\`\`json or \`\`\`. Do NOT include any text before or after the JSON. Start your response with { and end with }.`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────

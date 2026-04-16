@@ -81,6 +81,7 @@ export async function generateColoringImage(
 
       const elapsedMs = Date.now() - startMs;
 
+      console.log("RECRAFT RAW OUTPUT:", JSON.stringify(output));
       console.log("[generateColoringImage] Replicate raw output", {
         attempt,
         elapsedMs,
