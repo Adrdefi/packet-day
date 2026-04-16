@@ -2,6 +2,7 @@
 // a public URL. Returns null on any failure so it never blocks packet delivery.
 
 import Replicate from "replicate";
+import sharp from "sharp";
 
 let _replicate: Replicate | null = null;
 
@@ -108,18 +109,20 @@ export async function generateColoringImage(
         return null;
       }
 
-      console.log("[generateColoringImage] Success — fetching as base64", { url, elapsedMs });
+      console.log("[generateColoringImage] Success — fetching and converting to PNG", { url, elapsedMs });
 
       try {
         const imgResponse = await fetch(url);
         const arrayBuffer = await imgResponse.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        const contentType = imgResponse.headers.get("content-type") ?? "image/png";
-        const dataUrl = `data:${contentType};base64,${base64}`;
-        console.log("[generateColoringImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
+        // Recraft v3 returns webp. React-PDF only supports PNG and JPEG.
+        // Convert to PNG via sharp before encoding as base64.
+        const pngBuffer = await sharp(Buffer.from(arrayBuffer)).png().toBuffer();
+        const base64 = pngBuffer.toString("base64");
+        const dataUrl = `data:image/png;base64,${base64}`;
+        console.log("[generateColoringImage] Converted webp to PNG data URL", { byteLength: pngBuffer.byteLength });
         return dataUrl;
       } catch (fetchErr) {
-        console.error("[generateColoringImage] Failed to fetch image as base64 — returning original URL", {
+        console.error("[generateColoringImage] Failed to fetch/convert image — returning original URL", {
           message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
         });
         return url;
