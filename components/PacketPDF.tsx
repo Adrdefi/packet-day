@@ -848,17 +848,70 @@ function ActivityPage({
 
         {/* Instructions */}
         <Text style={styles.instructionsLabel}>How to do it</Text>
-        {activity.instructions.map((step, i) => (
-          <View wrap={false} key={i} style={styles.instructionRow}>
-            {/* Checkbox */}
-            <View style={styles.instructionCheckbox} />
-            {/* Numbered bullet */}
-            <View style={bulletBgStyle}>
-              <Text style={bulletTextStyle}>{i + 1}</Text>
+        {(() => {
+          const isReading = activity.subject.toLowerCase().includes('reading');
+          if (isReading) {
+            const passageIndex = activity.instructions.findIndex(s => s.length > 200);
+            const passage = passageIndex !== -1 ? activity.instructions[passageIndex] : null;
+            const questions = activity.instructions.filter((_, i) => i !== passageIndex);
+            let questionNumber = 0;
+            return (
+              <>
+                {passage && (
+                  <View wrap={false} style={{
+                    backgroundColor: '#F0F5F1',
+                    borderRadius: 8,
+                    padding: 16,
+                    marginBottom: 12,
+                    borderLeftWidth: 3,
+                    borderLeftColor: '#4A7C59',
+                  }}>
+                    <Text style={{
+                      fontSize: 8,
+                      color: '#4A7C59',
+                      fontFamily: 'Nunito',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: 1,
+                      marginBottom: 8,
+                    }}>READ THIS FIRST</Text>
+                    <Text style={{
+                      fontSize: 11.5,
+                      lineHeight: 1.7,
+                      color: '#3A3633',
+                      fontFamily: 'Nunito',
+                      fontStyle: 'italic',
+                    }}>{passage}</Text>
+                  </View>
+                )}
+                {questions.map((step) => {
+                  questionNumber += 1;
+                  const n = questionNumber;
+                  return (
+                    <View wrap={false} key={n} style={styles.instructionRow}>
+                      <View style={styles.instructionCheckbox} />
+                      <View style={bulletBgStyle}>
+                        <Text style={bulletTextStyle}>{n}</Text>
+                      </View>
+                      <Text style={styles.instructionText}>{step}</Text>
+                    </View>
+                  );
+                })}
+              </>
+            );
+          }
+          return activity.instructions.map((step, i) => (
+            <View wrap={false} key={i} style={styles.instructionRow}>
+              {/* Checkbox */}
+              <View style={styles.instructionCheckbox} />
+              {/* Numbered bullet */}
+              <View style={bulletBgStyle}>
+                <Text style={bulletTextStyle}>{i + 1}</Text>
+              </View>
+              <Text style={styles.instructionText}>{step}</Text>
             </View>
-            <Text style={styles.instructionText}>{step}</Text>
-          </View>
-        ))}
+          ));
+        })()}
 
         {/* Work area — dotted lines */}
         <View wrap={false} style={styles.workArea}>
