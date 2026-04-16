@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     borderBottomStyle: "dotted",
     borderBottomColor: "#D1D5DB",
-    marginBottom: 54,
+    marginBottom: 18,
   },
 
   // Bonus challenge box
@@ -787,7 +787,16 @@ function ActivityPage({
   mascotImageUrl?: string | null;
 }) {
   const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
-  const workLines = activity.answer_key ? 3 : 5;
+  const subject = activity.subject.toLowerCase();
+  const baseWorkLines = subject.includes("writ")
+    ? 10
+    : subject.includes("read")
+    ? 8
+    : subject.includes("math")
+    ? 6
+    : 5;
+  // Reduce slightly when an answer key takes space on the page
+  const workLines = activity.answer_key ? Math.max(baseWorkLines - 2, 4) : baseWorkLines;
 
   const pageStyle = [styles.activityPage, { backgroundColor: colors.bg }];
   const barStyle = [styles.activityBar, { backgroundColor: colors.bar }];
