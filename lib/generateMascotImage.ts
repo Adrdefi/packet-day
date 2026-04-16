@@ -72,7 +72,7 @@ export async function generateColoringImage(
       const output = await getReplicate().run("recraft-ai/recraft-v3", {
         input: {
           prompt,
-          style: "vector_illustration",
+          style: "digital_illustration/hand_drawn_outline",
           width: 1024,
           height: 1024,
           num_outputs: 1,
