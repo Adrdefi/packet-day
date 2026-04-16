@@ -46,133 +46,67 @@ export async function generateColoringImage(
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
-    console.warn("[generateColoringImage] REPLICATE_API_TOKEN not set — skipping image generation");
+    console.warn("[generateColoringImage] REPLICATE_API_TOKEN not set — skipping");
     return null;
   }
 
   const stripped = stripColors(mascotDescription.trim());
   const prompt =
-    `children's coloring book page outline drawing of ${stripped}, thick black outlines on pure white background, ` +
-    `no color, no shading, no gray fills, simple clean line art, ready to color in`;
+    `children's coloring book line art of ${stripped}, ` +
+    `thick bold black outlines, pure white background, no color, no shading, ` +
+    `no grey, no gradients, flat white fills, simple clean cartoon outline style, ` +
+    `black and white only, ready to color with crayons`;
 
   console.log("[generateColoringImage] Starting generation", {
-    model: "recraft-ai/recraft-v3",
-    promptLength: prompt.length,
     promptPreview: prompt.slice(0, 120),
   });
 
   const startMs = Date.now();
-  const MAX_ATTEMPTS = 3;
-  const RATE_LIMIT_DELAY_MS = 12_000;
 
-  let lastErr: unknown;
+  try {
+    const output = await getReplicate().run("black-forest-labs/flux-schnell", {
+      input: {
+        prompt,
+        num_outputs: 1,
+        aspect_ratio: "1:1",
+        output_format: "png",
+        output_quality: 100,
+      },
+    });
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    try {
-      const output = await getReplicate().run("recraft-ai/recraft-v3", {
-        input: {
-          prompt,
-          style: "realistic_image/b_and_w",
-          width: 1024,
-          height: 1024,
-          num_outputs: 1,
-        },
-      });
-
-      const elapsedMs = Date.now() - startMs;
-
-      console.log("RECRAFT RAW OUTPUT:", JSON.stringify(output));
-      console.log("[generateColoringImage] Replicate raw output", {
-        attempt,
-        elapsedMs,
-        outputType: typeof output,
-        isArray: Array.isArray(output),
-        arrayLength: Array.isArray(output) ? output.length : undefined,
-        rawValue: Array.isArray(output)
-          ? output.map((v) => String(v).slice(0, 200))
-          : String(output).slice(0, 200),
-      });
-
-      const first = Array.isArray(output) ? output[0] : output;
-      if (!first) {
-        console.error("[generateColoringImage] Output was empty or null", { output });
-        return null;
-      }
-
-      const url = String(first);
-
-      if (!url.startsWith("http")) {
-        console.error("[generateColoringImage] Output is not a URL", {
-          urlPreview: url.slice(0, 200),
-        });
-        return null;
-      }
-
-      console.log("[generateColoringImage] Success — fetching and converting to PNG", { url, elapsedMs });
-
-      try {
-        const imgResponse = await fetch(url);
-        const arrayBuffer = await imgResponse.arrayBuffer();
-        // Recraft v3 returns webp. React-PDF only supports PNG and JPEG.
-        // Convert to PNG via sharp before encoding as base64.
-        const pngBuffer = await sharp(Buffer.from(arrayBuffer))
-          .grayscale()
-          .normalise()
-          .threshold(190)
-          .png()
-          .toBuffer();
-        const base64 = pngBuffer.toString("base64");
-        const dataUrl = `data:image/png;base64,${base64}`;
-        console.log("[generateColoringImage] Converted webp to PNG data URL", { byteLength: pngBuffer.byteLength });
-        return dataUrl;
-      } catch (fetchErr) {
-        console.error("[generateColoringImage] Failed to fetch/convert image — returning original URL", {
-          message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
-        });
-        return url;
-      }
-    } catch (err) {
-      lastErr = err;
-      const status = (err as { status?: number }).status;
-      const message = err instanceof Error ? err.message : String(err);
-      const isRateLimit =
-        status === 429 ||
-        message.toLowerCase().includes("throttled") ||
-        message.toLowerCase().includes("too many requests");
-
-      if (!isRateLimit) {
-        // Non-rate-limit error — fail immediately, no retry
-        const elapsedMs = Date.now() - startMs;
-        console.error("[generateColoringImage] Non-retryable exception after", elapsedMs, "ms", {
-          attempt,
-          name: err instanceof Error ? err.name : undefined,
-          message,
-          status,
-          responseBody: (err as { response?: { body?: unknown } }).response?.body,
-          stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join("\n") : undefined,
-        });
-        return null;
-      }
-
-      console.warn("[generateColoringImage] Rate limited — waiting 12s before retry", {
-        attempt,
-        attemptsRemaining: MAX_ATTEMPTS - attempt,
-        status,
-        message,
-      });
-
-      if (attempt < MAX_ATTEMPTS) {
-        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
-      }
+    const first = Array.isArray(output) ? output[0] : output;
+    if (!first) {
+      console.error("[generateColoringImage] Output was empty");
+      return null;
     }
-  }
 
-  // All attempts exhausted
-  const elapsedMs = Date.now() - startMs;
-  console.error("[generateColoringImage] All", MAX_ATTEMPTS, "attempts failed after", elapsedMs, "ms", {
-    lastMessage: lastErr instanceof Error ? lastErr.message : String(lastErr),
-  });
-  return null;
+    const url = String(first);
+    if (!url.startsWith("http")) {
+      console.error("[generateColoringImage] Output is not a URL");
+      return null;
+    }
+
+    console.log("[generateColoringImage] Fetching image", { url, elapsedMs: Date.now() - startMs });
+
+    const imgResponse = await fetch(url);
+    const arrayBuffer = await imgResponse.arrayBuffer();
+
+    const pngBuffer = await sharp(Buffer.from(arrayBuffer))
+      .grayscale()
+      .linear(1.8, -(128 * 1.8 - 128))
+      .png()
+      .toBuffer();
+
+    console.log("[generateColoringImage] Done", { byteLength: pngBuffer.byteLength, elapsedMs: Date.now() - startMs });
+    return `data:image/png;base64,${pngBuffer.toString("base64")}`;
+
+  } catch (err) {
+    console.error("[generateColoringImage] Failed", {
+      message: err instanceof Error ? err.message : String(err),
+      elapsedMs: Date.now() - startMs,
+    });
+    return null;
+  }
 }
 
 /**
