@@ -4,7 +4,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse, after } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
-import { generateMascotImage } from "@/lib/generateMascotImage";
+import { generateMascotImage, generateColoringImage } from "@/lib/generateMascotImage";
 
 // Allow up to 90 seconds — streaming generation can take ~60s
 
@@ -404,8 +404,15 @@ export async function POST(req: NextRequest) {
         const mascotDescription = generatedContent.mascot_description;
 
         after(async () => {
-          const mascotImageUrl = await generateMascotImage(mascotDescription);
-          if (!mascotImageUrl) return;
+          const [mascotImageUrl, coloringImageUrl] = await Promise.all([
+            generateMascotImage(mascotDescription),
+            generateColoringImage(mascotDescription),
+          ]);
+
+          const updates: Record<string, string> = {};
+          if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
+          if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
+          if (Object.keys(updates).length === 0) return;
 
           const serviceClient = createServiceClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -413,7 +420,7 @@ export async function POST(req: NextRequest) {
           );
           await serviceClient
             .from("packets")
-            .update({ mascot_image_url: mascotImageUrl })
+            .update(updates)
             .eq("id", packetId);
         });
 
