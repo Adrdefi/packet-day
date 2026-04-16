@@ -406,10 +406,9 @@ export async function POST(req: NextRequest) {
         const mascotDescription = generatedContent.mascot_description;
 
         after(async () => {
-          const [mascotImageUrl, coloringImageUrl] = await Promise.all([
-            generateMascotImage(mascotDescription),
-            generateColoringImage(mascotDescription),
-          ]);
+          const mascotImageUrl = await generateMascotImage(mascotDescription);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const coloringImageUrl = await generateColoringImage(mascotDescription);
 
           console.log("COLORING IMAGE URL:", coloringImageUrl ?? "FAILED");
 

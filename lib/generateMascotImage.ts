@@ -62,72 +62,109 @@ export async function generateColoringImage(
   });
 
   const startMs = Date.now();
+  const MAX_ATTEMPTS = 3;
+  const RATE_LIMIT_DELAY_MS = 12_000;
 
-  try {
-    const output = await getReplicate().run("recraft-ai/recraft-v3", {
-      input: {
-        prompt,
-        style: "vector_illustration",
-        width: 1024,
-        height: 1024,
-        num_outputs: 1,
-      },
-    });
+  let lastErr: unknown;
 
-    const elapsedMs = Date.now() - startMs;
-
-    console.log("[generateColoringImage] Replicate raw output", {
-      elapsedMs,
-      outputType: typeof output,
-      isArray: Array.isArray(output),
-      arrayLength: Array.isArray(output) ? output.length : undefined,
-      rawValue: Array.isArray(output)
-        ? output.map((v) => String(v).slice(0, 200))
-        : String(output).slice(0, 200),
-    });
-
-    const first = Array.isArray(output) ? output[0] : output;
-    if (!first) {
-      console.error("[generateColoringImage] Output was empty or null", { output });
-      return null;
-    }
-
-    const url = String(first);
-
-    if (!url.startsWith("http")) {
-      console.error("[generateColoringImage] Output is not a URL", {
-        urlPreview: url.slice(0, 200),
-      });
-      return null;
-    }
-
-    console.log("[generateColoringImage] Success — fetching as base64", { url, elapsedMs });
-
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const imgResponse = await fetch(url);
-      const arrayBuffer = await imgResponse.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const contentType = imgResponse.headers.get("content-type") ?? "image/png";
-      const dataUrl = `data:${contentType};base64,${base64}`;
-      console.log("[generateColoringImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
-      return dataUrl;
-    } catch (fetchErr) {
-      console.error("[generateColoringImage] Failed to fetch image as base64 — returning original URL", {
-        message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+      const output = await getReplicate().run("recraft-ai/recraft-v3", {
+        input: {
+          prompt,
+          style: "vector_illustration",
+          width: 1024,
+          height: 1024,
+          num_outputs: 1,
+        },
       });
-      return url;
+
+      const elapsedMs = Date.now() - startMs;
+
+      console.log("[generateColoringImage] Replicate raw output", {
+        attempt,
+        elapsedMs,
+        outputType: typeof output,
+        isArray: Array.isArray(output),
+        arrayLength: Array.isArray(output) ? output.length : undefined,
+        rawValue: Array.isArray(output)
+          ? output.map((v) => String(v).slice(0, 200))
+          : String(output).slice(0, 200),
+      });
+
+      const first = Array.isArray(output) ? output[0] : output;
+      if (!first) {
+        console.error("[generateColoringImage] Output was empty or null", { output });
+        return null;
+      }
+
+      const url = String(first);
+
+      if (!url.startsWith("http")) {
+        console.error("[generateColoringImage] Output is not a URL", {
+          urlPreview: url.slice(0, 200),
+        });
+        return null;
+      }
+
+      console.log("[generateColoringImage] Success — fetching as base64", { url, elapsedMs });
+
+      try {
+        const imgResponse = await fetch(url);
+        const arrayBuffer = await imgResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const contentType = imgResponse.headers.get("content-type") ?? "image/png";
+        const dataUrl = `data:${contentType};base64,${base64}`;
+        console.log("[generateColoringImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
+        return dataUrl;
+      } catch (fetchErr) {
+        console.error("[generateColoringImage] Failed to fetch image as base64 — returning original URL", {
+          message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+        });
+        return url;
+      }
+    } catch (err) {
+      lastErr = err;
+      const status = (err as { status?: number }).status;
+      const message = err instanceof Error ? err.message : String(err);
+      const isRateLimit =
+        status === 429 ||
+        message.toLowerCase().includes("throttled") ||
+        message.toLowerCase().includes("too many requests");
+
+      if (!isRateLimit) {
+        // Non-rate-limit error — fail immediately, no retry
+        const elapsedMs = Date.now() - startMs;
+        console.error("[generateColoringImage] Non-retryable exception after", elapsedMs, "ms", {
+          attempt,
+          name: err instanceof Error ? err.name : undefined,
+          message,
+          status,
+          responseBody: (err as { response?: { body?: unknown } }).response?.body,
+          stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join("\n") : undefined,
+        });
+        return null;
+      }
+
+      console.warn("[generateColoringImage] Rate limited — waiting 12s before retry", {
+        attempt,
+        attemptsRemaining: MAX_ATTEMPTS - attempt,
+        status,
+        message,
+      });
+
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
+      }
     }
-  } catch (err) {
-    const elapsedMs = Date.now() - startMs;
-    console.error("[generateColoringImage] Exception after", elapsedMs, "ms", {
-      name: err instanceof Error ? err.name : undefined,
-      message: err instanceof Error ? err.message : String(err),
-      status: (err as { status?: number }).status,
-      responseBody: (err as { response?: { body?: unknown } }).response?.body,
-      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join("\n") : undefined,
-    });
-    return null;
   }
+
+  // All attempts exhausted
+  const elapsedMs = Date.now() - startMs;
+  console.error("[generateColoringImage] All", MAX_ATTEMPTS, "attempts failed after", elapsedMs, "ms", {
+    lastMessage: lastErr instanceof Error ? lastErr.message : String(lastErr),
+  });
+  return null;
 }
 
 /**
