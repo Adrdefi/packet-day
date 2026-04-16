@@ -51,6 +51,7 @@ export interface PDFActivity {
   estimated_minutes: number;
   materials?: string[];
   answer_key?: string | null;
+  encouragement?: string;
 }
 
 export interface PDFColoringPage {
@@ -839,7 +840,7 @@ function ActivityPage({
       {mascotImageUrl && (
         <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
           <Text style={styles.mascotSpeechText}>
-            Let's go, {childName}! You've got this!
+            {activity.encouragement || `Let's go, ${childName}! You've got this!`}
           </Text>
         </View>
       )}
