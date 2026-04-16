@@ -94,6 +94,7 @@ Return a JSON object with this exact structure:
       "subject": "Math",
       "title": "Activity title here",
       "description": "One sentence describing the activity.",
+      "encouragement": "A short, fun, personalized hype line for ${child.name} that references this specific activity's topic — e.g. 'Time to count your treasure, ${child.name}!' or 'Show the crew your best moves, ${child.name}!' Always include ${child.name}'s name. Never use a generic phrase like 'You've got this!'",
       "instructions": ["Step 1", "Step 2", "Step 3"],
       "estimated_minutes": 25,
       "materials": ["pencil", "paper"],
