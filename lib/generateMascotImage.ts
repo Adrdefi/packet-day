@@ -52,9 +52,9 @@ export async function generateColoringImage(
 
   const stripped = stripColors(mascotDescription.trim());
   const prompt =
-    `coloring book page, black and white line art only, thick bold outlines, no color, no shading, ` +
-    `no gray fills, pure white background, simple cute cartoon ${stripped}, ` +
-    `printable children's coloring page, clean vector style`;
+    `simple black and white coloring book page, ${stripped} wearing a straw hat, ` +
+    `thick bold black outlines only, pure white background, no color fills, no shading, ` +
+    `no gray, minimal detail, printable coloring page for children`;
 
   console.log("[generateColoringImage] Starting generation", {
     model: "recraft-ai/recraft-v3",
@@ -73,7 +73,7 @@ export async function generateColoringImage(
       const output = await getReplicate().run("recraft-ai/recraft-v3", {
         input: {
           prompt,
-          style: "digital_illustration/hand_drawn_outline",
+          style: "digital_illustration/infantile_sketch",
           width: 1024,
           height: 1024,
           num_outputs: 1,
