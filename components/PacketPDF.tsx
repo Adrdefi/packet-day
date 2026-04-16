@@ -77,6 +77,10 @@ export interface PacketPDFProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function stripNonAscii(text: string): string {
+  return text.replace(/[^\x00-\x7F]/g, '');
+}
+
 function formatPDFDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "long",
@@ -904,7 +908,7 @@ function ActivityPage({
                       <View style={bulletBgStyle}>
                         <Text style={bulletTextStyle}>{n}</Text>
                       </View>
-                      <Text style={styles.instructionText}>{step}</Text>
+                      <Text style={styles.instructionText}>{stripNonAscii(step)}</Text>
                     </View>
                   );
                 })}
