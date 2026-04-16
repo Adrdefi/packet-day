@@ -177,10 +177,10 @@ const styles = StyleSheet.create({
     fontSize: 44,
     textAlign: "center",
   },
-  // Mascot image — 300x300 square with contain fit
+  // Mascot image — 320x320 square with contain fit
   mascotImageCover: {
-    width: 300,
-    height: 300,
+    width: 320,
+    height: 320,
     objectFit: "contain",
     marginBottom: 16,
     alignSelf: "center",
@@ -739,8 +739,10 @@ function CoverPage({
       <View style={styles.coverCenter}>
         {mascotImageUrl ? (
           <>
-            {/* Mascot — 300x300 square, contain fit */}
-            <Image src={mascotImageUrl} style={styles.mascotImageCover} />
+            {/* Mascot — 320x320 image inside 340-height container */}
+            <View style={{ height: 340, alignItems: "center", justifyContent: "center" }}>
+              <Image src={mascotImageUrl} style={styles.mascotImageCover} />
+            </View>
             {mascotName && (
               <Text style={styles.mascotNameText}>{mascotName}</Text>
             )}
