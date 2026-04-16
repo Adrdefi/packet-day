@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
     coloringPage: content.coloring_page
       ? (content.coloring_page as PDFColoringPage)
       : null,
+    greeting: content.greeting ?? null,
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────

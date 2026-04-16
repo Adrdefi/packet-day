@@ -72,6 +72,7 @@ export interface PacketPDFProps {
   mascotName?: string | null;
   mascotEmojiCluster?: string | null;
   coloringPage?: PDFColoringPage | null;
+  greeting?: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -720,6 +721,7 @@ function CoverPage({
   createdAt,
   mascotImageUrl,
   mascotName,
+  greeting,
 }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.coverPage}>
@@ -756,7 +758,7 @@ function CoverPage({
         {/* Greeting box */}
         <View style={styles.greetingBox}>
           <Text style={styles.greetingText}>
-            {greetingMessage(childName, theme)}
+            {greeting || greetingMessage(childName, theme)}
           </Text>
         </View>
       </View>
