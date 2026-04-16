@@ -115,7 +115,12 @@ export async function generateColoringImage(
         const arrayBuffer = await imgResponse.arrayBuffer();
         // Recraft v3 returns webp. React-PDF only supports PNG and JPEG.
         // Convert to PNG via sharp before encoding as base64.
-        const pngBuffer = await sharp(Buffer.from(arrayBuffer)).png().toBuffer();
+        const pngBuffer = await sharp(Buffer.from(arrayBuffer))
+          .grayscale()
+          .normalise()
+          .threshold(190)
+          .png()
+          .toBuffer();
         const base64 = pngBuffer.toString("base64");
         const dataUrl = `data:image/png;base64,${base64}`;
         console.log("[generateColoringImage] Converted webp to PNG data URL", { byteLength: pngBuffer.byteLength });
