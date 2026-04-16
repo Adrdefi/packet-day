@@ -440,7 +440,6 @@ const styles = StyleSheet.create({
 
   // Work area — dotted lines
   workArea: {
-    flex: 1,
     marginTop: 18,
     flexDirection: "column",
     justifyContent: "flex-end",
@@ -930,7 +929,7 @@ function ActivityPage({
         })()}
 
         {/* Work area — dotted lines */}
-        <View wrap={false} style={styles.workArea}>
+        <View style={styles.workArea}>
           <Text style={styles.workAreaLabel}>Write your answer here:</Text>
           {Array.from({ length: workLines }, (_, i) => (
             <View key={i} style={styles.workLine} />
