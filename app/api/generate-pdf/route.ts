@@ -58,11 +58,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Packet not found." }, { status: 404 });
   }
 
-  // ── If cached PDF URL exists, redirect to it ──────────────────────────────
-  if (packet.pdf_url) {
-    return NextResponse.redirect(packet.pdf_url);
-  }
-
   // ── Build PDF props ───────────────────────────────────────────────────────
   const content = packet.generated_content as PacketContent;
 
@@ -85,6 +80,7 @@ export async function GET(req: NextRequest) {
     createdAt: packet.created_at,
     specialNotes: packet.special_notes ?? null,
     mascotImageUrl: (packet as { mascot_image_url?: string | null }).mascot_image_url ?? null,
+    coloringImageUrl: (packet as { coloring_image_url?: string | null }).coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
     mascotEmojiCluster: content.mascot_emoji_cluster ?? null,
     coloringPage: content.coloring_page

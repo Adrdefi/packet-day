@@ -72,6 +72,7 @@ export interface PacketPDFProps {
   mascotName?: string | null;
   mascotEmojiCluster?: string | null;
   coloringPage?: PDFColoringPage | null;
+  coloringImageUrl?: string | null;
   greeting?: string | null;
 }
 
@@ -1053,11 +1054,14 @@ function ParentNotesPage({
 
 function ColoringPage({
   coloringPage,
+  coloringImageUrl,
   mascotImageUrl,
 }: {
   coloringPage: PDFColoringPage;
+  coloringImageUrl?: string | null;
   mascotImageUrl?: string | null;
 }) {
+  const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
   return (
     <Page size="LETTER" style={styles.coloringPage}>
       {/* "Color me!" heading */}
@@ -1066,10 +1070,10 @@ function ColoringPage({
       {/* Title */}
       <Text style={styles.coloringTitle}>{coloringPage.title}</Text>
 
-      {/* Coloring area — mascot fills most of the page */}
+      {/* Coloring area */}
       <View style={styles.coloringBox}>
-        {mascotImageUrl ? (
-          <Image src={mascotImageUrl} style={styles.coloringBoxImage} />
+        {imageUrl ? (
+          <Image src={imageUrl} style={styles.coloringBoxImage} />
         ) : (
           <Text style={styles.coloringBoxPlaceholder}>
             Draw your scene here!
@@ -1111,6 +1115,7 @@ export default function PacketPDF(props: PacketPDFProps) {
       {props.coloringPage && (
         <ColoringPage
           coloringPage={props.coloringPage}
+          coloringImageUrl={props.coloringImageUrl}
           mascotImageUrl={props.mascotImageUrl}
         />
       )}

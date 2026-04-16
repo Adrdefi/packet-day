@@ -87,6 +87,7 @@ export interface Packet {
   special_notes: string | null;
   generated_content: PacketContent | null;
   mascot_image_url: string | null;
+  coloring_image_url?: string | null;
   pdf_url: string | null;
   share_token: string;
   view_count: number;
