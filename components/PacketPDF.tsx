@@ -1024,14 +1024,6 @@ function ParentNotesPage({
         </Text>
       </View>
 
-      {/* Reflection question */}
-      <View style={styles.reflectionBox}>
-        <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
-        <Text style={styles.reflectionText}>
-          {reflectionQuestion(theme)}
-        </Text>
-      </View>
-
       {/* Observation lines */}
       <Text style={styles.observationsLabel}>My Observations</Text>
       {Array.from({ length: 8 }, (_, i) => (
@@ -1090,6 +1082,38 @@ function ColoringPage({
   );
 }
 
+// ─── Reflection page ─────────────────────────────────────────────────────────
+
+function ReflectionPage({ childName, theme, createdAt }: PacketPDFProps) {
+  return (
+    <Page size="LETTER" style={styles.notesPage}>
+      <Text style={styles.notesPageTitle}>Daily Reflection</Text>
+      <Text style={styles.notesPageSubtitle}>
+        Take a moment to think about today's learning.
+      </Text>
+
+      <View style={styles.reflectionBox}>
+        <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
+        <Text style={styles.reflectionText}>
+          {reflectionQuestion(theme)}
+        </Text>
+      </View>
+
+      {/* Writing lines */}
+      {Array.from({ length: 10 }, (_, i) => (
+        <View key={i} style={styles.ruledLine} />
+      ))}
+
+      <View style={styles.notesFooter}>
+        <Text style={styles.footerText}>Made with love by Packet Day</Text>
+        <Text style={styles.footerText}>
+          packetday.com  |  {formatPDFDate(createdAt)}
+        </Text>
+      </View>
+    </Page>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function PacketPDF(props: PacketPDFProps) {
@@ -1118,6 +1142,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
         />
       )}
+      <ReflectionPage {...props} />
     </Document>
   );
 }
