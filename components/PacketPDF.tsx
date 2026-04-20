@@ -909,6 +909,74 @@ const styles = StyleSheet.create({
     borderBottomStyle: 'dotted',
     borderBottomColor: '#D1D5DB',
   },
+
+  // ── Mid-page mascot encouragement strip ─────────────────────────────────────
+  midPageEncouragement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    padding: 8,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  midPageMascotImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  midPageSpeechBubble: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 6,
+    backgroundColor: C.white,
+  },
+  midPageSpeechText: {
+    fontSize: 9.5,
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    color: C.dark,
+    lineHeight: 1.4,
+  },
+
+  // ── Star reward box ──────────────────────────────────────────────────────────
+  starRewardBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    marginBottom: 6,
+    paddingRight: 4,
+  },
+  starRewardText: {
+    fontSize: 9,
+    color: C.muted,
+    fontFamily: 'Nunito',
+  },
+  starChar: {
+    fontSize: 18,
+    lineHeight: 1,
+    marginHorizontal: 3,
+  },
+
+  // ── Fun fact bubble (cover page) ─────────────────────────────────────────────
+  funFactBox: {
+    backgroundColor: '#FFF8E7',
+    borderWidth: 1.5,
+    borderColor: C.honey,
+    borderRadius: 10,
+    padding: 12,
+    width: '100%',
+    marginTop: 10,
+  },
+  funFactText: {
+    fontSize: 10,
+    color: C.honeyDark,
+    fontFamily: 'Nunito',
+    lineHeight: 1.6,
+    textAlign: 'center',
+  },
 });
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
@@ -922,7 +990,10 @@ function CoverPage({
   mascotImageUrl,
   mascotName,
   greeting,
+  activities,
 }: PacketPDFProps) {
+  const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
+
   return (
     <Page size="LETTER" style={styles.coverPage}>
       {/* Top wordmark */}
@@ -963,6 +1034,13 @@ function CoverPage({
             {greeting || greetingMessage(childName, theme)}
           </Text>
         </View>
+      </View>
+
+      {/* Fun fact bubble */}
+      <View style={styles.funFactBox}>
+        <Text style={styles.funFactText}>
+          {"Did you know? Today's packet has " + activities.length + " activities and " + totalMinutes + " minutes of learning made just for " + childName + "!"}
+        </Text>
       </View>
 
       {/* Footer */}
@@ -1013,6 +1091,42 @@ function ActivityTopBar({
   );
 }
 
+// Mid-page mascot encouragement strip — shown after instructions, before answer area
+function MidPageEncouragement({
+  activity,
+  colors,
+  mascotImageUrl,
+}: {
+  activity: PDFActivity;
+  colors: (typeof ACTIVITY_COLORS)[0];
+  mascotImageUrl?: string | null;
+}) {
+  if (!mascotImageUrl) return null;
+  return (
+    <View wrap={false} style={[styles.midPageEncouragement, { backgroundColor: colors.bg }]}>
+      <Image src={mascotImageUrl} style={styles.midPageMascotImage} />
+      <View style={[styles.midPageSpeechBubble, { borderColor: colors.bar }]}>
+        <Text style={styles.midPageSpeechText}>
+          {activity.encouragement || 'Keep going — you are doing amazing!'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// Star reward row — "How did I do today?" shown above the answer key on every page
+function StarRewardBox({ colors }: { colors: (typeof ACTIVITY_COLORS)[0] }) {
+  return (
+    <View wrap={false} style={styles.starRewardBox}>
+      <Text style={styles.starRewardText}>How did I do today?</Text>
+      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
+      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
+      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
+      <Text style={styles.starRewardText}>Circle your stars!</Text>
+    </View>
+  );
+}
+
 // ── Math section renderer ─────────────────────────────────────────────────────
 // Parses the 3 labeled sections produced by the math activity prompt and renders
 // each with a distinct visual treatment.
@@ -1051,7 +1165,7 @@ function MathSections({
     <>
       {/* ── Section 1: Quick Calculations — 2-column grid ── */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>{quickCalcsLabel}</Text>
+        <Text style={styles.mathSectionBarText}>{"🧮 " + quickCalcsLabel}</Text>
       </View>
       <View style={styles.mathCalcGrid}>
         {quickCalcs.map((prob, i) => (
@@ -1067,7 +1181,7 @@ function MathSections({
 
       {/* ── Section 2: Word Problems — shaded boxes with answer lines ── */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>Word Problems</Text>
+        <Text style={styles.mathSectionBarText}>{"📖 Word Problems"}</Text>
       </View>
       {wordProblems.map((prob, i) => (
         <View wrap={false} key={i} style={styles.mathWordBox}>
@@ -1081,7 +1195,7 @@ function MathSections({
       {drawAndSolve !== '' && (
         <>
           <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-            <Text style={styles.mathSectionBarText}>Draw & Solve</Text>
+            <Text style={styles.mathSectionBarText}>{"✏️ Draw & Solve"}</Text>
           </View>
           <View wrap={false}>
             <View style={styles.mathDrawPromptBubble}>
@@ -1140,7 +1254,9 @@ function WorksheetTemplate({
           <MathSections instructions={activity.instructions} colors={colors} />
         ) : (
           <>
-            <Text style={styles.instructionsLabel}>How to do it</Text>
+            <Text style={styles.instructionsLabel}>
+              {activity.subject.toLowerCase().includes('sci') ? '🔬 How to do it' : '📋 How to do it'}
+            </Text>
             {activity.instructions.map((step, i) => (
               <View wrap={false} key={i} style={styles.questionBox}>
                 <View style={[styles.instructionRow, { marginBottom: 0 }]}>
@@ -1158,6 +1274,9 @@ function WorksheetTemplate({
           </>
         )}
 
+        {/* Mid-page mascot encouragement */}
+        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
+
         {/* Bonus challenge */}
         <View wrap={false} style={styles.bonusChallengeBox}>
           <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
@@ -1165,6 +1284,9 @@ function WorksheetTemplate({
             {bonusChallenge(activity.subject, activity.title)}
           </Text>
         </View>
+
+        {/* Star reward */}
+        <StarRewardBox colors={colors} />
 
         {/* Answer key */}
         {activity.answer_key && (
@@ -1216,14 +1338,14 @@ function ReadingTemplate({
         {/* Reading passage — cream bg + activity-color left border */}
         {passage && (
           <View wrap={false} style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
-            <Text style={styles.readingPassageLabel}>Read This</Text>
+            <Text style={styles.readingPassageLabel}>{"📖 Read This"}</Text>
             <Text style={styles.readingPassageText}>{passage}</Text>
           </View>
         )}
 
         {/* Comprehension questions — each in a shaded box with 2 answer lines */}
         {questions.length > 0 && (
-          <Text style={styles.instructionsLabel}>Comprehension Questions</Text>
+          <Text style={styles.instructionsLabel}>{"💬 Comprehension Questions"}</Text>
         )}
         {questions.map((step, i) => (
           <View wrap={false} key={i} style={styles.questionBox}>
@@ -1238,6 +1360,12 @@ function ReadingTemplate({
             <View style={styles.answerLineInBox} />
           </View>
         ))}
+
+        {/* Mid-page mascot encouragement */}
+        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
+
+        {/* Star reward */}
+        <StarRewardBox colors={colors} />
 
         {/* Answer key */}
         {activity.answer_key && (
@@ -1296,6 +1424,9 @@ function OpenWorkspaceTemplate({
           ))}
         </View>
 
+        {/* Mid-page mascot encouragement */}
+        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
+
         {/* Writing space: ruled lines for writing, large draw box for art/PE */}
         {isWriting ? (
           <>
@@ -1309,6 +1440,9 @@ function OpenWorkspaceTemplate({
             <Text style={styles.drawBoxLabel}>Draw or write here</Text>
           </View>
         )}
+
+        {/* Star reward */}
+        <StarRewardBox colors={colors} />
       </View>
     </Page>
   );
