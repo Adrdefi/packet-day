@@ -37,6 +37,12 @@ CRITICAL: The greeting field must contain zero emoji characters — no emoji wha
 
 CRITICAL: The reading passage text must appear as a plain instruction step with NO dashes, NO separator lines, NO markdown formatting, NO --- characters anywhere. Do not write --- PASSAGE --- or any variation. Just write the passage text directly as the instruction content.
 
+MATH ACTIVITY STRUCTURE: Every math activity's instructions array must contain exactly three labeled sections as separate entries:
+1. "[MASCOT NAME]'S QUICK CALCULATIONS: Solve these problems: [4-6 grade-appropriate arithmetic problems using ___ for blanks, separated by / ]" — pure numerical problems, no theme required, just clean arithmetic matched to grade level.
+2. "WORD PROBLEMS: [3-4 story problems starring the mascot and the theme, separated by / ]" — narrative and fun, each problem self-contained.
+3. "DRAW & SOLVE: [1 visual problem where the child draws objects, groups, a number line, or a shape to find the answer, then writes the number sentence]" — e.g. "Draw 4 groups of 3 sequins. Count them. Write the multiplication sentence: ___ x ___ = ___"
+Each section label must be in ALL CAPS at the start of the string. This structure applies ONLY to math activities.
+
 CRITICAL: Your entire response must be a single raw JSON object. Do NOT wrap in markdown code fences. Do NOT use \`\`\`json or \`\`\`. Do NOT include any text before or after the JSON. Start your response with { and end with }.`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -111,7 +117,8 @@ Return a JSON object with this exact structure:
 }
 
 INSTRUCTIONS ARRAY RULES:
-- Each individual math problem or question must be its own separate entry in the instructions array — never combine multiple problems into one step.
+- For math activities, the instructions array must contain exactly 3 entries — one per section: Quick Calculations, Word Problems, Draw & Solve. Follow the MATH ACTIVITY STRUCTURE rule above precisely.
+- For all other subjects, each individual question or step must be its own separate entry in the instructions array.
 - Do NOT include "Write your answer here", "Bonus Challenge", or "For Grown-Ups Only" text inside the instructions array — these are handled by the PDF layout automatically.`;
 }
 
