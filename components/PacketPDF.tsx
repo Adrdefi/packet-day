@@ -83,6 +83,17 @@ function stripNonAscii(text: string): string {
   return text.replace(/[^\x00-\x7F]/g, '');
 }
 
+// Twemoji CDN PNG icons — rendered via react-pdf Image so emoji glyphs are not needed
+const TWEMOJI_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/';
+function getSubjectIconUrl(subject: string): string {
+  const s = subject.toLowerCase();
+  if (s.includes('math'))                              return TWEMOJI_BASE + '1f9ee.png'; // abacus
+  if (s.includes('read') || s.includes('compreh'))    return TWEMOJI_BASE + '1f4d6.png'; // open book
+  if (s.includes('writ') || s.includes('journal') || s.includes('story')) return TWEMOJI_BASE + '270f.png';  // pencil
+  if (s.includes('sci'))                              return TWEMOJI_BASE + '1f52c.png'; // microscope
+  return TWEMOJI_BASE + '1f3c6.png'; // trophy — PE, art, creative, history, general
+}
+
 function formatPDFDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "long",
@@ -977,6 +988,30 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
     textAlign: 'center',
   },
+
+  // ── Subject icon in activity top bar ────────────────────────────────────────
+  subjectIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
+  },
+
+  // ── Star reward outlined boxes ───────────────────────────────────────────────
+  starBox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 3,
+  },
+  starBoxText: {
+    fontSize: 12,
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    lineHeight: 1,
+  },
 });
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
@@ -1070,9 +1105,12 @@ function ActivityTopBar({
   return (
     <>
       <View style={[styles.activityBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.activityBarEmoji}>{""}</Text>
         <View style={styles.activityBarLeft}>
-          <Text style={styles.activityBarSubject}>{activity.subject}</Text>
+          {/* Subject row: twemoji PNG icon + subject label */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image src={getSubjectIconUrl(activity.subject)} style={styles.subjectIcon} />
+            <Text style={styles.activityBarSubject}>{activity.subject}</Text>
+          </View>
           <Text style={styles.activityBarTitle}>{activity.title}</Text>
         </View>
         <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
@@ -1107,21 +1145,24 @@ function MidPageEncouragement({
       <Image src={mascotImageUrl} style={styles.midPageMascotImage} />
       <View style={[styles.midPageSpeechBubble, { borderColor: colors.bar }]}>
         <Text style={styles.midPageSpeechText}>
-          {activity.encouragement || 'Keep going — you are doing amazing!'}
+          {activity.encouragement || 'Keep going - you are doing amazing!'}
         </Text>
       </View>
     </View>
   );
 }
 
-// Star reward row — "How did I do today?" shown above the answer key on every page
+// Star reward row — "How did I do today?" shown above the answer key on every page.
+// Uses outlined boxes with "*" instead of unicode star glyphs (no emoji font support).
 function StarRewardBox({ colors }: { colors: (typeof ACTIVITY_COLORS)[0] }) {
   return (
     <View wrap={false} style={styles.starRewardBox}>
       <Text style={styles.starRewardText}>How did I do today?</Text>
-      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
-      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
-      <Text style={[styles.starChar, { color: colors.bar }]}>{"☆"}</Text>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={[styles.starBox, { borderColor: colors.bar }]}>
+          <Text style={[styles.starBoxText, { color: colors.bar }]}>*</Text>
+        </View>
+      ))}
       <Text style={styles.starRewardText}>Circle your stars!</Text>
     </View>
   );
@@ -1165,7 +1206,7 @@ function MathSections({
     <>
       {/* ── Section 1: Quick Calculations — 2-column grid ── */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>{"🧮 " + quickCalcsLabel}</Text>
+        <Text style={styles.mathSectionBarText}>{"[ " + quickCalcsLabel + " ]"}</Text>
       </View>
       <View style={styles.mathCalcGrid}>
         {quickCalcs.map((prob, i) => (
@@ -1181,7 +1222,7 @@ function MathSections({
 
       {/* ── Section 2: Word Problems — shaded boxes with answer lines ── */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>{"📖 Word Problems"}</Text>
+        <Text style={styles.mathSectionBarText}>{"[ Word Problems ]"}</Text>
       </View>
       {wordProblems.map((prob, i) => (
         <View wrap={false} key={i} style={styles.mathWordBox}>
@@ -1195,7 +1236,7 @@ function MathSections({
       {drawAndSolve !== '' && (
         <>
           <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-            <Text style={styles.mathSectionBarText}>{"✏️ Draw & Solve"}</Text>
+            <Text style={styles.mathSectionBarText}>{"[ Draw & Solve ]"}</Text>
           </View>
           <View wrap={false}>
             <View style={styles.mathDrawPromptBubble}>
@@ -1255,7 +1296,7 @@ function WorksheetTemplate({
         ) : (
           <>
             <Text style={styles.instructionsLabel}>
-              {activity.subject.toLowerCase().includes('sci') ? '🔬 How to do it' : '📋 How to do it'}
+              {'[ How to do it ]'}
             </Text>
             {activity.instructions.map((step, i) => (
               <View wrap={false} key={i} style={styles.questionBox}>
@@ -1338,14 +1379,14 @@ function ReadingTemplate({
         {/* Reading passage — cream bg + activity-color left border */}
         {passage && (
           <View wrap={false} style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
-            <Text style={styles.readingPassageLabel}>{"📖 Read This"}</Text>
+            <Text style={styles.readingPassageLabel}>{"[ Read This ]"}</Text>
             <Text style={styles.readingPassageText}>{passage}</Text>
           </View>
         )}
 
         {/* Comprehension questions — each in a shaded box with 2 answer lines */}
         {questions.length > 0 && (
-          <Text style={styles.instructionsLabel}>{"💬 Comprehension Questions"}</Text>
+          <Text style={styles.instructionsLabel}>{"[ Comprehension Questions ]"}</Text>
         )}
         {questions.map((step, i) => (
           <View wrap={false} key={i} style={styles.questionBox}>
