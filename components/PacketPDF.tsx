@@ -714,6 +714,100 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 1.6,
   },
+
+  // ── Question box (Templates A + B) ─────────────────────────────────────────
+  questionBox: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 12,
+    paddingBottom: 8,
+    marginBottom: 10,
+  },
+  answerLineInBox: {
+    borderBottomWidth: 1,
+    borderBottomStyle: 'dotted',
+    borderBottomColor: '#D1D5DB',
+    marginTop: 12,
+  },
+
+  // ── Reading passage block (Template B) ──────────────────────────────────────
+  readingPassageBlock: {
+    backgroundColor: '#FFFBF0',
+    borderRadius: 6,
+    padding: 14,
+    marginBottom: 14,
+  },
+  readingPassageLabel: {
+    fontSize: 8,
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    color: '#A67C1E',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  readingPassageText: {
+    fontSize: 11.5,
+    lineHeight: 1.7,
+    color: C.dark,
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+  },
+
+  // ── Open workspace (Template C) ─────────────────────────────────────────────
+  promptBubble: {
+    borderWidth: 1.5,
+    borderColor: C.border,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: C.white,
+    marginBottom: 16,
+  },
+  promptBubbleText: {
+    fontSize: 12,
+    color: C.dark,
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    lineHeight: 1.6,
+  },
+  promptInstructionText: {
+    fontSize: 11,
+    color: C.dark,
+    lineHeight: 1.5,
+    marginTop: 8,
+  },
+  writingSpaceHeader: {
+    fontSize: 9,
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    color: C.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 14,
+  },
+  writingLine: {
+    borderBottomWidth: 1.5,
+    borderBottomStyle: 'dotted',
+    borderBottomColor: '#D1D5DB',
+    marginBottom: 26,
+  },
+  drawBox: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 340,
+  },
+  drawBoxLabel: {
+    fontSize: 14,
+    color: '#C4C9D4',
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
 });
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
@@ -782,6 +876,252 @@ function CoverPage({
 
 // ─── Activity page ────────────────────────────────────────────────────────────
 
+// Shared colored top bar + encouragement speech bubble used by all three templates
+function ActivityTopBar({
+  activity,
+  colors,
+  childName,
+  mascotImageUrl,
+}: {
+  activity: PDFActivity;
+  colors: (typeof ACTIVITY_COLORS)[0];
+  childName: string;
+  mascotImageUrl?: string | null;
+}) {
+  return (
+    <>
+      <View style={[styles.activityBar, { backgroundColor: colors.bar }]}>
+        <Text style={styles.activityBarEmoji}>{""}</Text>
+        <View style={styles.activityBarLeft}>
+          <Text style={styles.activityBarSubject}>{activity.subject}</Text>
+          <Text style={styles.activityBarTitle}>{activity.title}</Text>
+        </View>
+        <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
+        {mascotImageUrl && (
+          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
+        )}
+      </View>
+      {mascotImageUrl && (
+        <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
+          <Text style={styles.mascotSpeechText}>
+            {activity.encouragement || `Let's go, ${childName}! You've got this!`}
+          </Text>
+        </View>
+      )}
+    </>
+  );
+}
+
+// ── Template A — Worksheet (math, science, general) ──────────────────────────
+// Each instruction step in its own shaded box with 3 inline answer lines.
+
+function WorksheetTemplate({
+  activity,
+  colors,
+  childName,
+  mascotImageUrl,
+}: {
+  activity: PDFActivity;
+  colors: (typeof ACTIVITY_COLORS)[0];
+  childName: string;
+  mascotImageUrl?: string | null;
+}) {
+  const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
+  const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
+
+  return (
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+
+      <View style={styles.activityContent}>
+        {/* Materials */}
+        {activity.materials && activity.materials.length > 0 && (
+          <View wrap={false} style={styles.materialsBox}>
+            <Text style={styles.materialsLabel}>You'll need:</Text>
+            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+          </View>
+        )}
+
+        {/* Description */}
+        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: C.white, borderLeftColor: colors.bar }]}>
+          <Text style={styles.descriptionText}>{activity.description}</Text>
+        </View>
+
+        {/* Instructions — each question in its own shaded box with 3 answer lines */}
+        <Text style={styles.instructionsLabel}>How to do it</Text>
+        {activity.instructions.map((step, i) => (
+          <View wrap={false} key={i} style={styles.questionBox}>
+            <View style={[styles.instructionRow, { marginBottom: 0 }]}>
+              <View style={styles.instructionCheckbox} />
+              <View style={bulletBgStyle}>
+                <Text style={bulletTextStyle}>{i + 1}</Text>
+              </View>
+              <Text style={styles.instructionText}>{step}</Text>
+            </View>
+            <View style={styles.answerLineInBox} />
+            <View style={styles.answerLineInBox} />
+            <View style={styles.answerLineInBox} />
+          </View>
+        ))}
+
+        {/* Bonus challenge */}
+        <View wrap={false} style={styles.bonusChallengeBox}>
+          <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
+          <Text style={styles.bonusChallengeText}>
+            {bonusChallenge(activity.subject, activity.title)}
+          </Text>
+        </View>
+
+        {/* Answer key */}
+        {activity.answer_key && (
+          <View wrap={false} style={styles.answerKeyBox}>
+            <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
+            <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
+          </View>
+        )}
+      </View>
+    </Page>
+  );
+}
+
+// ── Template B — Reading Passage ──────────────────────────────────────────────
+// Passage in a cream-tinted block with activity-color left border.
+// Comprehension questions each get their own shaded box with 2 answer lines.
+
+function ReadingTemplate({
+  activity,
+  colors,
+  childName,
+  mascotImageUrl,
+}: {
+  activity: PDFActivity;
+  colors: (typeof ACTIVITY_COLORS)[0];
+  childName: string;
+  mascotImageUrl?: string | null;
+}) {
+  const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
+  const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
+
+  const passageIndex = activity.instructions.findIndex((s) => s.length > 200);
+  const passage = passageIndex !== -1 ? activity.instructions[passageIndex] : null;
+  const questions = activity.instructions.filter((_, i) => i !== passageIndex);
+
+  return (
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+
+      <View style={styles.activityContent}>
+        {/* Materials */}
+        {activity.materials && activity.materials.length > 0 && (
+          <View wrap={false} style={styles.materialsBox}>
+            <Text style={styles.materialsLabel}>You'll need:</Text>
+            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+          </View>
+        )}
+
+        {/* Reading passage — cream bg + activity-color left border */}
+        {passage && (
+          <View wrap={false} style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
+            <Text style={styles.readingPassageLabel}>Read This</Text>
+            <Text style={styles.readingPassageText}>{passage}</Text>
+          </View>
+        )}
+
+        {/* Comprehension questions — each in a shaded box with 2 answer lines */}
+        {questions.length > 0 && (
+          <Text style={styles.instructionsLabel}>Comprehension Questions</Text>
+        )}
+        {questions.map((step, i) => (
+          <View wrap={false} key={i} style={styles.questionBox}>
+            <View style={[styles.instructionRow, { marginBottom: 0 }]}>
+              <View style={styles.instructionCheckbox} />
+              <View style={bulletBgStyle}>
+                <Text style={bulletTextStyle}>{i + 1}</Text>
+              </View>
+              <Text style={styles.instructionText}>{stripNonAscii(step)}</Text>
+            </View>
+            <View style={styles.answerLineInBox} />
+            <View style={styles.answerLineInBox} />
+          </View>
+        ))}
+
+        {/* Answer key */}
+        {activity.answer_key && (
+          <View wrap={false} style={styles.answerKeyBox}>
+            <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
+            <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
+          </View>
+        )}
+      </View>
+    </Page>
+  );
+}
+
+// ── Template C — Open Workspace (writing, art, PE, creative) ─────────────────
+// Prompt bubble with description + instructions, then maximum open space:
+// ruled writing lines for writing/journal/story, or a large draw box for art/PE.
+
+function OpenWorkspaceTemplate({
+  activity,
+  colors,
+  childName,
+  mascotImageUrl,
+}: {
+  activity: PDFActivity;
+  colors: (typeof ACTIVITY_COLORS)[0];
+  childName: string;
+  mascotImageUrl?: string | null;
+}) {
+  const subject = activity.subject.toLowerCase();
+  const isWriting =
+    subject.includes("writing") ||
+    subject.includes("journal") ||
+    subject.includes("story") ||
+    subject.includes("creative");
+
+  return (
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+
+      <View style={styles.activityContent}>
+        {/* Materials */}
+        {activity.materials && activity.materials.length > 0 && (
+          <View wrap={false} style={styles.materialsBox}>
+            <Text style={styles.materialsLabel}>You'll need:</Text>
+            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+          </View>
+        )}
+
+        {/* Prompt bubble — description + instruction steps */}
+        <View style={styles.promptBubble}>
+          <Text style={styles.promptBubbleText}>{activity.description}</Text>
+          {activity.instructions.map((step, i) => (
+            <Text key={i} style={styles.promptInstructionText}>
+              {i + 1}. {step}
+            </Text>
+          ))}
+        </View>
+
+        {/* Writing space: ruled lines for writing, large draw box for art/PE */}
+        {isWriting ? (
+          <>
+            <Text style={styles.writingSpaceHeader}>My Writing Space</Text>
+            {Array.from({ length: 16 }, (_, i) => (
+              <View key={i} style={styles.writingLine} />
+            ))}
+          </>
+        ) : (
+          <View style={styles.drawBox}>
+            <Text style={styles.drawBoxLabel}>Draw or write here</Text>
+          </View>
+        )}
+      </View>
+    </Page>
+  );
+}
+
+// ── Dispatcher — picks the right template based on subject ───────────────────
+
 function ActivityPage({
   activity,
   index,
@@ -795,169 +1135,44 @@ function ActivityPage({
 }) {
   const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
   const subject = activity.subject.toLowerCase();
-  const baseWorkLines = subject.includes("writ")
-    ? 10
-    : subject.includes("read")
-    ? 8
-    : subject.includes("math")
-    ? 6
-    : 5;
-  // Reduce slightly when an answer key takes space on the page
-  const workLines = activity.answer_key ? Math.max(baseWorkLines - 2, 4) : baseWorkLines;
 
-  const pageStyle = [styles.activityPage, { backgroundColor: colors.bg }];
-  const barStyle = [styles.activityBar, { backgroundColor: colors.bar }];
-  const descBoxStyle = [
-    styles.descriptionBox,
-    { backgroundColor: C.white, borderLeftColor: colors.bar },
-  ];
-  const bulletBgStyle = [
-    styles.instructionBullet,
-    { backgroundColor: colors.bg + "CC" },
-  ];
-  const bulletTextStyle = [
-    styles.instructionBulletText,
-    { color: colors.bar },
-  ];
+  const isReading =
+    subject.includes("reading") || subject.includes("comprehension");
+  const isCreative =
+    subject.includes("writing") ||
+    subject.includes("art") ||
+    subject.includes("pe") ||
+    subject.includes("creative") ||
+    subject.includes("journal") ||
+    subject.includes("story");
 
+  if (isReading) {
+    return (
+      <ReadingTemplate
+        activity={activity}
+        colors={colors}
+        childName={childName}
+        mascotImageUrl={mascotImageUrl}
+      />
+    );
+  }
+  if (isCreative) {
+    return (
+      <OpenWorkspaceTemplate
+        activity={activity}
+        colors={colors}
+        childName={childName}
+        mascotImageUrl={mascotImageUrl}
+      />
+    );
+  }
   return (
-    <Page size="LETTER" style={pageStyle}>
-      {/* Colored top bar */}
-      <View style={barStyle}>
-        <Text style={styles.activityBarEmoji}>{""}</Text>
-        <View style={styles.activityBarLeft}>
-          <Text style={styles.activityBarSubject}>{activity.subject}</Text>
-          <Text style={styles.activityBarTitle}>{activity.title}</Text>
-        </View>
-        <Text style={styles.activityBarTime}>
-          {activity.estimated_minutes} min
-        </Text>
-        {/* Mascot — 80x80 circle in top-right of bar */}
-        {mascotImageUrl && (
-          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
-        )}
-      </View>
-
-      {/* Mascot speech bubble */}
-      {mascotImageUrl && (
-        <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
-          <Text style={styles.mascotSpeechText}>
-            {activity.encouragement || `Let's go, ${childName}! You've got this!`}
-          </Text>
-        </View>
-      )}
-
-      {/* Content area */}
-      <View style={styles.activityContent}>
-        {/* Materials */}
-        {activity.materials && activity.materials.length > 0 && (
-          <View wrap={false} style={styles.materialsBox}>
-            <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>
-              {activity.materials.join("  /  ")}
-            </Text>
-          </View>
-        )}
-
-        {/* Description */}
-        <View wrap={false} style={descBoxStyle}>
-          <Text style={styles.descriptionText}>{activity.description}</Text>
-        </View>
-
-        {/* Instructions */}
-        <Text style={styles.instructionsLabel}>How to do it</Text>
-        {(() => {
-          const isReading = activity.subject.toLowerCase().includes('reading');
-          if (isReading) {
-            const passageIndex = activity.instructions.findIndex(s => s.length > 200);
-            const passage = passageIndex !== -1 ? activity.instructions[passageIndex] : null;
-            const questions = activity.instructions.filter((_, i) => i !== passageIndex);
-            let questionNumber = 0;
-            return (
-              <>
-                {passage && (
-                  <View wrap={false} style={{
-                    backgroundColor: '#F0F5F1',
-                    borderRadius: 8,
-                    padding: 16,
-                    marginBottom: 12,
-                    borderLeftWidth: 3,
-                    borderLeftColor: '#4A7C59',
-                  }}>
-                    <Text style={{
-                      fontSize: 8,
-                      color: '#4A7C59',
-                      fontFamily: 'Nunito',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: 1,
-                      marginBottom: 8,
-                    }}>READ THIS FIRST</Text>
-                    <Text style={{
-                      fontSize: 11.5,
-                      lineHeight: 1.7,
-                      color: '#3A3633',
-                      fontFamily: 'Nunito',
-                      fontStyle: 'italic',
-                    }}>{passage}</Text>
-                  </View>
-                )}
-                {questions.map((step) => {
-                  questionNumber += 1;
-                  const n = questionNumber;
-                  return (
-                    <View wrap={false} key={n} style={styles.instructionRow}>
-                      <View style={styles.instructionCheckbox} />
-                      <View style={bulletBgStyle}>
-                        <Text style={bulletTextStyle}>{n}</Text>
-                      </View>
-                      <Text style={styles.instructionText}>{stripNonAscii(step)}</Text>
-                    </View>
-                  );
-                })}
-              </>
-            );
-          }
-          return activity.instructions.map((step, i) => (
-            <View wrap={false} key={i} style={styles.instructionRow}>
-              {/* Checkbox */}
-              <View style={styles.instructionCheckbox} />
-              {/* Numbered bullet */}
-              <View style={bulletBgStyle}>
-                <Text style={bulletTextStyle}>{i + 1}</Text>
-              </View>
-              <Text style={styles.instructionText}>{step}</Text>
-            </View>
-          ));
-        })()}
-
-        {/* Work area — dotted lines */}
-        <View style={styles.workArea}>
-          <Text style={styles.workAreaLabel}>Write your answer here:</Text>
-          {Array.from({ length: workLines }, (_, i) => (
-            <View key={i} style={styles.workLine} />
-          ))}
-        </View>
-
-        {/* Bonus challenge */}
-        <View wrap={false} style={styles.bonusChallengeBox}>
-          <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
-          <Text style={styles.bonusChallengeText}>
-            {bonusChallenge(activity.subject, activity.title)}
-          </Text>
-        </View>
-
-        {/* Answer key */}
-        {activity.answer_key && (
-          <View wrap={false} style={styles.answerKeyBox}>
-            <Text style={styles.answerKeyHeader}>
-              FOR GROWN-UPS ONLY
-            </Text>
-            <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
-          </View>
-        )}
-      </View>
-    </Page>
+    <WorksheetTemplate
+      activity={activity}
+      colors={colors}
+      childName={childName}
+      mascotImageUrl={mascotImageUrl}
+    />
   );
 }
 
