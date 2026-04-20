@@ -849,7 +849,7 @@ function CoverPage({
 
         {/* Title banner strip */}
         <View style={styles.titleBanner}>
-          <Text style={styles.packetTitle} adjustsFontSizeToFit={true}>{title}</Text>
+          <Text style={styles.packetTitle}>{title}</Text>
         </View>
 
         <Text style={styles.packetSubtitle}>
