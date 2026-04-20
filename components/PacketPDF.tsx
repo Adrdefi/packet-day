@@ -808,6 +808,107 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
+
+  // ── Math structured sections (Template A — math subject) ────────────────────
+  mathSectionBar: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginBottom: 8,
+    marginTop: 10,
+  },
+  mathSectionBarText: {
+    fontSize: 8,
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    color: C.white,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  mathCalcGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 4,
+  },
+  mathCalcCell: {
+    width: '50%',
+    paddingHorizontal: 4,
+    paddingBottom: 12,
+  },
+  mathCalcNumber: {
+    fontSize: 9,
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    color: C.muted,
+    marginRight: 6,
+    marginTop: 2,
+  },
+  mathCalcEquation: {
+    fontSize: 11.5,
+    color: C.dark,
+    fontFamily: 'Nunito',
+    flex: 1,
+  },
+  mathCalcAnswerLine: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#9CA3AF',
+    width: 80,
+    marginTop: 8,
+  },
+  mathWordBox: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  mathWordText: {
+    fontSize: 11,
+    color: C.dark,
+    lineHeight: 1.55,
+    marginBottom: 6,
+  },
+  mathDrawPromptBubble: {
+    borderWidth: 1.5,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: C.white,
+    marginBottom: 8,
+  },
+  mathDrawPromptText: {
+    fontSize: 11,
+    color: C.dark,
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    lineHeight: 1.55,
+  },
+  mathDrawBox: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    minHeight: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  mathDrawBoxLabel: {
+    fontSize: 10,
+    color: '#C4C9D4',
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+  },
+  mathAnswerLineLabel: {
+    fontSize: 10,
+    color: C.muted,
+    fontFamily: 'Nunito',
+    marginBottom: 4,
+  },
+  mathAnswerLine: {
+    borderBottomWidth: 1.5,
+    borderBottomStyle: 'dotted',
+    borderBottomColor: '#D1D5DB',
+  },
 });
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
@@ -912,8 +1013,95 @@ function ActivityTopBar({
   );
 }
 
+// ── Math section renderer ─────────────────────────────────────────────────────
+// Parses the 3 labeled sections produced by the math activity prompt and renders
+// each with a distinct visual treatment.
+
+function MathSections({
+  instructions,
+  colors,
+}: {
+  instructions: string[];
+  colors: (typeof ACTIVITY_COLORS)[0];
+}) {
+  let quickCalcsLabel = 'Quick Calculations';
+  let quickCalcs: string[] = [];
+  let wordProblems: string[] = [];
+  let drawAndSolve = '';
+
+  for (const step of instructions) {
+    const colonIdx = step.indexOf(':');
+    if (colonIdx === -1) continue;
+    const label = step.slice(0, colonIdx).trim();
+    const rest = step.slice(colonIdx + 1).trim();
+
+    if (step.includes('QUICK CALCULATIONS')) {
+      quickCalcsLabel = label;
+      // Strip optional "Solve these problems:" sub-header if Claude added one
+      const cleaned = rest.replace(/^solve these problems:\s*/i, '');
+      quickCalcs = cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
+    } else if (step.includes('WORD PROBLEMS')) {
+      wordProblems = rest.split(' / ').map((s) => s.trim()).filter(Boolean);
+    } else if (step.includes('DRAW & SOLVE')) {
+      drawAndSolve = rest;
+    }
+  }
+
+  return (
+    <>
+      {/* ── Section 1: Quick Calculations — 2-column grid ── */}
+      <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+        <Text style={styles.mathSectionBarText}>{quickCalcsLabel}</Text>
+      </View>
+      <View style={styles.mathCalcGrid}>
+        {quickCalcs.map((prob, i) => (
+          <View key={i} style={styles.mathCalcCell}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Text style={styles.mathCalcNumber}>{i + 1}.</Text>
+              <Text style={styles.mathCalcEquation}>{prob}</Text>
+            </View>
+            <View style={styles.mathCalcAnswerLine} />
+          </View>
+        ))}
+      </View>
+
+      {/* ── Section 2: Word Problems — shaded boxes with answer lines ── */}
+      <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+        <Text style={styles.mathSectionBarText}>Word Problems</Text>
+      </View>
+      {wordProblems.map((prob, i) => (
+        <View wrap={false} key={i} style={styles.mathWordBox}>
+          <Text style={styles.mathWordText}>{prob}</Text>
+          <View style={styles.answerLineInBox} />
+          <View style={styles.answerLineInBox} />
+        </View>
+      ))}
+
+      {/* ── Section 3: Draw & Solve — prompt bubble + draw box + answer line ── */}
+      {drawAndSolve !== '' && (
+        <>
+          <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+            <Text style={styles.mathSectionBarText}>Draw & Solve</Text>
+          </View>
+          <View wrap={false}>
+            <View style={styles.mathDrawPromptBubble}>
+              <Text style={styles.mathDrawPromptText}>{drawAndSolve}</Text>
+            </View>
+            <View style={styles.mathDrawBox}>
+              <Text style={styles.mathDrawBoxLabel}>Draw here</Text>
+            </View>
+            <Text style={styles.mathAnswerLineLabel}>My answer:</Text>
+            <View style={styles.mathAnswerLine} />
+          </View>
+        </>
+      )}
+    </>
+  );
+}
+
 // ── Template A — Worksheet (math, science, general) ──────────────────────────
-// Each instruction step in its own shaded box with 3 inline answer lines.
+// Math activities: structured 3-section rendering via MathSections.
+// All other subjects: each instruction step in its own shaded box with 3 answer lines.
 
 function WorksheetTemplate({
   activity,
@@ -947,22 +1135,28 @@ function WorksheetTemplate({
           <Text style={styles.descriptionText}>{activity.description}</Text>
         </View>
 
-        {/* Instructions — each question in its own shaded box with 3 answer lines */}
-        <Text style={styles.instructionsLabel}>How to do it</Text>
-        {activity.instructions.map((step, i) => (
-          <View wrap={false} key={i} style={styles.questionBox}>
-            <View style={[styles.instructionRow, { marginBottom: 0 }]}>
-              <View style={styles.instructionCheckbox} />
-              <View style={bulletBgStyle}>
-                <Text style={bulletTextStyle}>{i + 1}</Text>
+        {/* Instructions — math gets structured sections; everything else gets shaded boxes */}
+        {activity.subject.toLowerCase().includes('math') ? (
+          <MathSections instructions={activity.instructions} colors={colors} />
+        ) : (
+          <>
+            <Text style={styles.instructionsLabel}>How to do it</Text>
+            {activity.instructions.map((step, i) => (
+              <View wrap={false} key={i} style={styles.questionBox}>
+                <View style={[styles.instructionRow, { marginBottom: 0 }]}>
+                  <View style={styles.instructionCheckbox} />
+                  <View style={bulletBgStyle}>
+                    <Text style={bulletTextStyle}>{i + 1}</Text>
+                  </View>
+                  <Text style={styles.instructionText}>{step}</Text>
+                </View>
+                <View style={styles.answerLineInBox} />
+                <View style={styles.answerLineInBox} />
+                <View style={styles.answerLineInBox} />
               </View>
-              <Text style={styles.instructionText}>{step}</Text>
-            </View>
-            <View style={styles.answerLineInBox} />
-            <View style={styles.answerLineInBox} />
-            <View style={styles.answerLineInBox} />
-          </View>
-        ))}
+            ))}
+          </>
+        )}
 
         {/* Bonus challenge */}
         <View wrap={false} style={styles.bonusChallengeBox}>
