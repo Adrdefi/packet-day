@@ -4,7 +4,7 @@ import Navbar from "@/components/landing/Navbar";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
-import EmailCapture from "@/components/landing/EmailCapture";
+// import EmailCapture from "@/components/landing/EmailCapture";
 
 export const metadata: Metadata = {
   title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
@@ -543,7 +543,7 @@ export default function Home() {
         </section>
 
         {/* ── EMAIL CAPTURE ─────────────────────────────────────────────────── */}
-        <EmailCapture />
+        {/* <EmailCapture /> */}
 
         {/* ── FOOTER ────────────────────────────────────────────────────────── */}
         <footer className="bg-dark px-6 py-14">
