@@ -63,6 +63,14 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
+            {/* Desktop Sign In */}
+            <Link
+              href="/login"
+              className="hidden md:inline-flex shrink-0 border-2 border-sage text-sage text-sm font-bold px-5 py-3 rounded-full hover:bg-sage hover:text-cream transition-colors"
+            >
+              Sign In
+            </Link>
+
             {/* Desktop CTA */}
             <Link
               href="/signup"
