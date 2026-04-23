@@ -370,7 +370,6 @@ function ResultView({
   async function downloadPDF() {
     setDownloading(true);
     try {
-      toast.error(`UA: ${navigator.userAgent.slice(0, 80)}`);
       // iOS Safari doesn't support the `download` attribute on anchor tags.
       // Detect iOS and navigate directly to the API URL — bypasses the blob
       // entirely and lets Safari open the PDF natively.
