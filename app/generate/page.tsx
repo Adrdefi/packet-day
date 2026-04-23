@@ -370,30 +370,30 @@ function ResultView({
   async function downloadPDF() {
     setDownloading(true);
     try {
-      const res = await fetch(`/api/generate-pdf?packetId=${packet.id}`);
-      if (!res.ok) throw new Error("PDF generation failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const filename =
-        res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ??
-        "packet.pdf";
-
       // iOS Safari doesn't support the `download` attribute on anchor tags.
-      // Detect iOS and fall back to opening the PDF in a new tab.
+      // Detect iOS and navigate directly to the API URL — bypasses the blob
+      // entirely and lets Safari open the PDF natively.
       const isIOS =
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
       if (isIOS) {
-        window.open(url, "_blank");
+        window.location.href = `/api/generate-pdf?packetId=${packet.id}`;
       } else {
+        const res = await fetch(`/api/generate-pdf?packetId=${packet.id}`);
+        if (!res.ok) throw new Error("PDF generation failed");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const filename =
+          res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ??
+          "packet.pdf";
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
         a.click();
+        // Delay revoke so the browser has time to open it
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
-      // Delay revoke so the browser has time to open it
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch {
       toast.error("Couldn't build the PDF right now. Try again, or use the Print button as a backup.");
     } finally {
