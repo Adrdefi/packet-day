@@ -21,6 +21,7 @@ function PacketRow({
   childEmoji: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   async function copyShareLink() {
     const url = `${window.location.origin}/packets/${packet.share_token}`;
@@ -58,9 +59,10 @@ function PacketRow({
             href={packet.pdf_url}
             target="_blank"
             rel="noopener noreferrer"
+            title={isIOS ? "Opens in Safari — tap share to save" : "Download PDF"}
             className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 px-3 py-2.5 rounded-lg transition-colors"
           >
-            PDF ↓
+            {isIOS ? "Open PDF" : "PDF ↓"}
           </a>
         )}
         <button
