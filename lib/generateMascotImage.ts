@@ -1,14 +1,27 @@
 // Server-side only. Generates mascot and coloring images via Replicate.
 // Returns null on any failure so it never blocks packet delivery.
 //
+// ── Models ────────────────────────────────────────────────────────────────────
+// Mascot:        black-forest-labs/flux-schnell  (unpinned deployment)
+//                Fast, vibrant cartoon output.
+// Coloring page: recraft-ai/recraft-v3 pinned to version 9507e61d...
+//                style="digital_illustration" (base style). Chosen via
+//                comparison test (2026-07-24): cleaner coloring-book output
+//                than hand_drawn_outline, which returned colored artwork.
+//                Sharp grayscale post-processing strips residual color tinting.
+//                Confirmed style enum for this version: any, realistic_image,
+//                realistic_image/{b_and_w,hard_flash,hdr,natural_light,
+//                studio_portrait,enterprise,motion_blur}, digital_illustration,
+//                digital_illustration/{pixel_art,hand_drawn,grain,
+//                infantile_sketch,2d_art_poster,handmade_3d,hand_drawn_outline,
+//                engraving_color,2d_art_poster_2}. No vector_illustration subtree.
+//
 // ── Diagnosed skip conditions (2026-07-24) ──────────────────────────────────
-// 1. SILENT: mascot_description null/empty — was returning null with no log,
-//    making it impossible to diagnose in production. Now logs a warning.
-// 2. TIMEOUT: sequential generation + 2 s sleep inside after() exceeded
-//    Vercel Hobby's 10 s after() cap. Fixed by running both in parallel.
+// 1. SILENT: mascot_description null/empty — was returning null with no log.
+// 2. TIMEOUT: old sequential gen + 2 s sleep inside after() exceeded Vercel
+//    Hobby's 10 s cap. Fixed by parallel generation. (Not an issue on Pro.)
 // 3. CRASH: missing SUPABASE_SERVICE_ROLE_KEY caused createServiceClient()
-//    to throw inside after(), aborting before any DB write. Caller now guards
-//    for this before invoking these functions.
+//    to throw inside after(). Caller now guards before scheduling after().
 
 import Replicate from "replicate";
 import sharp from "sharp";
@@ -25,10 +38,60 @@ function getReplicate(): Replicate {
   return _replicate;
 }
 
-const COLOR_WORDS = /\b(orange|blue|green|red|yellow|purple|brown|pink|gold|silver|white|black|rainbow)\b/gi;
+// ─── Model constants ──────────────────────────────────────────────────────────
+
+const FLUX_SCHNELL = "black-forest-labs/flux-schnell";
+
+// Pinned so a recraft update can't silently break coloring page output.
+// Version created 2025-11-07. Re-pin when a new version is verified.
+const RECRAFT_V3 =
+  "recraft-ai/recraft-v3:9507e61ddace8b3a238371b17a61be203747c5081ea6070fecd3c40d27318922";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const COLOR_WORDS =
+  /\b(orange|blue|green|red|yellow|purple|brown|pink|gold|silver|white|black|rainbow)\b/gi;
 
 function stripColors(description: string): string {
   return description.replace(COLOR_WORDS, "").replace(/\s{2,}/g, " ").trim();
+}
+
+/**
+ * Race a promise against a hard timeout.
+ * Replicate E9828 "Director" errors hang for 107 s before the platform gives
+ * up on its own. 60 s lets us fail fast, log it, and move on.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error(`${label}: timed out after ${ms / 1000}s`)),
+      ms
+    )
+  );
+  return Promise.race([promise, timeout]);
+}
+
+const REPLICATE_TIMEOUT_MS = 60_000;
+const RETRY_DELAY_MS = 3_000;
+
+/**
+ * Try `fn` once; if it throws, wait RETRY_DELAY_MS and try once more.
+ * Both attempts are logged distinctly so Vercel logs make the retry visible.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (firstErr) {
+    console.warn(`[${label}] Attempt 1 failed — retrying in ${RETRY_DELAY_MS / 1000}s`, {
+      reason: firstErr instanceof Error ? firstErr.message : String(firstErr),
+    });
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    // Let any error from attempt 2 propagate to the caller
+    return await fn();
+  }
 }
 
 /** Fetch a Replicate output URL and return it as a base64 data URL. */
@@ -46,13 +109,12 @@ async function fetchAsDataUrl(url: string): Promise<string> {
 /** Extract a URL string from whatever Replicate returns (FileOutput or string). */
 function extractUrl(output: unknown): string | null {
   if (!output) return null;
-  // Array output (most image models)
   const first = Array.isArray(output) ? output[0] : output;
   if (!first) return null;
   // FileOutput.toString() returns the URL in replicate SDK v1+
   const url = String(first);
   if (!url.startsWith("http")) {
-    console.error("[generateMascotImage] Unexpected output format — not a URL", {
+    console.error("[replicate] Unexpected output format — not a URL", {
       type: typeof first,
       preview: url.slice(0, 120),
     });
@@ -61,9 +123,18 @@ function extractUrl(output: unknown): string | null {
   return url;
 }
 
+// ─── Coloring page ────────────────────────────────────────────────────────────
+
 /**
- * Generates a coloring-page B&W image from a mascot description.
- * Uses flux-schnell with heavy coloring-book prompt constraints.
+ * Generates a B&W coloring-page image via recraft-v3.
+ *
+ * Style: "digital_illustration" (base style). Comparison testing (2026-07-24)
+ * showed this produces the cleanest coloring-book output with a strong
+ * black-outline prompt — better than hand_drawn_outline, which returned
+ * colored artwork despite the name.
+ *
+ * Sharp grayscale post-processing is applied as a safety net to strip any
+ * residual color tinting before the image reaches the PDF.
  */
 export async function generateColoringImage(
   mascotDescription: string | null | undefined
@@ -79,39 +150,55 @@ export async function generateColoringImage(
 
   const stripped = stripColors(mascotDescription.trim());
   const prompt =
-    `children's coloring book line art of ${stripped}, ` +
-    `thick bold black outlines, pure white background, no color, no shading, ` +
-    `no grey, no gradients, flat white fills, simple clean cartoon outline style, ` +
-    `black and white only, ready to color with crayons`;
+    `black and white coloring book page for children featuring ${stripped}, ` +
+    `clean black outlines only, no color, no shading, no fill, ` +
+    `pure white background, thick bold lines, simple shapes, ` +
+    `kid-friendly line art ready to color`;
 
   const startMs = Date.now();
 
-  try {
-    const output = await getReplicate().run("black-forest-labs/flux-schnell", {
-      input: {
-        prompt,
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "png",
-        output_quality: 100,
-      },
-    });
+  const attempt = async () => {
+    const output = await withTimeout(
+      getReplicate().run(RECRAFT_V3 as `${string}/${string}:${string}`, {
+        input: {
+          prompt,
+          style: "digital_illustration",
+          size: "1024x1024",
+        },
+      }),
+      REPLICATE_TIMEOUT_MS,
+      "generateColoringImage"
+    );
 
     const url = extractUrl(output);
-    if (!url) return null;
+    if (!url) throw new Error("No URL in Replicate output");
+    return url;
+  };
+
+  try {
+    console.warn("[generateColoringImage] Attempt 1 starting");
+    const url = await withRetry(attempt, "generateColoringImage");
+    const elapsed = Date.now() - startMs;
+    console.warn(`[generateColoringImage] Succeeded in ${elapsed}ms`);
 
     const imgResponse = await fetch(url);
+    if (!imgResponse.ok) {
+      throw new Error(`Fetch failed: ${imgResponse.status} ${imgResponse.statusText}`);
+    }
     const arrayBuffer = await imgResponse.arrayBuffer();
 
-    const pngBuffer = await sharp(Buffer.from(arrayBuffer))
+    // Gentle grayscale — strips residual color tinting without destroying
+    // tonal detail the way a hard threshold would.
+    const grayBuffer = await sharp(Buffer.from(arrayBuffer))
       .grayscale()
-      .linear(1.8, -(128 * 1.8 - 128))
       .png()
       .toBuffer();
 
-    return `data:image/png;base64,${pngBuffer.toString("base64")}`;
+    const base64 = grayBuffer.toString("base64");
+    console.warn(`[generateColoringImage] Grayscale pass complete, total ${Date.now() - startMs}ms`);
+    return `data:image/png;base64,${base64}`;
   } catch (err) {
-    console.error("[generateColoringImage] Failed", {
+    console.error("[generateColoringImage] Both attempts failed", {
       message: err instanceof Error ? err.message : String(err),
       elapsedMs: Date.now() - startMs,
     });
@@ -119,10 +206,11 @@ export async function generateColoringImage(
   }
 }
 
+// ─── Mascot image ─────────────────────────────────────────────────────────────
+
 /**
- * Generates a mascot image from a description string.
- * Uses black-forest-labs/flux-schnell.
- * Returns a base64 data URL, or null if generation fails.
+ * Generates a colourful cartoon mascot image via flux-schnell.
+ * Returns a base64 data URL, or null if both attempts fail.
  */
 export async function generateMascotImage(
   mascotDescription: string | null | undefined
@@ -142,44 +230,57 @@ export async function generateMascotImage(
 
   const startMs = Date.now();
 
-  try {
-    const output = await getReplicate().run("black-forest-labs/flux-schnell", {
-      input: {
-        prompt,
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "png",
-        output_quality: 80,
-      },
-    });
+  const attempt = async () => {
+    const output = await withTimeout(
+      getReplicate().run(FLUX_SCHNELL as `${string}/${string}`, {
+        input: {
+          prompt,
+          num_outputs: 1,
+          aspect_ratio: "1:1",
+          output_format: "png",
+          output_quality: 80,
+        },
+      }),
+      REPLICATE_TIMEOUT_MS,
+      "generateMascotImage"
+    );
 
     const url = extractUrl(output);
-    if (!url) return null;
+    if (!url) throw new Error("No URL in Replicate output");
+    return url;
+  };
+
+  try {
+    console.warn("[generateMascotImage] Attempt 1 starting");
+    const url = await withRetry(attempt, "generateMascotImage");
+    const elapsed = Date.now() - startMs;
+    console.warn(`[generateMascotImage] Succeeded in ${elapsed}ms`);
 
     try {
       return await fetchAsDataUrl(url);
     } catch (fetchErr) {
-      // URL fetch failed — return the direct Replicate URL as a last resort.
-      // Note: Replicate URLs expire after ~1 hour.
+      // Return the direct URL as a fallback — it expires in ~1 hour but
+      // that's long enough to render the PDF for the current session.
       console.error("[generateMascotImage] Base64 fetch failed — using direct URL", {
         message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
       });
       return url;
     }
   } catch (err) {
-    console.error("[generateMascotImage] Exception", {
+    console.error("[generateMascotImage] Both attempts failed", {
       message: err instanceof Error ? err.message : String(err),
       elapsedMs: Date.now() - startMs,
-      status: (err as { status?: number }).status,
     });
     return null;
   }
 }
 
+// ─── Parallel generation ──────────────────────────────────────────────────────
+
 /**
  * Generates mascot and coloring images in parallel.
- * Replaces the old sequential pattern (mascot → 2 s sleep → coloring)
- * which consistently timed out on Vercel Hobby after() tasks.
+ * Both calls run concurrently so the total time is max(mascot, coloring),
+ * not mascot + coloring.
  */
 export async function generateBothImages(
   mascotDescription: string | null | undefined
