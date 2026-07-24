@@ -40,14 +40,31 @@ export interface Child {
 
 // ─── Packet content ───────────────────────────────────────────────────────────
 
+/**
+ * Controls how the PDF layer renders the response area for an activity.
+ * Set by Claude in each activity; the PDF templates route on this value.
+ * Old packets without this field fall back to subject-keyword heuristics.
+ */
+export type ContentType =
+  | "reading_passage"   // passage field + comprehension questions
+  | "worksheet"         // discrete answerable steps (math, science, history)
+  | "writing_prompt"    // open-ended writing — renders ruled lines
+  | "movement_activity" // PE/physical — renders a small "How did it go?" box
+  | "coloring";         // art/craft — renders a large open draw box
+
 export interface PacketActivity {
   subject: string;
+  /** Explicit layout selector set by the AI. Optional for backwards compat. */
+  content_type?: ContentType;
+  /** Full reading passage text. Only set when content_type === "reading_passage". */
+  passage?: string | null;
   title: string;
   description: string;
   instructions: string[];
   estimated_minutes: number;
   materials?: string[];
   answer_key?: string | null;
+  encouragement?: string;
 }
 
 export interface PacketColoringPage {

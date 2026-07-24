@@ -3,6 +3,7 @@
 
 import path from 'path';
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { ContentType } from "@/types";
 
 Font.register({
   family: 'Nunito',
@@ -45,6 +46,8 @@ const ACTIVITY_COLORS = [
 
 export interface PDFActivity {
   subject: string;
+  content_type?: ContentType;
+  passage?: string | null;
   title: string;
   description: string;
   instructions: string[];
@@ -81,8 +84,75 @@ export interface PacketPDFProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function stripNonAscii(text: string): string {
-  return text.replace(/[^\x00-\x7F]/g, '');
+/**
+ * Strip emoji and non-renderable Unicode from text before PDF rendering.
+ * Nunito covers Latin + Latin-Extended but not emoji blocks.
+ *
+ * Removed ranges:
+ *  - Surrogate pairs (UTF-16 encoding of U+1F000+ emoji)
+ *  - Misc symbols / dingbats (U+2600–U+27BF)
+ *  - Supplemental arrows / misc technical (U+2B00–U+2BFF)
+ *  - Variation selectors (U+FE00–U+FE0F)
+ *  - Zero-width characters and BOM (U+200B–U+200D, U+FEFF)
+ *  - Combining enclosing keycap (U+20E3)
+ *
+ * Math symbols ÷ (U+00F7) and × (U+00D7) are in Latin-1 Supplement which
+ * Nunito covers, but the prompt now uses "x" / "divided by" instead, so
+ * this function doesn't need to remap them.
+ */
+function sanitizeText(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")   // surrogate pairs (emoji U+1F000+)
+    .replace(/[\u2600-\u27BF]/g, "")                    // misc symbols, dingbats
+    .replace(/[\u2B00-\u2BFF]/g, "")                    // supplemental arrows / misc tech
+    .replace(/[\uFE00-\uFE0F]/g, "")                    // variation selectors
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")              // ZWJ, ZWNJ, BOM
+    .replace(/\u20E3/g, "")                             // combining enclosing keycap
+    .trim();
+}
+
+/**
+ * Parse the child's grade string ("Kindergarten" or "Grade N") into a
+ * three-band string used for layout decisions (line counts, answer space).
+ */
+function getGradeBand(childGrade: string): "K-2" | "3-5" | "6-8" {
+  if (childGrade === "Kindergarten") return "K-2";
+  const match = childGrade.match(/\d+/);
+  const g = match ? parseInt(match[0], 10) : 3;
+  if (g <= 2) return "K-2";
+  if (g <= 5) return "3-5";
+  return "6-8";
+}
+
+/** How many ruled writing lines to render in a writing-prompt activity. */
+function writingLineCount(band: "K-2" | "3-5" | "6-8"): number {
+  return band === "K-2" ? 12 : band === "3-5" ? 16 : 20;
+}
+
+/** How many answer lines to render under each worksheet question. */
+function worksheetAnswerLines(band: "K-2" | "3-5" | "6-8"): number {
+  return band === "K-2" ? 2 : band === "3-5" ? 3 : 4;
+}
+
+/**
+ * Determine the content type for an activity.
+ * Uses the explicit content_type field when present (new packets).
+ * Falls back to subject-keyword heuristics for old packets that predate
+ * the content_type field.
+ */
+function resolveContentType(activity: PDFActivity): ContentType {
+  if (activity.content_type) return activity.content_type;
+
+  const s = activity.subject.toLowerCase();
+  if (s.includes("reading") || s.includes("comprehension")) return "reading_passage";
+  if (
+    s.includes("writing") || s.includes("journal") ||
+    s.includes("story") || s.includes("creative")
+  ) return "writing_prompt";
+  if (s.includes("art") || s.includes("coloring") || s.includes("drawing")) return "coloring";
+  if (s.includes("pe") || s.includes("movement") || s.includes("exercise")) return "movement_activity";
+  return "worksheet";
 }
 
 // Twemoji CDN PNG icons — rendered via react-pdf Image so emoji glyphs are not needed
@@ -923,6 +993,31 @@ const styles = StyleSheet.create({
     borderBottomColor: '#D1D5DB',
   },
 
+  // ── Movement activity reflection box ────────────────────────────────────────
+  movementReflectionBox: {
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  movementReflectionLabel: {
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    fontSize: 9,
+    color: C.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  movementReflectionLines: {
+    borderBottomWidth: 1,
+    borderBottomStyle: 'dotted' as const,
+    borderBottomColor: '#D1D5DB',
+    marginBottom: 22,
+  },
+
   // ── Mid-page mascot encouragement strip ─────────────────────────────────────
   midPageEncouragement: {
     flexDirection: 'row',
@@ -1058,7 +1153,7 @@ function CoverPage({
 
         {/* Title banner strip */}
         <View style={styles.titleBanner}>
-          <Text style={styles.packetTitle}>{title}</Text>
+          <Text style={styles.packetTitle}>{sanitizeText(title)}</Text>
         </View>
 
         <Text style={styles.packetSubtitle}>
@@ -1068,7 +1163,7 @@ function CoverPage({
         {/* Greeting box */}
         <View style={styles.greetingBox}>
           <Text style={styles.greetingText}>
-            {greeting || greetingMessage(childName, theme)}
+            {sanitizeText(greeting) || greetingMessage(childName, theme)}
           </Text>
         </View>
       </View>
@@ -1113,7 +1208,7 @@ function ActivityTopBar({
             <Image src={getSubjectIconUrl(activity.subject)} style={styles.subjectIcon} />
             <Text style={styles.activityBarSubject}>{activity.subject}</Text>
           </View>
-          <Text style={styles.activityBarTitle}>{activity.title}</Text>
+          <Text style={styles.activityBarTitle}>{sanitizeText(activity.title)}</Text>
         </View>
         <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
         {mascotImageUrl && (
@@ -1123,7 +1218,7 @@ function ActivityTopBar({
       {mascotImageUrl && (
         <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
           <Text style={styles.mascotSpeechText}>
-            {activity.encouragement || `Let's go, ${childName}! You've got this!`}
+            {sanitizeText(activity.encouragement) || `Let's go, ${childName}! You've got this!`}
           </Text>
         </View>
       )}
@@ -1196,9 +1291,13 @@ function MathSections({
       quickCalcsLabel = label;
       // Strip optional "Solve these problems:" sub-header if Claude added one
       const cleaned = rest.replace(/^solve these problems:\s*/i, '');
-      quickCalcs = cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
+      // New packets use ' || ' separator; old packets used ' / '.
+      // Try || first; fall back to / so old stored packets still render.
+      const byPipe = cleaned.split(' || ').map((s) => s.trim()).filter(Boolean);
+      quickCalcs = byPipe.length > 1 ? byPipe : cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
     } else if (step.includes('WORD PROBLEMS')) {
-      wordProblems = rest.split(' / ').map((s) => s.trim()).filter(Boolean);
+      const byPipe = rest.split(' || ').map((s) => s.trim()).filter(Boolean);
+      wordProblems = byPipe.length > 1 ? byPipe : rest.split(' / ').map((s) => s.trim()).filter(Boolean);
     } else if (step.includes('DRAW & SOLVE')) {
       drawAndSolve = rest;
     }
@@ -1264,15 +1363,19 @@ function WorksheetTemplate({
   activity,
   colors,
   childName,
+  childGrade,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
   colors: (typeof ACTIVITY_COLORS)[0];
   childName: string;
+  childGrade: string;
   mascotImageUrl?: string | null;
 }) {
   const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
   const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
+  const band = getGradeBand(childGrade);
+  const answerLines = worksheetAnswerLines(band);
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
@@ -1289,7 +1392,7 @@ function WorksheetTemplate({
 
         {/* Description */}
         <View wrap={false} style={[styles.descriptionBox, { backgroundColor: C.white, borderLeftColor: colors.bar }]}>
-          <Text style={styles.descriptionText}>{activity.description}</Text>
+          <Text style={styles.descriptionText}>{sanitizeText(activity.description)}</Text>
         </View>
 
         {/* Instructions — math gets structured sections; everything else gets shaded boxes */}
@@ -1307,11 +1410,11 @@ function WorksheetTemplate({
                   <View style={bulletBgStyle}>
                     <Text style={bulletTextStyle}>{i + 1}</Text>
                   </View>
-                  <Text style={styles.instructionText}>{step}</Text>
+                  <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
                 </View>
-                <View style={styles.answerLineInBox} />
-                <View style={styles.answerLineInBox} />
-                <View style={styles.answerLineInBox} />
+                {Array.from({ length: answerLines }, (_, j) => (
+                  <View key={j} style={styles.answerLineInBox} />
+                ))}
               </View>
             ))}
           </>
@@ -1335,7 +1438,7 @@ function WorksheetTemplate({
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
             <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
-            <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
+            <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
       </View>
@@ -1361,9 +1464,20 @@ function ReadingTemplate({
   const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
   const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
 
-  const passageIndex = activity.instructions.findIndex((s) => s.length > 200);
-  const passage = passageIndex !== -1 ? activity.instructions[passageIndex] : null;
-  const questions = activity.instructions.filter((_, i) => i !== passageIndex);
+  // Prefer the explicit passage field (new packets).
+  // Fall back to the length-heuristic for old packets that embedded the
+  // passage as the longest instruction entry.
+  let passage: string | null = null;
+  let questions: string[];
+
+  if (activity.passage) {
+    passage = activity.passage;
+    questions = activity.instructions;
+  } else {
+    const passageIndex = activity.instructions.findIndex((s) => s.length > 200);
+    passage = passageIndex !== -1 ? activity.instructions[passageIndex] : null;
+    questions = activity.instructions.filter((_, i) => i !== passageIndex);
+  }
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
@@ -1380,9 +1494,9 @@ function ReadingTemplate({
 
         {/* Reading passage — cream bg + activity-color left border */}
         {passage && (
-          <View wrap={false} style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
+          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
             <Text style={styles.readingPassageLabel}>{"[ Read This ]"}</Text>
-            <Text style={styles.readingPassageText}>{passage}</Text>
+            <Text style={styles.readingPassageText}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
@@ -1397,7 +1511,7 @@ function ReadingTemplate({
               <View style={bulletBgStyle}>
                 <Text style={bulletTextStyle}>{i + 1}</Text>
               </View>
-              <Text style={styles.instructionText}>{stripNonAscii(step)}</Text>
+              <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
             </View>
             <View style={styles.answerLineInBox} />
             <View style={styles.answerLineInBox} />
@@ -1414,7 +1528,7 @@ function ReadingTemplate({
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
             <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
-            <Text style={styles.answerKeyText}>{activity.answer_key}</Text>
+            <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
       </View>
@@ -1422,27 +1536,28 @@ function ReadingTemplate({
   );
 }
 
-// ── Template C — Open Workspace (writing, art, PE, creative) ─────────────────
-// Prompt bubble with description + instructions, then maximum open space:
-// ruled writing lines for writing/journal/story, or a large draw box for art/PE.
+// ── Template C — Open Workspace (writing, movement, coloring) ────────────────
+// Response area is determined by content_type:
+//   writing_prompt  → ruled writing lines (grade-appropriate count)
+//   movement_activity → small "How did it go?" reflection box
+//   coloring        → large open draw box
 
 function OpenWorkspaceTemplate({
   activity,
   colors,
   childName,
+  childGrade,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
   colors: (typeof ACTIVITY_COLORS)[0];
   childName: string;
+  childGrade: string;
   mascotImageUrl?: string | null;
 }) {
-  const subject = activity.subject.toLowerCase();
-  const isWriting =
-    subject.includes("writing") ||
-    subject.includes("journal") ||
-    subject.includes("story") ||
-    subject.includes("creative");
+  const contentType = resolveContentType(activity);
+  const band = getGradeBand(childGrade);
+  const lineCount = writingLineCount(band);
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
@@ -1459,10 +1574,10 @@ function OpenWorkspaceTemplate({
 
         {/* Prompt bubble — description + instruction steps */}
         <View style={styles.promptBubble}>
-          <Text style={styles.promptBubbleText}>{activity.description}</Text>
+          <Text style={styles.promptBubbleText}>{sanitizeText(activity.description)}</Text>
           {activity.instructions.map((step, i) => (
             <Text key={i} style={styles.promptInstructionText}>
-              {i + 1}. {step}
+              {i + 1}. {sanitizeText(step)}
             </Text>
           ))}
         </View>
@@ -1470,15 +1585,26 @@ function OpenWorkspaceTemplate({
         {/* Mid-page mascot encouragement */}
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
 
-        {/* Writing space: ruled lines for writing, large draw box for art/PE */}
-        {isWriting ? (
+        {/* Response area — routed by content_type */}
+        {contentType === "writing_prompt" && (
           <>
             <Text style={styles.writingSpaceHeader}>My Writing Space</Text>
-            {Array.from({ length: 16 }, (_, i) => (
+            {Array.from({ length: lineCount }, (_, i) => (
               <View key={i} style={styles.writingLine} />
             ))}
           </>
-        ) : (
+        )}
+
+        {contentType === "movement_activity" && (
+          <View wrap={false} style={styles.movementReflectionBox}>
+            <Text style={styles.movementReflectionLabel}>How did it go?</Text>
+            {Array.from({ length: 3 }, (_, i) => (
+              <View key={i} style={styles.movementReflectionLines} />
+            ))}
+          </View>
+        )}
+
+        {contentType === "coloring" && (
           <View style={styles.drawBox}>
             <Text style={styles.drawBoxLabel}>Draw or write here</Text>
           </View>
@@ -1491,33 +1617,25 @@ function OpenWorkspaceTemplate({
   );
 }
 
-// ── Dispatcher — picks the right template based on subject ───────────────────
+// ── Dispatcher — picks the right template based on content_type ───────────────
 
 function ActivityPage({
   activity,
   index,
   childName,
+  childGrade,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
   index: number;
   childName: string;
+  childGrade: string;
   mascotImageUrl?: string | null;
 }) {
   const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
-  const subject = activity.subject.toLowerCase();
+  const contentType = resolveContentType(activity);
 
-  const isReading =
-    subject.includes("reading") || subject.includes("comprehension");
-  const isCreative =
-    subject.includes("writing") ||
-    subject.includes("art") ||
-    subject.includes("pe") ||
-    subject.includes("creative") ||
-    subject.includes("journal") ||
-    subject.includes("story");
-
-  if (isReading) {
+  if (contentType === "reading_passage") {
     return (
       <ReadingTemplate
         activity={activity}
@@ -1527,21 +1645,28 @@ function ActivityPage({
       />
     );
   }
-  if (isCreative) {
+  if (
+    contentType === "writing_prompt" ||
+    contentType === "movement_activity" ||
+    contentType === "coloring"
+  ) {
     return (
       <OpenWorkspaceTemplate
         activity={activity}
         colors={colors}
         childName={childName}
+        childGrade={childGrade}
         mascotImageUrl={mascotImageUrl}
       />
     );
   }
+  // "worksheet" — math, science, history
   return (
     <WorksheetTemplate
       activity={activity}
       colors={colors}
       childName={childName}
+      childGrade={childGrade}
       mascotImageUrl={mascotImageUrl}
     />
   );
@@ -1610,7 +1735,7 @@ function ParentNotesPage({
       </View>
       <View style={styles.parentNoteBox}>
         <Text style={styles.parentNoteText}>
-          {parentNotes || parentNote(childName, theme)}
+          {sanitizeText(parentNotes) || parentNote(childName, theme)}
         </Text>
       </View>
 
@@ -1685,7 +1810,7 @@ function ReflectionPage({ childName, theme, createdAt, dailyReflection }: Packet
       <View style={styles.reflectionBox}>
         <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
         <Text style={styles.reflectionText}>
-          {dailyReflection || reflectionQuestion(theme)}
+          {sanitizeText(dailyReflection) || reflectionQuestion(theme)}
         </Text>
       </View>
 
@@ -1722,6 +1847,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           activity={activity}
           index={i}
           childName={props.childName}
+          childGrade={props.childGrade}
           mascotImageUrl={props.mascotImageUrl}
         />
       ))}

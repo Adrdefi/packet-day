@@ -4,10 +4,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse, after } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
-import { generateMascotImage, generateColoringImage } from "@/lib/generateMascotImage";
+import { generateBothImages } from "@/lib/generateMascotImage";
 import { MODEL } from "@/lib/config";
-
-// Allow up to 90 seconds — streaming generation can take ~60s
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
@@ -24,34 +22,129 @@ const PACKET_LIMITS: Record<string, number> = {
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a homeschool educator creating theme-based learning packets for children K-8. Be warm, specific, and fun. Use the child's name. Weave the theme into every activity. Match grade level precisely.
+const SYSTEM_PROMPT = `<role>
+You are a curriculum writer creating printable homeschool learning packets for children K-8. Every packet must feel warm, personal, and theme-connected — as though a beloved teacher designed it specifically for this child.
+</role>
 
-GRADE CALIBRATION: K-1: very simple, visual, 10-15 min max. 2-3: concrete math, simple sentences. 4-5: multi-step problems, paragraph writing. 6-8: abstract thinking, essay prompts, algebra.
+<critical_formatting_rules>
+PLAIN TEXT ONLY in every field except mascot_emoji_cluster.
+The PDF renderer uses Nunito, a font that cannot display emoji glyphs. Any emoji outside mascot_emoji_cluster will print as a blank rectangle and ruin the packet.
 
-MASCOT: Invent a fun character name (e.g. "Rex the Dino Detective"). Write a short image-gen description: "A cute cartoon [character] [expressive pose], [theme accessories], bright colors, simple lines, white background, kid-friendly."
+Banned from all fields except mascot_emoji_cluster:
+- Emoji of any kind (faces, animals, objects, symbols, flags)
+- Unicode symbols outside standard ASCII punctuation
+- Math operators ÷ and × — write "x" for multiplication, write out "divided by" for division
 
-COLORING PAGE: A simple scene with the mascot doing something theme-related. Include the child's name in the title.
+Problem separator in Quick Calculations: use || (double pipe). NEVER use / as a separator between problems. Fractions like "3/4" are fine — the slash is part of the fraction, not a separator.
 
-EMOJI RULE: Never use emoji characters anywhere in the instructions array. Instructions must contain plain text only. Emoji may only appear in the 'emoji' field, the 'title' field, and the 'introduction' field.
+JSON output: single raw object, no markdown fences, no text before or after. Start with { end with }.
+</critical_formatting_rules>
 
-CRITICAL: The greeting field must contain zero emoji characters — no emoji whatsoever. Plain text only. No unicode symbols, no emoji, no special characters beyond standard punctuation.
+<grade_calibration>
+Match complexity exactly to the child's grade. Never mix difficulty levels within one packet.
 
-CRITICAL: The reading passage text must appear as a plain instruction step with NO dashes, NO separator lines, NO markdown formatting, NO --- characters anywhere. Do not write --- PASSAGE --- or any variation. Just write the passage text directly as the instruction content.
+K-1: Counting 1-20, letters, phonics, addition/subtraction within 10. Very short sentences (5-8 words). Simple vocabulary.
+Grade 2: Addition/subtraction within 1000, skip counting, intro to multiplication. Short paragraphs.
+Grade 3: Multiplication tables 1-10, division intro, 3-digit arithmetic. Can write 2-3 sentences independently.
+Grade 4-5: Multi-step multiplication/division, fractions, decimals, geometry. Paragraph writing. Compare/contrast reasoning.
+Grade 6-8: Algebra (one-step through two-step equations), ratios, statistics, geometry (volume, surface area). Essay-level writing. Abstract reasoning and inference.
 
-MATH ACTIVITY STRUCTURE: Every math activity's instructions array must contain exactly three labeled sections as separate entries:
-1. "[MASCOT NAME]'S QUICK CALCULATIONS: Solve these problems: [4-6 grade-appropriate arithmetic problems using ___ for blanks, separated by / ]" — pure numerical problems, no theme required, just clean arithmetic matched to grade level.
-2. "WORD PROBLEMS: [3-4 story problems starring the mascot and the theme, separated by / ]" — narrative and fun, each problem self-contained.
-3. "DRAW & SOLVE: [1 visual problem where the child draws objects, groups, a number line, or a shape to find the answer, then writes the number sentence]" — e.g. "Draw 4 groups of 3 sequins. Count them. Write the multiplication sentence: ___ x ___ = ___"
-Each section label must be in ALL CAPS at the start of the string. This structure applies ONLY to math activities.
+READING PASSAGE WORD COUNTS — match grade exactly:
+K-2:  80-150 words. Simple sentences. Familiar vocabulary. One clear main idea.
+3-5: 200-350 words. 2-4 paragraphs. Some new vocabulary (define in context).
+6-8: 400-600 words. Full multi-paragraph structure. Inference required.
 
-CRITICAL: Your entire response must be a single raw JSON object. Do NOT wrap in markdown code fences. Do NOT use \`\`\`json or \`\`\`. Do NOT include any text before or after the JSON. Start your response with { and end with }.`;
+MATH DIFFICULTY — all problems in one packet must stay in the same grade band:
+K-1:  Addition/subtraction within 10 only
+Gr 2: Addition/subtraction within 100, intro multiplication (2x, 5x, 10x)
+Gr 3: Multiplication 1-10, division intro, 3-digit addition/subtraction
+Gr 4: Long multiplication (2-digit x 2-digit), long division, fraction intro
+Gr 5: Fractions, decimals to hundredths, percentages, area/perimeter
+Gr 6: Ratios, one-step equations, integers, percent problems
+Gr 7-8: Two-step equations, linear functions, statistics, geometry volume
+</grade_calibration>
+
+<math_structure>
+APPLIES ONLY TO math activities (content_type: "worksheet", subject: "Math").
+The instructions array must contain exactly three strings:
+
+1. "[MASCOT NAME]'S QUICK CALCULATIONS: [4-6 problems separated by ||]"
+   - Pure grade-appropriate arithmetic — no theme required
+   - Separate each problem with || (double pipe), not with /
+   - Write "x" for multiplication. Write "___ divided by ___ = ___" for division.
+   - Progress from easier to harder within the section
+   - Example for Grade 3: "MAX'S QUICK CALCULATIONS: 47 + 38 = ___ || 91 - 54 = ___ || 6 x 7 = ___ || 56 divided by 8 = ___"
+
+2. "WORD PROBLEMS: [3-4 story problems separated by ||]"
+   - Narrative problems starring the mascot and today's theme
+   - Each problem self-contained and solvable with grade-level arithmetic
+   - Separate with ||
+
+3. "DRAW & SOLVE: [one visual problem]"
+   - The child draws to find the answer (groups, number line, shape, etc.)
+   - Include the answer format: "___ x ___ = ___" or "My answer: ___"
+
+Section labels in ALL CAPS at start of string. No emoji. This structure applies ONLY to math.
+</math_structure>
+
+<reading_writing_rules>
+READING ACTIVITY (content_type: "reading_passage"):
+- "passage" field: the full themed reading passage. Must meet the grade-band word count above.
+  Theme and mascot should appear in the story.
+- "instructions" array: comprehension questions ONLY — never include passage text here.
+  Include at least: 1 recall question, 1 vocabulary/inference question, 1 personal connection.
+- passage field must be a non-empty string for reading activities.
+
+WRITING ACTIVITY (content_type: "writing_prompt"):
+- "instructions" array: opening prompt sentence, then 2-3 scaffolding questions.
+  Scaffold from concrete (describe what you see) to creative (what would you do next?).
+  Invite the child to use the mascot or theme in their writing.
+- "passage" field: null (not needed for writing).
+
+SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
+- Each instruction step should be substantive — a question worth 3-5 lines of response.
+  Not just "draw a picture" — ask for observation, explanation, comparison, or prediction.
+</reading_writing_rules>
+
+<output_schema>
+{
+  "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
+  "greeting": "2-3 sentences. Warm and direct to the child. Plain text. No emoji.",
+  "mascot_name": "Fun character name — no emoji",
+  "mascot_description": "A cute cartoon [character] [action], [accessories], bright colors, simple clean lines, white background, kid-friendly illustration",
+  "mascot_emoji_cluster": "5-6 emoji representing the theme — ONLY field that may contain emoji",
+  "activities": [
+    {
+      "subject": "Math",
+      "content_type": "worksheet",
+      "title": "Activity title — no emoji",
+      "description": "One sentence summary. Plain text. No emoji.",
+      "encouragement": "Personalized hype line using the child's name. References this specific activity. No emoji. Never a generic phrase like 'You've got this!'",
+      "passage": null,
+      "instructions": ["step or question 1", "step or question 2"],
+      "estimated_minutes": 25,
+      "materials": ["pencil", "paper"],
+      "answer_key": "Parent answers or null"
+    }
+  ],
+  "coloring_page": {
+    "title": "[Name] and [Mascot] [Action] — no emoji",
+    "scene_description": "Detailed description of the coloring scene",
+    "instructions": "Encouraging instructions for the child. Plain text. No emoji."
+  },
+  "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
+  "parent_notes": "Context for the parent. Plain text. No emoji."
+}
+
+Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring"
+- reading_passage: put full passage in "passage" field, questions only in "instructions"
+- all others: "passage" must be null
+</output_schema>`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// Alias to the canonical shared type — ParsedPacketContent kept for local clarity
 type ParsedPacketContent = PacketContent;
 
-// SSE event types sent to the client
 type SSEEvent =
   | { type: "progress"; message: string }
   | { type: "complete"; packet: Record<string, unknown> }
@@ -74,65 +167,42 @@ function buildUserPrompt(
       ? "math, reading, one creative or PE activity"
       : "math, reading, writing, science or history, one creative or PE activity";
 
-  return `Create a ${packetLength === "half" ? "half day" : "full day"} learning packet for ${child.name}.
+  // Explicit reading word-count reminder keyed to grade
+  const gradeNum = child.grade_level === "K" ? 0 : parseInt(child.grade_level, 10);
+  const readingWordCount =
+    gradeNum <= 2 ? "80-150 words" : gradeNum <= 5 ? "200-350 words" : "400-600 words";
 
-CHILD PROFILE:
-- Name: ${child.name}
-- Grade: ${gradeDisplay}
-- Learning style: ${child.learning_style}
-- Favorite subjects: ${child.favorite_subjects.length > 0 ? child.favorite_subjects.join(", ") : "varied"}
-${child.special_notes ? `- About ${child.name}: ${child.special_notes}` : ""}
-${specialNotes ? `- Parent note for today: ${specialNotes}` : ""}
+  return `<child_profile>
+Name: ${child.name}
+Grade: ${gradeDisplay}
+Learning style: ${child.learning_style}
+Favorite subjects: ${child.favorite_subjects.length > 0 ? child.favorite_subjects.join(", ") : "varied"}${child.special_notes ? `\nAbout ${child.name}: ${child.special_notes}` : ""}${specialNotes ? `\nParent note for today: ${specialNotes}` : ""}
+</child_profile>
 
-TODAY'S THEME: "${theme}"
-${date ? `Date: ${date}` : ""}
+<packet_request>
+Type: ${packetLength === "half" ? "Half-day" : "Full-day"} — exactly ${activityCount} activities
+Theme: "${theme}"${date ? `\nDate: ${date}` : ""}
+Subjects to cover: ${subjectList}
+</packet_request>
 
-Create exactly ${activityCount} activities covering: ${subjectList}.
+<grade_reminders>
+Grade: ${gradeDisplay}
+Reading passage for this grade: ${readingWordCount}
+All math must stay within the ${gradeDisplay} difficulty band — do not go easier or harder.
+Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
+</grade_reminders>
 
-Return a JSON object with this exact structure:
-{
-  "packet_title": "${child.name}'s [Theme] Adventure Day",
-  "greeting": "A short, warm, exciting 2-3 sentence welcome message directly to ${child.name}",
-  "mascot_name": "A fun name for the themed character (e.g. 'Rex the Dino Detective')",
-  "mascot_description": "Detailed cartoon description for image generation: 'A cute cartoon [character] [expressive pose], [theme-appropriate accessories], bright colors, simple clean lines, white background, kid-friendly illustration'",
-  "mascot_emoji_cluster": "5-6 emojis that represent the theme (e.g. '🦕 🔍 🌋 🦴 🌿')",
-  "activities": [
-    {
-      "subject": "Math",
-      "title": "Activity title here",
-      "description": "One sentence describing the activity.",
-      "encouragement": "A short, fun, personalized hype line for ${child.name} that references this specific activity's topic — e.g. 'Time to count your treasure, ${child.name}!' or 'Show the crew your best moves, ${child.name}!' Always include ${child.name}'s name. Never use a generic phrase like 'You've got this!'",
-      "instructions": ["Step 1", "Step 2", "Step 3"],
-      "estimated_minutes": 25,
-      "materials": ["pencil", "paper"],
-      "answer_key": "Complete answers for parent, or null if not applicable"
-    }
-  ],
-  "coloring_page": {
-    "title": "${child.name} and [Mascot Name] [Do Something Fun]",
-    "scene_description": "Detailed description of a fun coloring scene starring the mascot in a themed situation",
-    "instructions": "Simple, encouraging instructions for ${child.name} to color the page"
-  },
-  "daily_reflection": "A thoughtful, age-appropriate question for ${child.name} about what they learned today",
-  "parent_notes": "Helpful context for the parent about today's activities and how to support ${child.name}"
+Create the packet now. Return only the JSON object.`;
 }
 
-INSTRUCTIONS ARRAY RULES:
-- For math activities, the instructions array must contain exactly 3 entries — one per section: Quick Calculations, Word Problems, Draw & Solve. Follow the MATH ACTIVITY STRUCTURE rule above precisely.
-- For all other subjects, each individual question or step must be its own separate entry in the instructions array.
-- Do NOT include "Write your answer here", "Bonus Challenge", or "For Grown-Ups Only" text inside the instructions array — these are handled by the PDF layout automatically.`;
-}
-
-// ─── Claude call — streams tokens, returns full accumulated text ──────────────
-// Streams tokens to the SSE controller so the connection stays alive,
-// preventing Vercel from timing out on long generations.
+// ─── Claude call — streams tokens ─────────────────────────────────────────────
 
 async function callClaude(
   userPrompt: string,
   packetLength: "half" | "full",
   onToken: (text: string) => void
 ): Promise<string> {
-  const maxTokens = packetLength === "half" ? 4500 : 6000;
+  const maxTokens = packetLength === "half" ? 4500 : 7000;
 
   const stream = getAnthropic().messages.stream({
     model: MODEL,
@@ -158,11 +228,6 @@ async function callClaude(
 }
 
 // ─── JSON extraction (balanced-brace, respects string literals) ──────────────
-//
-// The greedy regex /\{[\s\S]*\}/ takes the *last* } in the text, which can be
-// a } inside a string value (mascot descriptions, scene descriptions, etc.).
-// That gives a malformed fragment and JSON.parse throws "Unexpected token 'A'".
-// Walk character-by-character so we stop at the real closing brace instead.
 
 function extractFirstJSON(text: string): string | null {
   const start = text.indexOf("{");
@@ -188,7 +253,7 @@ function extractFirstJSON(text: string): string | null {
     }
   }
 
-  return null; // unterminated — truncated response
+  return null;
 }
 
 // ─── JSON parser ──────────────────────────────────────────────────────────────
@@ -203,7 +268,6 @@ function parsePacketJSON(text: string): ParsedPacketContent {
 
   const parsed = JSON.parse(jsonString);
 
-  // Support "packet_title" (new) and "title" (legacy) — require one of them
   const hasTitle =
     typeof parsed.packet_title === "string" ||
     typeof parsed.title === "string";
@@ -213,13 +277,11 @@ function parsePacketJSON(text: string): ParsedPacketContent {
   }
 
   const result: ParsedPacketContent = {
-    // Preserve both field names so the UI can use whichever it finds
     packet_title: parsed.packet_title,
     title: parsed.title,
     activities: parsed.activities,
   };
 
-  // Attach new fields if present (backwards-compatible — old packets won't have them)
   if (parsed.greeting) result.greeting = parsed.greeting;
   if (parsed.mascot_name) result.mascot_name = parsed.mascot_name;
   if (parsed.mascot_description) result.mascot_description = parsed.mascot_description;
@@ -242,7 +304,6 @@ function encodeSSE(event: SSEEvent): Uint8Array {
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -254,7 +315,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Validate body ──────────────────────────────────────────────────────────
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -284,7 +344,6 @@ export async function POST(req: NextRequest) {
 
   const typedPacketLength = packetLength as "half" | "full";
 
-  // ── Quota check ────────────────────────────────────────────────────────────
   const { data: profile } = await supabase
     .from("profiles")
     .select("subscription_status, packets_used_this_month")
@@ -308,7 +367,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Fetch child (ownership enforced by RLS + explicit filter) ───────────────
   const { data: child } = await supabase
     .from("children")
     .select("*")
@@ -320,7 +378,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Child not found." }, { status: 404 });
   }
 
-  // ── Build prompt ────────────────────────────────────────────────────────────
   const userPrompt = buildUserPrompt(
     child as Child,
     theme.trim(),
@@ -328,10 +385,6 @@ export async function POST(req: NextRequest) {
     specialNotes?.trim(),
     date
   );
-
-  // ── Stream response — keeps Vercel connection alive during generation ────────
-  // Auth, quota, and validation are done above as normal JSON responses.
-  // From here on, all results (success and error) are sent as SSE events.
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -342,13 +395,11 @@ export async function POST(req: NextRequest) {
       try {
         send({ type: "progress", message: `Creating ${child.name}'s packet...` });
 
-        // ── Claude generation ───────────────────────────────────────────────
         let generatedContent: ParsedPacketContent;
         let tokenCount = 0;
 
         const onToken = () => {
           tokenCount++;
-          // Send a progress ping every 200 tokens so the connection stays warm
           if (tokenCount % 200 === 0) {
             send({ type: "progress", message: "Crafting your activities..." });
           }
@@ -372,7 +423,6 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        // ── Save to DB ──────────────────────────────────────────────────────
         const { data: savedPacket, error: insertError } = await supabase
           .from("packets")
           .insert({
@@ -393,8 +443,6 @@ export async function POST(req: NextRequest) {
             message: insertError?.message,
             code: insertError?.code,
             details: insertError?.details,
-            userId: user.id,
-            childId: child.id,
           });
           send({
             type: "error",
@@ -404,40 +452,42 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        // ── Increment usage ─────────────────────────────────────────────────
         await supabase
           .from("profiles")
           .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
           .eq("id", user.id);
 
-        // ── Schedule mascot generation after response is sent ───────────────
         const packetId = savedPacket.id;
         const mascotDescription = generatedContent.mascot_description;
 
-        after(async () => {
-          const mascotImageUrl = await generateMascotImage(mascotDescription);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          const coloringImageUrl = await generateColoringImage(mascotDescription);
+        // Guard before after() so a missing env var doesn't crash the background task
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-          const updates: Record<string, string> = {};
-          if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
-          if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
-          if (Object.keys(updates).length === 0) return;
+        if (mascotDescription && supabaseUrl && serviceKey) {
+          after(async () => {
+            // Generate both images in parallel — eliminates the old sequential
+            // pattern (mascot → 2 s sleep → coloring) that timed out on Hobby.
+            const { mascotImageUrl, coloringImageUrl } = await generateBothImages(mascotDescription);
 
-          const serviceClient = createServiceClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-          );
-          const { error: updateError } = await serviceClient
-            .from("packets")
-            .update(updates)
-            .eq("id", packetId);
-          if (updateError) {
-            console.error("[generate-packet] Failed to save image URLs:", updateError.message);
-          }
-        });
+            const updates: Record<string, string> = {};
+            if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
+            if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
+            if (Object.keys(updates).length === 0) return;
 
-        // ── Send complete ───────────────────────────────────────────────────
+            const serviceClient = createServiceClient(supabaseUrl, serviceKey);
+            const { error: updateError } = await serviceClient
+              .from("packets")
+              .update(updates)
+              .eq("id", packetId);
+            if (updateError) {
+              console.error("[generate-packet] Failed to save image URLs:", updateError.message);
+            }
+          });
+        } else if (!mascotDescription) {
+          console.warn("[generate-packet] No mascot_description in generated content — skipping image generation");
+        }
+
         send({
           type: "complete",
           packet: { ...savedPacket, mascot_image_url: null },

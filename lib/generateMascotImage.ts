@@ -1,5 +1,14 @@
-// Server-side only. Generates a mascot image via Replicate and returns
-// a public URL. Returns null on any failure so it never blocks packet delivery.
+// Server-side only. Generates mascot and coloring images via Replicate.
+// Returns null on any failure so it never blocks packet delivery.
+//
+// ── Diagnosed skip conditions (2026-07-24) ──────────────────────────────────
+// 1. SILENT: mascot_description null/empty — was returning null with no log,
+//    making it impossible to diagnose in production. Now logs a warning.
+// 2. TIMEOUT: sequential generation + 2 s sleep inside after() exceeded
+//    Vercel Hobby's 10 s after() cap. Fixed by running both in parallel.
+// 3. CRASH: missing SUPABASE_SERVICE_ROLE_KEY caused createServiceClient()
+//    to throw inside after(), aborting before any DB write. Caller now guards
+//    for this before invoking these functions.
 
 import Replicate from "replicate";
 import sharp from "sharp";
@@ -18,34 +27,53 @@ function getReplicate(): Replicate {
 
 const COLOR_WORDS = /\b(orange|blue|green|red|yellow|purple|brown|pink|gold|silver|white|black|rainbow)\b/gi;
 
-/**
- * Strips common color words from a description string.
- * Used to produce a neutral description for B&W coloring page generation.
- */
 function stripColors(description: string): string {
   return description.replace(COLOR_WORDS, "").replace(/\s{2,}/g, " ").trim();
 }
 
+/** Fetch a Replicate output URL and return it as a base64 data URL. */
+async function fetchAsDataUrl(url: string): Promise<string> {
+  const imgResponse = await fetch(url);
+  if (!imgResponse.ok) {
+    throw new Error(`Fetch failed: ${imgResponse.status} ${imgResponse.statusText}`);
+  }
+  const arrayBuffer = await imgResponse.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+  const contentType = imgResponse.headers.get("content-type") ?? "image/png";
+  return `data:${contentType};base64,${base64}`;
+}
+
+/** Extract a URL string from whatever Replicate returns (FileOutput or string). */
+function extractUrl(output: unknown): string | null {
+  if (!output) return null;
+  // Array output (most image models)
+  const first = Array.isArray(output) ? output[0] : output;
+  if (!first) return null;
+  // FileOutput.toString() returns the URL in replicate SDK v1+
+  const url = String(first);
+  if (!url.startsWith("http")) {
+    console.error("[generateMascotImage] Unexpected output format — not a URL", {
+      type: typeof first,
+      preview: url.slice(0, 120),
+    });
+    return null;
+  }
+  return url;
+}
+
 /**
- * Generates a B&W coloring page image from a mascot description.
- *
- * Uses recraft-ai/recraft-v3 with style="vector_illustration" instead of
- * flux-schnell. Flux Schnell does not reliably produce true B&W line art —
- * it tends to output shaded, colored illustrations regardless of prompt wording.
- * Recraft v3's vector_illustration style is purpose-built for clean outline art
- * and responds well to coloring-book prompts.
- *
- * Note: recraft-v3 uses width/height (not aspect_ratio) and does not accept
- * a negative_prompt parameter.
+ * Generates a coloring-page B&W image from a mascot description.
+ * Uses flux-schnell with heavy coloring-book prompt constraints.
  */
 export async function generateColoringImage(
   mascotDescription: string | null | undefined
 ): Promise<string | null> {
   if (!mascotDescription?.trim()) {
+    console.warn("[generateColoringImage] Skipping — mascot_description is null or empty");
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
-    console.warn("[generateColoringImage] REPLICATE_API_TOKEN not set — skipping");
+    console.warn("[generateColoringImage] Skipping — REPLICATE_API_TOKEN not set");
     return null;
   }
 
@@ -69,17 +97,8 @@ export async function generateColoringImage(
       },
     });
 
-    const first = Array.isArray(output) ? output[0] : output;
-    if (!first) {
-      console.error("[generateColoringImage] Output was empty");
-      return null;
-    }
-
-    const url = String(first);
-    if (!url.startsWith("http")) {
-      console.error("[generateColoringImage] Output is not a URL");
-      return null;
-    }
+    const url = extractUrl(output);
+    if (!url) return null;
 
     const imgResponse = await fetch(url);
     const arrayBuffer = await imgResponse.arrayBuffer();
@@ -91,7 +110,6 @@ export async function generateColoringImage(
       .toBuffer();
 
     return `data:image/png;base64,${pngBuffer.toString("base64")}`;
-
   } catch (err) {
     console.error("[generateColoringImage] Failed", {
       message: err instanceof Error ? err.message : String(err),
@@ -103,17 +121,18 @@ export async function generateColoringImage(
 
 /**
  * Generates a mascot image from a description string.
- * Uses black-forest-labs/flux-schnell (fast, cheap, great for cartoons).
- * Returns a public image URL, or null if generation fails.
+ * Uses black-forest-labs/flux-schnell.
+ * Returns a base64 data URL, or null if generation fails.
  */
 export async function generateMascotImage(
   mascotDescription: string | null | undefined
 ): Promise<string | null> {
   if (!mascotDescription?.trim()) {
+    console.warn("[generateMascotImage] Skipping — mascot_description is null or empty");
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
-    console.warn("[generateMascotImage] REPLICATE_API_TOKEN not set — skipping image generation");
+    console.warn("[generateMascotImage] Skipping — REPLICATE_API_TOKEN not set");
     return null;
   }
 
@@ -134,45 +153,40 @@ export async function generateMascotImage(
       },
     });
 
-    // SDK v1 returns FileOutput[] for image models. FileOutput.toString() returns the URL.
-    const first = Array.isArray(output) ? output[0] : output;
-    if (!first) {
-      console.error("[generateMascotImage] Output was empty or null", { output });
-      return null;
-    }
-
-    const url = String(first);
-
-    if (!url.startsWith("http")) {
-      console.error("[generateMascotImage] Output is not a URL", {
-        urlPreview: url.slice(0, 200),
-      });
-      return null;
-    }
+    const url = extractUrl(output);
+    if (!url) return null;
 
     try {
-      const imgResponse = await fetch(url);
-      const arrayBuffer = await imgResponse.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const contentType = imgResponse.headers.get("content-type") ?? "image/png";
-      const dataUrl = `data:${contentType};base64,${base64}`;
-      return dataUrl;
+      return await fetchAsDataUrl(url);
     } catch (fetchErr) {
-      console.error("[generateMascotImage] Failed to fetch image as base64 — returning original URL", {
+      // URL fetch failed — return the direct Replicate URL as a last resort.
+      // Note: Replicate URLs expire after ~1 hour.
+      console.error("[generateMascotImage] Base64 fetch failed — using direct URL", {
         message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
       });
       return url;
     }
   } catch (err) {
-    const elapsedMs = Date.now() - startMs;
-    console.error("[generateMascotImage] Exception after", elapsedMs, "ms", {
-      name: err instanceof Error ? err.name : undefined,
+    console.error("[generateMascotImage] Exception", {
       message: err instanceof Error ? err.message : String(err),
+      elapsedMs: Date.now() - startMs,
       status: (err as { status?: number }).status,
-      // Replicate ApiError has a response body
-      responseBody: (err as { response?: { body?: unknown } }).response?.body,
-      stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join("\n") : undefined,
     });
     return null;
   }
+}
+
+/**
+ * Generates mascot and coloring images in parallel.
+ * Replaces the old sequential pattern (mascot → 2 s sleep → coloring)
+ * which consistently timed out on Vercel Hobby after() tasks.
+ */
+export async function generateBothImages(
+  mascotDescription: string | null | undefined
+): Promise<{ mascotImageUrl: string | null; coloringImageUrl: string | null }> {
+  const [mascotImageUrl, coloringImageUrl] = await Promise.all([
+    generateMascotImage(mascotDescription),
+    generateColoringImage(mascotDescription),
+  ]);
+  return { mascotImageUrl, coloringImageUrl };
 }
