@@ -128,6 +128,11 @@ function extractUrl(output: unknown): string | null {
 /**
  * Generates a B&W coloring-page image via recraft-v3.
  *
+ * Accepts `coloringScene` — the concrete visual scene description from the
+ * packet JSON (coloring_page.coloring_scene). This is the single source of
+ * truth: the same text drives the image, the page title, and the instructions,
+ * so all three always describe the same scene.
+ *
  * Style: "digital_illustration" (base style). Comparison testing (2026-07-24)
  * showed this produces the cleanest coloring-book output with a strong
  * black-outline prompt — better than hand_drawn_outline, which returned
@@ -137,10 +142,10 @@ function extractUrl(output: unknown): string | null {
  * residual color tinting before the image reaches the PDF.
  */
 export async function generateColoringImage(
-  mascotDescription: string | null | undefined
+  coloringScene: string | null | undefined
 ): Promise<string | null> {
-  if (!mascotDescription?.trim()) {
-    console.warn("[generateColoringImage] Skipping — mascot_description is null or empty");
+  if (!coloringScene?.trim()) {
+    console.warn("[generateColoringImage] Skipping — coloring_scene is null or empty");
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
@@ -148,12 +153,13 @@ export async function generateColoringImage(
     return null;
   }
 
-  const stripped = stripColors(mascotDescription.trim());
+  const scene = coloringScene.trim();
   const prompt =
-    `black and white coloring book page for children featuring ${stripped}, ` +
+    `black and white coloring book page for children featuring ${scene}, ` +
     `clean black outlines only, no color, no shading, no fill, ` +
-    `pure white background, thick bold lines, simple shapes, ` +
-    `kid-friendly line art ready to color`;
+    `pure white background, thick clean outlines with large open white regions for coloring, ` +
+    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
+    `simple shapes, kid-friendly line art ready to color`;
 
   const startMs = Date.now();
 
@@ -281,13 +287,18 @@ export async function generateMascotImage(
  * Generates mascot and coloring images in parallel.
  * Both calls run concurrently so the total time is max(mascot, coloring),
  * not mascot + coloring.
+ *
+ * @param mascotDescription - drives the mascot image (character, style)
+ * @param coloringScene     - drives the coloring page image (scene, objects, setting)
+ *                            If omitted, falls back to mascotDescription so old callers still work.
  */
 export async function generateBothImages(
-  mascotDescription: string | null | undefined
+  mascotDescription: string | null | undefined,
+  coloringScene?: string | null | undefined
 ): Promise<{ mascotImageUrl: string | null; coloringImageUrl: string | null }> {
   const [mascotImageUrl, coloringImageUrl] = await Promise.all([
     generateMascotImage(mascotDescription),
-    generateColoringImage(mascotDescription),
+    generateColoringImage(coloringScene ?? mascotDescription),
   ]);
   return { mascotImageUrl, coloringImageUrl };
 }

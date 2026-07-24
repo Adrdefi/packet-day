@@ -106,6 +106,16 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
   Not just "draw a picture" — ask for observation, explanation, comparison, or prediction.
 </reading_writing_rules>
 
+<coloring_page_rules>
+SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image.
+- coloring_scene must list: the child and mascot (by name), the setting, and exactly 3-5 specific named objects.
+- coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements.
+- coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
+- coloring_scene is passed verbatim to the image generator — make it concrete and visual, not vague.
+  BAD: "Aria and Bubbles having a fun ocean adventure"
+  GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
+</coloring_page_rules>
+
 <output_schema>
 {
   "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
@@ -129,8 +139,8 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
   ],
   "coloring_page": {
     "title": "[Name] and [Mascot] [Action] — no emoji",
-    "scene_description": "Detailed description of the coloring scene",
-    "instructions": "Encouraging instructions for the child. Plain text. No emoji."
+    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text is passed verbatim to the image generator — it must be specific, visual, and match the title exactly.",
+    "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
   "parent_notes": "Context for the parent. Plain text. No emoji."
@@ -459,6 +469,7 @@ export async function POST(req: NextRequest) {
 
         const packetId = savedPacket.id;
         const mascotDescription = generatedContent.mascot_description;
+        const coloringScene = generatedContent.coloring_page?.coloring_scene ?? null;
 
         // Guard before after() so a missing env var doesn't crash the background task
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -466,9 +477,13 @@ export async function POST(req: NextRequest) {
 
         if (mascotDescription && supabaseUrl && serviceKey) {
           after(async () => {
-            // Generate both images in parallel — eliminates the old sequential
-            // pattern (mascot → 2 s sleep → coloring) that timed out on Hobby.
-            const { mascotImageUrl, coloringImageUrl } = await generateBothImages(mascotDescription);
+            // mascotDescription → mascot image; coloringScene → coloring page image.
+            // Both run in parallel. coloringScene is the single source of truth that
+            // also drives the coloring page title and instructions.
+            const { mascotImageUrl, coloringImageUrl } = await generateBothImages(
+              mascotDescription,
+              coloringScene
+            );
 
             const updates: Record<string, string> = {};
             if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;

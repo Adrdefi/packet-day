@@ -59,7 +59,7 @@ export interface PDFActivity {
 
 export interface PDFColoringPage {
   title: string;
-  scene_description: string;
+  coloring_scene: string;
   instructions: string;
 }
 
@@ -1200,29 +1200,20 @@ function ActivityTopBar({
   mascotImageUrl?: string | null;
 }) {
   return (
-    <>
-      <View style={[styles.activityBar, { backgroundColor: colors.bar }]}>
-        <View style={styles.activityBarLeft}>
-          {/* Subject row: twemoji PNG icon + subject label */}
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Image src={getSubjectIconUrl(activity.subject)} style={styles.subjectIcon} />
-            <Text style={styles.activityBarSubject}>{activity.subject}</Text>
-          </View>
-          <Text style={styles.activityBarTitle}>{sanitizeText(activity.title)}</Text>
+    <View style={[styles.activityBar, { backgroundColor: colors.bar }]}>
+      <View style={styles.activityBarLeft}>
+        {/* Subject row: twemoji PNG icon + subject label */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image src={getSubjectIconUrl(activity.subject)} style={styles.subjectIcon} />
+          <Text style={styles.activityBarSubject}>{activity.subject}</Text>
         </View>
-        <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
-        {mascotImageUrl && (
-          <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
-        )}
+        <Text style={styles.activityBarTitle}>{sanitizeText(activity.title)}</Text>
       </View>
+      <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
       {mascotImageUrl && (
-        <View style={[styles.mascotSpeechBubble, { borderColor: colors.bar }]}>
-          <Text style={styles.mascotSpeechText}>
-            {sanitizeText(activity.encouragement) || `Let's go, ${childName}! You've got this!`}
-          </Text>
-        </View>
+        <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
       )}
-    </>
+    </View>
   );
 }
 

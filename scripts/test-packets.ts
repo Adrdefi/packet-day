@@ -100,6 +100,16 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
   Not just "draw a picture" — ask for observation, explanation, comparison, or prediction.
 </reading_writing_rules>
 
+<coloring_page_rules>
+SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image.
+- coloring_scene must list: the child and mascot (by name), the setting, and exactly 3-5 specific named objects.
+- coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements.
+- coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
+- coloring_scene is passed verbatim to the image generator — make it concrete and visual, not vague.
+  BAD: "Aria and Bubbles having a fun ocean adventure"
+  GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
+</coloring_page_rules>
+
 <output_schema>
 {
   "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
@@ -123,8 +133,8 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
   ],
   "coloring_page": {
     "title": "[Name] and [Mascot] [Action] — no emoji",
-    "scene_description": "Detailed description of the coloring scene",
-    "instructions": "Encouraging instructions for the child. Plain text. No emoji."
+    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text is passed verbatim to the image generator — it must be specific, visual, and match the title exactly.",
+    "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
   "parent_notes": "Context for the parent. Plain text. No emoji."
@@ -279,6 +289,16 @@ function validatePacket(parsed: Record<string, unknown>, gradeBand: string): Val
     if (typeof cp.instructions === "string" && hasEmoji(cp.instructions)) {
       failures.push(`EMOJI in coloring_page.instructions`);
     }
+    // coloring_scene must be present (single source of truth for image generation)
+    if (!cp.coloring_scene || typeof cp.coloring_scene !== "string" || cp.coloring_scene.trim().length < 20) {
+      failures.push(`coloring_page.coloring_scene missing or too short`);
+    }
+    // Warn if old field name was used instead
+    if ((cp as Record<string, unknown>).scene_description && !cp.coloring_scene) {
+      failures.push(`coloring_page uses legacy "scene_description" field — must be "coloring_scene"`);
+    }
+  } else {
+    warnings.push("coloring_page missing from packet");
   }
 
   return { pass: failures.length === 0, failures, warnings };
@@ -413,6 +433,15 @@ async function main() {
         const usesSymbols = quickCalc.includes("÷") || quickCalc.includes("×");
         console.log(`  Math: || separator=${usesPipe ? "YES" : "NO"} | / separator=${usesSlash ? "YES (BAD)" : "no"} | ÷× symbols=${usesSymbols ? "YES (BAD)" : "no"}`);
         console.log(`  Math sample: ${quickCalc.slice(0, 100)}`);
+      }
+
+      // Coloring page coherence check
+      const cp = parsed.coloring_page as Record<string, unknown> | undefined;
+      if (cp) {
+        console.log(`\n  Coloring page:`);
+        console.log(`    title        : ${String(cp.title ?? "").slice(0, 80)}`);
+        console.log(`    coloring_scene: ${String(cp.coloring_scene ?? "MISSING").slice(0, 120)}`);
+        console.log(`    instructions : ${String(cp.instructions ?? "").slice(0, 100)}`);
       }
 
       if (result.failures.length > 0) {

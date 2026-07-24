@@ -69,7 +69,8 @@ export interface PacketActivity {
 
 export interface PacketColoringPage {
   title: string;
-  scene_description: string;
+  /** Concrete visual description passed verbatim to the image generator. */
+  coloring_scene: string;
   instructions: string;
 }
 
