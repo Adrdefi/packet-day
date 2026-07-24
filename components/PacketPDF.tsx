@@ -75,6 +75,8 @@ export interface PacketPDFProps {
   coloringPage?: PDFColoringPage | null;
   coloringImageUrl?: string | null;
   greeting?: string | null;
+  parentNotes?: string | null;
+  dailyReflection?: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1553,6 +1555,7 @@ function ParentNotesPage({
   activities,
   createdAt,
   mascotImageUrl,
+  parentNotes,
 }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.notesPage}>
@@ -1607,7 +1610,7 @@ function ParentNotesPage({
       </View>
       <View style={styles.parentNoteBox}>
         <Text style={styles.parentNoteText}>
-          {parentNote(childName, theme)}
+          {parentNotes || parentNote(childName, theme)}
         </Text>
       </View>
 
@@ -1671,7 +1674,7 @@ function ColoringPage({
 
 // ─── Reflection page ─────────────────────────────────────────────────────────
 
-function ReflectionPage({ childName, theme, createdAt }: PacketPDFProps) {
+function ReflectionPage({ childName, theme, createdAt, dailyReflection }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.notesPage}>
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
@@ -1682,7 +1685,7 @@ function ReflectionPage({ childName, theme, createdAt }: PacketPDFProps) {
       <View style={styles.reflectionBox}>
         <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
         <Text style={styles.reflectionText}>
-          {reflectionQuestion(theme)}
+          {dailyReflection || reflectionQuestion(theme)}
         </Text>
       </View>
 

@@ -87,10 +87,11 @@ export async function GET(req: NextRequest) {
       ? (content.coloring_page as PDFColoringPage)
       : null,
     greeting: content.greeting ?? null,
+    parentNotes: content.parent_notes ?? null,
+    dailyReflection: content.daily_reflection ?? null,
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────
-  console.log("PDF PROPS coloringImageUrl:", props.coloringImageUrl);
 
   let pdfBuffer: Uint8Array;
   try {

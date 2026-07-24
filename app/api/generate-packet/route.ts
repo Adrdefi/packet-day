@@ -5,6 +5,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateMascotImage, generateColoringImage } from "@/lib/generateMascotImage";
+import { MODEL } from "@/lib/config";
 
 // Allow up to 90 seconds — streaming generation can take ~60s
 
@@ -134,7 +135,7 @@ async function callClaude(
   const maxTokens = packetLength === "half" ? 4500 : 6000;
 
   const stream = getAnthropic().messages.stream({
-    model: "claude-sonnet-4-6",
+    model: MODEL,
     max_tokens: maxTokens,
     temperature: 0.7,
     system: SYSTEM_PROMPT,
@@ -197,10 +198,7 @@ function parsePacketJSON(text: string): ParsedPacketContent {
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
     .trim();
-  console.log("[parsePacketJSON] Cleaned text preview:", cleaned.slice(0, 100), "| length:", cleaned.length);
-
   const jsonString = extractFirstJSON(cleaned);
-  console.log("[parsePacketJSON] extractFirstJSON result:", jsonString ? jsonString.slice(0, 100) : "NULL");
   if (!jsonString) throw new Error("No JSON object found in response");
 
   const parsed = JSON.parse(jsonString);
@@ -358,7 +356,6 @@ export async function POST(req: NextRequest) {
 
         try {
           const responseText = await callClaude(userPrompt, typedPacketLength, onToken);
-          console.log("[generate-packet] Raw Claude response (first 500 chars):", responseText.slice(0, 500));
           generatedContent = parsePacketJSON(responseText);
         } catch (err) {
           console.error("[generate-packet] Generation failed:", {
@@ -422,8 +419,6 @@ export async function POST(req: NextRequest) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
           const coloringImageUrl = await generateColoringImage(mascotDescription);
 
-          console.log("COLORING IMAGE URL:", coloringImageUrl ?? "FAILED");
-
           const updates: Record<string, string> = {};
           if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
           if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
@@ -437,7 +432,9 @@ export async function POST(req: NextRequest) {
             .from("packets")
             .update(updates)
             .eq("id", packetId);
-          console.log("SUPABASE COLORING UPDATE:", updateError ?? "ok");
+          if (updateError) {
+            console.error("[generate-packet] Failed to save image URLs:", updateError.message);
+          }
         });
 
         // ── Send complete ───────────────────────────────────────────────────

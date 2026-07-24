@@ -42,7 +42,6 @@ export async function generateColoringImage(
   mascotDescription: string | null | undefined
 ): Promise<string | null> {
   if (!mascotDescription?.trim()) {
-    console.log("[generateColoringImage] Skipping — no mascot description provided");
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
@@ -56,10 +55,6 @@ export async function generateColoringImage(
     `thick bold black outlines, pure white background, no color, no shading, ` +
     `no grey, no gradients, flat white fills, simple clean cartoon outline style, ` +
     `black and white only, ready to color with crayons`;
-
-  console.log("[generateColoringImage] Starting generation", {
-    promptPreview: prompt.slice(0, 120),
-  });
 
   const startMs = Date.now();
 
@@ -86,8 +81,6 @@ export async function generateColoringImage(
       return null;
     }
 
-    console.log("[generateColoringImage] Fetching image", { url, elapsedMs: Date.now() - startMs });
-
     const imgResponse = await fetch(url);
     const arrayBuffer = await imgResponse.arrayBuffer();
 
@@ -97,7 +90,6 @@ export async function generateColoringImage(
       .png()
       .toBuffer();
 
-    console.log("[generateColoringImage] Done", { byteLength: pngBuffer.byteLength, elapsedMs: Date.now() - startMs });
     return `data:image/png;base64,${pngBuffer.toString("base64")}`;
 
   } catch (err) {
@@ -118,7 +110,6 @@ export async function generateMascotImage(
   mascotDescription: string | null | undefined
 ): Promise<string | null> {
   if (!mascotDescription?.trim()) {
-    console.log("[generateMascotImage] Skipping — no mascot description provided");
     return null;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
@@ -129,12 +120,6 @@ export async function generateMascotImage(
   const prompt =
     `${mascotDescription.trim()}, whimsical cartoon style, bright vibrant colors, ` +
     `simple clean lines, perfect for children's worksheet, white background, no text`;
-
-  console.log("[generateMascotImage] Starting generation", {
-    promptLength: prompt.length,
-    promptPreview: prompt.slice(0, 120),
-    tokenPresent: !!process.env.REPLICATE_API_TOKEN,
-  });
 
   const startMs = Date.now();
 
@@ -147,19 +132,6 @@ export async function generateMascotImage(
         output_format: "png",
         output_quality: 80,
       },
-    });
-
-    const elapsedMs = Date.now() - startMs;
-
-    console.log("[generateMascotImage] Replicate raw output", {
-      elapsedMs,
-      outputType: typeof output,
-      isArray: Array.isArray(output),
-      arrayLength: Array.isArray(output) ? output.length : undefined,
-      // Log the raw value safely — truncate if it's an unexpected giant string
-      rawValue: Array.isArray(output)
-        ? output.map((v) => String(v).slice(0, 200))
-        : String(output).slice(0, 200),
     });
 
     // SDK v1 returns FileOutput[] for image models. FileOutput.toString() returns the URL.
@@ -178,16 +150,12 @@ export async function generateMascotImage(
       return null;
     }
 
-    console.log("[generateMascotImage] Success — fetching as base64", { url, elapsedMs });
-
     try {
       const imgResponse = await fetch(url);
       const arrayBuffer = await imgResponse.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
       const contentType = imgResponse.headers.get("content-type") ?? "image/png";
       const dataUrl = `data:${contentType};base64,${base64}`;
-      console.log("[generateMascotImage] Converted to base64 data URL", { contentType, byteLength: arrayBuffer.byteLength });
-      console.log("[generateMascotImage] Base64 data URL created", { length: dataUrl.length, preview: dataUrl.slice(0, 50) });
       return dataUrl;
     } catch (fetchErr) {
       console.error("[generateMascotImage] Failed to fetch image as base64 — returning original URL", {
