@@ -50,7 +50,8 @@ export type ContentType =
   | "worksheet"         // discrete answerable steps (math, science, history)
   | "writing_prompt"    // open-ended writing — renders ruled lines
   | "movement_activity" // PE/physical — renders a small "How did it go?" box
-  | "coloring";         // art/craft — renders a large open draw box
+  | "coloring"          // art/craft — renders a large open draw box
+  | "puzzle_break";     // themed word search — instructions array = word list
 
 export interface PacketActivity {
   subject: string;
@@ -65,6 +66,8 @@ export interface PacketActivity {
   materials?: string[];
   answer_key?: string | null;
   encouragement?: string;
+  /** One-sentence themed wow-fact or joke rendered as a honey callout. */
+  fun_fact?: string | null;
 }
 
 export interface PacketColoringPage {
@@ -84,6 +87,10 @@ export interface PacketContent {
   mascot_name?: string;
   mascot_description?: string;
   mascot_emoji_cluster?: string;
+  /** Mascot-voiced quest for the child, shown on the cover. */
+  packet_mission?: string;
+  /** Mascot-voiced victory message for the final page. */
+  packet_celebration?: string;
   activities: PacketActivity[];
   coloring_page?: PacketColoringPage;
   daily_reflection?: string;

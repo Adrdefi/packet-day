@@ -2,8 +2,20 @@
 // Used exclusively by app/api/generate-pdf/route.ts via createElement().
 
 import path from 'path';
-import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import {
+  Document,
+  Font,
+  Image,
+  Page,
+  StyleSheet,
+  Svg,
+  Polygon,
+  Text,
+  View,
+} from "@react-pdf/renderer";
 import type { ContentType } from "@/types";
+
+// ─── Font registration ─────────────────────────────────────────────────────────
 
 Font.register({
   family: 'Nunito',
@@ -15,32 +27,53 @@ Font.register({
   ],
 });
 
-// ─── Color palette ────────────────────────────────────────────────────────────
+Font.register({
+  family: 'Fraunces',
+  fonts: [
+    { src: path.join(process.cwd(), 'public/fonts/Fraunces-Regular.ttf'), fontWeight: 400 },
+    { src: path.join(process.cwd(), 'public/fonts/Fraunces-Bold.ttf'), fontWeight: 700 },
+  ],
+});
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
 
 const C = {
-  cream: "#FDFBF7",
-  dark: "#1A1A2E",
-  muted: "#6B7280",
-  border: "#E5E7EB",
-  white: "#FFFFFF",
-  sage: "#4A7C59",
-  sageDark: "#2E5238",
-  sageBg: "#EFF6F1",
-  honey: "#D4A843",
-  honeyDark: "#A67C1E",
-  honeyBg: "#FDF8EC",
-  coral: "#E07A5F",
-  coralBg: "#FDF1EE",
+  cream:    '#FFF8F0',
+  charcoal: '#3A3633',
+  warmGray: '#6B6460',
+  border:   '#DDD5CC',
+  white:    '#FFFFFF',
+  sage:     '#7C9A82',
+  sageDark: '#4A6B52',
+  sageBg:   '#EEF5EF',
+  honey:    '#E8A849',
+  honeyDark:'#B07820',
+  honeyBg:  '#FEF8EC',
+  coral:    '#E07A5F',
+  coralBg:  '#FDF1EE',
+  // Legacy aliases — used in older code paths
+  dark:  '#3A3633',
+  muted: '#6B6460',
 };
 
-// 5-color activity rotation
+// 5-colour activity rotation — bright palette for K-5, muted for 6-8
 const ACTIVITY_COLORS = [
-  { bar: "#4A7C59", bg: "#EFF6F1", text: "#2E5238" }, // sage
-  { bar: "#D4A843", bg: "#FDF8EC", text: "#A67C1E" }, // honey
-  { bar: "#E07A5F", bg: "#FDF1EE", text: "#B85A40" }, // coral
-  { bar: "#7B68EE", bg: "#F4F2FF", text: "#5548CC" }, // purple
-  { bar: "#5BC0EB", bg: "#EBF8FE", text: "#2A8EAF" }, // sky blue
+  { bar: '#7C9A82', bg: '#EEF5EF', text: '#4A6B52' }, // sage
+  { bar: '#E8A849', bg: '#FEF8EC', text: '#B07820' }, // honey
+  { bar: '#E07A5F', bg: '#FDF1EE', text: '#B85A40' }, // coral
+  { bar: '#7B68EE', bg: '#F4F2FF', text: '#5548CC' }, // purple
+  { bar: '#5BC0EB', bg: '#EBF8FE', text: '#2A8EAF' }, // sky
 ];
+
+const ACTIVITY_COLORS_MUTED = [
+  { bar: '#5E7D65', bg: '#EEF4EF', text: '#3D5448' },
+  { bar: '#B5892E', bg: '#FAF6EE', text: '#8A6422' },
+  { bar: '#B85E47', bg: '#F8EDEA', text: '#8A4034' },
+  { bar: '#5C54BE', bg: '#F0EEFB', text: '#3E3898' },
+  { bar: '#3E92B0', bg: '#EBF5FA', text: '#2A7088' },
+];
+
+type ActivityColor = (typeof ACTIVITY_COLORS)[0];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +88,7 @@ export interface PDFActivity {
   materials?: string[];
   answer_key?: string | null;
   encouragement?: string;
+  fun_fact?: string | null;
 }
 
 export interface PDFColoringPage {
@@ -80,98 +114,97 @@ export interface PacketPDFProps {
   greeting?: string | null;
   parentNotes?: string | null;
   dailyReflection?: string | null;
+  packetMission?: string | null;
+  packetCelebration?: string | null;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Grade-band helpers ───────────────────────────────────────────────────────
+
+function getGradeBand(childGrade: string): 'K-2' | '3-5' | '6-8' {
+  if (childGrade === 'Kindergarten') return 'K-2';
+  const m = childGrade.match(/\d+/);
+  const g = m ? parseInt(m[0], 10) : 3;
+  if (g <= 2) return 'K-2';
+  if (g <= 5) return '3-5';
+  return '6-8';
+}
+
+interface BandConfig {
+  body: number;       // body font size
+  barH: number;       // activity top bar height
+  cardPad: number;    // card padding
+  cardRadius: number; // card border radius
+  borderW: number;    // border width
+  lineSpacing: number;// writing-line spacing
+  mascotInBar: number;// mascot image size in activity bar
+  instrBody: number;  // instruction text size
+}
+
+function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
+  const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
+    'K-2': { body: 13, barH: 108, cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32, mascotInBar: 90, instrBody: 14 },
+    '3-5': { body: 11.5, barH: 96, cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26, mascotInBar: 80, instrBody: 11.5 },
+    '6-8': { body: 10.5, barH: 86, cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22, mascotInBar: 60, instrBody: 10.5 },
+  };
+  return configs[band];
+}
+
+function getActivityColors(index: number, band: 'K-2' | '3-5' | '6-8'): ActivityColor {
+  const palette = band === '6-8' ? ACTIVITY_COLORS_MUTED : ACTIVITY_COLORS;
+  return palette[index % palette.length];
+}
+
+function writingLineCount(band: 'K-2' | '3-5' | '6-8'): number {
+  return band === 'K-2' ? 10 : band === '3-5' ? 14 : 18;
+}
+
+function worksheetAnswerLines(band: 'K-2' | '3-5' | '6-8'): number {
+  return band === 'K-2' ? 2 : band === '3-5' ? 3 : 4;
+}
+
+// ─── Text helpers ─────────────────────────────────────────────────────────────
 
 /**
  * Strip emoji and non-renderable Unicode from text before PDF rendering.
- * Nunito covers Latin + Latin-Extended but not emoji blocks.
- *
- * Removed ranges:
- *  - Surrogate pairs (UTF-16 encoding of U+1F000+ emoji)
- *  - Misc symbols / dingbats (U+2600–U+27BF)
- *  - Supplemental arrows / misc technical (U+2B00–U+2BFF)
- *  - Variation selectors (U+FE00–U+FE0F)
- *  - Zero-width characters and BOM (U+200B–U+200D, U+FEFF)
- *  - Combining enclosing keycap (U+20E3)
- *
- * Math symbols ÷ (U+00F7) and × (U+00D7) are in Latin-1 Supplement which
- * Nunito covers, but the prompt now uses "x" / "divided by" instead, so
- * this function doesn't need to remap them.
+ * Nunito/Fraunces covers Latin + Latin-Extended but not emoji blocks.
  */
 function sanitizeText(text: string | null | undefined): string {
-  if (!text) return "";
+  if (!text) return '';
   return text
-    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")   // surrogate pairs (emoji U+1F000+)
-    .replace(/[\u2600-\u27BF]/g, "")                    // misc symbols, dingbats
-    .replace(/[\u2B00-\u2BFF]/g, "")                    // supplemental arrows / misc tech
-    .replace(/[\uFE00-\uFE0F]/g, "")                    // variation selectors
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")              // ZWJ, ZWNJ, BOM
-    .replace(/\u20E3/g, "")                             // combining enclosing keycap
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/[\u2600-\u27BF]/g, '')
+    .replace(/[\u2B00-\u2BFF]/g, '')
+    .replace(/[\uFE00-\uFE0F]/g, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\u20E3/g, '')
     .trim();
 }
 
-/**
- * Parse the child's grade string ("Kindergarten" or "Grade N") into a
- * three-band string used for layout decisions (line counts, answer space).
- */
-function getGradeBand(childGrade: string): "K-2" | "3-5" | "6-8" {
-  if (childGrade === "Kindergarten") return "K-2";
-  const match = childGrade.match(/\d+/);
-  const g = match ? parseInt(match[0], 10) : 3;
-  if (g <= 2) return "K-2";
-  if (g <= 5) return "3-5";
-  return "6-8";
-}
-
-/** How many ruled writing lines to render in a writing-prompt activity. */
-function writingLineCount(band: "K-2" | "3-5" | "6-8"): number {
-  return band === "K-2" ? 12 : band === "3-5" ? 16 : 20;
-}
-
-/** How many answer lines to render under each worksheet question. */
-function worksheetAnswerLines(band: "K-2" | "3-5" | "6-8"): number {
-  return band === "K-2" ? 2 : band === "3-5" ? 3 : 4;
-}
-
-/**
- * Determine the content type for an activity.
- * Uses the explicit content_type field when present (new packets).
- * Falls back to subject-keyword heuristics for old packets that predate
- * the content_type field.
- */
 function resolveContentType(activity: PDFActivity): ContentType {
   if (activity.content_type) return activity.content_type;
-
   const s = activity.subject.toLowerCase();
-  if (s.includes("reading") || s.includes("comprehension")) return "reading_passage";
-  if (
-    s.includes("writing") || s.includes("journal") ||
-    s.includes("story") || s.includes("creative")
-  ) return "writing_prompt";
-  if (s.includes("art") || s.includes("coloring") || s.includes("drawing")) return "coloring";
-  if (s.includes("pe") || s.includes("movement") || s.includes("exercise")) return "movement_activity";
-  return "worksheet";
+  if (s.includes('reading') || s.includes('comprehension')) return 'reading_passage';
+  if (s.includes('writing') || s.includes('journal') || s.includes('story') || s.includes('creative')) return 'writing_prompt';
+  if (s.includes('art') || s.includes('coloring') || s.includes('drawing')) return 'coloring';
+  if (s.includes('pe') || s.includes('movement') || s.includes('exercise')) return 'movement_activity';
+  if (s.includes('puzzle')) return 'puzzle_break';
+  return 'worksheet';
 }
 
-// Twemoji CDN PNG icons — rendered via react-pdf Image so emoji glyphs are not needed
 const TWEMOJI_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/';
 function getSubjectIconUrl(subject: string): string {
   const s = subject.toLowerCase();
-  if (s.includes('math'))                              return TWEMOJI_BASE + '1f9ee.png'; // abacus
-  if (s.includes('read') || s.includes('compreh'))    return TWEMOJI_BASE + '1f4d6.png'; // open book
-  if (s.includes('writ') || s.includes('journal') || s.includes('story')) return TWEMOJI_BASE + '270f.png';  // pencil
-  if (s.includes('sci'))                              return TWEMOJI_BASE + '1f52c.png'; // microscope
-  return TWEMOJI_BASE + '1f3c6.png'; // trophy — PE, art, creative, history, general
+  if (s.includes('math'))                                       return TWEMOJI_BASE + '1f9ee.png';
+  if (s.includes('read') || s.includes('compreh'))             return TWEMOJI_BASE + '1f4d6.png';
+  if (s.includes('writ') || s.includes('journal') || s.includes('story')) return TWEMOJI_BASE + '270f.png';
+  if (s.includes('sci'))                                        return TWEMOJI_BASE + '1f52c.png';
+  if (s.includes('puzzle'))                                     return TWEMOJI_BASE + '1f9e9.png';
+  return TWEMOJI_BASE + '1f3c6.png';
 }
 
 function formatPDFDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 }
 
@@ -195,150 +228,265 @@ function parentNote(childName: string, theme: string): string {
   );
 }
 
-
 function bonusChallenge(subject: string, title: string): string {
   const s = subject.toLowerCase();
-  if (s.includes("math")) return `Try making up your own math problem inspired by "${title}"! Can you solve it too?`;
-  if (s.includes("read") || s.includes("writ")) return `Write 2-3 sentences about what "${title}" makes you think of. Use your best descriptive words!`;
-  if (s.includes("sci")) return `What's one experiment you could do at home related to "${title}"? Describe it step by step!`;
-  if (s.includes("art")) return `Draw something inspired by "${title}" using only 3 colors. See what you can create!`;
-  if (s.includes("hist") || s.includes("social")) return `If you could time-travel to learn more about "${title}", where would you go? Write 2 sentences about it!`;
-  return `Can you teach someone else what you learned about "${title}" today? Try explaining it in 3 sentences!`;
+  if (s.includes('math')) return `Make up your own math problem inspired by "${title}". Can you solve it too?`;
+  if (s.includes('read') || s.includes('writ')) return `Write 2-3 sentences about what "${title}" makes you think of. Use your best descriptive words.`;
+  if (s.includes('sci')) return `What's one experiment you could do at home related to "${title}"? Describe it step by step.`;
+  if (s.includes('art')) return `Draw something inspired by "${title}" using only 3 colours. See what you can create.`;
+  if (s.includes('hist') || s.includes('social')) return `If you could learn more about "${title}", what question would you ask an expert?`;
+  return `Can you teach someone else what you learned about "${title}" today? Try explaining it in 3 sentences.`;
 }
+
+// ─── Word search generator (deterministic) ───────────────────────────────────
+
+function seededLCG(seed: number): () => number {
+  let s = (seed ^ 0xDEADBEEF) >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+function generateWordSearch(
+  wordList: string[],
+  gridSize = 10
+): { grid: string[][]; placed: string[] } {
+  const words = wordList
+    .map(w => w.toUpperCase().replace(/[^A-Z]/g, ''))
+    .filter(w => w.length >= 3 && w.length <= gridSize);
+
+  const seed = words.join('').split('').reduce((a, c) => a + c.charCodeAt(0), 42);
+  const rand = seededLCG(seed);
+
+  const grid: string[][] = Array.from({ length: gridSize }, () =>
+    Array.from({ length: gridSize }, () => '')
+  );
+
+  // Horizontal + vertical (both directions) — diagonal skipped for readability
+  const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
+  const placed: string[] = [];
+
+  for (const word of words) {
+    let ok = false;
+    for (let attempt = 0; attempt < 200 && !ok; attempt++) {
+      const [dr, dc] = dirs[Math.floor(rand() * dirs.length)];
+
+      const minR = dr < 0 ? word.length - 1 : 0;
+      const minC = dc < 0 ? word.length - 1 : 0;
+      const maxR = dr > 0 ? gridSize - word.length : gridSize - 1;
+      const maxC = dc > 0 ? gridSize - word.length : gridSize - 1;
+
+      if (maxR < minR || maxC < minC) continue;
+
+      const row = minR + Math.floor(rand() * (maxR - minR + 1));
+      const col = minC + Math.floor(rand() * (maxC - minC + 1));
+
+      let canPlace = true;
+      for (let i = 0; i < word.length; i++) {
+        const r = row + dr * i;
+        const c = col + dc * i;
+        if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) { canPlace = false; break; }
+        if (grid[r][c] !== '' && grid[r][c] !== word[i]) { canPlace = false; break; }
+      }
+
+      if (canPlace) {
+        for (let i = 0; i < word.length; i++) {
+          grid[row + dr * i][col + dc * i] = word[i];
+        }
+        placed.push(word);
+        ok = true;
+      }
+    }
+  }
+
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      if (!grid[r][c]) grid[r][c] = alpha[Math.floor(rand() * alpha.length)];
+    }
+  }
+
+  return { grid, placed };
+}
+
+// ─── Hidden mascot corner positions (cycle by page index) ────────────────────
+
+const HIDDEN_MASCOT_CORNERS = [
+  { bottom: 24, right: 12 },
+  { bottom: 24, left: 12 },
+  { top: 112, right: 12 },
+  { top: 112, left: 12 },
+] as const;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // ── Cover page ─────────────────────────────────────────────────────────────
+  // ── Page base ───────────────────────────────────────────────────────────────
   coverPage: {
     backgroundColor: C.cream,
-    padding: 56,
-    flexDirection: "column",
-    justifyContent: "space-between",
+    padding: 48,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+
+  // ── Cover: decorative frame ─────────────────────────────────────────────────
+  coverFrameOuter: {
+    position: 'absolute',
+    top: 16,
+    bottom: 16,
+    left: 16,
+    right: 16,
+    borderWidth: 2,
+    borderColor: C.honey,
+    borderRadius: 4,
+    opacity: 0.55,
+  },
+  coverFrameInner: {
+    position: 'absolute',
+    top: 22,
+    bottom: 22,
+    left: 22,
+    right: 22,
+    borderWidth: 1,
+    borderColor: C.honey,
+    borderRadius: 3,
+    opacity: 0.3,
+  },
+
+  // ── Cover: top row ──────────────────────────────────────────────────────────
+  coverTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   wordmark: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    fontSize: 10,
+    fontSize: 11,
     color: C.sage,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
+  coverDate: {
+    fontFamily: 'Nunito',
+    fontSize: 9,
+    color: C.warmGray,
+  },
+
+  // ── Cover: center content ───────────────────────────────────────────────────
   coverCenter: {
-    flexDirection: "column",
-    alignItems: "center",
+    flexDirection: 'column',
+    alignItems: 'center',
     flex: 1,
-    justifyContent: "center",
-    paddingVertical: 24,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 10,
   },
-  // Emoji cluster above mascot (shown always on cover)
-  coverEmojiCluster: {
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 14,
-    letterSpacing: 4,
+  mascotImageCover: {
+    width: 280,
+    height: 280,
+    objectFit: 'contain',
+    alignSelf: 'center',
+    marginBottom: 4,
   },
-  // Fallback emoji row (when no mascot image)
-  themeEmojiRow: {
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 14,
-    letterSpacing: 4,
-  },
-  childAvatarCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  mascotFallbackCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: C.white,
     borderWidth: 3,
     borderColor: C.sage,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  childAvatarEmoji: {
-    fontSize: 44,
-    textAlign: "center",
-  },
-  // Mascot image — 320x320 square with contain fit
-  mascotImageCover: {
-    width: 320,
-    height: 320,
-    objectFit: "contain",
-    marginBottom: 16,
-    alignSelf: "center",
+  mascotFallbackEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
   },
   mascotNameText: {
-    fontSize: 11,
-    fontFamily: "Nunito",
+    fontFamily: 'Nunito',
     fontWeight: 700,
+    fontSize: 11,
     color: C.sage,
-    textAlign: "center",
-    marginBottom: 4,
+    textAlign: 'center',
   },
-  // Title banner strip
-  titleBanner: {
-    backgroundColor: C.sage,
-    width: "100%",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginBottom: 6,
-    alignItems: "center",
-  },
-  packetTitle: {
-    fontFamily: "Nunito",
+
+  // ── Cover: title ────────────────────────────────────────────────────────────
+  coverTitle: {
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    fontSize: 28,
+    fontSize: 34,
+    color: C.charcoal,
+    textAlign: 'center',
+    lineHeight: 1.2,
+    marginHorizontal: 16,
+  },
+  coverSubtitle: {
+    fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.warmGray,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+
+  // ── Cover: activity count badge ─────────────────────────────────────────────
+  activityBadge: {
+    backgroundColor: C.honey,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    alignSelf: 'center',
+  },
+  activityBadgeText: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 12,
     color: C.white,
-    textAlign: "center",
-    lineHeight: 1.25,
+    letterSpacing: 0.2,
   },
-  packetSubtitle: {
-    fontSize: 11,
-    color: C.muted,
-    textAlign: "center",
-    marginBottom: 20,
-    marginTop: 6,
-  },
-  // Speech bubble arrow (triangle pointing up toward mascot)
-  speechBubbleArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 16,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: C.sage,
-    alignSelf: "center",
-    marginBottom: 0,
-  },
+
+  // ── Cover: greeting / mission box ───────────────────────────────────────────
   greetingBox: {
     borderWidth: 2,
     borderColor: C.sage,
     borderRadius: 12,
-    padding: 18,
+    padding: 16,
     backgroundColor: C.sageBg,
-    width: "100%",
+    width: '100%',
+  },
+  greetingLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 9,
+    color: C.sage,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
   },
   greetingText: {
     fontSize: 11,
     color: C.sageDark,
-    lineHeight: 1.75,
-    fontFamily: "Nunito",
+    lineHeight: 1.7,
+    fontFamily: 'Nunito',
     fontStyle: 'italic',
-    textAlign: "center",
+    textAlign: 'center',
   },
+
+  // ── Cover: footer ───────────────────────────────────────────────────────────
   coverFooter: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 6,
+    marginTop: 4,
   },
   coverFooterText: {
+    fontFamily: 'Nunito',
     fontSize: 9,
-    color: C.muted,
+    color: C.warmGray,
   },
   coverFooterDot: {
     fontSize: 9,
@@ -347,552 +495,403 @@ const styles = StyleSheet.create({
 
   // ── Activity page ───────────────────────────────────────────────────────────
   activityPage: {
-    flexDirection: "column",
-    // backgroundColor set dynamically
-  },
-  activityBar: {
-    height: 96,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 28,
-    gap: 14,
-    // backgroundColor set dynamically
-  },
-  activityBarEmoji: {
-    fontSize: 34,
-    width: 42,
-    textAlign: "center",
-  },
-  activityBarLeft: {
-    flexDirection: "column",
-    gap: 2,
-    flex: 1,
-  },
-  activityBarSubject: {
-    fontSize: 9,
-    color: "rgba(255,255,255,0.75)",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontFamily: "Nunito",
-    fontWeight: 700,
-  },
-  activityBarTitle: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 16,
-    color: C.white,
-    lineHeight: 1.3,
-  },
-  activityBarTime: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.9)",
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    backgroundColor: "rgba(0,0,0,0.18)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  // Mascot in top-right corner of activity bar — 80x80
-  mascotImageCorner: {
-    position: "absolute",
-    top: 8,
-    right: 14,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.6)",
-  },
-  // Speech bubble below activity bar
-  mascotSpeechBubble: {
-    marginHorizontal: 36,
-    marginTop: 10,
-    marginBottom: 4,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: C.white,
-    // borderColor set dynamically
-  },
-  mascotSpeechText: {
-    fontSize: 11,
-    color: C.dark,
-    fontFamily: "Nunito",
-    fontStyle: 'italic',
-    textAlign: "center",
+    flexDirection: 'column',
   },
   activityContent: {
     padding: 36,
     flex: 1,
-    flexDirection: "column",
+    flexDirection: 'column',
   },
 
-  // Materials
+  // Activity bar elements — height/mascot size set dynamically via band config
+  activityBarLeft: {
+    flexDirection: 'column',
+    gap: 3,
+    flex: 1,
+  },
+  activityBarSubjectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  activityBarIcon: {
+    width: 18,
+    height: 18,
+  },
+  activityBarSubject: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  activityBarTitle: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 18,
+    color: C.white,
+    lineHeight: 1.2,
+  },
+  activityBarTime: {
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    flexShrink: 0,
+  },
+
+  // ── Content cards ───────────────────────────────────────────────────────────
   materialsBox: {
     backgroundColor: C.white,
     borderRadius: 8,
     padding: 10,
-    marginBottom: 14,
-    flexDirection: "row",
-    alignItems: "flex-start",
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     borderWidth: 1,
     borderColor: C.border,
   },
   materialsLabel: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.muted,
-    textTransform: "uppercase",
+    color: C.warmGray,
+    textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginRight: 8,
     paddingTop: 1,
   },
   materialsText: {
+    fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.dark,
+    color: C.charcoal,
     lineHeight: 1.5,
     flex: 1,
   },
 
-  // Description box — borderLeftColor set dynamically
   descriptionBox: {
     borderLeftWidth: 4,
-    borderRadius: 6,
+    borderRadius: 8,
     padding: 12,
-    marginBottom: 18,
-    // backgroundColor and borderLeftColor set dynamically
+    marginBottom: 16,
   },
   descriptionText: {
-    fontSize: 11.5,
-    color: C.dark,
-    fontFamily: "Nunito",
+    fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 11.5,
+    color: C.charcoal,
     lineHeight: 1.65,
   },
 
-  // Instructions
+  // ── Instructions ────────────────────────────────────────────────────────────
   instructionsLabel: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    color: C.warmGray,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: 10,
   },
-  instructionRow: {
-    flexDirection: "row",
-    marginBottom: 9,
-    alignItems: "flex-start",
+  questionBox: {
+    backgroundColor: C.white,
+    borderRadius: 10,
+    padding: 12,
+    paddingBottom: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  // Checkbox before bullet number
-  instructionCheckbox: {
-    width: 14,
-    height: 14,
-    borderWidth: 1.5,
-    borderColor: "#9CA3AF",
-    borderRadius: 2,
-    marginRight: 8,
-    flexShrink: 0,
-    marginTop: 4,
+  instructionRow: {
+    flexDirection: 'row',
+    marginBottom: 0,
+    alignItems: 'flex-start',
   },
   instructionBullet: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 10,
     flexShrink: 0,
-    marginTop: 0,
-    // backgroundColor set dynamically
+    marginTop: 1,
   },
   instructionBulletText: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    fontSize: 11,
-    // color set dynamically
+    fontSize: 12,
   },
   instructionText: {
+    fontFamily: 'Nunito',
     fontSize: 11.5,
-    color: C.dark,
+    color: C.charcoal,
     lineHeight: 1.55,
     flex: 1,
   },
+  answerLineInBox: {
+    borderBottomWidth: 1,
+    borderBottomStyle: 'dotted' as const,
+    borderBottomColor: '#D1D5DB',
+    marginTop: 12,
+  },
 
-  // Work area — dotted lines
-  workArea: {
-    marginTop: 18,
-    flexDirection: "column",
-    justifyContent: "flex-end",
-  },
-  workAreaLabel: {
-    fontSize: 8,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    marginBottom: 10,
-  },
+  // ── Work area ───────────────────────────────────────────────────────────────
   workLine: {
     borderBottomWidth: 1.5,
-    borderBottomStyle: "dotted",
-    borderBottomColor: "#D1D5DB",
+    borderBottomStyle: 'dotted' as const,
+    borderBottomColor: '#D1D5DB',
     marginBottom: 18,
   },
 
-  // Bonus challenge box
+  // ── Fun fact callout (honey) ─────────────────────────────────────────────────
+  funFactBox: {
+    backgroundColor: C.honeyBg,
+    borderWidth: 1.5,
+    borderColor: C.honey,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  funFactLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 8,
+    color: C.honeyDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  funFactText: {
+    fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.charcoal,
+    lineHeight: 1.5,
+    flex: 1,
+  },
+
+  // ── Bonus challenge ─────────────────────────────────────────────────────────
   bonusChallengeBox: {
     backgroundColor: C.honeyBg,
     borderWidth: 2,
     borderColor: C.honey,
     borderRadius: 10,
-    padding: 14,
-    marginTop: 10,
+    padding: 12,
+    marginTop: 8,
     marginBottom: 6,
   },
   bonusChallengeHeader: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    fontSize: 10,
+    fontSize: 9,
     color: C.honeyDark,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 6,
+    marginBottom: 5,
   },
   bonusChallengeText: {
-    fontSize: 11,
-    color: C.dark,
-    lineHeight: 1.5,
-    fontFamily: "Nunito",
+    fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 11,
+    color: C.charcoal,
+    lineHeight: 1.5,
   },
 
-  // Answer key
+  // ── Answer key ──────────────────────────────────────────────────────────────
   answerKeyBox: {
     backgroundColor: C.honeyBg,
     borderRadius: 10,
-    padding: 14,
-    marginTop: 10,
+    padding: 12,
+    marginTop: 8,
     borderWidth: 1.5,
     borderColor: C.honey,
   },
   answerKeyHeader: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 9,
-    color: C.honeyDark,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 7,
-  },
-  answerKeyText: {
-    fontSize: 10,
-    color: C.dark,
-    lineHeight: 1.6,
-  },
-
-  // ── Notes page ──────────────────────────────────────────────────────────────
-  notesPage: {
-    backgroundColor: C.white,
-    padding: 48,
-    flexDirection: "column",
-  },
-  notesPageTitle: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 22,
-    color: C.dark,
-    marginBottom: 6,
-  },
-  notesPageSubtitle: {
-    fontSize: 11,
-    color: C.muted,
-    marginBottom: 24,
-  },
-  // Mascot in top-right corner of notes page
-  mascotImageNotes: {
-    position: "absolute",
-    top: 40,
-    right: 40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  sectionLabel: {
-    fontFamily: "Nunito",
+    fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  summaryColorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 10,
-    marginTop: 3,
-    flexShrink: 0,
-  },
-  summaryText: {
-    fontSize: 10,
-    color: C.dark,
-    lineHeight: 1.5,
-    flex: 1,
-  },
-  summaryCheckboxes: {
-    fontSize: 10,
-    color: C.muted,
-    marginLeft: 8,
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  parentNoteBox: {
-    backgroundColor: C.sageBg,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 18,
-  },
-  parentNoteText: {
-    fontSize: 10.5,
-    color: C.sageDark,
-    lineHeight: 1.7,
-    fontFamily: "Nunito",
-    fontStyle: 'italic',
-  },
-  reflectionBox: {
-    backgroundColor: C.honeyBg,
-    borderWidth: 2.5,
-    borderColor: C.honey,
-    borderRadius: 12,
-    padding: 22,
-    marginBottom: 22,
-  },
-  reflectionLabel: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 9,
     color: C.honeyDark,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 10,
+    marginBottom: 6,
   },
-  reflectionText: {
-    fontSize: 13,
-    color: C.dark,
-    lineHeight: 1.75,
-    fontFamily: "Nunito",
-    fontStyle: 'italic',
-  },
-  observationsLabel: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 12,
-    color: C.dark,
-    marginBottom: 18,
-  },
-  ruledLine: {
-    borderBottomWidth: 1,
-    borderBottomStyle: "dotted",
-    borderBottomColor: "#D1D5DB",
-    marginBottom: 26,
-  },
-  notesFooter: {
-    marginTop: "auto",
-    paddingTop: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: C.border,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 8.5,
-    color: C.muted,
-  },
-
-  // ── Mascot emoji cluster (cover, no-image fallback) ──────────────────────────
-  mascotEmojiText: {
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 20,
-    letterSpacing: 4,
-  },
-
-  // ── Coloring page ───────────────────────────────────────────────────────────
-  coloringPage: {
-    backgroundColor: C.cream,
-    padding: 48,
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  colorMeText: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 26,
-    color: C.sage,
-    textAlign: "center",
-    marginBottom: 10,
-    letterSpacing: 1,
-  },
-  coloringTitle: {
-    fontFamily: "Nunito",
-    fontWeight: 700,
-    fontSize: 28,
-    color: C.dark,
-    textAlign: "center",
-    marginBottom: 14,
-    lineHeight: 1.25,
-  },
-  coloringBox: {
-    borderWidth: 2.5,
-    borderStyle: "dashed",
-    borderColor: "#A3C4B0",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    padding: 12,
-    width: "100%",
-  },
-  coloringBoxImage: {
-    width: 420,
-    height: 420,
-    objectFit: "contain",
-  },
-  coloringBoxPlaceholder: {
-    fontSize: 13,
-    color: "#A3C4B0",
-    textAlign: "center",
-    fontFamily: "Nunito",
-    fontStyle: 'italic',
-    lineHeight: 1.7,
-    width: 420,
-    height: 420,
-  },
-  coloringInstructionBubble: {
-    borderWidth: 2,
-    borderColor: "#A3C4B0",
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: C.white,
-    width: "100%",
-    marginTop: 4,
-  },
-  coloringInstructionText: {
-    fontSize: 12,
-    color: C.sageDark,
-    textAlign: "center",
-    fontFamily: "Nunito",
-    fontStyle: 'italic',
+  answerKeyText: {
+    fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.charcoal,
     lineHeight: 1.6,
   },
 
-  // ── Question box (Templates A + B) ─────────────────────────────────────────
-  questionBox: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 12,
-    paddingBottom: 8,
-    marginBottom: 10,
+  // ── Star reward row ──────────────────────────────────────────────────────────
+  starRewardBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    marginBottom: 6,
+    paddingRight: 4,
+    gap: 4,
   },
-  answerLineInBox: {
-    borderBottomWidth: 1,
-    borderBottomStyle: 'dotted',
-    borderBottomColor: '#D1D5DB',
-    marginTop: 12,
+  starRewardText: {
+    fontFamily: 'Nunito',
+    fontSize: 9,
+    color: C.warmGray,
   },
 
-  // ── Reading passage block (Template B) ──────────────────────────────────────
+  // ── Mid-page mascot encouragement ───────────────────────────────────────────
+  midPageEncouragement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    padding: 8,
+    marginTop: 10,
+    marginBottom: 10,
+    gap: 10,
+  },
+  midPageMascotImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    flexShrink: 0,
+  },
+  midPageSpeechBubble: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 6,
+    backgroundColor: C.white,
+  },
+  midPageSpeechText: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 9.5,
+    color: C.charcoal,
+    lineHeight: 1.4,
+  },
+
+  // ── Hidden mascot (small, corner overlay) ───────────────────────────────────
+  hiddenMascotImage: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    opacity: 0.75,
+  },
+
+  // ── Reading passage ──────────────────────────────────────────────────────────
   readingPassageBlock: {
     backgroundColor: '#FFFBF0',
-    borderRadius: 6,
+    borderRadius: 8,
     padding: 14,
     marginBottom: 14,
   },
   readingPassageLabel: {
-    fontSize: 8,
-    fontFamily: 'Nunito',
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    color: '#A67C1E',
+    fontSize: 8,
+    color: C.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
   },
   readingPassageText: {
-    fontSize: 11.5,
-    lineHeight: 1.7,
-    color: C.dark,
     fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 11.5,
+    lineHeight: 1.7,
+    color: C.charcoal,
   },
 
-  // ── Open workspace (Template C) ─────────────────────────────────────────────
+  // ── Open workspace (writing / movement / coloring) ───────────────────────────
   promptBubble: {
     borderWidth: 1.5,
     borderColor: C.border,
     borderRadius: 12,
     padding: 14,
     backgroundColor: C.white,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   promptBubbleText: {
-    fontSize: 12,
-    color: C.dark,
     fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 12,
+    color: C.charcoal,
     lineHeight: 1.6,
+    marginBottom: 6,
   },
   promptInstructionText: {
+    fontFamily: 'Nunito',
     fontSize: 11,
-    color: C.dark,
+    color: C.charcoal,
     lineHeight: 1.5,
-    marginTop: 8,
+    marginTop: 6,
   },
   writingSpaceHeader: {
-    fontSize: 9,
-    fontFamily: 'Nunito',
+    fontFamily: 'Fraunces',
     fontWeight: 700,
-    color: C.muted,
+    fontSize: 9,
+    color: C.warmGray,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   writingLine: {
     borderBottomWidth: 1.5,
-    borderBottomStyle: 'dotted',
+    borderBottomStyle: 'dotted' as const,
     borderBottomColor: '#D1D5DB',
     marginBottom: 26,
   },
   drawBox: {
     borderWidth: 2,
-    borderStyle: 'dashed',
+    borderStyle: 'dashed' as const,
     borderColor: '#D1D5DB',
     borderRadius: 12,
     marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 340,
+    minHeight: 320,
   },
   drawBoxLabel: {
-    fontSize: 14,
-    color: '#C4C9D4',
     fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 14,
+    color: '#C4C9D4',
     textAlign: 'center',
   },
+  movementReflectionBox: {
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  movementReflectionLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 9,
+    color: C.warmGray,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  movementReflectionLine: {
+    borderBottomWidth: 1,
+    borderBottomStyle: 'dotted' as const,
+    borderBottomColor: '#D1D5DB',
+    marginBottom: 22,
+  },
 
-  // ── Math structured sections (Template A — math subject) ────────────────────
+  // ── Math structured sections ─────────────────────────────────────────────────
   mathSectionBar: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -901,9 +900,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   mathSectionBarText: {
-    fontSize: 8,
-    fontFamily: 'Nunito',
+    fontFamily: 'Fraunces',
     fontWeight: 700,
+    fontSize: 8,
     color: C.white,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -919,17 +918,17 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   mathCalcNumber: {
-    fontSize: 9,
     fontFamily: 'Nunito',
     fontWeight: 700,
-    color: C.muted,
+    fontSize: 9,
+    color: C.warmGray,
     marginRight: 6,
     marginTop: 2,
   },
   mathCalcEquation: {
-    fontSize: 11.5,
-    color: C.dark,
     fontFamily: 'Nunito',
+    fontSize: 11.5,
+    color: C.charcoal,
     flex: 1,
   },
   mathCalcAnswerLine: {
@@ -943,10 +942,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   mathWordText: {
+    fontFamily: 'Nunito',
     fontSize: 11,
-    color: C.dark,
+    color: C.charcoal,
     lineHeight: 1.55,
     marginBottom: 6,
   },
@@ -959,157 +961,491 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mathDrawPromptText: {
-    fontSize: 11,
-    color: C.dark,
     fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 11,
+    color: C.charcoal,
     lineHeight: 1.55,
   },
   mathDrawBox: {
     borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderStyle: 'dashed' as const,
     borderColor: '#D1D5DB',
     borderRadius: 8,
-    minHeight: 180,
+    minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   mathDrawBoxLabel: {
-    fontSize: 10,
-    color: '#C4C9D4',
     fontFamily: 'Nunito',
     fontStyle: 'italic',
+    fontSize: 10,
+    color: '#C4C9D4',
   },
   mathAnswerLineLabel: {
-    fontSize: 10,
-    color: C.muted,
     fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.warmGray,
     marginBottom: 4,
   },
   mathAnswerLine: {
     borderBottomWidth: 1.5,
-    borderBottomStyle: 'dotted',
+    borderBottomStyle: 'dotted' as const,
     borderBottomColor: '#D1D5DB',
   },
 
-  // ── Movement activity reflection box ────────────────────────────────────────
-  movementReflectionBox: {
+  // ── Puzzle break (word search) ───────────────────────────────────────────────
+  puzzleIntroBox: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
+    borderColor: C.border,
+    borderRadius: 12,
     padding: 14,
-    marginTop: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: C.white,
+    marginBottom: 16,
   },
-  movementReflectionLabel: {
+  puzzleIntroText: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: C.charcoal,
+    lineHeight: 1.6,
+  },
+  wordSearchGrid: {
+    flexDirection: 'column',
+    alignSelf: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 4,
+  },
+  wordSearchRow: {
+    flexDirection: 'row',
+  },
+  wordSearchCell: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+  wordSearchLetter: {
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 9,
-    color: C.muted,
+    color: C.charcoal,
+    textAlign: 'center',
+  },
+  wordListLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 9,
+    color: C.warmGray,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  wordListGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  wordListItem: {
+    backgroundColor: C.sageBg,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: C.sage,
+  },
+  wordListText: {
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    fontSize: 9.5,
+    color: C.sageDark,
+    letterSpacing: 0.5,
+  },
+
+  // ── Certificate page ─────────────────────────────────────────────────────────
+  certificatePage: {
+    backgroundColor: C.cream,
+    padding: 56,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  certFrameOuter: {
+    position: 'absolute',
+    top: 20,
+    bottom: 20,
+    left: 20,
+    right: 20,
+    borderWidth: 3,
+    borderColor: C.honey,
+    borderRadius: 6,
+    opacity: 0.6,
+  },
+  certFrameInner: {
+    position: 'absolute',
+    top: 27,
+    bottom: 27,
+    left: 27,
+    right: 27,
+    borderWidth: 1.5,
+    borderColor: C.honey,
+    borderRadius: 4,
+    opacity: 0.35,
+  },
+  certStar: {
+    width: 36,
+    height: 36,
+    marginBottom: 12,
+  },
+  certHeader: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 11,
+    color: C.warmGray,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  certTitle: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 28,
+    color: C.charcoal,
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 1.2,
+  },
+  certPresented: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: C.warmGray,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  certChildName: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 48,
+    color: C.sage,
+    textAlign: 'center',
+    lineHeight: 1.1,
+    marginBottom: 8,
+  },
+  certBody: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: C.warmGray,
+    textAlign: 'center',
+    lineHeight: 1.6,
+    marginBottom: 6,
+  },
+  certTheme: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 18,
+    color: C.honey,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  certDivider: {
+    width: 200,
+    height: 2,
+    backgroundColor: C.honey,
+    borderRadius: 1,
+    opacity: 0.5,
+    marginBottom: 24,
+    alignSelf: 'center',
+  },
+  certDateLine: {
+    fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.warmGray,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  certSignatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: 40,
+    width: '80%',
+  },
+  certSignatureBlock: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: 160,
+  },
+  certSignatureLine: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: C.charcoal,
+    width: '100%',
+    marginBottom: 4,
+  },
+  certSignatureLabel: {
+    fontFamily: 'Nunito',
+    fontSize: 8,
+    color: C.warmGray,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  // ── Notes / reflection pages ─────────────────────────────────────────────────
+  notesPage: {
+    backgroundColor: C.white,
+    padding: 48,
+    flexDirection: 'column',
+  },
+  notesPageTitle: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 24,
+    color: C.charcoal,
+    marginBottom: 4,
+  },
+  notesPageSubtitle: {
+    fontFamily: 'Nunito',
+    fontSize: 11,
+    color: C.warmGray,
+    marginBottom: 22,
+  },
+  mascotImageNotes: {
+    position: 'absolute',
+    top: 40,
+    right: 40,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+  },
+  sectionLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 8,
+    color: C.warmGray,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
   },
-  movementReflectionLines: {
-    borderBottomWidth: 1,
-    borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
-    marginBottom: 22,
-  },
-
-  // ── Mid-page mascot encouragement strip ─────────────────────────────────────
-  midPageEncouragement: {
+  summaryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 8,
-    marginTop: 10,
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  midPageMascotImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  summaryColorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: 10,
+    marginTop: 3,
+    flexShrink: 0,
   },
-  midPageSpeechBubble: {
+  summaryText: {
+    fontFamily: 'Nunito',
+    fontSize: 10,
+    color: C.charcoal,
+    lineHeight: 1.5,
     flex: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 6,
-    backgroundColor: C.white,
   },
-  midPageSpeechText: {
-    fontSize: 9.5,
+  parentNoteBox: {
+    backgroundColor: C.sageBg,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: C.sage,
+  },
+  parentNoteText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
-    color: C.dark,
-    lineHeight: 1.4,
+    fontSize: 10.5,
+    color: C.sageDark,
+    lineHeight: 1.7,
   },
-
-  // ── Star reward box ──────────────────────────────────────────────────────────
-  starRewardBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 10,
-    marginBottom: 6,
-    paddingRight: 4,
+  reflectionBox: {
+    backgroundColor: C.honeyBg,
+    borderWidth: 2.5,
+    borderColor: C.honey,
+    borderRadius: 12,
+    padding: 22,
+    marginBottom: 22,
   },
-  starRewardText: {
+  reflectionLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
     fontSize: 9,
-    color: C.muted,
+    color: C.honeyDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  reflectionText: {
     fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: C.charcoal,
+    lineHeight: 1.75,
   },
-  starChar: {
-    fontSize: 18,
-    lineHeight: 1,
-    marginHorizontal: 3,
+  celebrationBox: {
+    backgroundColor: C.sageBg,
+    borderWidth: 2,
+    borderColor: C.sage,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 18,
   },
-
-  // ── Fun fact bubble (cover page) ─────────────────────────────────────────────
-  funFactBox: {
-    backgroundColor: '#FFF8E7',
+  celebrationLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 9,
+    color: C.sage,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  celebrationText: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: C.sageDark,
+    lineHeight: 1.7,
+  },
+  mascotHuntBox: {
+    backgroundColor: C.honeyBg,
     borderWidth: 1.5,
     borderColor: C.honey,
     borderRadius: 10,
     padding: 12,
-    width: '100%',
-    marginTop: 10,
+    marginTop: 8,
+    marginBottom: 16,
   },
-  funFactText: {
-    fontSize: 10,
-    color: C.honeyDark,
-    fontFamily: 'Nunito',
-    lineHeight: 1.6,
-    textAlign: 'center',
-  },
-
-  // ── Subject icon in activity top bar ────────────────────────────────────────
-  subjectIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 6,
-  },
-
-  // ── Star reward outlined boxes ───────────────────────────────────────────────
-  starBox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderRadius: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 3,
-  },
-  starBoxText: {
-    fontSize: 12,
+  mascotHuntText: {
     fontFamily: 'Nunito',
     fontWeight: 700,
-    lineHeight: 1,
+    fontSize: 10,
+    color: C.honeyDark,
+    textAlign: 'center',
+    lineHeight: 1.5,
+  },
+  observationsLabel: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 12,
+    color: C.charcoal,
+    marginBottom: 16,
+  },
+  ruledLine: {
+    borderBottomWidth: 1,
+    borderBottomStyle: 'dotted' as const,
+    borderBottomColor: '#D1D5DB',
+    marginBottom: 26,
+  },
+  notesFooter: {
+    marginTop: 'auto',
+    paddingTop: 16,
+    borderTopWidth: 0.5,
+    borderTopColor: C.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerText: {
+    fontFamily: 'Nunito',
+    fontSize: 8.5,
+    color: C.warmGray,
+  },
+
+  // ── Coloring page ────────────────────────────────────────────────────────────
+  coloringPage: {
+    backgroundColor: C.cream,
+    padding: 48,
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  coloringHeaderText: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 13,
+    color: C.sage,
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  coloringTitle: {
+    fontFamily: 'Fraunces',
+    fontWeight: 700,
+    fontSize: 28,
+    color: C.charcoal,
+    textAlign: 'center',
+    marginBottom: 14,
+    lineHeight: 1.25,
+  },
+  coloringBox: {
+    borderWidth: 2.5,
+    borderStyle: 'dashed' as const,
+    borderColor: '#A3C4B0',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    padding: 12,
+    width: '100%',
+  },
+  coloringBoxImage: {
+    width: 420,
+    height: 420,
+    objectFit: 'contain',
+  },
+  coloringBoxPlaceholder: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: '#A3C4B0',
+    textAlign: 'center',
+    lineHeight: 1.7,
+    width: 420,
+    height: 420,
+  },
+  coloringInstructionBubble: {
+    borderWidth: 2,
+    borderColor: '#A3C4B0',
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: C.white,
+    width: '100%',
+    marginTop: 4,
+  },
+  coloringInstructionText: {
+    fontFamily: 'Nunito',
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: C.sageDark,
+    textAlign: 'center',
+    lineHeight: 1.6,
   },
 });
+
+// ─── SVG star component ───────────────────────────────────────────────────────
+
+function StarSvg({ color, size = 18 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Polygon
+        points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+      />
+    </Svg>
+  );
+}
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
 
@@ -1123,108 +1459,148 @@ function CoverPage({
   mascotName,
   greeting,
   activities,
+  packetMission,
 }: PacketPDFProps) {
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
+  const missionText = sanitizeText(packetMission) || sanitizeText(greeting) || greetingMessage(childName, theme);
 
   return (
     <Page size="LETTER" style={styles.coverPage}>
-      {/* Top wordmark */}
-      <View>
+      {/* Decorative border frames */}
+      <View style={styles.coverFrameOuter} />
+      <View style={styles.coverFrameInner} />
+
+      {/* Top row: wordmark + date */}
+      <View style={styles.coverTop}>
         <Text style={styles.wordmark}>Packet Day</Text>
+        <Text style={styles.coverDate}>{formatPDFDate(createdAt)}</Text>
       </View>
 
       {/* Center block */}
       <View style={styles.coverCenter}>
+        {/* Mascot hero image or fallback emoji circle */}
         {mascotImageUrl ? (
           <>
-            {/* Mascot — 320x320 image inside 340-height container */}
-            <View style={{ height: 340, alignItems: "center", justifyContent: "center" }}>
-              <Image src={mascotImageUrl} style={styles.mascotImageCover} />
-            </View>
+            <Image src={mascotImageUrl} style={styles.mascotImageCover} />
             {mascotName && (
-              <Text style={styles.mascotNameText}>{mascotName}</Text>
+              <Text style={styles.mascotNameText}>{sanitizeText(mascotName)}</Text>
             )}
           </>
         ) : (
-          <View style={styles.childAvatarCircle}>
-            <Text style={styles.childAvatarEmoji}>{childEmoji}</Text>
+          <View style={styles.mascotFallbackCircle}>
+            <Text style={styles.mascotFallbackEmoji}>{childEmoji}</Text>
           </View>
         )}
 
-        {/* Title banner strip */}
-        <View style={styles.titleBanner}>
-          <Text style={styles.packetTitle}>{sanitizeText(title)}</Text>
-        </View>
+        {/* Packet title — Fraunces bold, large */}
+        <Text style={styles.coverTitle}>{sanitizeText(title)}</Text>
 
-        <Text style={styles.packetSubtitle}>
-          A day of learning made just for {childName}  |  {formatPDFDate(createdAt)}
+        <Text style={styles.coverSubtitle}>
+          {childName}&apos;s Learning Adventure
         </Text>
 
-        {/* Greeting box */}
-        <View style={styles.greetingBox}>
-          <Text style={styles.greetingText}>
-            {sanitizeText(greeting) || greetingMessage(childName, theme)}
+        {/* Activity count badge */}
+        <View style={styles.activityBadge}>
+          <Text style={styles.activityBadgeText}>
+            {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'} · {totalMinutes} min
           </Text>
         </View>
-      </View>
 
-      {/* Fun fact bubble */}
-      <View style={styles.funFactBox}>
-        <Text style={styles.funFactText}>
-          {"Did you know? Today's packet has " + activities.length + " activities and " + totalMinutes + " minutes of learning made just for " + childName + "!"}
-        </Text>
+        {/* Mission / greeting box */}
+        <View style={styles.greetingBox}>
+          {packetMission ? (
+            <Text style={styles.greetingLabel}>Your Mission Today</Text>
+          ) : null}
+          <Text style={styles.greetingText}>{missionText}</Text>
+        </View>
       </View>
 
       {/* Footer */}
       <View style={styles.coverFooter}>
         <Text style={styles.coverFooterText}>Made with love by Packet Day</Text>
-        <Text style={styles.coverFooterDot}>  |  </Text>
+        <Text style={styles.coverFooterDot}>  ·  </Text>
         <Text style={styles.coverFooterText}>packetday.com</Text>
       </View>
     </Page>
   );
 }
 
-// ─── Activity page ────────────────────────────────────────────────────────────
+// ─── Activity top bar ─────────────────────────────────────────────────────────
 
-// Shared colored top bar + encouragement speech bubble used by all three templates
 function ActivityTopBar({
   activity,
   colors,
-  childName,
   mascotImageUrl,
+  band,
 }: {
   activity: PDFActivity;
-  colors: (typeof ACTIVITY_COLORS)[0];
-  childName: string;
+  colors: ActivityColor;
   mascotImageUrl?: string | null;
+  band: 'K-2' | '3-5' | '6-8';
 }) {
+  const bc = getBandConfig(band);
+  const barTitleSize = band === 'K-2' ? 20 : band === '3-5' ? 18 : 15;
+  const mascotSize = bc.mascotInBar;
+
   return (
-    <View style={[styles.activityBar, { backgroundColor: colors.bar }]}>
+    <View style={{ height: bc.barH, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 28, gap: 12, backgroundColor: colors.bar }}>
       <View style={styles.activityBarLeft}>
-        {/* Subject row: twemoji PNG icon + subject label */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image src={getSubjectIconUrl(activity.subject)} style={styles.subjectIcon} />
-          <Text style={styles.activityBarSubject}>{activity.subject}</Text>
+        <View style={styles.activityBarSubjectRow}>
+          <Image src={getSubjectIconUrl(activity.subject)} style={styles.activityBarIcon} />
+          <Text style={styles.activityBarSubject}>{sanitizeText(activity.subject)}</Text>
         </View>
-        <Text style={styles.activityBarTitle}>{sanitizeText(activity.title)}</Text>
+        <Text style={[styles.activityBarTitle, { fontSize: barTitleSize }]}>
+          {sanitizeText(activity.title)}
+        </Text>
       </View>
       <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
       {mascotImageUrl && (
-        <Image src={mascotImageUrl} style={styles.mascotImageCorner} />
+        <Image
+          src={mascotImageUrl}
+          style={{
+            position: 'absolute',
+            top: (bc.barH - mascotSize) / 2,
+            right: 14,
+            width: mascotSize,
+            height: mascotSize,
+            borderRadius: mascotSize / 2,
+            borderWidth: 2,
+            borderColor: 'rgba(255,255,255,0.6)',
+          }}
+        />
       )}
     </View>
   );
 }
 
-// Mid-page mascot encouragement strip — shown after instructions, before answer area
+// ─── Hidden mascot (small, corner) ────────────────────────────────────────────
+
+function HiddenMascot({
+  mascotImageUrl,
+  pageIndex,
+}: {
+  mascotImageUrl?: string | null;
+  pageIndex: number;
+}) {
+  if (!mascotImageUrl) return null;
+  const pos = HIDDEN_MASCOT_CORNERS[pageIndex % HIDDEN_MASCOT_CORNERS.length];
+  return (
+    <Image
+      src={mascotImageUrl}
+      style={[styles.hiddenMascotImage, pos]}
+    />
+  );
+}
+
+// ─── Mid-page mascot encouragement ────────────────────────────────────────────
+
 function MidPageEncouragement({
   activity,
   colors,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
-  colors: (typeof ACTIVITY_COLORS)[0];
+  colors: ActivityColor;
   mascotImageUrl?: string | null;
 }) {
   if (!mascotImageUrl) return null;
@@ -1233,39 +1609,56 @@ function MidPageEncouragement({
       <Image src={mascotImageUrl} style={styles.midPageMascotImage} />
       <View style={[styles.midPageSpeechBubble, { borderColor: colors.bar }]}>
         <Text style={styles.midPageSpeechText}>
-          {activity.encouragement || 'Keep going - you are doing amazing!'}
+          {activity.encouragement || 'Keep going — you are doing amazing!'}
         </Text>
       </View>
     </View>
   );
 }
 
-// Star reward row — "How did I do today?" shown above the answer key on every page.
-// Uses outlined boxes with "*" instead of unicode star glyphs (no emoji font support).
-function StarRewardBox({ colors }: { colors: (typeof ACTIVITY_COLORS)[0] }) {
+// ─── Star rating row ──────────────────────────────────────────────────────────
+
+function StarRewardRow({
+  colors,
+  band,
+}: {
+  colors: ActivityColor;
+  band: 'K-2' | '3-5' | '6-8';
+}) {
+  const label = band === '6-8' ? 'Self-assessment:' : 'How did I do today?';
+  const starSize = band === 'K-2' ? 22 : band === '3-5' ? 18 : 16;
   return (
     <View wrap={false} style={styles.starRewardBox}>
-      <Text style={styles.starRewardText}>How did I do today?</Text>
+      <Text style={styles.starRewardText}>{label}</Text>
       {[0, 1, 2].map((i) => (
-        <View key={i} style={[styles.starBox, { borderColor: colors.bar }]}>
-          <Text style={[styles.starBoxText, { color: colors.bar }]}>*</Text>
-        </View>
+        <StarSvg key={i} color={colors.bar} size={starSize} />
       ))}
-      <Text style={styles.starRewardText}>Circle your stars!</Text>
     </View>
   );
 }
 
-// ── Math section renderer ─────────────────────────────────────────────────────
-// Parses the 3 labeled sections produced by the math activity prompt and renders
-// each with a distinct visual treatment.
+// ─── Fun fact callout ─────────────────────────────────────────────────────────
+
+function FunFactBox({ funFact }: { funFact: string }) {
+  if (!funFact) return null;
+  return (
+    <View wrap={false} style={styles.funFactBox}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.funFactLabel}>Did you know?</Text>
+        <Text style={styles.funFactText}>{sanitizeText(funFact)}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Math sections ────────────────────────────────────────────────────────────
 
 function MathSections({
   instructions,
   colors,
 }: {
   instructions: string[];
-  colors: (typeof ACTIVITY_COLORS)[0];
+  colors: ActivityColor;
 }) {
   let quickCalcsLabel = 'Quick Calculations';
   let quickCalcs: string[] = [];
@@ -1280,10 +1673,7 @@ function MathSections({
 
     if (step.includes('QUICK CALCULATIONS')) {
       quickCalcsLabel = label;
-      // Strip optional "Solve these problems:" sub-header if Claude added one
       const cleaned = rest.replace(/^solve these problems:\s*/i, '');
-      // New packets use ' || ' separator; old packets used ' / '.
-      // Try || first; fall back to / so old stored packets still render.
       const byPipe = cleaned.split(' || ').map((s) => s.trim()).filter(Boolean);
       quickCalcs = byPipe.length > 1 ? byPipe : cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
     } else if (step.includes('WORD PROBLEMS')) {
@@ -1296,9 +1686,9 @@ function MathSections({
 
   return (
     <>
-      {/* ── Section 1: Quick Calculations — 2-column grid ── */}
+      {/* Quick Calculations — 2-column grid */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>{"[ " + quickCalcsLabel + " ]"}</Text>
+        <Text style={styles.mathSectionBarText}>{'[ ' + quickCalcsLabel + ' ]'}</Text>
       </View>
       <View style={styles.mathCalcGrid}>
         {quickCalcs.map((prob, i) => (
@@ -1312,9 +1702,9 @@ function MathSections({
         ))}
       </View>
 
-      {/* ── Section 2: Word Problems — shaded boxes with answer lines ── */}
+      {/* Word Problems */}
       <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-        <Text style={styles.mathSectionBarText}>{"[ Word Problems ]"}</Text>
+        <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
       </View>
       {wordProblems.map((prob, i) => (
         <View wrap={false} key={i} style={styles.mathWordBox}>
@@ -1324,11 +1714,11 @@ function MathSections({
         </View>
       ))}
 
-      {/* ── Section 3: Draw & Solve — prompt bubble + draw box + answer line ── */}
+      {/* Draw & Solve */}
       {drawAndSolve !== '' && (
         <>
           <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
-            <Text style={styles.mathSectionBarText}>{"[ Draw & Solve ]"}</Text>
+            <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
           </View>
           <View wrap={false}>
             <View style={styles.mathDrawPromptBubble}>
@@ -1346,9 +1736,7 @@ function MathSections({
   );
 }
 
-// ── Template A — Worksheet (math, science, general) ──────────────────────────
-// Math activities: structured 3-section rendering via MathSections.
-// All other subjects: each instruction step in its own shaded box with 3 answer lines.
+// ─── Template A — Worksheet ───────────────────────────────────────────────────
 
 function WorksheetTemplate({
   activity,
@@ -1356,79 +1744,82 @@ function WorksheetTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  pageIndex,
 }: {
   activity: PDFActivity;
-  colors: (typeof ACTIVITY_COLORS)[0];
+  colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  pageIndex: number;
 }) {
-  const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
-  const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
   const band = getGradeBand(childGrade);
+  const bc = getBandConfig(band);
   const answerLines = worksheetAnswerLines(band);
+  const isMath = activity.subject.toLowerCase().includes('math');
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
-      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
-      <View style={styles.activityContent}>
+      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         {/* Materials */}
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
         {/* Description */}
-        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: C.white, borderLeftColor: colors.bar }]}>
-          <Text style={styles.descriptionText}>{sanitizeText(activity.description)}</Text>
+        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: C.white, borderLeftColor: colors.bar, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
+          <Text style={[styles.descriptionText, { fontSize: bc.body }]}>{sanitizeText(activity.description)}</Text>
         </View>
 
-        {/* Instructions — math gets structured sections; everything else gets shaded boxes */}
-        {activity.subject.toLowerCase().includes('math') ? (
+        {/* Instructions */}
+        {isMath ? (
           <MathSections instructions={activity.instructions} colors={colors} />
         ) : (
           <>
-            <Text style={styles.instructionsLabel}>
-              {'[ How to do it ]'}
-            </Text>
+            <Text style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
             {activity.instructions.map((step, i) => (
-              <View wrap={false} key={i} style={styles.questionBox}>
-                <View style={[styles.instructionRow, { marginBottom: 0 }]}>
-                  <View style={styles.instructionCheckbox} />
-                  <View style={bulletBgStyle}>
-                    <Text style={bulletTextStyle}>{i + 1}</Text>
+              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.bar + '33' }]}>
+                <View style={[styles.instructionRow, { marginBottom: 2 }]}>
+                  <View style={[styles.instructionBullet, { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.bar }]}>
+                    <Text style={[styles.instructionBulletText, { color: colors.bar }]}>{i + 1}</Text>
                   </View>
-                  <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
+                  <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
                 </View>
                 {Array.from({ length: answerLines }, (_, j) => (
-                  <View key={j} style={styles.answerLineInBox} />
+                  <View key={j} style={[styles.answerLineInBox, { marginTop: bc.lineSpacing / 2 }]} />
                 ))}
               </View>
             ))}
           </>
         )}
 
-        {/* Mid-page mascot encouragement */}
+        {/* Fun fact */}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+
+        {/* Mid-page encouragement */}
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
 
-        {/* Bonus challenge */}
-        <View wrap={false} style={styles.bonusChallengeBox}>
-          <Text style={styles.bonusChallengeHeader}>BONUS CHALLENGE</Text>
-          <Text style={styles.bonusChallengeText}>
-            {bonusChallenge(activity.subject, activity.title)}
-          </Text>
-        </View>
+        {/* Bonus challenge — only for K-5 */}
+        {band !== '6-8' && (
+          <View wrap={false} style={styles.bonusChallengeBox}>
+            <Text style={styles.bonusChallengeHeader}>Bonus Challenge</Text>
+            <Text style={styles.bonusChallengeText}>{bonusChallenge(activity.subject, activity.title)}</Text>
+          </View>
+        )}
 
-        {/* Star reward */}
-        <StarRewardBox colors={colors} />
+        {/* Star rating */}
+        <StarRewardRow colors={colors} band={band} />
 
         {/* Answer key */}
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
-            <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
+            <Text style={styles.answerKeyHeader}>For Grown-Ups Only</Text>
             <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
@@ -1437,27 +1828,26 @@ function WorksheetTemplate({
   );
 }
 
-// ── Template B — Reading Passage ──────────────────────────────────────────────
-// Passage in a cream-tinted block with activity-color left border.
-// Comprehension questions each get their own shaded box with 2 answer lines.
+// ─── Template B — Reading Passage ─────────────────────────────────────────────
 
 function ReadingTemplate({
   activity,
   colors,
   childName,
+  childGrade,
   mascotImageUrl,
+  pageIndex,
 }: {
   activity: PDFActivity;
-  colors: (typeof ACTIVITY_COLORS)[0];
+  colors: ActivityColor;
   childName: string;
+  childGrade: string;
   mascotImageUrl?: string | null;
+  pageIndex: number;
 }) {
-  const bulletBgStyle = [styles.instructionBullet, { backgroundColor: colors.bg + "CC" }];
-  const bulletTextStyle = [styles.instructionBulletText, { color: colors.bar }];
+  const band = getGradeBand(childGrade);
+  const bc = getBandConfig(band);
 
-  // Prefer the explicit passage field (new packets).
-  // Fall back to the length-heuristic for old packets that embedded the
-  // passage as the longest instruction entry.
   let passage: string | null = null;
   let questions: string[];
 
@@ -1472,53 +1862,49 @@ function ReadingTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
-      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
-      <View style={styles.activityContent}>
-        {/* Materials */}
+      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
-        {/* Reading passage — cream bg + activity-color left border */}
         {passage && (
-          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar }]}>
-            <Text style={styles.readingPassageLabel}>{"[ Read This ]"}</Text>
-            <Text style={styles.readingPassageText}>{sanitizeText(passage)}</Text>
+          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar, borderRadius: bc.cardRadius }]}>
+            <Text style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
+            <Text style={[styles.readingPassageText, { fontSize: bc.body }]}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
-        {/* Comprehension questions — each in a shaded box with 2 answer lines */}
         {questions.length > 0 && (
-          <Text style={styles.instructionsLabel}>{"[ Comprehension Questions ]"}</Text>
+          <Text style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
         )}
         {questions.map((step, i) => (
-          <View wrap={false} key={i} style={styles.questionBox}>
-            <View style={[styles.instructionRow, { marginBottom: 0 }]}>
-              <View style={styles.instructionCheckbox} />
-              <View style={bulletBgStyle}>
-                <Text style={bulletTextStyle}>{i + 1}</Text>
+          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.bar + '33' }]}>
+            <View style={[styles.instructionRow, { marginBottom: 2 }]}>
+              <View style={[styles.instructionBullet, { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.bar }]}>
+                <Text style={[styles.instructionBulletText, { color: colors.bar }]}>{i + 1}</Text>
               </View>
-              <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
+              <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
             </View>
             <View style={styles.answerLineInBox} />
             <View style={styles.answerLineInBox} />
           </View>
         ))}
 
-        {/* Mid-page mascot encouragement */}
+        {/* Fun fact */}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
+        <StarRewardRow colors={colors} band={band} />
 
-        {/* Star reward */}
-        <StarRewardBox colors={colors} />
-
-        {/* Answer key */}
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
-            <Text style={styles.answerKeyHeader}>FOR GROWN-UPS ONLY</Text>
+            <Text style={styles.answerKeyHeader}>For Grown-Ups Only</Text>
             <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
@@ -1527,11 +1913,7 @@ function ReadingTemplate({
   );
 }
 
-// ── Template C — Open Workspace (writing, movement, coloring) ────────────────
-// Response area is determined by content_type:
-//   writing_prompt  → ruled writing lines (grade-appropriate count)
-//   movement_activity → small "How did it go?" reflection box
-//   coloring        → large open draw box
+// ─── Template C — Open Workspace ──────────────────────────────────────────────
 
 function OpenWorkspaceTemplate({
   activity,
@@ -1539,76 +1921,150 @@ function OpenWorkspaceTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  pageIndex,
 }: {
   activity: PDFActivity;
-  colors: (typeof ACTIVITY_COLORS)[0];
+  colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  pageIndex: number;
 }) {
-  const contentType = resolveContentType(activity);
   const band = getGradeBand(childGrade);
+  const bc = getBandConfig(band);
+  const contentType = resolveContentType(activity);
   const lineCount = writingLineCount(band);
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
-      <ActivityTopBar activity={activity} colors={colors} childName={childName} mascotImageUrl={mascotImageUrl} />
+      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
-      <View style={styles.activityContent}>
-        {/* Materials */}
+      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join("  /  ")}</Text>
+            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
-        {/* Prompt bubble — description + instruction steps */}
-        <View style={styles.promptBubble}>
-          <Text style={styles.promptBubbleText}>{sanitizeText(activity.description)}</Text>
+        {/* Prompt bubble */}
+        <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
+          <Text style={[styles.promptBubbleText, { fontSize: bc.body + 0.5 }]}>{sanitizeText(activity.description)}</Text>
           {activity.instructions.map((step, i) => (
-            <Text key={i} style={styles.promptInstructionText}>
+            <Text key={i} style={[styles.promptInstructionText, { fontSize: bc.instrBody }]}>
               {i + 1}. {sanitizeText(step)}
             </Text>
           ))}
         </View>
 
-        {/* Mid-page mascot encouragement */}
+        {/* Fun fact */}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
 
-        {/* Response area — routed by content_type */}
-        {contentType === "writing_prompt" && (
+        {/* Response area */}
+        {contentType === 'writing_prompt' && (
           <>
             <Text style={styles.writingSpaceHeader}>My Writing Space</Text>
             {Array.from({ length: lineCount }, (_, i) => (
-              <View key={i} style={styles.writingLine} />
+              <View key={i} style={[styles.writingLine, { marginBottom: bc.lineSpacing }]} />
             ))}
           </>
         )}
 
-        {contentType === "movement_activity" && (
+        {contentType === 'movement_activity' && (
           <View wrap={false} style={styles.movementReflectionBox}>
             <Text style={styles.movementReflectionLabel}>How did it go?</Text>
             {Array.from({ length: 3 }, (_, i) => (
-              <View key={i} style={styles.movementReflectionLines} />
+              <View key={i} style={styles.movementReflectionLine} />
             ))}
           </View>
         )}
 
-        {contentType === "coloring" && (
+        {contentType === 'coloring' && (
           <View style={styles.drawBox}>
             <Text style={styles.drawBoxLabel}>Draw or write here</Text>
           </View>
         )}
 
-        {/* Star reward */}
-        <StarRewardBox colors={colors} />
+        <StarRewardRow colors={colors} band={band} />
       </View>
     </Page>
   );
 }
 
-// ── Dispatcher — picks the right template based on content_type ───────────────
+// ─── Template D — Puzzle Break (Word Search) ──────────────────────────────────
+
+function PuzzleBreakTemplate({
+  activity,
+  colors,
+  childName,
+  childGrade,
+  mascotImageUrl,
+  pageIndex,
+}: {
+  activity: PDFActivity;
+  colors: ActivityColor;
+  childName: string;
+  childGrade: string;
+  mascotImageUrl?: string | null;
+  pageIndex: number;
+}) {
+  const band = getGradeBand(childGrade);
+  const bc = getBandConfig(band);
+  const gridSize = band === '6-8' ? 12 : 10;
+  const cellSize = band === '6-8' ? 20 : 22;
+
+  const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
+
+  return (
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
+
+      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+        {/* Intro */}
+        <View style={[styles.puzzleIntroBox, { borderRadius: bc.cardRadius }]}>
+          <Text style={[styles.puzzleIntroText, { fontSize: bc.body + 0.5 }]}>
+            {sanitizeText(activity.description)}
+          </Text>
+        </View>
+
+        {/* Fun fact */}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+
+        {/* Word search grid */}
+        <View style={styles.wordSearchGrid}>
+          {grid.map((row, r) => (
+            <View key={r} style={styles.wordSearchRow}>
+              {row.map((letter, c) => (
+                <View key={c} style={[styles.wordSearchCell, { width: cellSize, height: cellSize }]}>
+                  <Text style={styles.wordSearchLetter}>{letter}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+
+        {/* Word list */}
+        <Text style={styles.wordListLabel}>Find these words:</Text>
+        <View style={styles.wordListGrid}>
+          {placed.map((word, i) => (
+            <View key={i} style={styles.wordListItem}>
+              <Text style={styles.wordListText}>{word}</Text>
+            </View>
+          ))}
+        </View>
+
+        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
+        <StarRewardRow colors={colors} band={band} />
+      </View>
+    </Page>
+  );
+}
+
+// ─── Activity page dispatcher ─────────────────────────────────────────────────
 
 function ActivityPage({
   activity,
@@ -1623,43 +2079,73 @@ function ActivityPage({
   childGrade: string;
   mascotImageUrl?: string | null;
 }) {
-  const colors = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
+  const band = getGradeBand(childGrade);
+  const colors = getActivityColors(index, band);
   const contentType = resolveContentType(activity);
 
-  if (contentType === "reading_passage") {
-    return (
-      <ReadingTemplate
-        activity={activity}
-        colors={colors}
-        childName={childName}
-        mascotImageUrl={mascotImageUrl}
-      />
-    );
+  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, pageIndex: index };
+
+  if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
+  if (contentType === 'puzzle_break')     return <PuzzleBreakTemplate {...sharedProps} />;
+  if (contentType === 'writing_prompt' || contentType === 'movement_activity' || contentType === 'coloring') {
+    return <OpenWorkspaceTemplate {...sharedProps} />;
   }
-  if (
-    contentType === "writing_prompt" ||
-    contentType === "movement_activity" ||
-    contentType === "coloring"
-  ) {
-    return (
-      <OpenWorkspaceTemplate
-        activity={activity}
-        colors={colors}
-        childName={childName}
-        childGrade={childGrade}
-        mascotImageUrl={mascotImageUrl}
-      />
-    );
-  }
-  // "worksheet" — math, science, history
+  return <WorksheetTemplate {...sharedProps} />;
+}
+
+// ─── Certificate page ─────────────────────────────────────────────────────────
+
+function CertificatePage({
+  childName,
+  theme,
+  createdAt,
+  mascotImageUrl,
+}: {
+  childName: string;
+  theme: string;
+  createdAt: string;
+  mascotImageUrl?: string | null;
+}) {
   return (
-    <WorksheetTemplate
-      activity={activity}
-      colors={colors}
-      childName={childName}
-      childGrade={childGrade}
-      mascotImageUrl={mascotImageUrl}
-    />
+    <Page size="LETTER" style={styles.certificatePage}>
+      {/* Decorative frames */}
+      <View style={styles.certFrameOuter} />
+      <View style={styles.certFrameInner} />
+
+      {/* Trophy star SVG */}
+      <View style={{ marginBottom: 16 }}>
+        <Svg width={48} height={48} viewBox="0 0 24 24">
+          <Polygon
+            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+            fill={C.honey}
+            stroke={C.honeyDark}
+            strokeWidth="0.5"
+          />
+        </Svg>
+      </View>
+
+      <Text style={styles.certHeader}>Certificate of Completion</Text>
+      <Text style={styles.certPresented}>This certifies that</Text>
+      <Text style={styles.certChildName}>{sanitizeText(childName)}</Text>
+      <Text style={styles.certBody}>has successfully completed all activities in</Text>
+      <Text style={styles.certTheme}>{sanitizeText(theme)}</Text>
+
+      <View style={styles.certDivider} />
+      <Text style={styles.certDateLine}>{formatPDFDate(createdAt)}</Text>
+
+      {/* Signature lines */}
+      <View style={styles.certSignatureRow}>
+        <View style={styles.certSignatureBlock}>
+          <View style={styles.certSignatureLine} />
+          <Text style={styles.certSignatureLabel}>Grown-up Signature</Text>
+        </View>
+      </View>
+
+      {/* Small mascot at bottom */}
+      {mascotImageUrl && (
+        <Image src={mascotImageUrl} style={{ position: 'absolute', bottom: 48, right: 48, width: 64, height: 64, borderRadius: 32, opacity: 0.8 }} />
+      )}
+    </Page>
   );
 }
 
@@ -1675,53 +2161,36 @@ function ParentNotesPage({
 }: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.notesPage}>
-      {/* Mascot — 120x120 top-right corner */}
       {mascotImageUrl && (
         <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
       )}
 
-      <Text style={styles.notesPageTitle}>Today's Packet at a Glance</Text>
+      <Text style={styles.notesPageTitle}>Today at a Glance</Text>
       <Text style={styles.notesPageSubtitle}>
-        {activities.length} activities  |  {" "}
-        {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
+        {activities.length} activities  ·  {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
       </Text>
 
-      {/* Activity summary with color dots + star checkboxes */}
       <Text style={styles.sectionLabel}>Activity Summary</Text>
       {activities.map((activity, i) => {
-        const colors = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
+        const band = getGradeBand('Grade 3'); // parent notes don't need band styling
+        const colors = getActivityColors(i, band);
         return (
           <View key={i} style={styles.summaryRow}>
-            <View
-              style={[styles.summaryColorDot, { backgroundColor: colors.bar }]}
-            />
+            <View style={[styles.summaryColorDot, { backgroundColor: colors.bar }]} />
             <Text style={styles.summaryText}>
-              <Text style={{ fontFamily: "Nunito", fontWeight: 700 }}>
-                {activity.subject}:{" "}
-              </Text>
-              {activity.title} - {activity.estimated_minutes} min
+              <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
+              {activity.title} — {activity.estimated_minutes} min
             </Text>
-            <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
               {[0, 1, 2, 3, 4].map((j) => (
-                <View
-                  key={j}
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderWidth: 1.5,
-                    borderColor: colors.bar,
-                    borderRadius: 2,
-                    marginLeft: 6,
-                  }}
-                />
+                <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.bar, borderRadius: 2, marginLeft: 5 }} />
               ))}
             </View>
           </View>
         );
       })}
 
-      {/* Parent note */}
-      <View style={{ marginTop: 24, marginBottom: 6 }}>
+      <View style={{ marginTop: 22, marginBottom: 6 }}>
         <Text style={styles.sectionLabel}>A Note for You</Text>
       </View>
       <View style={styles.parentNoteBox}>
@@ -1730,18 +2199,14 @@ function ParentNotesPage({
         </Text>
       </View>
 
-      {/* Observation lines */}
       <Text style={styles.observationsLabel}>My Observations</Text>
       {Array.from({ length: 8 }, (_, i) => (
         <View key={i} style={styles.ruledLine} />
       ))}
 
-      {/* Footer */}
       <View style={styles.notesFooter}>
         <Text style={styles.footerText}>Made with love by Packet Day</Text>
-        <Text style={styles.footerText}>
-          packetday.com  |  {formatPDFDate(createdAt)}
-        </Text>
+        <Text style={styles.footerText}>packetday.com  ·  {formatPDFDate(createdAt)}</Text>
       </View>
     </Page>
   );
@@ -1761,60 +2226,71 @@ function ColoringPage({
   const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
   return (
     <Page size="LETTER" style={styles.coloringPage}>
-      {/* "Color me!" heading */}
-      <Text style={styles.colorMeText}>Color me!</Text>
-
-      {/* Title */}
-      <Text style={styles.coloringTitle}>{coloringPage.title}</Text>
-
-      {/* Coloring area */}
+      <Text style={styles.coloringHeaderText}>Color me!</Text>
+      <Text style={styles.coloringTitle}>{sanitizeText(coloringPage.title)}</Text>
       <View style={styles.coloringBox}>
         {imageUrl ? (
           <Image src={imageUrl} style={styles.coloringBoxImage} />
         ) : (
-          <Text style={styles.coloringBoxPlaceholder}>
-            Draw your scene here!
-          </Text>
+          <Text style={styles.coloringBoxPlaceholder}>Draw your scene here!</Text>
         )}
       </View>
-
-      {/* Instructions as speech bubble at bottom */}
       <View style={styles.coloringInstructionBubble}>
-        <Text style={styles.coloringInstructionText}>
-          {coloringPage.instructions}
-        </Text>
+        <Text style={styles.coloringInstructionText}>{sanitizeText(coloringPage.instructions)}</Text>
       </View>
     </Page>
   );
 }
 
-// ─── Reflection page ─────────────────────────────────────────────────────────
+// ─── Celebration / reflection page ────────────────────────────────────────────
 
-function ReflectionPage({ childName, theme, createdAt, dailyReflection }: PacketPDFProps) {
+function CelebrationPage({
+  childName,
+  theme,
+  createdAt,
+  dailyReflection,
+  packetCelebration,
+  mascotName,
+  mascotImageUrl,
+}: PacketPDFProps) {
   return (
     <Page size="LETTER" style={styles.notesPage}>
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
-      <Text style={styles.notesPageSubtitle}>
-        Take a moment to think about today's learning.
-      </Text>
+      <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
 
+      {/* Celebration message from mascot */}
+      {packetCelebration && (
+        <View style={styles.celebrationBox}>
+          <Text style={styles.celebrationLabel}>{mascotName ? mascotName + ' says:' : 'Great work!'}</Text>
+          <Text style={styles.celebrationText}>{sanitizeText(packetCelebration)}</Text>
+        </View>
+      )}
+
+      {/* Reflection question */}
       <View style={styles.reflectionBox}>
-        <Text style={styles.reflectionLabel}>Daily Reflection Question</Text>
+        <Text style={styles.reflectionLabel}>Today&apos;s Question</Text>
         <Text style={styles.reflectionText}>
           {sanitizeText(dailyReflection) || reflectionQuestion(theme)}
         </Text>
       </View>
 
       {/* Writing lines */}
-      {Array.from({ length: 10 }, (_, i) => (
+      {Array.from({ length: 8 }, (_, i) => (
         <View key={i} style={styles.ruledLine} />
       ))}
 
+      {/* Hidden mascot hunt prompt */}
+      {mascotImageUrl && mascotName && (
+        <View style={styles.mascotHuntBox}>
+          <Text style={styles.mascotHuntText}>
+            Did you find {sanitizeText(mascotName)} hiding on every activity page? Go back and count them all!
+          </Text>
+        </View>
+      )}
+
       <View style={styles.notesFooter}>
         <Text style={styles.footerText}>Made with love by Packet Day</Text>
-        <Text style={styles.footerText}>
-          packetday.com  |  {formatPDFDate(createdAt)}
-        </Text>
+        <Text style={styles.footerText}>packetday.com  ·  {formatPDFDate(createdAt)}</Text>
       </View>
     </Page>
   );
@@ -1827,7 +2303,7 @@ export default function PacketPDF(props: PacketPDFProps) {
     <Document
       title={props.title}
       author="Packet Day"
-      subject={`${props.theme} • ${props.childName}`}
+      subject={`${props.theme} · ${props.childName}`}
       creator="packetday.com"
     >
       <CoverPage {...props} />
@@ -1842,6 +2318,12 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
         />
       ))}
+      <CertificatePage
+        childName={props.childName}
+        theme={props.theme}
+        createdAt={props.createdAt}
+        mascotImageUrl={props.mascotImageUrl}
+      />
       {props.coloringPage && (
         <ColoringPage
           coloringPage={props.coloringPage}
@@ -1849,7 +2331,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
         />
       )}
-      <ReflectionPage {...props} />
+      <CelebrationPage {...props} />
     </Document>
   );
 }

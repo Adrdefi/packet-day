@@ -120,6 +120,8 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
 {
   "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
   "greeting": "2-3 sentences. Warm and direct to the child. Plain text. No emoji.",
+  "packet_mission": "2-3 sentences. The mascot gives the child a themed quest ('Your mission today is to...'). Direct address. Mascot's voice. Plain text. No emoji.",
+  "packet_celebration": "2-3 sentences. Mascot's victory message for the final page. References specific activities the child completed. Warm and celebratory. Plain text. No emoji.",
   "mascot_name": "Fun character name — no emoji",
   "mascot_description": "A cute cartoon [character] [action], [accessories], bright colors, simple clean lines, white background, kid-friendly illustration",
   "mascot_emoji_cluster": "5-6 emoji representing the theme — ONLY field that may contain emoji",
@@ -130,6 +132,7 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
       "title": "Activity title — no emoji",
       "description": "One sentence summary. Plain text. No emoji.",
       "encouragement": "Personalized hype line using the child's name. References this specific activity. No emoji. Never a generic phrase like 'You've got this!'",
+      "fun_fact": "One themed wow-fact or kid-appropriate joke related to this activity. One sentence. Surprising and specific. Plain text. No emoji.",
       "passage": null,
       "instructions": ["step or question 1", "step or question 2"],
       "estimated_minutes": 25,
@@ -146,10 +149,21 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   "parent_notes": "Context for the parent. Plain text. No emoji."
 }
 
-Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring"
+Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring" | "puzzle_break"
 - reading_passage: put full passage in "passage" field, questions only in "instructions"
+- puzzle_break: instructions array must be a list of 6-10 themed WORDS (uppercase, letters only, 3-10 characters each). No sentences — just the words to find. passage must be null.
 - all others: "passage" must be null
-</output_schema>`;
+</output_schema>
+
+<puzzle_break_rules>
+For FULL-DAY packets (5 activities), include a puzzle_break as the 4th activity — between the 3rd and final subject activity.
+The puzzle_break uses content_type "puzzle_break" and subject "Puzzle Break".
+The instructions array must be EXACTLY a list of 6-10 themed words for the word search grid.
+Each word: uppercase letters only, 3-10 characters, no spaces, no punctuation.
+Example for an Ocean theme: ["OCEAN", "WAVE", "CORAL", "SHARK", "ANCHOR", "TIDE", "REEF", "KELP"]
+The fun_fact for a puzzle_break should be an interesting fact about word searches or language.
+Do NOT include a puzzle_break in half-day packets.
+</puzzle_break_rules>`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -175,7 +189,7 @@ function buildUserPrompt(
   const subjectList =
     packetLength === "half"
       ? "math, reading, one creative or PE activity"
-      : "math, reading, writing, science or history, one creative or PE activity";
+      : "math, reading, writing, puzzle_break (between activities 3 and 4), science or history or PE";
 
   // Explicit reading word-count reminder keyed to grade
   const gradeNum = child.grade_level === "K" ? 0 : parseInt(child.grade_level, 10);
@@ -212,7 +226,7 @@ async function callClaude(
   packetLength: "half" | "full",
   onToken: (text: string) => void
 ): Promise<string> {
-  const maxTokens = packetLength === "half" ? 4500 : 7000;
+  const maxTokens = packetLength === "half" ? 5000 : 8500;
 
   const stream = getAnthropic().messages.stream({
     model: MODEL,
@@ -293,6 +307,8 @@ function parsePacketJSON(text: string): ParsedPacketContent {
   };
 
   if (parsed.greeting) result.greeting = parsed.greeting;
+  if (parsed.packet_mission) result.packet_mission = parsed.packet_mission;
+  if (parsed.packet_celebration) result.packet_celebration = parsed.packet_celebration;
   if (parsed.mascot_name) result.mascot_name = parsed.mascot_name;
   if (parsed.mascot_description) result.mascot_description = parsed.mascot_description;
   if (parsed.mascot_emoji_cluster) result.mascot_emoji_cluster = parsed.mascot_emoji_cluster;

@@ -89,6 +89,8 @@ export async function GET(req: NextRequest) {
     greeting: content.greeting ?? null,
     parentNotes: content.parent_notes ?? null,
     dailyReflection: content.daily_reflection ?? null,
+    packetMission: content.packet_mission ?? null,
+    packetCelebration: content.packet_celebration ?? null,
   };
 
   // ── Render to buffer ──────────────────────────────────────────────────────
