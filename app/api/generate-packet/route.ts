@@ -1,7 +1,6 @@
 export const maxDuration = 300;
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateBothImages } from "@/lib/generateMascotImage";
@@ -487,41 +486,43 @@ export async function POST(req: NextRequest) {
         const mascotDescription = generatedContent.mascot_description;
         const coloringScene = generatedContent.coloring_page?.coloring_scene ?? null;
 
-        // Guard before after() so a missing env var doesn't crash the background task
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        // Generate images in the foreground while the SSE connection is still alive.
+        // Replicate's internal polling loop hangs inside after() because Vercel's
+        // connection pool degrades after the response is sent. Running here keeps
+        // the connection active so the SDK's fetch calls complete normally.
+        let mascotImageUrl: string | null = null;
+        let coloringImageUrl: string | null = null;
 
-        if (mascotDescription && supabaseUrl && serviceKey) {
-          after(async () => {
-            // mascotDescription → mascot image; coloringScene → coloring page image.
-            // Both run in parallel. coloringScene is the single source of truth that
-            // also drives the coloring page title and instructions.
-            const { mascotImageUrl, coloringImageUrl } = await generateBothImages(
-              mascotDescription,
-              coloringScene
-            );
+        if (mascotDescription) {
+          send({ type: "progress", message: "Generating mascot and coloring page images..." });
+          ({ mascotImageUrl, coloringImageUrl } = await generateBothImages(
+            mascotDescription,
+            coloringScene
+          ));
 
-            const updates: Record<string, string> = {};
-            if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
-            if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
-            if (Object.keys(updates).length === 0) return;
-
-            const serviceClient = createServiceClient(supabaseUrl, serviceKey);
-            const { error: updateError } = await serviceClient
+          const updates: Record<string, string> = {};
+          if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
+          if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
+          if (Object.keys(updates).length > 0) {
+            const { error: updateError } = await supabase
               .from("packets")
               .update(updates)
               .eq("id", packetId);
             if (updateError) {
               console.error("[generate-packet] Failed to save image URLs:", updateError.message);
             }
-          });
-        } else if (!mascotDescription) {
-          console.warn("[generate-packet] No mascot_description in generated content — skipping image generation");
+          }
+        } else {
+          console.warn("[generate-packet] No mascot_description — skipping image generation");
         }
 
         send({
           type: "complete",
-          packet: { ...savedPacket, mascot_image_url: null },
+          packet: {
+            ...savedPacket,
+            mascot_image_url: mascotImageUrl,
+            coloring_image_url: coloringImageUrl,
+          },
         });
         controller.close();
       } catch (err) {
