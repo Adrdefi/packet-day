@@ -35,6 +35,9 @@ Font.register({
   ],
 });
 
+// Disable auto-hyphenation globally — titles and content should break on whole words only.
+Font.registerHyphenationCallback((word) => [word]);
+
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const C = {
@@ -650,6 +653,9 @@ const styles = StyleSheet.create({
   },
 
   // ── Fun fact callout (honey) ─────────────────────────────────────────────────
+  // Column direction (default) — lets the box auto-size to its text content.
+  // Do NOT add flexDirection:'row' or alignItems:'flex-start' here; in react-pdf
+  // those prevent the cross-axis from expanding and text overflows the border.
   funFactBox: {
     backgroundColor: C.honeyBg,
     borderWidth: 1.5,
@@ -658,9 +664,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 8,
     marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
   },
   funFactLabel: {
     fontFamily: 'Fraunces',
@@ -676,7 +679,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: C.charcoal,
     lineHeight: 1.5,
-    flex: 1,
   },
 
   // ── Bonus challenge ─────────────────────────────────────────────────────────
@@ -1643,10 +1645,8 @@ function FunFactBox({ funFact }: { funFact: string }) {
   if (!funFact) return null;
   return (
     <View wrap={false} style={styles.funFactBox}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.funFactLabel}>Did you know?</Text>
-        <Text style={styles.funFactText}>{sanitizeText(funFact)}</Text>
-      </View>
+      <Text style={styles.funFactLabel}>Did you know?</Text>
+      <Text style={styles.funFactText}>{sanitizeText(funFact)}</Text>
     </View>
   );
 }
@@ -1670,16 +1670,18 @@ function MathSections({
     if (colonIdx === -1) continue;
     const label = step.slice(0, colonIdx).trim();
     const rest = step.slice(colonIdx + 1).trim();
+    const upper = step.toUpperCase();
 
-    if (step.includes('QUICK CALCULATIONS')) {
+    if (upper.includes('QUICK CALCULATIONS')) {
       quickCalcsLabel = label;
       const cleaned = rest.replace(/^solve these problems:\s*/i, '');
       const byPipe = cleaned.split(' || ').map((s) => s.trim()).filter(Boolean);
       quickCalcs = byPipe.length > 1 ? byPipe : cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
-    } else if (step.includes('WORD PROBLEMS')) {
+    } else if (upper.includes('WORD PROBLEMS')) {
       const byPipe = rest.split(' || ').map((s) => s.trim()).filter(Boolean);
       wordProblems = byPipe.length > 1 ? byPipe : rest.split(' / ').map((s) => s.trim()).filter(Boolean);
-    } else if (step.includes('DRAW & SOLVE')) {
+    } else if (upper.includes('DRAW') && upper.includes('SOLVE')) {
+      // Matches "DRAW & SOLVE", "DRAW AND SOLVE", "Draw & Solve", etc.
       drawAndSolve = rest;
     }
   }
