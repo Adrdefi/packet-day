@@ -6,7 +6,7 @@ import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
 
-export const maxDuration = 60;
+export const maxDuration = 90; // 30s image poll + ~10s render + upload headroom
 // @react-pdf/renderer is Node-only — force Node runtime
 export const runtime = "nodejs";
 
@@ -58,6 +58,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Packet not found." }, { status: 404 });
   }
 
+  // ── Wait for images if they are still being generated ────────────────────
+  // Image generation runs in after() and can take up to ~2 min after packet
+  // creation (45s Claude + 120s Replicate × 2 attempts). Poll the two image
+  // columns for up to 30s so the PDF is never rendered with a placeholder
+  // when the real image is moments away.
+  const IMAGES_MAX_AGE_MS = 4 * 60 * 1000; // 4 min — covers worst-case gen time
+  const POLL_INTERVAL_MS = 2_000;
+  const POLL_TIMEOUT_MS = 30_000;
+
+  const packetAgeMs = Date.now() - new Date(packet.created_at).getTime();
+  const typedPacket = packet as typeof packet & {
+    mascot_image_url?: string | null;
+    coloring_image_url?: string | null;
+  };
+
+  if (
+    packetAgeMs < IMAGES_MAX_AGE_MS &&
+    (!typedPacket.mascot_image_url || !typedPacket.coloring_image_url)
+  ) {
+    const pollStart = Date.now();
+    while (Date.now() - pollStart < POLL_TIMEOUT_MS) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      const { data: refreshed } = await supabase
+        .from("packets")
+        .select("mascot_image_url, coloring_image_url")
+        .eq("id", packetId)
+        .single();
+      if (refreshed?.mascot_image_url) typedPacket.mascot_image_url = refreshed.mascot_image_url;
+      if (refreshed?.coloring_image_url) typedPacket.coloring_image_url = refreshed.coloring_image_url;
+      if (typedPacket.mascot_image_url && typedPacket.coloring_image_url) break;
+    }
+  }
+
   // ── Build PDF props ───────────────────────────────────────────────────────
   const content = packet.generated_content as PacketContent;
 
@@ -79,8 +112,8 @@ export async function GET(req: NextRequest) {
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
     specialNotes: packet.special_notes ?? null,
-    mascotImageUrl: (packet as { mascot_image_url?: string | null }).mascot_image_url ?? null,
-    coloringImageUrl: (packet as { coloring_image_url?: string | null }).coloring_image_url ?? null,
+    mascotImageUrl: typedPacket.mascot_image_url ?? null,
+    coloringImageUrl: typedPacket.coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
     mascotEmojiCluster: content.mascot_emoji_cluster ?? null,
     coloringPage: content.coloring_page

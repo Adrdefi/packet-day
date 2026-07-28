@@ -40,7 +40,9 @@ function getReplicate(): Replicate {
 
 // ─── Model constants ──────────────────────────────────────────────────────────
 
-const FLUX_SCHNELL = "black-forest-labs/flux-schnell";
+// Pinned 2025-06-25. Re-pin when a new version is verified working.
+const FLUX_SCHNELL =
+  "black-forest-labs/flux-schnell:c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e";
 
 // Pinned so a recraft update can't silently break coloring page output.
 // Version created 2025-11-07. Re-pin when a new version is verified.
@@ -111,7 +113,24 @@ function extractUrl(output: unknown): string | null {
   if (!output) return null;
   const first = Array.isArray(output) ? output[0] : output;
   if (!first) return null;
-  // FileOutput.toString() returns the URL in replicate SDK v1+
+
+  // FileOutput objects (replicate SDK v1+) expose a .url() method that returns
+  // a URL object. Prefer this over toString() so we're not relying on the
+  // string coercion behavior of ReadableStream subclasses.
+  if (
+    typeof first === "object" &&
+    first !== null &&
+    typeof (first as Record<string, unknown>).url === "function"
+  ) {
+    try {
+      const urlObj = (first as { url: () => URL }).url();
+      return urlObj.toString();
+    } catch {
+      // fall through to String() attempt
+    }
+  }
+
+  // Plain string URL (pinned-version calls, or future SDK changes)
   const url = String(first);
   if (!url.startsWith("http")) {
     console.error("[replicate] Unexpected output format — not a URL", {
@@ -300,5 +319,17 @@ export async function generateBothImages(
     generateMascotImage(mascotDescription),
     generateColoringImage(coloringScene ?? mascotDescription),
   ]);
+
+  if (!mascotImageUrl) {
+    console.error("[generateBothImages] mascot image returned null", {
+      mascotDescription: mascotDescription?.slice(0, 120) ?? "(empty)",
+    });
+  }
+  if (!coloringImageUrl) {
+    console.error("[generateBothImages] coloring image returned null", {
+      coloringScene: (coloringScene ?? mascotDescription)?.slice(0, 120) ?? "(empty)",
+    });
+  }
+
   return { mascotImageUrl, coloringImageUrl };
 }
