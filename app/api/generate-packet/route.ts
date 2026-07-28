@@ -155,14 +155,24 @@ Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | 
 </output_schema>
 
 <puzzle_break_rules>
-For FULL-DAY packets (5 activities), include a puzzle_break as the 4th activity — between the 3rd and final subject activity.
+For FULL-DAY packets (6 activities), include a puzzle_break as the 4th activity — after the 3rd subject activity.
 The puzzle_break uses content_type "puzzle_break" and subject "Puzzle Break".
 The instructions array must be EXACTLY a list of 6-10 themed words for the word search grid.
 Each word: uppercase letters only, 3-10 characters, no spaces, no punctuation.
 Example for an Ocean theme: ["OCEAN", "WAVE", "CORAL", "SHARK", "ANCHOR", "TIDE", "REEF", "KELP"]
 The fun_fact for a puzzle_break should be an interesting fact about word searches or language.
 Do NOT include a puzzle_break in half-day packets.
-</puzzle_break_rules>`;
+</puzzle_break_rules>
+
+<movement_break_rules>
+For FULL-DAY packets (6 activities), include a movement_break as the 5th activity — immediately after the puzzle_break, forming a combined brain-break block before the final subject activity.
+The movement_break uses content_type "movement_activity" and subject "Movement Break".
+This is a SHORT ENERGIZER (5–10 minutes), NOT a PE lesson. Keep it light and fun — a themed stretch, dance, or active game the child can do alone or with a sibling. Do not include curriculum content, vocabulary, or anything that requires reading or concentration.
+The instructions array should contain 3–6 simple, physical steps the child can follow immediately (e.g., "Hop like a dolphin 10 times!", "Spin in a circle and roar like a shark!"). Write them in the child's voice, enthusiastic and themed to the packet.
+No answer_key. No materials beyond what any child would have in their home.
+The fun_fact should be a quick wow-fact about the body, movement, or exercise — themed to the packet if possible.
+Do NOT include a movement_break in half-day packets.
+</movement_break_rules>`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -184,11 +194,11 @@ function buildUserPrompt(
 ): string {
   const gradeDisplay =
     child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
-  const activityCount = packetLength === "half" ? 3 : 5;
+  const activityCount = packetLength === "half" ? 3 : 6;
   const subjectList =
     packetLength === "half"
       ? "math, reading, one creative or PE activity"
-      : "math, reading, writing, puzzle_break (between activities 3 and 4), science or history or PE";
+      : "math, reading, writing, puzzle_break (activity 4), movement_break (activity 5), science or history or PE";
 
   // Explicit reading word-count reminder keyed to grade
   const gradeNum = child.grade_level === "K" ? 0 : parseInt(child.grade_level, 10);
