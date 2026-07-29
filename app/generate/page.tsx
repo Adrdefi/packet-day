@@ -810,7 +810,7 @@ function GenerateContent() {
   // ── Form ───────────────────────────────────────────────────────────────────
 
   const isFree = subscriptionStatus === "free";
-  const atLimit = isFree && packetsUsed >= 3;
+  const atLimit = isFree && packetsUsed >= 1;
   const canGenerate = !!selectedChild && !!theme.trim() && !atLimit;
   const suggestion = SUGGESTIONS[suggIdx];
 
@@ -827,8 +827,8 @@ function GenerateContent() {
           {!loadingData && isFree && (
             <p className="text-sm text-muted">
               {atLimit
-                ? "You've used all 3 free packets this month."
-                : `${packetsUsed} of 3 free packets used this month.`}
+                ? "You've used your free packet this month."
+                : `${packetsUsed} of 1 free packet used this month.`}
             </p>
           )}
         </div>
@@ -1025,7 +1025,7 @@ function GenerateContent() {
                 </Link>
               </>
             ) : isFree ? (
-              `Uses 1 of your ${3 - packetsUsed} remaining free packet${3 - packetsUsed === 1 ? "" : "s"}`
+              `Uses 1 of your ${1 - packetsUsed} remaining free packet${1 - packetsUsed === 1 ? "" : "s"}`
             ) : (
               <span className="flex items-center justify-center gap-1.5">
                 <span className="w-2 h-2 bg-sage rounded-full inline-block" />

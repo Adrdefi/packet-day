@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const FREE_FEATURES = [
-  "3 AI-generated packets per month",
+  "1 AI-generated packet per month",
   "1 child profile",
   "All core subjects included",
   "Print-ready PDFs",
@@ -230,7 +230,7 @@ export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Pro
             <span className="text-center text-sage">Unlimited</span>
           </div>
           {[
-            ["Packets per month", "3", "Unlimited"],
+            ["Packets per month", "1", "Unlimited"],
             ["Child profiles", "1", "Unlimited"],
             ["All subjects", "✓", "✓"],
             ["Print-ready PDFs", "✓", "✓"],

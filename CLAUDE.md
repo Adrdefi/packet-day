@@ -113,7 +113,7 @@ See `.env.local.example` for all variables and where to find them.
 
 | Plan | Packets/month | Price |
 |------|--------------|-------|
-| Free | 3 | $0 |
+| Free | 1 | $0 |
 | Starter | 20 | $9/mo |
 | Family | Unlimited | $19/mo |
 

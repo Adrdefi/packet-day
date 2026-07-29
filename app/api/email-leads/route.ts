@@ -123,7 +123,7 @@ function buildSampleEmailHtml(): string {
                   text-decoration:none;font-weight:700;font-size:16px;display:inline-block;letter-spacing:0.01em;">
           Try It Free — No Card Needed ✨
         </a>
-        <p style="color:#6B7280;font-size:13px;margin:12px 0 0;">3 free packets/month. No credit card. Cancel anytime.</p>
+        <p style="color:#6B7280;font-size:13px;margin:12px 0 0;">1 free packet/month. No credit card. Cancel anytime.</p>
       </div>
 
       <hr style="border:none;border-top:1px solid #E5E7EB;margin:28px 0;">

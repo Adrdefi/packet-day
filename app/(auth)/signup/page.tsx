@@ -93,7 +93,7 @@ export default function SignupPage() {
         Start your free account
       </h1>
       <p className="text-dark/60 text-sm mb-8">
-        3 free packets every month. No credit card needed.
+        1 free packet every month. No credit card needed.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">

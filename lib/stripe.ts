@@ -23,7 +23,7 @@ export const PLANS = {
   free: {
     id: "free" as const,
     name: "Free",
-    packetsPerMonth: 3,
+    packetsPerMonth: 1,
     priceId: null,
     price: 0,
   },

@@ -14,7 +14,7 @@ function getAnthropic() {
 // ─── Quota config ─────────────────────────────────────────────────────────────
 
 const PACKET_LIMITS: Record<string, number> = {
-  free: 3,
+  free: 1,
   pro: Infinity,
   cancelled: 0,
 };
@@ -395,7 +395,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "limit_reached",
-        message: "You've used all 3 free packets this month.",
+        message: "You've used your free packet this month.",
         upgradeUrl: "/pricing",
       },
       { status: 403 }

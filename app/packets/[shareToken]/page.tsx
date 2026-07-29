@@ -343,7 +343,7 @@ export default async function SharePage({
                 href="/signup"
                 className="bg-sage text-cream font-bold px-8 py-3.5 rounded-xl hover:bg-sage-dark transition-colors text-base"
               >
-                Start free — 3 packets on us →
+                Start free — 1 packet on us →
               </Link>
               <Link
                 href="/"

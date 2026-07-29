@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 const STARTER_FEATURES = [
-  "3 AI-generated packets per month",
+  "1 AI-generated packet per month",
   "1 child profile",
   "All subjects included",
   "Print-ready PDFs",

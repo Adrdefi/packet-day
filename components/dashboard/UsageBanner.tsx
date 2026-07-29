@@ -35,7 +35,7 @@ export default function UsageBanner({ used, limit }: UsageBannerProps) {
           >
             {exhausted
               ? `You're out of free packets for this month. Upgrade to keep going, or come back ${firstOfNextMonth()}.`
-              : `You've used ${used} of ${limit} free packets this month.`}
+              : `You've used ${used} of ${limit} free packet${limit === 1 ? "" : "s"} this month.`}
           </p>
 
           {/* Progress bar */}

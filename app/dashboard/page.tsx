@@ -102,7 +102,7 @@ export default async function DashboardPage({
 
       {/* ── Free tier usage banner ──────────────────────────────────── */}
       {isFree && (
-        <UsageBanner used={profile?.packets_used_this_month ?? 0} limit={3} />
+        <UsageBanner used={profile?.packets_used_this_month ?? 0} limit={1} />
       )}
     </div>
   );
