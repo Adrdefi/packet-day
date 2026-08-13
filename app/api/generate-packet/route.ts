@@ -400,7 +400,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Profile not found." }, { status: 404 });
   }
 
-  const limit = PACKET_LIMITS[profile.subscription_status] ?? 0;
+  const limit =
+    profile.subscription_status in PACKET_LIMITS
+      ? PACKET_LIMITS[profile.subscription_status]
+      : 0;
 
   const serviceClient = getServiceClient();
   const { data: usageRows, error: usageError } = await serviceClient.rpc(
@@ -452,6 +455,8 @@ export async function POST(req: NextRequest) {
       function send(event: SSEEvent) {
         controller.enqueue(encodeSSE(event));
       }
+
+      let packetSaved = false; // guards the outer catch below from double/wrongly refunding
 
       try {
         send({ type: "progress", message: `Creating ${child.name}'s packet...` });
@@ -531,6 +536,7 @@ export async function POST(req: NextRequest) {
           return;
         }
 
+        packetSaved = true;
         const packetId = savedPacket.id;
         const mascotDescription = generatedContent.mascot_description;
         const coloringScene = generatedContent.coloring_page?.coloring_scene ?? null;
@@ -579,6 +585,17 @@ export async function POST(req: NextRequest) {
           message: err instanceof Error ? err.message : String(err),
           stack: err instanceof Error ? err.stack : undefined,
         });
+        if (!packetSaved) {
+          const { error: outerRollbackError } = await serviceClient.rpc("decrement_packet_usage", {
+            p_user_id: user.id,
+          });
+          if (outerRollbackError) {
+            console.error(
+              "[generate-packet] Failed to roll back quota after unhandled exception:",
+              outerRollbackError.message
+            );
+          }
+        }
         try {
           controller.enqueue(
             encodeSSE({ type: "error", message: "Something went sideways. Let's try that again." })
