@@ -92,7 +92,16 @@ types/
 
 After any `GRANT`, `REVOKE`, or RLS policy migration, never treat "applied without error" as proof of effect. `REVOKE` is set-based and succeeds silently when the grant it targets does not exist. Always verify by querying `pg_proc.proacl` (for function privileges) or `pg_policies` plus `pg_class.relrowsecurity` (for RLS) directly, then re-run the Supabase security advisor. `has_function_privilege` tells you whether a role can execute; `proacl` tells you why. Check `proacl`.
 
+Two independent mechanisms can leave a new function publicly callable, and closing one does not close the other:
+
+1. The implicit PUBLIC pseudo-role. Postgres grants EXECUTE to PUBLIC on function creation by default. Shows in `proacl` as a bare `=X/postgres` entry with no role name before the equals. Closed with: `revoke all on function ... from public;`
+2. `ALTER DEFAULT PRIVILEGES`. This project has a standing rule that auto-grants EXECUTE to `anon` and `authenticated` on new functions. Shows in `proacl` as named `anon=X/postgres` and `authenticated=X/postgres` entries. NOT affected by revoking from `public`. Closed with: `revoke execute on function ... from anon, authenticated;`
+
+Every new `SECURITY DEFINER` function that should not be public needs BOTH revokes. After applying, always verify with `pg_proc.proacl` and confirm the ACL contains only the roles you intended. An ACL with only `postgres=` and `service_role=` entries is correct for an internal function.
+
 When calling `apply_migration`, send bare executable SQL only. Keep explanatory comments in the migration file on disk, not in the tool payload.
+
+Do not attempt to verify long `apply_migration` payloads by reading them in the terminal, which truncates long lines and creates false alarms. Verify against the migration file on disk, and confirm the actual result with `pg_proc.proacl` after applying.
 
 ---
 
