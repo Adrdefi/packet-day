@@ -4,6 +4,7 @@ import Navbar from "@/components/landing/Navbar";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
+import { TESTIMONIALS } from "@/lib/testimonials";
 // import EmailCapture from "@/components/landing/EmailCapture";
 
 export const metadata: Metadata = {
@@ -107,39 +108,6 @@ const FEATURES = [
     emoji: "🖨️",
     title: "Beautiful Print-Ready PDFs",
     desc: "Clean layouts, colorful pages, zero screen time. Print on regular paper and hand it over — done.",
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    stars: 5,
-    tag: "Sick Day Lifesaver",
-    quote:
-      "I had a stomach bug and literally could not get off the couch. Generated three packets from my phone — one for each kid — in under five minutes. They did school for the entire day and I didn't have to do anything except hit print. I almost cried.",
-    bold: "one for each kid — in under five minutes.",
-    initial: "J",
-    name: "Jessica M.",
-    detail: "Mom of 3 • Grades 1, 3, 6",
-  },
-  {
-    stars: 5,
-    tag: "AI Skeptic → Believer",
-    quote:
-      "I was super skeptical about 'AI-generated' anything for my kids. Then my daughter got a packet themed around horses and the reading passage mentioned different gaits — walk, trot, canter, gallop. This wasn't generic. The AI actually knew things. I was sold.",
-    bold: "different gaits — walk, trot, canter, gallop.",
-    initial: "R",
-    name: "Rachel T.",
-    detail: "Mom of 2 • Grades K, 4",
-  },
-  {
-    stars: 5,
-    tag: "Multi-Kid Magic",
-    quote:
-      "My 7-year-old wants rainbows and unicorns. My 10-year-old wants 'only military history.' They each get exactly what they want and I'm not planning two completely different school days anymore. This has given me my sanity back. Not exaggerating.",
-    bold: "I'm not planning two completely different school days anymore.",
-    initial: "D",
-    name: "Danielle K.",
-    detail: "Mom of 4 • Grades 2, 4, 6, 8",
   },
 ];
 
@@ -396,30 +364,22 @@ export default function Home() {
               something brilliant.
             </p>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
-              {TESTIMONIALS.map((t) => (
+            <div className="grid sm:grid-cols-2 gap-6 mb-6 max-w-3xl mx-auto">
+              {TESTIMONIALS.filter((t) => t.verified && !t.featured).map((t) => (
                 <div
-                  key={t.name}
+                  key={t.id}
                   className="bg-white rounded-2xl p-7 border border-border flex flex-col"
                 >
-                  <div className="flex gap-1 mb-3">
-                    {Array.from({ length: t.stars }).map((_, i) => (
-                      <span key={i} className="text-honey text-sm">⭐</span>
-                    ))}
-                  </div>
-                  <span className="inline-block self-start bg-sage/10 text-sage text-xs font-bold px-3 py-1 rounded-full mb-4">
-                    {t.tag}
-                  </span>
                   <p className="text-dark/80 text-sm leading-relaxed mb-6 flex-1">
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <div className="flex items-center gap-3 mt-auto">
                     <div className="w-10 h-10 rounded-full bg-sage flex items-center justify-center text-cream font-bold text-sm shrink-0">
-                      {t.initial}
+                      {t.name.charAt(0)}
                     </div>
                     <div>
                       <div className="font-bold text-dark text-sm">{t.name}</div>
-                      <div className="text-muted text-xs">{t.detail}</div>
+                      <div className="text-muted text-xs">{t.credential}</div>
                     </div>
                   </div>
                 </div>
@@ -427,30 +387,22 @@ export default function Home() {
             </div>
 
             {/* Highlighted testimonial — full width */}
-            <div className="bg-sage rounded-2xl p-8 md:p-10">
-              <div className="flex gap-1 mb-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className="text-honey text-sm">⭐</span>
-                ))}
-              </div>
-              <blockquote className="font-display text-xl md:text-2xl text-cream font-bold leading-snug mb-6">
-                &ldquo;I run a homeschool co-op with 14 families and I recommended Packet Day to
-                all of them. Within a week, every single mom had signed up. One of them texted me
-                at 9pm and said &lsquo;I just generated a packet about marine biology while lying
-                in bed and I&apos;m emotional about it.&rsquo; That&apos;s the energy.&rdquo;
-              </blockquote>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-cream/20 flex items-center justify-center text-cream font-bold shrink-0">
-                  S
-                </div>
-                <div>
-                  <div className="font-bold text-cream">Sarah W.</div>
-                  <div className="text-cream/70 text-sm">
-                    Co-op organizer • 6 years homeschooling
+            {TESTIMONIALS.filter((t) => t.verified && t.featured).map((t) => (
+              <div key={t.id} className="bg-sage rounded-2xl p-8 md:p-10">
+                <blockquote className="font-display text-xl md:text-2xl text-cream font-bold leading-snug mb-6">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-cream/20 flex items-center justify-center text-cream font-bold shrink-0">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-cream">{t.name}</div>
+                    <div className="text-cream/70 text-sm">{t.credential}</div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </section>
 
