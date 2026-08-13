@@ -41,7 +41,7 @@ export default async function DashboardPage({
       .limit(10),
     supabase
       .from("profiles")
-      .select("subscription_status, packets_used_this_month")
+      .select("subscription_status, packets_used_this_month, packets_reset_date")
       .eq("id", user.id)
       .single(),
   ]);
@@ -102,7 +102,11 @@ export default async function DashboardPage({
 
       {/* ── Free tier usage banner ──────────────────────────────────── */}
       {isFree && (
-        <UsageBanner used={profile?.packets_used_this_month ?? 0} limit={1} />
+        <UsageBanner
+          used={profile?.packets_used_this_month ?? 0}
+          limit={1}
+          resetDate={profile?.packets_reset_date ?? new Date().toISOString().slice(0, 10)}
+        />
       )}
     </div>
   );

@@ -5,17 +5,28 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateBothImages } from "@/lib/generateMascotImage";
 import { MODEL } from "@/lib/config";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 }
 
+// Service-role client — required because check_and_increment_packet_usage and
+// decrement_packet_usage are granted to service_role only, not authenticated.
+// Same pattern as app/api/webhooks/stripe/route.ts's getServiceClient().
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env vars");
+  return createSupabaseClient(url, key);
+}
+
 // ─── Quota config ─────────────────────────────────────────────────────────────
 
-const PACKET_LIMITS: Record<string, number> = {
+const PACKET_LIMITS: Record<string, number | null> = {
   free: 1,
-  pro: Infinity,
+  pro: null, // null = unlimited — RPC params are JSON, which has no Infinity
   cancelled: 0,
 };
 
@@ -381,7 +392,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_status, packets_used_this_month")
+    .select("subscription_status")
     .eq("id", user.id)
     .single();
 
@@ -389,9 +400,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Profile not found." }, { status: 404 });
   }
 
-  const limit = PACKET_LIMITS[profile.subscription_status] ?? 3;
+  const limit = PACKET_LIMITS[profile.subscription_status] ?? 0;
 
-  if (profile.packets_used_this_month >= limit) {
+  const serviceClient = getServiceClient();
+  const { data: usageRows, error: usageError } = await serviceClient.rpc(
+    "check_and_increment_packet_usage",
+    { p_user_id: user.id, p_limit: limit }
+  );
+
+  if (usageError) {
+    console.error("[generate-packet] Quota check failed:", usageError.message);
+    return NextResponse.json(
+      { error: "Something went sideways checking your plan. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  if (!usageRows || usageRows.length === 0) {
     return NextResponse.json(
       {
         error: "limit_reached",
@@ -410,6 +435,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!child) {
+    await serviceClient.rpc("decrement_packet_usage", { p_user_id: user.id });
     return NextResponse.json({ error: "Child not found." }, { status: 404 });
   }
 
@@ -450,6 +476,15 @@ export async function POST(req: NextRequest) {
             theme: theme.trim(),
             packetLength: typedPacketLength,
           });
+          const { error: rollbackError } = await serviceClient.rpc("decrement_packet_usage", {
+            p_user_id: user.id,
+          });
+          if (rollbackError) {
+            console.error(
+              "[generate-packet] Failed to roll back quota after generation failure:",
+              rollbackError.message
+            );
+          }
           send({
             type: "error",
             message: "Something went wrong generating your packet. Please try again.",
@@ -479,6 +514,15 @@ export async function POST(req: NextRequest) {
             code: insertError?.code,
             details: insertError?.details,
           });
+          const { error: saveRollbackError } = await serviceClient.rpc("decrement_packet_usage", {
+            p_user_id: user.id,
+          });
+          if (saveRollbackError) {
+            console.error(
+              "[generate-packet] Failed to roll back quota after save failure:",
+              saveRollbackError.message
+            );
+          }
           send({
             type: "error",
             message: "Your packet was generated but couldn't be saved. Please try again.",
@@ -486,11 +530,6 @@ export async function POST(req: NextRequest) {
           controller.close();
           return;
         }
-
-        await supabase
-          .from("profiles")
-          .update({ packets_used_this_month: profile.packets_used_this_month + 1 })
-          .eq("id", user.id);
 
         const packetId = savedPacket.id;
         const mascotDescription = generatedContent.mascot_description;

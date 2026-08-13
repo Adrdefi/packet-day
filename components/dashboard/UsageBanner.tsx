@@ -3,17 +3,20 @@ import Link from "next/link";
 interface UsageBannerProps {
   used: number;
   limit: number;
+  resetDate: string; // profiles.packets_reset_date, e.g. "2026-08-01"
 }
 
-function firstOfNextMonth(): string {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString(
-    "en-US",
-    { month: "long", day: "numeric" }
-  );
+function firstOfMonthAfter(resetDate: string): string {
+  const d = new Date(`${resetDate}T00:00:00Z`);
+  const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+  return next.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
-export default function UsageBanner({ used, limit }: UsageBannerProps) {
+export default function UsageBanner({ used, limit, resetDate }: UsageBannerProps) {
   const exhausted = used >= limit;
   const pct = Math.min((used / limit) * 100, 100);
 
@@ -34,7 +37,7 @@ export default function UsageBanner({ used, limit }: UsageBannerProps) {
             }`}
           >
             {exhausted
-              ? `You're out of free packets for this month. Upgrade to keep going, or come back ${firstOfNextMonth()}.`
+              ? `You're out of free packets for this month. Upgrade to keep going, or come back ${firstOfMonthAfter(resetDate)}.`
               : `You've used ${used} of ${limit} free packet${limit === 1 ? "" : "s"} this month.`}
           </p>
 

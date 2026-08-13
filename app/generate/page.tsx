@@ -811,7 +811,11 @@ function GenerateContent() {
 
   const isFree = subscriptionStatus === "free";
   const atLimit = isFree && packetsUsed >= 1;
-  const canGenerate = !!selectedChild && !!theme.trim() && !atLimit;
+  // atLimit still drives the informational copy below — it is a hint, not a
+  // gate. The server's atomic check is the real enforcement; disabling the
+  // button on stale client-side quota state would block a user whose
+  // packets_reset_date reset is due before the server ever saw the request.
+  const canGenerate = !!selectedChild && !!theme.trim();
   const suggestion = SUGGESTIONS[suggIdx];
 
   return (
