@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ packetId: string }> }
 ) {
-  const { id } = await params;
+  const { packetId } = await params;
 
-  if (!id) {
+  if (!packetId) {
     return NextResponse.json({ error: "Missing packet id." }, { status: 400 });
   }
 
@@ -24,7 +24,7 @@ export async function GET(
   const { data: packet, error } = await supabase
     .from("packets")
     .select("mascot_image_url")
-    .eq("id", id)
+    .eq("id", packetId)
     .eq("user_id", user.id)
     .single();
 
