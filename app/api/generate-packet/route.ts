@@ -111,9 +111,19 @@ WRITING ACTIVITY (content_type: "writing_prompt"):
   Invite the child to use the mascot or theme in their writing.
 - "passage" field: null (not needed for writing).
 
-SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
-- Each instruction step should be substantive — a question worth 3-5 lines of response.
-  Not just "draw a picture" — ask for observation, explanation, comparison, or prediction.
+SCIENCE/HISTORY WORKSHEET (content_type: "worksheet", subject is NOT Math):
+- The instructions array must contain a specific number of steps, by grade:
+  K-2:  4-5 steps
+  Gr 3-5: 5-6 steps
+  Gr 6-8: 6-7 steps
+- Each instruction step must be substantive — a question worth 3-5 lines of
+  written response. Not just "draw a picture" — ask for observation,
+  explanation, comparison, or prediction.
+- Vary the question types across the steps. Do not ask five versions of the
+  same question. Include at least one observation question, at least one
+  explanation or "why" question, and at least one prediction or comparison.
+- These counts are a floor for page fill. A short worksheet leaves the printed
+  page half empty, which looks unfinished.
 </reading_writing_rules>
 
 <coloring_page_rules>
