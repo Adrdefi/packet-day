@@ -181,6 +181,7 @@ The puzzle_break uses content_type "puzzle_break" and subject "Puzzle Break".
 The instructions array must be EXACTLY a list of 6-10 themed words for the word search grid.
 Each word: uppercase letters only, 3-10 characters, no spaces, no punctuation.
 Example for an Ocean theme: ["OCEAN", "WAVE", "CORAL", "SHARK", "ANCHOR", "TIDE", "REEF", "KELP"]
+The word search grid is generated automatically from this word list and printed on the page, fully solvable — never tell parents it needs to be hand-drawn or generated separately, and never say the word list is in the answer key.
 The fun_fact for a puzzle_break should be an interesting fact about word searches or language.
 Do NOT include a puzzle_break in half-day packets.
 </puzzle_break_rules>
