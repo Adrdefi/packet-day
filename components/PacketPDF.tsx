@@ -1761,7 +1761,7 @@ function WorksheetTemplate({
   const isMath = activity.subject.toLowerCase().includes('math');
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { backgroundColor: colors.bg }]}>
       <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
