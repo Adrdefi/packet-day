@@ -514,6 +514,33 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
+        <section className="py-24 bg-paper px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+                The part nobody else does
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-3">
+                Every packet gets its own character.
+              </h2>
+              <p className="text-dark/70 max-w-2xl mx-auto leading-relaxed">
+                A character invented for that day, drawn for that kid, who turns up
+                in the math problems, the writing prompt, and the coloring page.
+              </p>
+            </div>
+
+            <Image
+              src="/landing/characters.png"
+              alt="Two illustrated characters, a fox in a top hat and a worm in a lab coat holding a magnifying glass, beside an empty dashed card labeled 'your kid's character'."
+              width={1600}
+              height={900}
+              sizes="(max-width: 768px) 100vw, 1024px"
+              className="w-full h-auto"
+            />
+          </div>
+        </section>
+
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
         <PricingSection />
 
