@@ -127,11 +127,11 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet", subject is NOT Math):
 </reading_writing_rules>
 
 <coloring_page_rules>
-SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image.
+SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image, and also drives the printed title and instructions.
 - coloring_scene must list: the child and mascot (by name), the setting, and exactly 3-5 specific named objects.
 - coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements.
 - coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
-- coloring_scene is passed verbatim to the image generator — make it concrete and visual, not vague.
+- Before coloring_scene reaches the image generator, the child's name is automatically replaced with a generic placeholder — the image itself never depicts the child by name. Still write coloring_scene as a concrete, visual scene (not vague) so it holds up once the name is swapped out.
   BAD: "Aria and Bubbles having a fun ocean adventure"
   GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
 </coloring_page_rules>
@@ -162,7 +162,7 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   ],
   "coloring_page": {
     "title": "[Name] and [Mascot] [Action] — no emoji",
-    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text is passed verbatim to the image generator — it must be specific, visual, and match the title exactly.",
+    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text drives the coloring page image (the child's name is swapped for a generic placeholder before the image model sees it) and must match the title exactly — keep it specific and visual.",
     "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
@@ -563,7 +563,8 @@ export async function POST(req: NextRequest) {
           send({ type: "progress", message: "Generating mascot and coloring page images..." });
           ({ mascotImageUrl, coloringImageUrl } = await generateBothImages(
             mascotDescription,
-            coloringScene
+            coloringScene,
+            child.name
           ));
 
           const updates: Record<string, string> = {};

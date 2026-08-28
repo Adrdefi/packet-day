@@ -12,6 +12,7 @@ import path from "path";
 import { generateMascotImage, generateColoringImage } from "../lib/generateMascotImage";
 
 const TEST_DESCRIPTION = "a friendly pirate parrot with a feathered hat and golden earring";
+const TEST_CHILD_NAME = "Test Child";
 const OUT_DIR = path.join(__dirname, "..", "test-output");
 
 function dataUrlToBuffer(dataUrl: string): Buffer {
@@ -34,8 +35,8 @@ async function main() {
   console.log("----------------------------------------------\n");
 
   const [mascotResult, coloringResult] = await Promise.allSettled([
-    generateMascotImage(TEST_DESCRIPTION),
-    generateColoringImage(TEST_DESCRIPTION),
+    generateMascotImage(TEST_DESCRIPTION, TEST_CHILD_NAME),
+    generateColoringImage(TEST_DESCRIPTION, TEST_CHILD_NAME),
   ]);
 
   // ── Mascot ────────────────────────────────────────────────────────────────────
