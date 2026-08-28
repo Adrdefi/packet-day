@@ -179,3 +179,13 @@ Examples:
 - **No inline styles** — use Tailwind tokens
 - **Don't use `tailwind.config.ts`** — Tailwind v4 uses CSS-based config in `globals.css`
 - **Don't skip RLS** — all Supabase tables must have Row Level Security
+
+---
+
+## Agent operating rules
+
+- **This repo is public on GitHub.** Never create a file inside the repo tree — including temporary or scratch files — that references `SUPABASE_SERVICE_ROLE_KEY` or any other secret. Scratch work belongs outside the repo entirely, not in a gitignored folder inside it.
+- **Never widen a destructive action beyond what you verified.** If you confirmed 3 PIDs to kill, kill exactly those 3 — not a broader pattern match. Same discipline applies to file deletions and git operations: act only on the specific items you checked, never on a wider guess.
+- **Stop after two failed tooling attempts.** If an approach to a tooling or environment problem fails twice, stop and report back rather than trying a third variant.
+- **State hypothesis outcomes explicitly.** When debugging, say plainly whether each hypothesis was CONFIRMED or FAILED before moving to the next one. Never move on silently from a failed test.
+- **Test through the real app when possible.** Prefer `npm run dev` plus the actual API route over hand-built scratch harnesses. The dev server resolves modules correctly; hand-rolled Node invocations on Windows often don't.
