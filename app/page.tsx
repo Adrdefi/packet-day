@@ -172,7 +172,7 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
               {[
                 { stat: "K–8th", label: "Grade Levels" },
-                { stat: "4–6 hrs", label: "Per Packet" },
+                { stat: "2–6 hrs", label: "Per Packet" },
                 { stat: "60 sec", label: "To Generate" },
                 { stat: "∞", label: "Possible Themes" },
               ].map(({ stat, label }) => (

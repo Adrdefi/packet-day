@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: "Will this actually keep my kids busy or will they be done in 20 minutes?",
-    a: "Each packet is designed for 4–6 hours of engaged learning with PE breaks woven between subjects. That's a full school day — not a 20-minute worksheet they'll blow through before you finish your coffee.",
+    a: "Most packets run 2–6 hours of engaged learning, depending on grade level and how deep your kid goes, with PE breaks woven between subjects. Younger grades land toward the shorter end. Either way it's real work, not a 20-minute worksheet they'll blow through before you finish your coffee.",
   },
   {
     q: "My kid is obsessed with something super specific. Will it work?",
