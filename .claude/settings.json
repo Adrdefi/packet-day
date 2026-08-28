@@ -21,6 +21,9 @@
       "Bash(find D:/Projects/packet-day:*)",
       "Bash(npm view:*)",
       "Read(//D:/Projects/packet-day/**)"
+    ],
+    "deny": [
+      "Read(//D:/Projects/packet-day/.env.local)"
     ]
   }
 }
