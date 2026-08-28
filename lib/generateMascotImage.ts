@@ -22,6 +22,16 @@
 //    Hobby's 10 s cap. Fixed by parallel generation. (Not an issue on Pro.)
 // 3. CRASH: missing SUPABASE_SERVICE_ROLE_KEY caused createServiceClient()
 //    to throw inside after(). Caller now guards before scheduling after().
+//
+// ── IP guard (2026-08-28) ────────────────────────────────────────────────────
+// coloring_scene names the child so the printed title/instructions read as
+// personal — but a real child's name is also the strongest possible signal
+// for a diffusion model to draw a same-named copyrighted character (e.g. a
+// child named "Bart" produced a recognizable Bart Simpson). Both generators
+// now scrub the child's name to a generic placeholder before it reaches the
+// image model (scrubChildName below) and both prompts carry an explicit
+// no-copyrighted-character instruction as a second layer. Neither is a
+// guarantee on its own; see the fix writeup for why both are kept.
 
 import Replicate from "replicate";
 import sharp from "sharp";
@@ -51,11 +61,30 @@ const RECRAFT_V3 =
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const COLOR_WORDS =
-  /\b(orange|blue|green|red|yellow|purple|brown|pink|gold|silver|white|black|rainbow)\b/gi;
+const CHILD_PLACEHOLDER = "the child";
 
-function stripColors(description: string): string {
-  return description.replace(COLOR_WORDS, "").replace(/\s{2,}/g, " ").trim();
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Replaces every whole-word occurrence of the child's name with a generic
+ * placeholder before text reaches an image-generation model. Case-insensitive.
+ * Word-bounded so a short name ("Al") doesn't match inside another word
+ * ("Also", "Alligator"). Possessives fall out for free: "Bart's" matches on
+ * "Bart" (the boundary after "t" holds against the following apostrophe),
+ * leaving "the child's".
+ *
+ * Only ever applied to the string handed to the image model — coloring_scene,
+ * coloring_page.title, and coloring_page.instructions keep the real name for
+ * the printed packet.
+ */
+function scrubChildName(text: string, childName: string): string {
+  const trimmedName = childName.trim();
+  if (!trimmedName) return text;
+
+  const pattern = new RegExp(`\\b${escapeRegExp(trimmedName)}\\b`, "gi");
+  return text.replace(pattern, CHILD_PLACEHOLDER);
 }
 
 /**
@@ -159,9 +188,14 @@ function extractUrl(output: unknown): string | null {
  *
  * Sharp grayscale post-processing is applied as a safety net to strip any
  * residual color tinting before the image reaches the PDF.
+ *
+ * `childName` is scrubbed out of the scene text before it reaches Recraft —
+ * see the IP guard note above the model constants. The prompt also carries
+ * an explicit no-copyrighted-character instruction as a second layer.
  */
 export async function generateColoringImage(
-  coloringScene: string | null | undefined
+  coloringScene: string | null | undefined,
+  childName: string
 ): Promise<string | null> {
   if (!coloringScene?.trim()) {
     console.warn("[generateColoringImage] Skipping — coloring_scene is null or empty");
@@ -172,13 +206,16 @@ export async function generateColoringImage(
     return null;
   }
 
-  const scene = coloringScene.trim();
+  const scene = scrubChildName(coloringScene.trim(), childName);
   const prompt =
     `black and white coloring book page for children featuring ${scene}, ` +
     `clean black outlines only, no color, no shading, no fill, ` +
     `pure white background, thick clean outlines with large open white regions for coloring, ` +
     `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
-    `simple shapes, kid-friendly line art ready to color`;
+    `simple shapes, kid-friendly line art ready to color, ` +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`;
 
   const startMs = Date.now();
 
@@ -236,9 +273,15 @@ export async function generateColoringImage(
 /**
  * Generates a colourful cartoon mascot image via flux-schnell.
  * Returns a base64 data URL, or null if both attempts fail.
+ *
+ * `childName` is scrubbed out of the description before it reaches
+ * flux-schnell, as defense in depth — mascot_description isn't instructed to
+ * contain the child's name, but nothing structurally prevents it either. See
+ * the IP guard note above the model constants.
  */
 export async function generateMascotImage(
-  mascotDescription: string | null | undefined
+  mascotDescription: string | null | undefined,
+  childName: string
 ): Promise<string | null> {
   if (!mascotDescription?.trim()) {
     console.warn("[generateMascotImage] Skipping — mascot_description is null or empty");
@@ -249,9 +292,13 @@ export async function generateMascotImage(
     return null;
   }
 
+  const description = scrubChildName(mascotDescription.trim(), childName);
   const prompt =
-    `${mascotDescription.trim()}, whimsical cartoon style, bright vibrant colors, ` +
-    `simple clean lines, perfect for children's worksheet, white background, no text`;
+    `${description}, whimsical cartoon style, bright vibrant colors, ` +
+    `simple clean lines, perfect for children's worksheet, white background, no text, ` +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`;
 
   const startMs = Date.now();
 
@@ -310,14 +357,16 @@ export async function generateMascotImage(
  * @param mascotDescription - drives the mascot image (character, style)
  * @param coloringScene     - drives the coloring page image (scene, objects, setting)
  *                            If omitted, falls back to mascotDescription so old callers still work.
+ * @param childName         - scrubbed out of both prompts before they reach the image model.
  */
 export async function generateBothImages(
   mascotDescription: string | null | undefined,
-  coloringScene?: string | null | undefined
+  coloringScene: string | null | undefined,
+  childName: string
 ): Promise<{ mascotImageUrl: string | null; coloringImageUrl: string | null }> {
   const [mascotImageUrl, coloringImageUrl] = await Promise.all([
-    generateMascotImage(mascotDescription),
-    generateColoringImage(coloringScene ?? mascotDescription),
+    generateMascotImage(mascotDescription, childName),
+    generateColoringImage(coloringScene ?? mascotDescription, childName),
   ]);
 
   if (!mascotImageUrl) {
