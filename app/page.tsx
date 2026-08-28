@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/landing/Navbar";
 import ThemeTicker from "@/components/landing/ThemeTicker";
@@ -181,6 +182,58 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── LOOK INSIDE ───────────────────────────────────────────────────── */}
+        <section className="py-24 bg-paper px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+                A real packet, start to finish
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6">
+                This is what lands in your inbox.
+              </h2>
+              <div className="flex flex-wrap justify-center gap-2">
+                {["Crossword", "Coloring page", "History + fun facts", "Answer key"].map((chip) => (
+                  <span
+                    key={chip}
+                    className="bg-cream border border-border rounded-full px-4 py-1.5 text-sm font-semibold text-dark/70"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Image
+              src="/landing/packet-pages-desktop.png"
+              alt="Three printed pages from a learning packet fanned out: a reading passage, a personalized cover page with a fox character, and a certificate."
+              width={1600}
+              height={900}
+              sizes="(max-width: 768px) 100vw, 1024px"
+              className="hidden md:block w-full h-auto"
+            />
+
+            <Image
+              src="/landing/packet-pages-mobile.png"
+              alt="The cover page of a learning packet, titled for one child, with a fox character in a top hat and chips reading 5 activities and 135 minutes."
+              width={343}
+              height={349}
+              sizes="100vw"
+              className="md:hidden w-full h-auto"
+            />
+
+            <p className="hidden md:block text-center text-dark/70 mt-6">
+              That&apos;s three of the fourteen pages. Inside: math, reading, science,
+              art, and a movement break.
+            </p>
+
+            <p className="md:hidden text-center text-dark/70 mt-6">
+              That&apos;s the cover. Inside: math, reading, science, art, and a
+              movement break.
+            </p>
           </div>
         </section>
 
