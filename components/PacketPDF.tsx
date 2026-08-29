@@ -14,7 +14,17 @@ import {
   View,
 } from "@react-pdf/renderer";
 import type { ContentType } from "@/types";
-import { color, accentFamily, familyForActivity, type AccentFamily } from "@/lib/pdf-tokens";
+import {
+  color,
+  accentFamily,
+  familyForActivity,
+  type AccentFamily,
+  type as typeScale,
+  typeStyle,
+  band as bandTable,
+  bandForGrade,
+  type BandKey,
+} from "@/lib/pdf-tokens";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -107,32 +117,26 @@ export interface PacketPDFProps {
 }
 
 // ─── Grade-band helpers ───────────────────────────────────────────────────────
-
-function getGradeBand(childGrade: string): 'K-2' | '3-5' | '6-8' {
-  if (childGrade === 'Kindergarten') return 'K-2';
-  const m = childGrade.match(/\d+/);
-  const g = m ? parseInt(m[0], 10) : 3;
-  if (g <= 2) return 'K-2';
-  if (g <= 5) return '3-5';
-  return '6-8';
-}
+// Band-KEY resolution (childGrade -> 'K-2'|'3-5'|'6-8') now goes through
+// bandForGrade (lib/pdf-tokens.ts) — see Stage 3 of the PDF token rebuild.
 
 interface BandConfig {
-  body: number;       // body font size
   barH: number;       // activity top bar height
   cardPad: number;    // card padding
   cardRadius: number; // card border radius
   borderW: number;    // border width
   lineSpacing: number;// writing-line spacing
   mascotInBar: number;// mascot image size in activity bar
-  instrBody: number;  // instruction text size
 }
 
+// Font-size fields (body, instrBody) moved to lib/pdf-tokens.ts's band table
+// in Stage 3 of the PDF token rebuild — these remaining fields are layout
+// values, out of scope for that migration.
 function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
   const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
-    'K-2': { body: 13, barH: 108, cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32, mascotInBar: 90, instrBody: 14 },
-    '3-5': { body: 11.5, barH: 96, cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26, mascotInBar: 80, instrBody: 11.5 },
-    '6-8': { body: 10.5, barH: 86, cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22, mascotInBar: 60, instrBody: 10.5 },
+    'K-2': { barH: 108, cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32, mascotInBar: 90 },
+    '3-5': { barH: 96, cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26, mascotInBar: 80 },
+    '6-8': { barH: 86, cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22, mascotInBar: 60 },
   };
   return configs[band];
 }
@@ -353,8 +357,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   coverDate: {
-    fontFamily: 'Nunito',
-    fontSize: 9,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
   },
 
@@ -390,29 +393,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   mascotNameText: {
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 11,
+    ...typeStyle(typeScale.mascotName),
     color: color.sage,
     textAlign: 'center',
   },
 
   // ── Cover: title ────────────────────────────────────────────────────────────
   coverTitle: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 34,
+    ...typeStyle(typeScale.packetTitle),
     color: color.textPrimary,
     textAlign: 'center',
-    lineHeight: 1.2,
     marginHorizontal: 16,
   },
   coverSubtitle: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
-    letterSpacing: 0.3,
   },
 
   // ── Cover: activity count badge ─────────────────────────────────────────────
@@ -441,19 +437,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   greetingLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.sage,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
     marginBottom: 6,
   },
   greetingText: {
-    fontSize: 11,
+    ...typeStyle(typeScale.missionBody),
     color: color.sageDark,
-    lineHeight: 1.7,
-    fontFamily: 'Nunito',
     fontStyle: 'italic',
     textAlign: 'center',
   },
@@ -467,8 +457,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   coverFooterText: {
-    fontFamily: 'Nunito',
-    fontSize: 9,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
   },
   coverFooterDot: {
@@ -502,24 +491,15 @@ const styles = StyleSheet.create({
     height: 18,
   },
   activityBarSubject: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.subjectLabel),
     color: 'rgba(255,255,255,0.8)',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
   },
   activityBarTitle: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 18,
+    ...typeStyle(typeScale.activityTitle),
     color: color.page,
-    lineHeight: 1.2,
   },
   activityBarTime: {
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 10,
+    ...typeStyle(typeScale.durationMaterials),
     color: 'rgba(255,255,255,0.95)',
     backgroundColor: 'rgba(0,0,0,0.18)',
     paddingHorizontal: 10,
@@ -540,20 +520,14 @@ const styles = StyleSheet.create({
     borderColor: color.faintDivider,
   },
   materialsLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginRight: 8,
     paddingTop: 1,
   },
   materialsText: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.durationMaterials),
     color: color.textPrimary,
-    lineHeight: 1.5,
     flex: 1,
   },
 
@@ -564,21 +538,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   descriptionText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 11.5,
+    ...typeStyle(typeScale.body),
     color: color.textPrimary,
-    lineHeight: 1.65,
+    fontStyle: 'italic',
   },
 
   // ── Instructions ────────────────────────────────────────────────────────────
   instructionsLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
     marginBottom: 10,
   },
   questionBox: {
@@ -606,15 +574,11 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   instructionBulletText: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 12,
+    ...typeStyle(typeScale.questionNumber),
   },
   instructionText: {
-    fontFamily: 'Nunito',
-    fontSize: 11.5,
+    ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    lineHeight: 1.55,
     flex: 1,
   },
   answerLineInBox: {
@@ -646,19 +610,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   funFactLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 3,
   },
   funFactText: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.calloutBody),
     color: color.textPrimary,
-    lineHeight: 1.5,
   },
 
   // ── Bonus challenge ─────────────────────────────────────────────────────────
@@ -672,20 +630,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   bonusChallengeHeader: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 5,
   },
   bonusChallengeText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 11,
+    ...typeStyle(typeScale.calloutBody),
     color: color.textPrimary,
-    lineHeight: 1.5,
+    fontStyle: 'italic',
   },
 
   // ── Answer key ──────────────────────────────────────────────────────────────
@@ -698,19 +650,13 @@ const styles = StyleSheet.create({
     borderColor: color.honey,
   },
   answerKeyHeader: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 6,
   },
   answerKeyText: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.answerKeyBody),
     color: color.textPrimary,
-    lineHeight: 1.6,
   },
 
   // ── Star reward row ──────────────────────────────────────────────────────────
@@ -724,8 +670,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   starRewardText: {
-    fontFamily: 'Nunito',
-    fontSize: 9,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
   },
 
@@ -753,11 +698,9 @@ const styles = StyleSheet.create({
     backgroundColor: color.page,
   },
   midPageSpeechText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 9.5,
+    ...typeStyle(typeScale.characterStripText),
     color: color.textPrimary,
-    lineHeight: 1.4,
+    fontStyle: 'italic',
   },
 
   // ── Hidden mascot (small, corner overlay) ───────────────────────────────────
@@ -777,20 +720,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   readingPassageLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
     marginBottom: 8,
   },
   readingPassageText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 11.5,
-    lineHeight: 1.7,
+    ...typeStyle(typeScale.readingPassage),
     color: color.textPrimary,
+    fontStyle: 'italic',
   },
 
   // ── Open workspace (writing / movement / coloring) ───────────────────────────
@@ -803,27 +740,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   promptBubbleText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 12,
+    ...typeStyle(typeScale.body),
     color: color.textPrimary,
-    lineHeight: 1.6,
+    fontStyle: 'italic',
     marginBottom: 6,
   },
   promptInstructionText: {
-    fontFamily: 'Nunito',
-    fontSize: 11,
+    ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    lineHeight: 1.5,
     marginTop: 6,
   },
   writingSpaceHeader: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 12,
   },
   writingLine: {
@@ -843,10 +772,9 @@ const styles = StyleSheet.create({
     minHeight: 320,
   },
   drawBoxLabel: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 14,
+    ...typeStyle(typeScale.openAreaPlaceholder),
     color: color.placeholder,
+    fontStyle: 'italic',
     textAlign: 'center',
   },
   movementReflectionBox: {
@@ -858,12 +786,8 @@ const styles = StyleSheet.create({
     backgroundColor: color.creamPanel,
   },
   movementReflectionLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 10,
   },
   movementReflectionLine: {
@@ -882,12 +806,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   mathSectionBarText: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.page,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   mathCalcGrid: {
     flexDirection: 'row',
@@ -900,16 +820,13 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   mathCalcNumber: {
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.questionNumber),
     color: color.textSecondary,
     marginRight: 6,
     marginTop: 2,
   },
   mathCalcEquation: {
-    fontFamily: 'Nunito',
-    fontSize: 11.5,
+    ...typeStyle(typeScale.quickCalcItem),
     color: color.textPrimary,
     flex: 1,
   },
@@ -928,10 +845,8 @@ const styles = StyleSheet.create({
     borderColor: color.faintDivider,
   },
   mathWordText: {
-    fontFamily: 'Nunito',
-    fontSize: 11,
+    ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    lineHeight: 1.55,
     marginBottom: 6,
   },
   mathDrawPromptBubble: {
@@ -943,11 +858,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mathDrawPromptText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 11,
+    ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    lineHeight: 1.55,
+    fontStyle: 'italic',
   },
   mathDrawBox: {
     borderWidth: 1.5,
@@ -960,14 +873,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   mathDrawBoxLabel: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 10,
+    ...typeStyle(typeScale.openAreaPlaceholder),
     color: color.placeholder,
+    fontStyle: 'italic',
   },
   mathAnswerLineLabel: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.answerLineLabel),
     color: color.textSecondary,
     marginBottom: 4,
   },
@@ -987,11 +898,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   puzzleIntroText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 12,
+    ...typeStyle(typeScale.body),
     color: color.textPrimary,
-    lineHeight: 1.6,
+    fontStyle: 'italic',
   },
   wordSearchGrid: {
     flexDirection: 'column',
@@ -1013,19 +922,13 @@ const styles = StyleSheet.create({
     borderColor: color.faintDivider,
   },
   wordSearchLetter: {
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.wordSearchCell),
     color: color.textPrimary,
     textAlign: 'center',
   },
   wordListLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 8,
   },
   wordListGrid: {
@@ -1042,10 +945,7 @@ const styles = StyleSheet.create({
   },
   wordListText: {
     // color comes from the activity's family — see JSX
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 9.5,
-    letterSpacing: 0.5,
+    ...typeStyle(typeScale.wordListChip),
   },
 
   // ── Certificate page ─────────────────────────────────────────────────────────
@@ -1084,12 +984,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   certHeader: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 11,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -1111,12 +1007,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   certChildName: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 48,
+    ...typeStyle(typeScale.certificateName),
     color: color.sage,
     textAlign: 'center',
-    lineHeight: 1.1,
     marginBottom: 8,
   },
   certBody: {
@@ -1129,9 +1022,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   certTheme: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 18,
+    ...typeStyle(typeScale.certificateDayTitle),
     color: color.honey,
     textAlign: 'center',
     marginBottom: 24,
@@ -1146,8 +1037,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   certDateLine: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
@@ -1171,11 +1061,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   certSignatureLabel: {
-    fontFamily: 'Nunito',
-    fontSize: 8,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
 
   // ── Notes / reflection pages ─────────────────────────────────────────────────
@@ -1185,15 +1073,12 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   notesPageTitle: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 24,
+    ...typeStyle(typeScale.pageTitle),
     color: color.textPrimary,
     marginBottom: 4,
   },
   notesPageSubtitle: {
-    fontFamily: 'Nunito',
-    fontSize: 11,
+    ...typeStyle(typeScale.durationMaterials),
     color: color.textSecondary,
     marginBottom: 22,
   },
@@ -1206,12 +1091,8 @@ const styles = StyleSheet.create({
     borderRadius: 55,
   },
   sectionLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 8,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 10,
   },
   summaryRow: {
@@ -1228,10 +1109,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   summaryText: {
-    fontFamily: 'Nunito',
-    fontSize: 10,
+    ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    lineHeight: 1.5,
     flex: 1,
   },
   parentNoteBox: {
@@ -1243,11 +1122,9 @@ const styles = StyleSheet.create({
     borderColor: color.sage,
   },
   parentNoteText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 10.5,
+    ...typeStyle(typeScale.parentNoteBody),
     color: color.sageDark,
-    lineHeight: 1.7,
+    fontStyle: 'italic',
   },
   reflectionBox: {
     backgroundColor: color.honeyTint,
@@ -1258,20 +1135,14 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   reflectionLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 10,
   },
   reflectionText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 13,
+    ...typeStyle(typeScale.calloutBody),
     color: color.textPrimary,
-    lineHeight: 1.75,
+    fontStyle: 'italic',
   },
   celebrationBox: {
     backgroundColor: color.sageTint,
@@ -1282,20 +1153,14 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   celebrationLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 9,
+    ...typeStyle(typeScale.calloutEyebrow),
     color: color.sage,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginBottom: 8,
   },
   celebrationText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 12,
+    ...typeStyle(typeScale.characterStripText),
     color: color.sageDark,
-    lineHeight: 1.7,
+    fontStyle: 'italic',
   },
   mascotHuntBox: {
     backgroundColor: color.honeyTint,
@@ -1307,17 +1172,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   mascotHuntText: {
-    fontFamily: 'Nunito',
-    fontWeight: 700,
-    fontSize: 10,
+    ...typeStyle(typeScale.calloutBody),
     color: color.honeyDark,
     textAlign: 'center',
-    lineHeight: 1.5,
   },
   observationsLabel: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 12,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.textPrimary,
     marginBottom: 16,
   },
@@ -1337,8 +1197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: 'Nunito',
-    fontSize: 8.5,
+    ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
   },
 
@@ -1350,23 +1209,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   coloringHeaderText: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 13,
+    ...typeStyle(typeScale.sectionLabel),
     color: color.sage,
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   coloringTitle: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 28,
+    ...typeStyle(typeScale.pageTitle),
     color: color.textPrimary,
     textAlign: 'center',
     marginBottom: 14,
-    lineHeight: 1.25,
   },
   coloringBox: {
     borderWidth: 2.5,
@@ -1385,12 +1237,10 @@ const styles = StyleSheet.create({
     objectFit: 'contain',
   },
   coloringBoxPlaceholder: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 13,
+    ...typeStyle(typeScale.openAreaPlaceholder),
     color: color.sageRule,
+    fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 1.7,
     width: 420,
     height: 420,
   },
@@ -1404,12 +1254,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   coloringInstructionText: {
-    fontFamily: 'Nunito',
-    fontStyle: 'italic',
-    fontSize: 12,
+    ...typeStyle(typeScale.instruction),
     color: color.sageDark,
+    fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 1.6,
   },
 });
 
@@ -1520,7 +1368,6 @@ function ActivityTopBar({
   band: 'K-2' | '3-5' | '6-8';
 }) {
   const bc = getBandConfig(band);
-  const barTitleSize = band === 'K-2' ? 20 : band === '3-5' ? 18 : 15;
   const mascotSize = bc.mascotInBar;
 
   return (
@@ -1530,7 +1377,7 @@ function ActivityTopBar({
           <Image src={getSubjectIconUrl(activity.subject)} style={styles.activityBarIcon} />
           <Text style={styles.activityBarSubject}>{sanitizeText(activity.subject)}</Text>
         </View>
-        <Text style={[styles.activityBarTitle, { fontSize: barTitleSize }]}>
+        <Text style={styles.activityBarTitle}>
           {sanitizeText(activity.title)}
         </Text>
       </View>
@@ -1620,12 +1467,12 @@ function StarRewardRow({
 
 // ─── Fun fact callout ─────────────────────────────────────────────────────────
 
-function FunFactBox({ funFact }: { funFact: string }) {
+function FunFactBox({ funFact, band }: { funFact: string; band: BandKey }) {
   if (!funFact) return null;
   return (
     <View wrap={false} style={styles.funFactBox}>
       <Text style={styles.funFactLabel}>Did you know?</Text>
-      <Text style={styles.funFactText}>{sanitizeText(funFact)}</Text>
+      <Text style={[styles.funFactText, { fontSize: bandTable[band].calloutBodySize }]}>{sanitizeText(funFact)}</Text>
     </View>
   );
 }
@@ -1635,9 +1482,11 @@ function FunFactBox({ funFact }: { funFact: string }) {
 function MathSections({
   instructions,
   colors,
+  band,
 }: {
   instructions: string[];
   colors: ActivityColor;
+  band: BandKey;
 }) {
   let quickCalcsLabel = 'Quick Calculations';
   let quickCalcs: string[] = [];
@@ -1676,7 +1525,7 @@ function MathSections({
           <View key={i} style={styles.mathCalcCell}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Text style={styles.mathCalcNumber}>{i + 1}.</Text>
-              <Text style={styles.mathCalcEquation}>{prob}</Text>
+              <Text style={[styles.mathCalcEquation, { fontSize: bandTable[band].quickCalcSize }]}>{prob}</Text>
             </View>
             <View style={styles.mathCalcAnswerLine} />
           </View>
@@ -1734,7 +1583,7 @@ function WorksheetTemplate({
   mascotImageUrl?: string | null;
   pageIndex: number;
 }) {
-  const band = getGradeBand(childGrade);
+  const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
   const answerLines = worksheetAnswerLines(band);
   const isMath = activity.subject.toLowerCase().includes('math');
@@ -1755,12 +1604,12 @@ function WorksheetTemplate({
 
         {/* Description */}
         <View wrap={false} style={[styles.descriptionBox, { backgroundColor: color.page, borderLeftColor: colors.rule, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
-          <Text style={[styles.descriptionText, { fontSize: bc.body }]}>{sanitizeText(activity.description)}</Text>
+          <Text style={[styles.descriptionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(activity.description)}</Text>
         </View>
 
         {/* Instructions */}
         {isMath ? (
-          <MathSections instructions={activity.instructions} colors={colors} />
+          <MathSections instructions={activity.instructions} colors={colors} band={band} />
         ) : (
           <>
             <Text style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
@@ -1770,7 +1619,7 @@ function WorksheetTemplate({
                   <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                     <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
                   </View>
-                  <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
+                  <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
                 </View>
                 {Array.from({ length: answerLines }, (_, j) => (
                   <View key={j} style={[styles.answerLineInBox, { marginTop: bc.lineSpacing / 2 }]} />
@@ -1781,7 +1630,7 @@ function WorksheetTemplate({
         )}
 
         {/* Fun fact */}
-        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
         {/* Mid-page encouragement */}
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
@@ -1790,7 +1639,7 @@ function WorksheetTemplate({
         {band !== '6-8' && (
           <View wrap={false} style={styles.bonusChallengeBox}>
             <Text style={styles.bonusChallengeHeader}>Bonus Challenge</Text>
-            <Text style={styles.bonusChallengeText}>{bonusChallenge(activity.subject, activity.title)}</Text>
+            <Text style={[styles.bonusChallengeText, { fontSize: bandTable[band].calloutBodySize }]}>{bonusChallenge(activity.subject, activity.title)}</Text>
           </View>
         )}
 
@@ -1826,7 +1675,7 @@ function ReadingTemplate({
   mascotImageUrl?: string | null;
   pageIndex: number;
 }) {
-  const band = getGradeBand(childGrade);
+  const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
 
   let passage: string | null = null;
@@ -1857,7 +1706,7 @@ function ReadingTemplate({
         {passage && (
           <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
             <Text style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
-            <Text style={[styles.readingPassageText, { fontSize: bc.body }]}>{sanitizeText(passage)}</Text>
+            <Text style={[styles.readingPassageText, { fontSize: bandTable[band].passageSize, lineHeight: bandTable[band].passageLineHeight }]}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
@@ -1870,7 +1719,7 @@ function ReadingTemplate({
               <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                 <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
               </View>
-              <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
+              <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
             </View>
             <View style={styles.answerLineInBox} />
             <View style={styles.answerLineInBox} />
@@ -1878,7 +1727,7 @@ function ReadingTemplate({
         ))}
 
         {/* Fun fact */}
-        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
         <StarRewardRow colors={colors} band={band} />
@@ -1911,7 +1760,7 @@ function OpenWorkspaceTemplate({
   mascotImageUrl?: string | null;
   pageIndex: number;
 }) {
-  const band = getGradeBand(childGrade);
+  const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
   const contentType = resolveContentType(activity);
   const lineCount = writingLineCount(band);
@@ -1931,16 +1780,16 @@ function OpenWorkspaceTemplate({
 
         {/* Prompt bubble */}
         <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
-          <Text style={[styles.promptBubbleText, { fontSize: bc.body + 0.5 }]}>{sanitizeText(activity.description)}</Text>
+          <Text style={[styles.promptBubbleText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(activity.description)}</Text>
           {activity.instructions.map((step, i) => (
-            <Text key={i} style={[styles.promptInstructionText, { fontSize: bc.instrBody }]}>
+            <Text key={i} style={styles.promptInstructionText}>
               {i + 1}. {sanitizeText(step)}
             </Text>
           ))}
         </View>
 
         {/* Fun fact */}
-        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
         <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
 
@@ -1992,7 +1841,7 @@ function PuzzleBreakTemplate({
   mascotImageUrl?: string | null;
   pageIndex: number;
 }) {
-  const band = getGradeBand(childGrade);
+  const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
   const gridSize = band === '6-8' ? 12 : 10;
   const cellSize = band === '6-8' ? 20 : 22;
@@ -2007,13 +1856,13 @@ function PuzzleBreakTemplate({
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         {/* Intro */}
         <View style={[styles.puzzleIntroBox, { borderRadius: bc.cardRadius }]}>
-          <Text style={[styles.puzzleIntroText, { fontSize: bc.body + 0.5 }]}>
+          <Text style={[styles.puzzleIntroText, { fontSize: bandTable[band].bodySize }]}>
             {sanitizeText(activity.description)}
           </Text>
         </View>
 
         {/* Fun fact */}
-        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} />}
+        {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
         {/* Word search grid */}
         <View style={styles.wordSearchGrid}>
@@ -2021,7 +1870,7 @@ function PuzzleBreakTemplate({
             <View key={r} style={styles.wordSearchRow}>
               {row.map((letter, c) => (
                 <View key={c} style={[styles.wordSearchCell, { width: cellSize, height: cellSize }]}>
-                  <Text style={styles.wordSearchLetter}>{letter}</Text>
+                  <Text style={[styles.wordSearchLetter, { fontSize: bandTable[band].wordSearchCellFontSize }]}>{letter}</Text>
                 </View>
               ))}
             </View>
@@ -2225,6 +2074,7 @@ function ColoringPage({
 
 function CelebrationPage({
   childName,
+  childGrade,
   theme,
   createdAt,
   dailyReflection,
@@ -2232,6 +2082,7 @@ function CelebrationPage({
   mascotName,
   mascotImageUrl,
 }: PacketPDFProps) {
+  const band = bandForGrade(childGrade);
   return (
     <Page size="LETTER" style={styles.notesPage}>
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
@@ -2248,7 +2099,7 @@ function CelebrationPage({
       {/* Reflection question */}
       <View style={styles.reflectionBox}>
         <Text style={styles.reflectionLabel}>Today&apos;s Question</Text>
-        <Text style={styles.reflectionText}>
+        <Text style={[styles.reflectionText, { fontSize: bandTable[band].calloutBodySize }]}>
           {sanitizeText(dailyReflection) || reflectionQuestion(theme)}
         </Text>
       </View>
@@ -2261,7 +2112,7 @@ function CelebrationPage({
       {/* Hidden mascot hunt prompt */}
       {mascotImageUrl && mascotName && (
         <View style={styles.mascotHuntBox}>
-          <Text style={styles.mascotHuntText}>
+          <Text style={[styles.mascotHuntText, { fontSize: bandTable[band].calloutBodySize }]}>
             Did you find {sanitizeText(mascotName)} hiding on every activity page? Go back and count them all!
           </Text>
         </View>

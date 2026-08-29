@@ -289,6 +289,48 @@ export const type = {
 
 export type TypeStyleName = keyof typeof type;
 
+// ─── Consuming a TypeStyle in react-pdf ────────────────────────────────────
+//
+// react-pdf's unit parser (@react-pdf/stylesheet) only recognizes
+// in|mm|cm|pt|vh|vw|px|rem as suffixes — 'em' is NOT among them. A string
+// like '-0.02em' passed straight into a react-pdf style is left as an
+// unparsed string and silently produces broken/absent letter-spacing. Every
+// letterSpacing value in `type` above must be converted to absolute points
+// (1em == that style's own fontSize) before it reaches a react-pdf style.
+
+/** Converts a TypeStyle's em-based letterSpacing to absolute points. */
+export function letterSpacingPt(style: TypeStyle): number | undefined {
+  if (!style.letterSpacing) return undefined;
+  const match = /^(-?[\d.]+)em$/.exec(style.letterSpacing);
+  if (!match) return undefined;
+  return parseFloat(match[1]) * style.fontSize;
+}
+
+export interface RNTypeStyle {
+  fontFamily: 'Fraunces' | 'Nunito';
+  fontWeight: 400 | 600 | 700 | 800;
+  fontSize: number;
+  lineHeight: number;
+  letterSpacing?: number;
+  textTransform?: 'uppercase';
+}
+
+/**
+ * Spreadable react-pdf style object for a TypeStyle — every property
+ * EXCEPT color, which callers apply separately (color is driven by the
+ * page's accentFamily in many cases, not fixed per style).
+ */
+export function typeStyle(style: TypeStyle): RNTypeStyle {
+  return {
+    fontFamily: style.fontFamily,
+    fontWeight: style.fontWeight,
+    fontSize: style.fontSize,
+    lineHeight: style.lineHeight,
+    letterSpacing: letterSpacingPt(style),
+    textTransform: style.textTransform,
+  };
+}
+
 // ─── Spacing ────────────────────────────────────────────────────────────────
 // Base unit: 3pt.
 

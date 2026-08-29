@@ -124,9 +124,11 @@ const props: PacketPDFProps = {
   packetCelebration: "You did it, Oliver — Captain Fin says you're the best first mate in the seven seas!",
 };
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const grade = new URL(req.url).searchParams.get("grade");
+  const gradedProps = grade ? { ...props, childGrade: grade } : props;
   const buf = await renderToBuffer(
-    createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>
+    createElement(PacketPDF, gradedProps) as React.ReactElement<PacketPDFProps>
   );
   return new Response(buf.buffer as ArrayBuffer, {
     status: 200,
