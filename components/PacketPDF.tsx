@@ -21,6 +21,7 @@ Font.register({
   family: 'Nunito',
   fonts: [
     { src: path.join(process.cwd(), 'public/fonts/Nunito-Regular.ttf'), fontWeight: 400 },
+    { src: path.join(process.cwd(), 'public/fonts/Nunito-SemiBold.ttf'), fontWeight: 600 },
     { src: path.join(process.cwd(), 'public/fonts/Nunito-Bold.ttf'), fontWeight: 700 },
     { src: path.join(process.cwd(), 'public/fonts/Nunito-Regular.ttf'), fontWeight: 400, fontStyle: 'italic' },
     { src: path.join(process.cwd(), 'public/fonts/Nunito-Bold.ttf'), fontWeight: 700, fontStyle: 'italic' },
@@ -32,6 +33,7 @@ Font.register({
   fonts: [
     { src: path.join(process.cwd(), 'public/fonts/Fraunces-Regular.ttf'), fontWeight: 400 },
     { src: path.join(process.cwd(), 'public/fonts/Fraunces-Bold.ttf'), fontWeight: 700 },
+    { src: path.join(process.cwd(), 'public/fonts/Fraunces-ExtraBold.ttf'), fontWeight: 800 },
   ],
 });
 
