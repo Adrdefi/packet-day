@@ -90,27 +90,31 @@ export const accentFamily: Record<AccentFamilyKey, AccentFamily> = {
 };
 
 /**
- * Resolves the accent family for an activity from its OUTPUT TYPE (what kind
- * of work product it produces), not its subject name. Written work — math,
- * reading, writing, science, history, geography, art, music (art/music count
- * because they still produce a finished piece of work) — is "academic".
- * Non-written work — puzzle breaks, movement breaks, PE — is "break".
+ * Resolves the accent family for an activity from its ContentType (the
+ * explicit output-type selector PacketActivity.content_type / PDFActivity's
+ * resolved content type — see resolveContentType in components/PacketPDF.tsx).
  *
- * Accepts loose input (subject strings, content-type strings, mixed case)
- * and defaults to "academic" for anything unrecognized.
+ * Explicit map over the six real ContentType values — reading_passage,
+ * worksheet, and writing_prompt are written work ("academic"); puzzle_break
+ * and movement_activity are non-written breaks ("break"); coloring is its
+ * own family. Defaults to "academic" for anything unrecognized.
  */
-export function familyForActivity(outputType: string | null | undefined): 'academic' | 'break' {
-  if (!outputType) return 'academic';
-  const s = outputType.toLowerCase();
-
-  const isBreak =
-    s.includes('puzzle') ||
-    s.includes('movement') ||
-    s.includes('break') ||
-    s === 'pe' ||
-    s.includes('physical ed');
-
-  return isBreak ? 'break' : 'academic';
+export function familyForActivity(
+  contentType: string | null | undefined
+): 'academic' | 'break' | 'coloring' {
+  switch (contentType) {
+    case 'reading_passage':
+    case 'worksheet':
+    case 'writing_prompt':
+      return 'academic';
+    case 'puzzle_break':
+    case 'movement_activity':
+      return 'break';
+    case 'coloring':
+      return 'coloring';
+    default:
+      return 'academic';
+  }
 }
 
 // ─── Typography ─────────────────────────────────────────────────────────────

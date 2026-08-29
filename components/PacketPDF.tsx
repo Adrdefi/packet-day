@@ -14,6 +14,7 @@ import {
   View,
 } from "@react-pdf/renderer";
 import type { ContentType } from "@/types";
+import { color, accentFamily, familyForActivity, type AccentFamily } from "@/lib/pdf-tokens";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -41,44 +42,26 @@ Font.register({
 Font.registerHyphenationCallback((word) => [word]);
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
+//
+// Colors come from lib/pdf-tokens.ts (color, accentFamily, familyForActivity).
+// `C` and the old 5-colour index-based activity rotation are gone — an
+// activity's accent now comes from its ContentType via familyForActivity,
+// not from its position in the packet. See familyColorsForActivity below.
 
-const C = {
-  cream:    '#FFF8F0',
-  charcoal: '#3A3633',
-  warmGray: '#6B6460',
-  border:   '#DDD5CC',
-  white:    '#FFFFFF',
-  sage:     '#7C9A82',
-  sageDark: '#4A6B52',
-  sageBg:   '#EEF5EF',
-  honey:    '#E8A849',
-  honeyDark:'#B07820',
-  honeyBg:  '#FEF8EC',
-  coral:    '#E07A5F',
-  coralBg:  '#FDF1EE',
-  // Legacy aliases — used in older code paths
-  dark:  '#3A3633',
-  muted: '#6B6460',
-};
+// Kept as a local alias so the many `colors: ActivityColor` prop types in
+// this file don't all need touching — it's exactly AccentFamily.
+type ActivityColor = AccentFamily;
 
-// 5-colour activity rotation — bright palette for K-5, muted for 6-8
-const ACTIVITY_COLORS = [
-  { bar: '#7C9A82', bg: '#EEF5EF', text: '#4A6B52' }, // sage
-  { bar: '#E8A849', bg: '#FEF8EC', text: '#B07820' }, // honey
-  { bar: '#E07A5F', bg: '#FDF1EE', text: '#B85A40' }, // coral
-  { bar: '#7B68EE', bg: '#F4F2FF', text: '#5548CC' }, // purple
-  { bar: '#5BC0EB', bg: '#EBF8FE', text: '#2A8EAF' }, // sky
-];
+/** The page-wash color for an activity's family — falls back to plain white
+ * for families with no stripFill defined (coloring). */
+function familyBg(colors: ActivityColor): string {
+  return colors.stripFill ?? color.page;
+}
 
-const ACTIVITY_COLORS_MUTED = [
-  { bar: '#5E7D65', bg: '#EEF4EF', text: '#3D5448' },
-  { bar: '#B5892E', bg: '#FAF6EE', text: '#8A6422' },
-  { bar: '#B85E47', bg: '#F8EDEA', text: '#8A4034' },
-  { bar: '#5C54BE', bg: '#F0EEFB', text: '#3E3898' },
-  { bar: '#3E92B0', bg: '#EBF5FA', text: '#2A7088' },
-];
-
-type ActivityColor = (typeof ACTIVITY_COLORS)[0];
+function familyColorsForActivity(activity: PDFActivity): ActivityColor {
+  const contentType = resolveContentType(activity);
+  return accentFamily[familyForActivity(contentType)];
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -152,11 +135,6 @@ function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
     '6-8': { body: 10.5, barH: 86, cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22, mascotInBar: 60, instrBody: 10.5 },
   };
   return configs[band];
-}
-
-function getActivityColors(index: number, band: 'K-2' | '3-5' | '6-8'): ActivityColor {
-  const palette = band === '6-8' ? ACTIVITY_COLORS_MUTED : ACTIVITY_COLORS;
-  return palette[index % palette.length];
 }
 
 function writingLineCount(band: 'K-2' | '3-5' | '6-8'): number {
@@ -330,7 +308,7 @@ const HIDDEN_MASCOT_CORNERS = [
 const styles = StyleSheet.create({
   // ── Page base ───────────────────────────────────────────────────────────────
   coverPage: {
-    backgroundColor: C.cream,
+    backgroundColor: color.creamPanel,
     padding: 48,
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -344,7 +322,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     borderWidth: 2,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 4,
     opacity: 0.55,
   },
@@ -355,7 +333,7 @@ const styles = StyleSheet.create({
     left: 22,
     right: 22,
     borderWidth: 1,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 3,
     opacity: 0.3,
   },
@@ -371,13 +349,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 11,
-    color: C.sage,
+    color: color.sage,
     letterSpacing: 0.3,
   },
   coverDate: {
     fontFamily: 'Nunito',
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
   },
 
   // ── Cover: center content ───────────────────────────────────────────────────
@@ -400,9 +378,9 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     borderWidth: 3,
-    borderColor: C.sage,
+    borderColor: color.sage,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -415,7 +393,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 11,
-    color: C.sage,
+    color: color.sage,
     textAlign: 'center',
   },
 
@@ -424,7 +402,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 34,
-    color: C.charcoal,
+    color: color.textPrimary,
     textAlign: 'center',
     lineHeight: 1.2,
     marginHorizontal: 16,
@@ -432,14 +410,14 @@ const styles = StyleSheet.create({
   coverSubtitle: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.warmGray,
+    color: color.textSecondary,
     textAlign: 'center',
     letterSpacing: 0.3,
   },
 
   // ── Cover: activity count badge ─────────────────────────────────────────────
   activityBadge: {
-    backgroundColor: C.honey,
+    backgroundColor: color.honey,
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 7,
@@ -449,31 +427,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 12,
-    color: C.white,
+    color: color.page,
     letterSpacing: 0.2,
   },
 
   // ── Cover: greeting / mission box ───────────────────────────────────────────
   greetingBox: {
     borderWidth: 2,
-    borderColor: C.sage,
+    borderColor: color.sage,
     borderRadius: 12,
     padding: 16,
-    backgroundColor: C.sageBg,
+    backgroundColor: color.sageTint,
     width: '100%',
   },
   greetingLabel: {
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.sage,
+    color: color.sage,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 6,
   },
   greetingText: {
     fontSize: 11,
-    color: C.sageDark,
+    color: color.sageDark,
     lineHeight: 1.7,
     fontFamily: 'Nunito',
     fontStyle: 'italic',
@@ -491,11 +469,11 @@ const styles = StyleSheet.create({
   coverFooterText: {
     fontFamily: 'Nunito',
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
   },
   coverFooterDot: {
     fontSize: 9,
-    color: C.border,
+    color: color.faintDivider,
   },
 
   // ── Activity page ───────────────────────────────────────────────────────────
@@ -535,7 +513,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 18,
-    color: C.white,
+    color: color.page,
     lineHeight: 1.2,
   },
   activityBarTime: {
@@ -552,20 +530,20 @@ const styles = StyleSheet.create({
 
   // ── Content cards ───────────────────────────────────────────────────────────
   materialsBox: {
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
   },
   materialsLabel: {
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginRight: 8,
@@ -574,7 +552,7 @@ const styles = StyleSheet.create({
   materialsText: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.5,
     flex: 1,
   },
@@ -589,7 +567,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 11.5,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.65,
   },
 
@@ -598,19 +576,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 10,
   },
   questionBox: {
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     borderRadius: 10,
     padding: 12,
     paddingBottom: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
   },
   instructionRow: {
     flexDirection: 'row',
@@ -635,14 +613,14 @@ const styles = StyleSheet.create({
   instructionText: {
     fontFamily: 'Nunito',
     fontSize: 11.5,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.55,
     flex: 1,
   },
   answerLineInBox: {
     borderBottomWidth: 1,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
     marginTop: 12,
   },
 
@@ -650,7 +628,7 @@ const styles = StyleSheet.create({
   workLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
     marginBottom: 18,
   },
 
@@ -659,9 +637,9 @@ const styles = StyleSheet.create({
   // Do NOT add flexDirection:'row' or alignItems:'flex-start' here; in react-pdf
   // those prevent the cross-axis from expanding and text overflows the border.
   funFactBox: {
-    backgroundColor: C.honeyBg,
+    backgroundColor: color.honeyTint,
     borderWidth: 1.5,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 10,
     padding: 10,
     marginTop: 8,
@@ -671,7 +649,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 3,
@@ -679,15 +657,15 @@ const styles = StyleSheet.create({
   funFactText: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.5,
   },
 
   // ── Bonus challenge ─────────────────────────────────────────────────────────
   bonusChallengeBox: {
-    backgroundColor: C.honeyBg,
+    backgroundColor: color.honeyTint,
     borderWidth: 2,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
@@ -697,7 +675,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 5,
@@ -706,24 +684,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 11,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.5,
   },
 
   // ── Answer key ──────────────────────────────────────────────────────────────
   answerKeyBox: {
-    backgroundColor: C.honeyBg,
+    backgroundColor: color.honeyTint,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
     borderWidth: 1.5,
-    borderColor: C.honey,
+    borderColor: color.honey,
   },
   answerKeyHeader: {
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 6,
@@ -731,7 +709,7 @@ const styles = StyleSheet.create({
   answerKeyText: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.6,
   },
 
@@ -748,7 +726,7 @@ const styles = StyleSheet.create({
   starRewardText: {
     fontFamily: 'Nunito',
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
   },
 
   // ── Mid-page mascot encouragement ───────────────────────────────────────────
@@ -772,13 +750,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: 6,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
   },
   midPageSpeechText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 9.5,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.4,
   },
 
@@ -793,7 +771,7 @@ const styles = StyleSheet.create({
 
   // ── Reading passage ──────────────────────────────────────────────────────────
   readingPassageBlock: {
-    backgroundColor: '#FFFBF0',
+    backgroundColor: color.creamPanel,
     borderRadius: 8,
     padding: 14,
     marginBottom: 14,
@@ -802,7 +780,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
@@ -812,30 +790,30 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 11.5,
     lineHeight: 1.7,
-    color: C.charcoal,
+    color: color.textPrimary,
   },
 
   // ── Open workspace (writing / movement / coloring) ───────────────────────────
   promptBubble: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
     borderRadius: 12,
     padding: 14,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     marginBottom: 14,
   },
   promptBubbleText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.6,
     marginBottom: 6,
   },
   promptInstructionText: {
     fontFamily: 'Nunito',
     fontSize: 11,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.5,
     marginTop: 6,
   },
@@ -843,7 +821,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 12,
@@ -851,13 +829,13 @@ const styles = StyleSheet.create({
   writingLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
     marginBottom: 26,
   },
   drawBox: {
     borderWidth: 2,
     borderStyle: 'dashed' as const,
-    borderColor: '#D1D5DB',
+    borderColor: color.answerRule,
     borderRadius: 12,
     marginTop: 8,
     alignItems: 'center',
@@ -868,22 +846,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 14,
-    color: '#C4C9D4',
+    color: color.placeholder,
     textAlign: 'center',
   },
   movementReflectionBox: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
+    borderColor: color.answerRule,
     borderRadius: 10,
     padding: 14,
     marginTop: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: color.creamPanel,
   },
   movementReflectionLabel: {
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -891,7 +869,7 @@ const styles = StyleSheet.create({
   movementReflectionLine: {
     borderBottomWidth: 1,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
     marginBottom: 22,
   },
 
@@ -907,7 +885,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.white,
+    color: color.page,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -925,56 +903,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
     marginRight: 6,
     marginTop: 2,
   },
   mathCalcEquation: {
     fontFamily: 'Nunito',
     fontSize: 11.5,
-    color: C.charcoal,
+    color: color.textPrimary,
     flex: 1,
   },
   mathCalcAnswerLine: {
     borderBottomWidth: 1.5,
-    borderBottomColor: '#9CA3AF',
+    borderBottomColor: color.answerRule,
     width: 80,
     marginTop: 8,
   },
   mathWordBox: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: color.creamPanel,
     borderRadius: 8,
     padding: 10,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
   },
   mathWordText: {
     fontFamily: 'Nunito',
     fontSize: 11,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.55,
     marginBottom: 6,
   },
   mathDrawPromptBubble: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     marginBottom: 8,
   },
   mathDrawPromptText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 11,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.55,
   },
   mathDrawBox: {
     borderWidth: 1.5,
     borderStyle: 'dashed' as const,
-    borderColor: '#D1D5DB',
+    borderColor: color.answerRule,
     borderRadius: 8,
     minHeight: 160,
     alignItems: 'center',
@@ -985,34 +963,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 10,
-    color: '#C4C9D4',
+    color: color.placeholder,
   },
   mathAnswerLineLabel: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.warmGray,
+    color: color.textSecondary,
     marginBottom: 4,
   },
   mathAnswerLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
   },
 
   // ── Puzzle break (word search) ───────────────────────────────────────────────
   puzzleIntroBox: {
     borderWidth: 1.5,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
     borderRadius: 12,
     padding: 14,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     marginBottom: 16,
   },
   puzzleIntroText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.6,
   },
   wordSearchGrid: {
@@ -1020,7 +998,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: color.faintDivider,
     borderRadius: 4,
   },
   wordSearchRow: {
@@ -1032,20 +1010,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
-    borderColor: '#E5E7EB',
+    borderColor: color.faintDivider,
   },
   wordSearchLetter: {
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 9,
-    color: C.charcoal,
+    color: color.textPrimary,
     textAlign: 'center',
   },
   wordListLabel: {
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -1056,24 +1034,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   wordListItem: {
-    backgroundColor: C.sageBg,
+    // backgroundColor/borderColor come from the activity's family — see JSX
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: C.sage,
   },
   wordListText: {
+    // color comes from the activity's family — see JSX
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 9.5,
-    color: C.sageDark,
     letterSpacing: 0.5,
   },
 
   // ── Certificate page ─────────────────────────────────────────────────────────
   certificatePage: {
-    backgroundColor: C.cream,
+    backgroundColor: color.creamPanel,
     padding: 56,
     flexDirection: 'column',
     alignItems: 'center',
@@ -1086,7 +1063,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     borderWidth: 3,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 6,
     opacity: 0.6,
   },
@@ -1097,7 +1074,7 @@ const styles = StyleSheet.create({
     left: 27,
     right: 27,
     borderWidth: 1.5,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 4,
     opacity: 0.35,
   },
@@ -1110,7 +1087,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 11,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 2,
     textAlign: 'center',
@@ -1120,7 +1097,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 28,
-    color: C.charcoal,
+    color: color.textPrimary,
     textAlign: 'center',
     marginBottom: 6,
     lineHeight: 1.2,
@@ -1129,7 +1106,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.warmGray,
+    color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -1137,7 +1114,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 48,
-    color: C.sage,
+    color: color.sage,
     textAlign: 'center',
     lineHeight: 1.1,
     marginBottom: 8,
@@ -1146,7 +1123,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.warmGray,
+    color: color.textSecondary,
     textAlign: 'center',
     lineHeight: 1.6,
     marginBottom: 6,
@@ -1155,14 +1132,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 18,
-    color: C.honey,
+    color: color.honey,
     textAlign: 'center',
     marginBottom: 24,
   },
   certDivider: {
     width: 200,
     height: 2,
-    backgroundColor: C.honey,
+    backgroundColor: color.honey,
     borderRadius: 1,
     opacity: 0.5,
     marginBottom: 24,
@@ -1171,7 +1148,7 @@ const styles = StyleSheet.create({
   certDateLine: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.warmGray,
+    color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -1189,21 +1166,21 @@ const styles = StyleSheet.create({
   },
   certSignatureLine: {
     borderBottomWidth: 1.5,
-    borderBottomColor: C.charcoal,
+    borderBottomColor: color.textPrimary,
     width: '100%',
     marginBottom: 4,
   },
   certSignatureLabel: {
     fontFamily: 'Nunito',
     fontSize: 8,
-    color: C.warmGray,
+    color: color.textSecondary,
     textAlign: 'center',
     letterSpacing: 0.5,
   },
 
   // ── Notes / reflection pages ─────────────────────────────────────────────────
   notesPage: {
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     padding: 48,
     flexDirection: 'column',
   },
@@ -1211,13 +1188,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 24,
-    color: C.charcoal,
+    color: color.textPrimary,
     marginBottom: 4,
   },
   notesPageSubtitle: {
     fontFamily: 'Nunito',
     fontSize: 11,
-    color: C.warmGray,
+    color: color.textSecondary,
     marginBottom: 22,
   },
   mascotImageNotes: {
@@ -1232,7 +1209,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 8,
-    color: C.warmGray,
+    color: color.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -1253,29 +1230,29 @@ const styles = StyleSheet.create({
   summaryText: {
     fontFamily: 'Nunito',
     fontSize: 10,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.5,
     flex: 1,
   },
   parentNoteBox: {
-    backgroundColor: C.sageBg,
+    backgroundColor: color.sageTint,
     borderRadius: 10,
     padding: 14,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: C.sage,
+    borderColor: color.sage,
   },
   parentNoteText: {
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 10.5,
-    color: C.sageDark,
+    color: color.sageDark,
     lineHeight: 1.7,
   },
   reflectionBox: {
-    backgroundColor: C.honeyBg,
+    backgroundColor: color.honeyTint,
     borderWidth: 2.5,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 12,
     padding: 22,
     marginBottom: 22,
@@ -1284,7 +1261,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -1293,13 +1270,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 13,
-    color: C.charcoal,
+    color: color.textPrimary,
     lineHeight: 1.75,
   },
   celebrationBox: {
-    backgroundColor: C.sageBg,
+    backgroundColor: color.sageTint,
     borderWidth: 2,
-    borderColor: C.sage,
+    borderColor: color.sage,
     borderRadius: 12,
     padding: 18,
     marginBottom: 18,
@@ -1308,7 +1285,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 9,
-    color: C.sage,
+    color: color.sage,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -1317,13 +1294,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.sageDark,
+    color: color.sageDark,
     lineHeight: 1.7,
   },
   mascotHuntBox: {
-    backgroundColor: C.honeyBg,
+    backgroundColor: color.honeyTint,
     borderWidth: 1.5,
-    borderColor: C.honey,
+    borderColor: color.honey,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
@@ -1333,7 +1310,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontWeight: 700,
     fontSize: 10,
-    color: C.honeyDark,
+    color: color.honeyDark,
     textAlign: 'center',
     lineHeight: 1.5,
   },
@@ -1341,20 +1318,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 12,
-    color: C.charcoal,
+    color: color.textPrimary,
     marginBottom: 16,
   },
   ruledLine: {
     borderBottomWidth: 1,
     borderBottomStyle: 'dotted' as const,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: color.answerRule,
     marginBottom: 26,
   },
   notesFooter: {
     marginTop: 'auto',
     paddingTop: 16,
     borderTopWidth: 0.5,
-    borderTopColor: C.border,
+    borderTopColor: color.faintDivider,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1362,12 +1339,12 @@ const styles = StyleSheet.create({
   footerText: {
     fontFamily: 'Nunito',
     fontSize: 8.5,
-    color: C.warmGray,
+    color: color.textSecondary,
   },
 
   // ── Coloring page ────────────────────────────────────────────────────────────
   coloringPage: {
-    backgroundColor: C.cream,
+    backgroundColor: color.creamPanel,
     padding: 48,
     flexDirection: 'column',
     alignItems: 'center',
@@ -1376,7 +1353,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 13,
-    color: C.sage,
+    color: color.sage,
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: 1,
@@ -1386,7 +1363,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Fraunces',
     fontWeight: 700,
     fontSize: 28,
-    color: C.charcoal,
+    color: color.textPrimary,
     textAlign: 'center',
     marginBottom: 14,
     lineHeight: 1.25,
@@ -1394,7 +1371,7 @@ const styles = StyleSheet.create({
   coloringBox: {
     borderWidth: 2.5,
     borderStyle: 'dashed' as const,
-    borderColor: '#A3C4B0',
+    borderColor: color.sageRule,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1411,7 +1388,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 13,
-    color: '#A3C4B0',
+    color: color.sageRule,
     textAlign: 'center',
     lineHeight: 1.7,
     width: 420,
@@ -1419,10 +1396,10 @@ const styles = StyleSheet.create({
   },
   coloringInstructionBubble: {
     borderWidth: 2,
-    borderColor: '#A3C4B0',
+    borderColor: color.sageRule,
     borderRadius: 12,
     padding: 14,
-    backgroundColor: C.white,
+    backgroundColor: color.page,
     width: '100%',
     marginTop: 4,
   },
@@ -1430,7 +1407,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     fontStyle: 'italic',
     fontSize: 12,
-    color: C.sageDark,
+    color: color.sageDark,
     textAlign: 'center',
     lineHeight: 1.6,
   },
@@ -1547,7 +1524,7 @@ function ActivityTopBar({
   const mascotSize = bc.mascotInBar;
 
   return (
-    <View style={{ height: bc.barH, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 28, gap: 12, backgroundColor: colors.bar }}>
+    <View style={{ height: bc.barH, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 28, gap: 12, backgroundColor: colors.label }}>
       <View style={styles.activityBarLeft}>
         <View style={styles.activityBarSubjectRow}>
           <Image src={getSubjectIconUrl(activity.subject)} style={styles.activityBarIcon} />
@@ -1609,9 +1586,9 @@ function MidPageEncouragement({
 }) {
   if (!mascotImageUrl) return null;
   return (
-    <View wrap={false} style={[styles.midPageEncouragement, { backgroundColor: colors.bg }]}>
+    <View wrap={false} style={[styles.midPageEncouragement, { backgroundColor: familyBg(colors) }]}>
       <Image src={mascotImageUrl} style={styles.midPageMascotImage} />
-      <View style={[styles.midPageSpeechBubble, { borderColor: colors.bar }]}>
+      <View style={[styles.midPageSpeechBubble, { borderColor: colors.rule }]}>
         <Text style={styles.midPageSpeechText}>
           {activity.encouragement || 'Keep going — you are doing amazing!'}
         </Text>
@@ -1635,7 +1612,7 @@ function StarRewardRow({
     <View wrap={false} style={styles.starRewardBox}>
       <Text style={styles.starRewardText}>{label}</Text>
       {[0, 1, 2].map((i) => (
-        <StarSvg key={i} color={colors.bar} size={starSize} />
+        <StarSvg key={i} color={colors.label} size={starSize} />
       ))}
     </View>
   );
@@ -1691,7 +1668,7 @@ function MathSections({
   return (
     <>
       {/* Quick Calculations — 2-column grid */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
         <Text style={styles.mathSectionBarText}>{'[ ' + quickCalcsLabel + ' ]'}</Text>
       </View>
       <View style={styles.mathCalcGrid}>
@@ -1707,7 +1684,7 @@ function MathSections({
       </View>
 
       {/* Word Problems */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
         <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
       </View>
       {wordProblems.map((prob, i) => (
@@ -1721,7 +1698,7 @@ function MathSections({
       {/* Draw & Solve */}
       {drawAndSolve !== '' && (
         <>
-          <View style={[styles.mathSectionBar, { backgroundColor: colors.bar }]}>
+          <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
             <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
           </View>
           <View wrap={false}>
@@ -1763,7 +1740,7 @@ function WorksheetTemplate({
   const isMath = activity.subject.toLowerCase().includes('math');
 
   return (
-    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
       <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
@@ -1777,7 +1754,7 @@ function WorksheetTemplate({
         )}
 
         {/* Description */}
-        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: C.white, borderLeftColor: colors.bar, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
+        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: color.page, borderLeftColor: colors.rule, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
           <Text style={[styles.descriptionText, { fontSize: bc.body }]}>{sanitizeText(activity.description)}</Text>
         </View>
 
@@ -1788,10 +1765,10 @@ function WorksheetTemplate({
           <>
             <Text style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
             {activity.instructions.map((step, i) => (
-              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.bar + '33' }]}>
+              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33' }]}>
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-                  <View style={[styles.instructionBullet, { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.bar }]}>
-                    <Text style={[styles.instructionBulletText, { color: colors.bar }]}>{i + 1}</Text>
+                  <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
+                    <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
                   </View>
                   <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
                 </View>
@@ -1865,7 +1842,7 @@ function ReadingTemplate({
   }
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
       <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
@@ -1878,7 +1855,7 @@ function ReadingTemplate({
         )}
 
         {passage && (
-          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.bar, borderRadius: bc.cardRadius }]}>
+          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
             <Text style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
             <Text style={[styles.readingPassageText, { fontSize: bc.body }]}>{sanitizeText(passage)}</Text>
           </View>
@@ -1888,10 +1865,10 @@ function ReadingTemplate({
           <Text style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
         )}
         {questions.map((step, i) => (
-          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.bar + '33' }]}>
+          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33' }]}>
             <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-              <View style={[styles.instructionBullet, { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.bar }]}>
-                <Text style={[styles.instructionBulletText, { color: colors.bar }]}>{i + 1}</Text>
+              <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
+                <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
               </View>
               <Text style={[styles.instructionText, { fontSize: bc.instrBody }]}>{sanitizeText(step)}</Text>
             </View>
@@ -1940,7 +1917,7 @@ function OpenWorkspaceTemplate({
   const lineCount = writingLineCount(band);
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
       <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
@@ -2023,7 +2000,7 @@ function PuzzleBreakTemplate({
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: colors.bg }]}>
+    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
       <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
@@ -2055,8 +2032,8 @@ function PuzzleBreakTemplate({
         <Text style={styles.wordListLabel}>Find these words:</Text>
         <View style={styles.wordListGrid}>
           {placed.map((word, i) => (
-            <View key={i} style={styles.wordListItem}>
-              <Text style={styles.wordListText}>{word}</Text>
+            <View key={i} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
+              <Text style={[styles.wordListText, { color: colors.label }]}>{word}</Text>
             </View>
           ))}
         </View>
@@ -2083,9 +2060,8 @@ function ActivityPage({
   childGrade: string;
   mascotImageUrl?: string | null;
 }) {
-  const band = getGradeBand(childGrade);
-  const colors = getActivityColors(index, band);
   const contentType = resolveContentType(activity);
+  const colors = accentFamily[familyForActivity(contentType)];
 
   const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, pageIndex: index };
 
@@ -2121,8 +2097,8 @@ function CertificatePage({
         <Svg width={48} height={48} viewBox="0 0 24 24">
           <Polygon
             points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-            fill={C.honey}
-            stroke={C.honeyDark}
+            fill={color.honey}
+            stroke={color.honeyDark}
             strokeWidth="0.5"
           />
         </Svg>
@@ -2176,18 +2152,17 @@ function ParentNotesPage({
 
       <Text style={styles.sectionLabel}>Activity Summary</Text>
       {activities.map((activity, i) => {
-        const band = getGradeBand('Grade 3'); // parent notes don't need band styling
-        const colors = getActivityColors(i, band);
+        const colors = familyColorsForActivity(activity);
         return (
           <View key={i} style={styles.summaryRow}>
-            <View style={[styles.summaryColorDot, { backgroundColor: colors.bar }]} />
+            <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
             <Text style={styles.summaryText}>
               <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
               {activity.title} — {activity.estimated_minutes} min
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
               {[0, 1, 2, 3, 4].map((j) => (
-                <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.bar, borderRadius: 2, marginLeft: 5 }} />
+                <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.label, borderRadius: 2, marginLeft: 5 }} />
               ))}
             </View>
           </View>
