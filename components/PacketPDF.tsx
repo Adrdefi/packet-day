@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     paddingTop: 1,
   },
   materialsText: {
-    ...typeStyle(typeScale.durationMaterials),
+    ...typeStyle(typeScale.body),
     color: color.textPrimary,
     flex: 1,
   },
@@ -577,6 +577,14 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.questionNumber),
   },
   instructionText: {
+    // TODO(chunk 3): `instruction` is fixed 11.5pt for every band — the
+    // original 5 band-driven categories omitted it. That dropped K-2's
+    // instruction text from 14pt to 11.5pt, too small for a six-year-old
+    // per the design spec (K-2 body is 14pt for that reason). Chunk 3
+    // should make `instruction` band-driven, taking bodySize from the
+    // band table like `body` does. Same applies everywhere `instruction`
+    // is used: promptInstructionText, mathWordText, mathDrawPromptText,
+    // coloringInstructionText, summaryText.
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
     flex: 1,
@@ -1078,7 +1086,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   notesPageSubtitle: {
-    ...typeStyle(typeScale.durationMaterials),
+    ...typeStyle(typeScale.body),
     color: color.textSecondary,
     marginBottom: 22,
   },
@@ -1598,7 +1606,7 @@ function WorksheetTemplate({
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
+            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
@@ -1699,7 +1707,7 @@ function ReadingTemplate({
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
+            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
@@ -1774,7 +1782,7 @@ function OpenWorkspaceTemplate({
         {activity.materials && activity.materials.length > 0 && (
           <View wrap={false} style={styles.materialsBox}>
             <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={styles.materialsText}>{activity.materials.join('  /  ')}</Text>
+            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
           </View>
         )}
 
@@ -1982,12 +1990,14 @@ function CertificatePage({
 
 function ParentNotesPage({
   childName,
+  childGrade,
   theme,
   activities,
   createdAt,
   mascotImageUrl,
   parentNotes,
 }: PacketPDFProps) {
+  const band = bandForGrade(childGrade);
   return (
     <Page size="LETTER" style={styles.notesPage}>
       {mascotImageUrl && (
@@ -1995,7 +2005,7 @@ function ParentNotesPage({
       )}
 
       <Text style={styles.notesPageTitle}>Today at a Glance</Text>
-      <Text style={styles.notesPageSubtitle}>
+      <Text style={[styles.notesPageSubtitle, { fontSize: bandTable[band].bodySize }]}>
         {activities.length} activities  ·  {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
       </Text>
 
