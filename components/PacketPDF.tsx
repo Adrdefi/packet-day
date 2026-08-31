@@ -552,14 +552,6 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.questionNumber),
   },
   instructionText: {
-    // TODO(chunk 3): `instruction` is fixed 11.5pt for every band — the
-    // original 5 band-driven categories omitted it. That dropped K-2's
-    // instruction text from 14pt to 11.5pt, too small for a six-year-old
-    // per the design spec (K-2 body is 14pt for that reason). Chunk 3
-    // should make `instruction` band-driven, taking bodySize from the
-    // band table like `body` does. Same applies everywhere `instruction`
-    // is used: promptInstructionText, mathWordText, mathDrawPromptText,
-    // coloringInstructionText, summaryText.
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
     flex: 1,
@@ -579,27 +571,77 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  // ── Fun fact callout (honey) ─────────────────────────────────────────────────
-  // Column direction (default) — lets the box auto-size to its text content.
-  // Do NOT add flexDirection:'row' or alignItems:'flex-start' here; in react-pdf
-  // those prevent the cross-axis from expanding and text overflows the border.
+  // ── Callouts (spec 5.8 / 5.9) ─────────────────────────────────────────────────
+  // All three callouts are fixed 44pt tall with a 10.5pt radius. Fixed height is
+  // literal per spec — react-pdf doesn't clip overflow, so a fun fact or
+  // encouragement line long enough to wrap past ~2 short lines will visibly
+  // spill past the box's bottom edge rather than growing it or being cut off.
   funFactBox: {
+    height: 44,
+    flexDirection: 'column',
+    gap: 2.25,
+    borderRadius: 10.5,
+    paddingVertical: 9,
+    paddingHorizontal: 13.5,
     backgroundColor: color.honeyTint,
-    borderWidth: 1.5,
-    borderColor: color.honey,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 8,
-    marginBottom: 8,
   },
   funFactLabel: {
     ...typeStyle(typeScale.calloutEyebrow),
     color: color.honeyDark,
-    marginBottom: 3,
   },
   funFactText: {
     ...typeStyle(typeScale.calloutBody),
     color: color.textPrimary,
+  },
+
+  // Encouragement and self-assessment share this row shape — text left,
+  // star row right. Only the fill color and left-text style differ.
+  calloutRow: {
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 13.5,
+    borderRadius: 10.5,
+    paddingVertical: 10.5,
+    paddingHorizontal: 13.5,
+  },
+  encouragementCallout: {
+    backgroundColor: color.honeyTint,
+  },
+  selfAssessmentCallout: {
+    backgroundColor: color.sageTint,
+  },
+  calloutRowText: {
+    ...typeStyle(typeScale.calloutBody),
+    color: color.textPrimary,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  selfAssessmentText: {
+    ...typeStyle(typeScale.calloutBody),
+    fontWeight: 700,
+    color: color.sageDark,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+
+  // Star row — always the right-hand element of a callout, never standalone.
+  calloutStarRow: {
+    flexDirection: 'row',
+    gap: 7.5,
+    flexShrink: 0,
+  },
+  calloutStarCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    borderWidth: 2.25,
+    borderColor: color.honey,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Bonus challenge ─────────────────────────────────────────────────────────
@@ -640,50 +682,6 @@ const styles = StyleSheet.create({
   answerKeyText: {
     ...typeStyle(typeScale.answerKeyBody),
     color: color.textPrimary,
-  },
-
-  // ── Star reward row ──────────────────────────────────────────────────────────
-  starRewardBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 10,
-    marginBottom: 6,
-    paddingRight: 4,
-    gap: 4,
-  },
-  starRewardText: {
-    ...typeStyle(typeScale.footerText),
-    color: color.textSecondary,
-  },
-
-  // ── Mid-page mascot encouragement ───────────────────────────────────────────
-  midPageEncouragement: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 8,
-    marginTop: 10,
-    marginBottom: 10,
-    gap: 10,
-  },
-  midPageMascotImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    flexShrink: 0,
-  },
-  midPageSpeechBubble: {
-    flex: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 6,
-    backgroundColor: color.page,
-  },
-  midPageSpeechText: {
-    ...typeStyle(typeScale.characterStripText),
-    color: color.textPrimary,
-    fontStyle: 'italic',
   },
 
   // ── Reading passage ──────────────────────────────────────────────────────────
@@ -1372,47 +1370,59 @@ function CharacterStrip({
   );
 }
 
-// ─── Mid-page mascot encouragement ────────────────────────────────────────────
+// ─── Star row (spec 5.9) ───────────────────────────────────────────────────────
+// Always the right-hand element of a callout, never standalone. Fixed honey
+// styling regardless of the activity's family — one consistent look.
 
-function MidPageEncouragement({
-  activity,
-  colors,
-  mascotImageUrl,
-}: {
-  activity: PDFActivity;
-  colors: ActivityColor;
-  mascotImageUrl?: string | null;
-}) {
-  if (!mascotImageUrl) return null;
+function StarRow() {
   return (
-    <View wrap={false} style={[styles.midPageEncouragement, { backgroundColor: familyBg(colors) }]}>
-      <Image src={mascotImageUrl} style={styles.midPageMascotImage} />
-      <View style={[styles.midPageSpeechBubble, { borderColor: colors.rule }]}>
-        <Text style={styles.midPageSpeechText}>
-          {activity.encouragement || 'Keep going — you are doing amazing!'}
-        </Text>
-      </View>
+    <View style={styles.calloutStarRow}>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={styles.calloutStarCircle}>
+          <StarSvg color={color.honey} size={15} />
+        </View>
+      ))}
     </View>
   );
 }
 
-// ─── Star rating row ──────────────────────────────────────────────────────────
+// ─── End-of-activity callout (spec 5.8 / 5.9, star rule) ──────────────────────
+//
+// Exactly one per activity, rendered last in the template's content flow so
+// it lands on whatever page pagination decides is the activity's last page
+// (no page-boundary detection exists yet — that's chunk 5). Replaces both
+// the old mid-page mascot bubble and the standalone star row.
+//
+// - Graded activities (isBreak=false): encouragement callout with stars if
+//   activity.encouragement is set, else a self-assessment callout with stars.
+// - Breaks (isBreak=true): encouragement callout with NO stars if there's
+//   encouragement text, else nothing — a break isn't graded, and "how did I
+//   do" doesn't fit a puzzle or a movement drill.
 
-function StarRewardRow({
-  colors,
-  band,
+function EndOfActivityCallout({
+  activity,
+  isBreak,
 }: {
-  colors: ActivityColor;
-  band: 'K-2' | '3-5' | '6-8';
+  activity: PDFActivity;
+  isBreak: boolean;
 }) {
-  const label = band === '6-8' ? 'Self-assessment:' : 'How did I do today?';
-  const starSize = band === 'K-2' ? 22 : band === '3-5' ? 18 : 16;
+  const encouragement = activity.encouragement?.trim();
+
+  if (encouragement) {
+    return (
+      <View wrap={false} style={[styles.calloutRow, styles.encouragementCallout]}>
+        <Text style={styles.calloutRowText}>{sanitizeText(encouragement)}</Text>
+        {!isBreak && <StarRow />}
+      </View>
+    );
+  }
+
+  if (isBreak) return null;
+
   return (
-    <View wrap={false} style={styles.starRewardBox}>
-      <Text style={styles.starRewardText}>{label}</Text>
-      {[0, 1, 2].map((i) => (
-        <StarSvg key={i} color={colors.label} size={starSize} />
-      ))}
+    <View wrap={false} style={[styles.calloutRow, styles.selfAssessmentCallout]}>
+      <Text style={styles.selfAssessmentText}>How did I do today? Circle your stars.</Text>
+      <StarRow />
     </View>
   );
 }
@@ -1490,7 +1500,7 @@ function MathSections({
       </View>
       {wordProblems.map((prob, i) => (
         <View wrap={false} key={i} style={styles.mathWordBox}>
-          <Text style={styles.mathWordText}>{prob}</Text>
+          <Text style={[styles.mathWordText, { fontSize: bandTable[band].bodySize }]}>{prob}</Text>
           <View style={styles.answerLineInBox} />
           <View style={styles.answerLineInBox} />
         </View>
@@ -1504,7 +1514,7 @@ function MathSections({
           </View>
           <View wrap={false}>
             <View style={styles.mathDrawPromptBubble}>
-              <Text style={styles.mathDrawPromptText}>{drawAndSolve}</Text>
+              <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
             </View>
             <View style={styles.mathDrawBox}>
               <Text style={styles.mathDrawBoxLabel}>Draw here</Text>
@@ -1556,7 +1566,7 @@ function WorksheetTemplate({
                   <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                     <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
                   </View>
-                  <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
+                  <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
                 </View>
                 {Array.from({ length: answerLines }, (_, j) => (
                   <View key={j} style={[styles.answerLineInBox, { marginTop: bc.lineSpacing / 2 }]} />
@@ -1569,9 +1579,6 @@ function WorksheetTemplate({
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
-        {/* Mid-page encouragement */}
-        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
-
         {/* Bonus challenge — only for K-5 */}
         {band !== '6-8' && (
           <View wrap={false} style={styles.bonusChallengeBox}>
@@ -1580,9 +1587,6 @@ function WorksheetTemplate({
           </View>
         )}
 
-        {/* Star rating */}
-        <StarRewardRow colors={colors} band={band} />
-
         {/* Answer key */}
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
@@ -1590,6 +1594,9 @@ function WorksheetTemplate({
             <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
+
+        {/* End-of-activity callout — encouragement or self-assessment, with stars */}
+        <EndOfActivityCallout activity={activity} isBreak={false} />
       </View>
     </Page>
   );
@@ -1647,7 +1654,7 @@ function ReadingTemplate({
               <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                 <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
               </View>
-              <Text style={styles.instructionText}>{sanitizeText(step)}</Text>
+              <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
             <View style={styles.answerLineInBox} />
             <View style={styles.answerLineInBox} />
@@ -1657,15 +1664,14 @@ function ReadingTemplate({
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
-        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
-        <StarRewardRow colors={colors} band={band} />
-
         {activity.answer_key && (
           <View wrap={false} style={styles.answerKeyBox}>
             <Text style={styles.answerKeyHeader}>For Grown-Ups Only</Text>
             <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
           </View>
         )}
+
+        <EndOfActivityCallout activity={activity} isBreak={false} />
       </View>
     </Page>
   );
@@ -1700,7 +1706,7 @@ function OpenWorkspaceTemplate({
         {/* Prompt bubble */}
         <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
           {activity.instructions.map((step, i) => (
-            <Text key={i} style={styles.promptInstructionText}>
+            <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>
               {i + 1}. {sanitizeText(step)}
             </Text>
           ))}
@@ -1708,8 +1714,6 @@ function OpenWorkspaceTemplate({
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
-
-        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
 
         {/* Response area */}
         {contentType === 'writing_prompt' && (
@@ -1736,7 +1740,7 @@ function OpenWorkspaceTemplate({
           </View>
         )}
 
-        <StarRewardRow colors={colors} band={band} />
+        <EndOfActivityCallout activity={activity} isBreak={contentType === 'movement_activity'} />
       </View>
     </Page>
   );
@@ -1796,8 +1800,7 @@ function PuzzleBreakTemplate({
           ))}
         </View>
 
-        <MidPageEncouragement activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} />
-        <StarRewardRow colors={colors} band={band} />
+        <EndOfActivityCallout activity={activity} isBreak={true} />
       </View>
     </Page>
   );
@@ -1914,7 +1917,7 @@ function ParentNotesPage({
         return (
           <View key={i} style={styles.summaryRow}>
             <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
-            <Text style={styles.summaryText}>
+            <Text style={[styles.summaryText, { fontSize: bandTable[band].bodySize }]}>
               <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
               {activity.title} — {activity.estimated_minutes} min
             </Text>
@@ -1955,11 +1958,14 @@ function ColoringPage({
   coloringPage,
   coloringImageUrl,
   mascotImageUrl,
+  childGrade,
 }: {
   coloringPage: PDFColoringPage;
   coloringImageUrl?: string | null;
   mascotImageUrl?: string | null;
+  childGrade: string;
 }) {
+  const band = bandForGrade(childGrade);
   const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
   return (
     <Page size="LETTER" style={styles.coloringPage}>
@@ -1973,7 +1979,7 @@ function ColoringPage({
         )}
       </View>
       <View style={styles.coloringInstructionBubble}>
-        <Text style={styles.coloringInstructionText}>{sanitizeText(coloringPage.instructions)}</Text>
+        <Text style={[styles.coloringInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(coloringPage.instructions)}</Text>
       </View>
     </Page>
   );
@@ -2067,6 +2073,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           coloringPage={props.coloringPage}
           coloringImageUrl={props.coloringImageUrl}
           mascotImageUrl={props.mascotImageUrl}
+          childGrade={props.childGrade}
         />
       )}
       <CelebrationPage {...props} />

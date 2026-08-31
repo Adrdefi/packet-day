@@ -128,10 +128,18 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const grade = url.searchParams.get("grade");
   const withMascot = url.searchParams.get("mascot") === "1";
+  const noEncourage = url.searchParams.get("noencourage") === "1";
   const gradedProps = {
     ...props,
     ...(grade ? { childGrade: grade } : null),
     ...(withMascot ? { mascotImageUrl: `${url.origin}/landing/characters.png` } : null),
+    // Reading activity loses its encouragement text so the self-assessment
+    // callout's code path (chunk 3, stage 3a/3b) can be exercised in a render
+    // check — the shipped fixture always has encouragement set on every
+    // activity, so that path is otherwise silently untested.
+    ...(noEncourage
+      ? { activities: activities.map((a, i) => (i === 1 ? { ...a, encouragement: undefined } : a)) }
+      : null),
   };
   const buf = await renderToBuffer(
     createElement(PacketPDF, gradedProps) as React.ReactElement<PacketPDFProps>
