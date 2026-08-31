@@ -128,17 +128,17 @@ interface BandConfig {
   cardPad: number;    // card padding
   cardRadius: number; // card border radius
   borderW: number;    // border width
-  lineSpacing: number;// writing-line spacing
 }
 
 // Font-size fields (body, instrBody) moved to lib/pdf-tokens.ts's band table
 // in Stage 3 of the PDF token rebuild — these remaining fields are layout
-// values, out of scope for that migration.
+// values, out of scope for that migration. Line pitch now comes from
+// bandTable[band].answerLinePitch (chunk 4) — see the stretch-group caps.
 function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
   const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
-    'K-2': { cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32 },
-    '3-5': { cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26 },
-    '6-8': { cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22 },
+    'K-2': { cardPad: 14, cardRadius: 14, borderW: 3 },
+    '3-5': { cardPad: 12, cardRadius: 10, borderW: 2 },
+    '6-8': { cardPad: 10, cardRadius: 8, borderW: 1.5 },
   };
   return configs[band];
 }
@@ -562,6 +562,24 @@ const styles = StyleSheet.create({
     borderBottomColor: color.answerRule,
     marginTop: 12,
   },
+  // Spec section 6 — a MAY STRETCH group of ruled lines. flexGrow/maxHeight
+  // are set per instance (weight and cap vary by category); this just holds
+  // the shared structural bits.
+  answerLineGroup: {
+    flexBasis: 'auto',
+  },
+  // Each individual ruled line gets an EQUAL flexGrow share of the group's
+  // grown height, its border-bottom sitting at the bottom of that share.
+  // Tried justifyContent:'space-between' on the group first — two lines
+  // read as one at a glance, close enough together to worry it wasn't
+  // repositioning after growth. Switched to this per-child pattern instead
+  // and confirmed it via a high-contrast diagnostic render (distinct
+  // top/bottom lines, correct positions) rather than digging into whether
+  // space-between was actually broken or just a low-contrast dotted line.
+  answerLineGroupLine: {
+    flexGrow: 1,
+    flexBasis: 0,
+  },
 
   // ── Work area ───────────────────────────────────────────────────────────────
   workLine: {
@@ -686,11 +704,17 @@ const styles = StyleSheet.create({
   },
 
   // ── Reading passage ──────────────────────────────────────────────────────────
+  // Spec section 6 — the passage is a MAY STRETCH column, weight 1, no cap:
+  // it has no maxHeight, so when it competes with capped siblings (the
+  // comprehension answer-line groups) it simply absorbs whatever they can't
+  // use, and when it's the page's only stretcher it absorbs everything.
   readingPassageBlock: {
     backgroundColor: color.creamPanel,
     borderRadius: 8,
     padding: 14,
     marginBottom: 14,
+    flexGrow: 1,
+    flexBasis: 'auto',
   },
   readingPassageLabel: {
     ...typeStyle(typeScale.sectionLabel),
@@ -834,7 +858,6 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed' as const,
     borderColor: color.answerRule,
     borderRadius: 8,
-    minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -1174,6 +1197,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 14,
   },
+  // Spec section 6 — "Coloring image frame", MAY STRETCH weight 1, no cap.
+  // The frame grows; the fixed-size image inside stays centered within it.
   coloringBox: {
     borderWidth: 2.5,
     borderStyle: 'dashed' as const,
@@ -1184,6 +1209,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 12,
     width: '100%',
+    flexGrow: 1,
+    flexBasis: 'auto',
   },
   coloringBoxImage: {
     width: 420,
@@ -1500,10 +1527,12 @@ function MathSections({
         <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
       </View>
       {wordProblems.map((prob, i) => (
-        <View wrap={false} key={i} style={styles.mathWordBox}>
+        <View wrap={false} key={i} style={[styles.mathWordBox, { flexGrow: 1, flexBasis: 'auto' }]}>
           <Text style={[styles.mathWordText, { fontSize: bandTable[band].bodySize }]}>{prob}</Text>
-          <View style={styles.answerLineInBox} />
-          <View style={styles.answerLineInBox} />
+          <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
+            <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+            <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+          </View>
         </View>
       ))}
 
@@ -1513,11 +1542,11 @@ function MathSections({
           <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
             <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
           </View>
-          <View wrap={false}>
+          <View wrap={false} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
             <View style={styles.mathDrawPromptBubble}>
               <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
             </View>
-            <View style={styles.mathDrawBox}>
+            <View style={[styles.mathDrawBox, { minHeight: bandTable[band].openAreaMinHeight, flexGrow: 1.4, flexBasis: 'auto', maxHeight: 340 }]}>
               <Text style={styles.mathDrawBoxLabel}>Draw here</Text>
             </View>
             <Text style={styles.mathAnswerLineLabel}>My answer:</Text>
@@ -1562,16 +1591,18 @@ function WorksheetTemplate({
           <>
             <Text style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
             {activity.instructions.map((step, i) => (
-              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33' }]}>
+              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
                   <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                     <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
                   </View>
                   <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
                 </View>
-                {Array.from({ length: answerLines }, (_, j) => (
-                  <View key={j} style={[styles.answerLineInBox, { marginTop: bc.lineSpacing / 2 }]} />
-                ))}
+                <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
+                  {Array.from({ length: answerLines }, (_, j) => (
+                    <View key={j} style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+                  ))}
+                </View>
               </View>
             ))}
           </>
@@ -1650,15 +1681,17 @@ function ReadingTemplate({
           <Text style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
         )}
         {questions.map((step, i) => (
-          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33' }]}>
+          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
             <View style={[styles.instructionRow, { marginBottom: 2 }]}>
               <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                 <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
               </View>
               <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
-            <View style={styles.answerLineInBox} />
-            <View style={styles.answerLineInBox} />
+            <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
+              <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+              <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+            </View>
           </View>
         ))}
 
@@ -1704,14 +1737,28 @@ function OpenWorkspaceTemplate({
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
-        {/* Prompt bubble */}
-        <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
-          {activity.instructions.map((step, i) => (
-            <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>
-              {i + 1}. {sanitizeText(step)}
-            </Text>
-          ))}
-        </View>
+        {/* Prompt bubble — for movement_activity, the numbered steps are a
+            MAY STRETCH "Movement step list" (weight 1, cap = steps × 44pt);
+            for every other content type the prompt text stays fixed. */}
+        {contentType === 'movement_activity' ? (
+          <View wrap={false} style={[styles.promptBubble, { borderRadius: bc.cardRadius, flexGrow: 1, flexBasis: 'auto' }]}>
+            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: activity.instructions.length * 44 }]}>
+              {activity.instructions.map((step, i) => (
+                <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize, marginTop: 0, flexGrow: 1, flexBasis: 'auto' }]}>
+                  {i + 1}. {sanitizeText(step)}
+                </Text>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
+            {activity.instructions.map((step, i) => (
+              <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>
+                {i + 1}. {sanitizeText(step)}
+              </Text>
+            ))}
+          </View>
+        )}
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
@@ -1720,23 +1767,27 @@ function OpenWorkspaceTemplate({
         {contentType === 'writing_prompt' && (
           <>
             <Text style={styles.writingSpaceHeader}>My Writing Space</Text>
-            {Array.from({ length: lineCount }, (_, i) => (
-              <View key={i} style={[styles.writingLine, { marginBottom: bc.lineSpacing }]} />
-            ))}
+            <View style={[styles.answerLineGroup, { flexGrow: 1, flexBasis: 'auto', maxHeight: lineCount * bandTable[band].answerLinePitch * 1.5 }]}>
+              {Array.from({ length: lineCount }, (_, i) => (
+                <View key={i} style={[styles.writingLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
+              ))}
+            </View>
           </>
         )}
 
         {contentType === 'movement_activity' && (
-          <View wrap={false} style={styles.movementReflectionBox}>
+          <View wrap={false} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
             <Text style={styles.movementReflectionLabel}>How did it go?</Text>
-            {Array.from({ length: 3 }, (_, i) => (
-              <View key={i} style={styles.movementReflectionLine} />
-            ))}
+            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
+              ))}
+            </View>
           </View>
         )}
 
         {contentType === 'coloring' && (
-          <View style={styles.drawBox}>
+          <View style={[styles.drawBox, { minHeight: bandTable[band].openAreaMinHeight, flexGrow: 1.4, flexBasis: 'auto', maxHeight: 340 }]}>
             <Text style={styles.drawBoxLabel}>Draw or write here</Text>
           </View>
         )}
@@ -1852,32 +1903,39 @@ function CertificatePage({
       <View style={styles.certFrameOuter} />
       <View style={styles.certFrameInner} />
 
-      {/* Trophy star SVG */}
-      <View style={{ marginBottom: 16 }}>
-        <Svg width={48} height={48} viewBox="0 0 24 24">
-          <Polygon
-            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-            fill={color.honey}
-            stroke={color.honeyDark}
-            strokeWidth="0.5"
-          />
-        </Svg>
-      </View>
+      {/* Certificate frame content — spec section 6, MAY STRETCH weight 1,
+          cap 640pt. certificatePage's own justifyContent:'center' becomes
+          the fallback once this wrapper hits its cap: any height beyond
+          640pt shows up as symmetric margin around the wrapper instead of
+          the wrapper itself growing further. */}
+      <View style={{ flexGrow: 1, flexBasis: 'auto', maxHeight: 640, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {/* Trophy star SVG */}
+        <View style={{ marginBottom: 16 }}>
+          <Svg width={48} height={48} viewBox="0 0 24 24">
+            <Polygon
+              points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+              fill={color.honey}
+              stroke={color.honeyDark}
+              strokeWidth="0.5"
+            />
+          </Svg>
+        </View>
 
-      <Text style={styles.certHeader}>Certificate of Completion</Text>
-      <Text style={styles.certPresented}>This certifies that</Text>
-      <Text style={styles.certChildName}>{sanitizeText(childName)}</Text>
-      <Text style={styles.certBody}>has successfully completed all activities in</Text>
-      <Text style={styles.certTheme}>{sanitizeText(theme)}</Text>
+        <Text style={styles.certHeader}>Certificate of Completion</Text>
+        <Text style={styles.certPresented}>This certifies that</Text>
+        <Text style={styles.certChildName}>{sanitizeText(childName)}</Text>
+        <Text style={styles.certBody}>has successfully completed all activities in</Text>
+        <Text style={styles.certTheme}>{sanitizeText(theme)}</Text>
 
-      <View style={styles.certDivider} />
-      <Text style={styles.certDateLine}>{formatPDFDate(createdAt)}</Text>
+        <View style={styles.certDivider} />
+        <Text style={styles.certDateLine}>{formatPDFDate(createdAt)}</Text>
 
-      {/* Signature lines */}
-      <View style={styles.certSignatureRow}>
-        <View style={styles.certSignatureBlock}>
-          <View style={styles.certSignatureLine} />
-          <Text style={styles.certSignatureLabel}>Grown-up Signature</Text>
+        {/* Signature lines */}
+        <View style={styles.certSignatureRow}>
+          <View style={styles.certSignatureBlock}>
+            <View style={styles.certSignatureLine} />
+            <Text style={styles.certSignatureLabel}>Grown-up Signature</Text>
+          </View>
         </View>
       </View>
 
@@ -1913,23 +1971,28 @@ function ParentNotesPage({
       </Text>
 
       <Text style={styles.sectionLabel}>Activity Summary</Text>
-      {activities.map((activity, i) => {
-        const colors = familyColorsForActivity(activity);
-        return (
-          <View key={i} style={styles.summaryRow}>
-            <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
-            <Text style={[styles.summaryText, { fontSize: bandTable[band].bodySize }]}>
-              <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
-              {activity.title} — {activity.estimated_minutes} min
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
-              {[0, 1, 2, 3, 4].map((j) => (
-                <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.label, borderRadius: 2, marginLeft: 5 }} />
-              ))}
+      {/* Spec section 6 — "Parent-sheet key stack", MAY STRETCH weight 1, no
+          cap. Distributes leftover height as wider gaps between rows rather
+          than leaving it as a void before "A Note for You". */}
+      <View style={{ flexGrow: 1, flexBasis: 'auto', justifyContent: 'space-between' }}>
+        {activities.map((activity, i) => {
+          const colors = familyColorsForActivity(activity);
+          return (
+            <View key={i} style={[styles.summaryRow, { marginBottom: 0 }]}>
+              <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
+              <Text style={[styles.summaryText, { fontSize: bandTable[band].bodySize }]}>
+                <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
+                {activity.title} — {activity.estimated_minutes} min
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
+                {[0, 1, 2, 3, 4].map((j) => (
+                  <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.label, borderRadius: 2, marginLeft: 5 }} />
+                ))}
+              </View>
             </View>
-          </View>
-        );
-      })}
+          );
+        })}
+      </View>
 
       <View style={{ marginTop: 22, marginBottom: 6 }}>
         <Text style={styles.sectionLabel}>A Note for You</Text>
