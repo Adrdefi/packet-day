@@ -10,6 +10,7 @@ import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity } from "@/components/PacketPDF";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const activities: PDFActivity[] = [
   {
@@ -146,6 +147,6 @@ export async function GET(req: NextRequest) {
   );
   return new Response(buf.buffer as ArrayBuffer, {
     status: 200,
-    headers: { "Content-Type": "application/pdf" },
+    headers: { "Content-Type": "application/pdf", "Cache-Control": "no-store" },
   });
 }
