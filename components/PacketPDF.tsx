@@ -2022,7 +2022,7 @@ function CelebrationPage({
       {mascotImageUrl && mascotName && (
         <View style={styles.mascotHuntBox}>
           <Text style={[styles.mascotHuntText, { fontSize: bandTable[band].calloutBodySize }]}>
-            Did you find {sanitizeText(mascotName)} hiding on every activity page? Go back and count them all!
+            Did you spot {sanitizeText(mascotName)} along the way? Go back and find every page where they show up.
           </Text>
         </View>
       )}
