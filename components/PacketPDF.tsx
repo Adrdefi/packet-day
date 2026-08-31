@@ -21,10 +21,12 @@ import {
   type AccentFamily,
   type as typeScale,
   typeStyle,
+  space,
   band as bandTable,
   bandForGrade,
   type BandKey,
 } from "@/lib/pdf-tokens";
+import { shortTitle } from "@/lib/pdf-fields";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -62,8 +64,10 @@ Font.registerHyphenationCallback((word) => [word]);
 // this file don't all need touching — it's exactly AccentFamily.
 type ActivityColor = AccentFamily;
 
-/** The page-wash color for an activity's family — falls back to plain white
- * for families with no stripFill defined (coloring). */
+/** The fill color for a bounded family-tinted element (character strip,
+ * instruction bullets, etc.) — falls back to plain white for families with
+ * no stripFill defined (coloring). Pages themselves are always color.page;
+ * see the PDF token rebuild chunk 3 spec. */
 function familyBg(colors: ActivityColor): string {
   return colors.stripFill ?? color.page;
 }
@@ -121,12 +125,10 @@ export interface PacketPDFProps {
 // bandForGrade (lib/pdf-tokens.ts) — see Stage 3 of the PDF token rebuild.
 
 interface BandConfig {
-  barH: number;       // activity top bar height
   cardPad: number;    // card padding
   cardRadius: number; // card border radius
   borderW: number;    // border width
   lineSpacing: number;// writing-line spacing
-  mascotInBar: number;// mascot image size in activity bar
 }
 
 // Font-size fields (body, instrBody) moved to lib/pdf-tokens.ts's band table
@@ -134,9 +136,9 @@ interface BandConfig {
 // values, out of scope for that migration.
 function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
   const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
-    'K-2': { barH: 108, cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32, mascotInBar: 90 },
-    '3-5': { barH: 96, cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26, mascotInBar: 80 },
-    '6-8': { barH: 86, cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22, mascotInBar: 60 },
+    'K-2': { cardPad: 14, cardRadius: 14, borderW: 3, lineSpacing: 32 },
+    '3-5': { cardPad: 12, cardRadius: 10, borderW: 2, lineSpacing: 26 },
+    '6-8': { cardPad: 10, cardRadius: 8, borderW: 1.5, lineSpacing: 22 },
   };
   return configs[band];
 }
@@ -176,17 +178,6 @@ function resolveContentType(activity: PDFActivity): ContentType {
   if (s.includes('pe') || s.includes('movement') || s.includes('exercise')) return 'movement_activity';
   if (s.includes('puzzle')) return 'puzzle_break';
   return 'worksheet';
-}
-
-const TWEMOJI_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/';
-function getSubjectIconUrl(subject: string): string {
-  const s = subject.toLowerCase();
-  if (s.includes('math'))                                       return TWEMOJI_BASE + '1f9ee.png';
-  if (s.includes('read') || s.includes('compreh'))             return TWEMOJI_BASE + '1f4d6.png';
-  if (s.includes('writ') || s.includes('journal') || s.includes('story')) return TWEMOJI_BASE + '270f.png';
-  if (s.includes('sci'))                                        return TWEMOJI_BASE + '1f52c.png';
-  if (s.includes('puzzle'))                                     return TWEMOJI_BASE + '1f9e9.png';
-  return TWEMOJI_BASE + '1f3c6.png';
 }
 
 function formatPDFDate(iso: string): string {
@@ -312,7 +303,7 @@ const HIDDEN_MASCOT_CORNERS = [
 const styles = StyleSheet.create({
   // ── Page base ───────────────────────────────────────────────────────────────
   coverPage: {
-    backgroundColor: color.creamPanel,
+    backgroundColor: color.page,
     padding: 48,
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -468,6 +459,7 @@ const styles = StyleSheet.create({
   // ── Activity page ───────────────────────────────────────────────────────────
   activityPage: {
     flexDirection: 'column',
+    backgroundColor: color.page,
   },
   activityContent: {
     padding: 36,
@@ -475,62 +467,42 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
 
-  // Activity bar elements — height/mascot size set dynamically via band config
-  activityBarLeft: {
+  // Activity header — see spec 5.3. Replaces the old full-bleed colored bar.
+  activityHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+  activityHeaderLeft: {
     flexDirection: 'column',
     gap: 3,
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    paddingRight: 12,
   },
-  activityBarSubjectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  activityBarIcon: {
-    width: 18,
-    height: 18,
-  },
-  activityBarSubject: {
+  activityHeaderSubject: {
     ...typeStyle(typeScale.subjectLabel),
-    color: 'rgba(255,255,255,0.8)',
   },
-  activityBarTitle: {
+  activityHeaderTitle: {
     ...typeStyle(typeScale.activityTitle),
-    color: color.page,
+    color: color.textPrimary,
   },
-  activityBarTime: {
+  activityHeaderDuration: {
     ...typeStyle(typeScale.durationMaterials),
-    color: 'rgba(255,255,255,0.95)',
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    color: color.textSecondary,
+    textAlign: 'right',
+    maxWidth: 165,
     flexShrink: 0,
+  },
+  activityHeaderRule: {
+    height: 2.25,
+    marginTop: space.headerToRule,
+    marginBottom: space.ruleToContent,
   },
 
   // ── Content cards ───────────────────────────────────────────────────────────
-  materialsBox: {
-    backgroundColor: color.page,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderWidth: 1,
-    borderColor: color.faintDivider,
-  },
-  materialsLabel: {
-    ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
-    marginRight: 8,
-    paddingTop: 1,
-  },
-  materialsText: {
-    ...typeStyle(typeScale.body),
-    color: color.textPrimary,
-    flex: 1,
-  },
-
   descriptionBox: {
     borderLeftWidth: 4,
     borderRadius: 8,
@@ -958,7 +930,7 @@ const styles = StyleSheet.create({
 
   // ── Certificate page ─────────────────────────────────────────────────────────
   certificatePage: {
-    backgroundColor: color.creamPanel,
+    backgroundColor: color.page,
     padding: 56,
     flexDirection: 'column',
     alignItems: 'center',
@@ -1211,7 +1183,7 @@ const styles = StyleSheet.create({
 
   // ── Coloring page ────────────────────────────────────────────────────────────
   coloringPage: {
-    backgroundColor: color.creamPanel,
+    backgroundColor: color.page,
     padding: 48,
     flexDirection: 'column',
     alignItems: 'center',
@@ -1362,49 +1334,36 @@ function CoverPage({
   );
 }
 
-// ─── Activity top bar ─────────────────────────────────────────────────────────
+// ─── Activity header ──────────────────────────────────────────────────────────
+// Spec 5.3 — subject + title left, duration/materials right, then a rule.
+// No mascot here; it lives in the character strip (stage 2).
 
-function ActivityTopBar({
+function ActivityHeader({
   activity,
   colors,
-  mascotImageUrl,
-  band,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
-  mascotImageUrl?: string | null;
-  band: 'K-2' | '3-5' | '6-8';
 }) {
-  const bc = getBandConfig(band);
-  const mascotSize = bc.mascotInBar;
+  const materials = activity.materials && activity.materials.length > 0
+    ? activity.materials.join(', ')
+    : '';
+  const durationMaterials = `${activity.estimated_minutes} min${materials ? ' · ' + materials : ''}`;
 
   return (
-    <View style={{ height: bc.barH, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 28, gap: 12, backgroundColor: colors.label }}>
-      <View style={styles.activityBarLeft}>
-        <View style={styles.activityBarSubjectRow}>
-          <Image src={getSubjectIconUrl(activity.subject)} style={styles.activityBarIcon} />
-          <Text style={styles.activityBarSubject}>{sanitizeText(activity.subject)}</Text>
+    <View>
+      <View style={styles.activityHeaderRow}>
+        <View style={styles.activityHeaderLeft}>
+          <Text style={[styles.activityHeaderSubject, { color: colors.label }]}>
+            {sanitizeText(activity.subject)}
+          </Text>
+          <Text style={styles.activityHeaderTitle}>
+            {sanitizeText(shortTitle(activity))}
+          </Text>
         </View>
-        <Text style={styles.activityBarTitle}>
-          {sanitizeText(activity.title)}
-        </Text>
+        <Text style={styles.activityHeaderDuration}>{durationMaterials}</Text>
       </View>
-      <Text style={styles.activityBarTime}>{activity.estimated_minutes} min</Text>
-      {mascotImageUrl && (
-        <Image
-          src={mascotImageUrl}
-          style={{
-            position: 'absolute',
-            top: (bc.barH - mascotSize) / 2,
-            right: 14,
-            width: mascotSize,
-            height: mascotSize,
-            borderRadius: mascotSize / 2,
-            borderWidth: 2,
-            borderColor: 'rgba(255,255,255,0.6)',
-          }}
-        />
-      )}
+      <View style={[styles.activityHeaderRule, { backgroundColor: colors.rule }]} />
     </View>
   );
 }
@@ -1597,18 +1556,11 @@ function WorksheetTemplate({
   const isMath = activity.subject.toLowerCase().includes('math');
 
   return (
-    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
-      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+    <Page size="LETTER" experimentalPagination style={styles.activityPage}>
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
-        {/* Materials */}
-        {activity.materials && activity.materials.length > 0 && (
-          <View wrap={false} style={styles.materialsBox}>
-            <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
-          </View>
-        )}
+        <ActivityHeader activity={activity} colors={colors} />
 
         {/* Description */}
         <View wrap={false} style={[styles.descriptionBox, { backgroundColor: color.page, borderLeftColor: colors.rule, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
@@ -1699,17 +1651,11 @@ function ReadingTemplate({
   }
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
-      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+    <Page size="LETTER" style={styles.activityPage}>
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
-        {activity.materials && activity.materials.length > 0 && (
-          <View wrap={false} style={styles.materialsBox}>
-            <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
-          </View>
-        )}
+        <ActivityHeader activity={activity} colors={colors} />
 
         {passage && (
           <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
@@ -1774,17 +1720,11 @@ function OpenWorkspaceTemplate({
   const lineCount = writingLineCount(band);
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
-      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+    <Page size="LETTER" style={styles.activityPage}>
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
-        {activity.materials && activity.materials.length > 0 && (
-          <View wrap={false} style={styles.materialsBox}>
-            <Text style={styles.materialsLabel}>You'll need:</Text>
-            <Text style={[styles.materialsText, { fontSize: bandTable[band].bodySize }]}>{activity.materials.join('  /  ')}</Text>
-          </View>
-        )}
+        <ActivityHeader activity={activity} colors={colors} />
 
         {/* Prompt bubble */}
         <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
@@ -1857,11 +1797,12 @@ function PuzzleBreakTemplate({
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 
   return (
-    <Page size="LETTER" style={[styles.activityPage, { backgroundColor: familyBg(colors) }]}>
-      <ActivityTopBar activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
+    <Page size="LETTER" style={styles.activityPage}>
       <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+        <ActivityHeader activity={activity} colors={colors} />
+
         {/* Intro */}
         <View style={[styles.puzzleIntroBox, { borderRadius: bc.cardRadius }]}>
           <Text style={[styles.puzzleIntroText, { fontSize: bandTable[band].bodySize }]}>
