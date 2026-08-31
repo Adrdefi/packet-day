@@ -572,12 +572,13 @@ const styles = StyleSheet.create({
   },
 
   // ── Callouts (spec 5.8 / 5.9) ─────────────────────────────────────────────────
-  // All three callouts are fixed 44pt tall with a 10.5pt radius. Fixed height is
-  // literal per spec — react-pdf doesn't clip overflow, so a fun fact or
-  // encouragement line long enough to wrap past ~2 short lines will visibly
-  // spill past the box's bottom edge rather than growing it or being cut off.
+  // 10.5pt radius. The fun fact callout is minHeight:44 — fun_fact is capped
+  // at 200 chars generator-side to fit 44pt at this width, so it grows only
+  // if that cap is ever violated, rather than clipping. Encouragement and
+  // self-assessment stay fixed height:44 — they hold a 30pt star row with
+  // real vertical structure to preserve, and their text is always short.
   funFactBox: {
-    height: 44,
+    minHeight: 44,
     flexDirection: 'column',
     gap: 2.25,
     borderRadius: 10.5,
