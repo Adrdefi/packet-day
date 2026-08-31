@@ -502,17 +502,29 @@ const styles = StyleSheet.create({
     marginBottom: space.ruleToContent,
   },
 
-  // ── Content cards ───────────────────────────────────────────────────────────
-  descriptionBox: {
-    borderLeftWidth: 4,
-    borderRadius: 8,
-    padding: 12,
+  // ── Character strip ─────────────────────────────────────────────────────────
+  // Spec 5.5 — mascot + intro text, once per activity, replaces the old
+  // description box.
+  characterStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13.5,
+    borderRadius: 10.5,
+    paddingVertical: 10,
+    paddingHorizontal: 13.5,
     marginBottom: 16,
+    width: '100%',
   },
-  descriptionText: {
-    ...typeStyle(typeScale.body),
+  characterStripMascot: {
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+  characterStripText: {
+    ...typeStyle(typeScale.characterStripText),
     color: color.textPrimary,
-    fontStyle: 'italic',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
 
   // ── Instructions ────────────────────────────────────────────────────────────
@@ -719,12 +731,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.page,
     marginBottom: 14,
   },
-  promptBubbleText: {
-    ...typeStyle(typeScale.body),
-    color: color.textPrimary,
-    fontStyle: 'italic',
-    marginBottom: 6,
-  },
   promptInstructionText: {
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
@@ -869,19 +875,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Puzzle break (word search) ───────────────────────────────────────────────
-  puzzleIntroBox: {
-    borderWidth: 1.5,
-    borderColor: color.faintDivider,
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: color.page,
-    marginBottom: 16,
-  },
-  puzzleIntroText: {
-    ...typeStyle(typeScale.body),
-    color: color.textPrimary,
-    fontStyle: 'italic',
-  },
   wordSearchGrid: {
     flexDirection: 'column',
     alignSelf: 'center',
@@ -1368,6 +1361,35 @@ function ActivityHeader({
   );
 }
 
+// ─── Character strip ──────────────────────────────────────────────────────────
+// Spec 5.5 — mascot + intro text, once per activity, first page only.
+// Replaces the old description box everywhere activity.description rendered.
+
+function CharacterStrip({
+  activity,
+  colors,
+  mascotImageUrl,
+  band,
+}: {
+  activity: PDFActivity;
+  colors: ActivityColor;
+  mascotImageUrl?: string | null;
+  band: BandKey;
+}) {
+  const mascotSize = bandTable[band].stripMascot;
+  return (
+    <View wrap={false} style={[styles.characterStrip, { backgroundColor: familyBg(colors) }]}>
+      {mascotImageUrl && (
+        <Image
+          src={mascotImageUrl}
+          style={[styles.characterStripMascot, { width: mascotSize, height: mascotSize }]}
+        />
+      )}
+      <Text style={styles.characterStripText}>{sanitizeText(activity.description)}</Text>
+    </View>
+  );
+}
+
 // ─── Hidden mascot (small, corner) ────────────────────────────────────────────
 
 function HiddenMascot({
@@ -1561,11 +1583,7 @@ function WorksheetTemplate({
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
-
-        {/* Description */}
-        <View wrap={false} style={[styles.descriptionBox, { backgroundColor: color.page, borderLeftColor: colors.rule, borderRadius: bc.cardRadius, padding: bc.cardPad }]}>
-          <Text style={[styles.descriptionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(activity.description)}</Text>
-        </View>
+        <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {/* Instructions */}
         {isMath ? (
@@ -1656,6 +1674,7 @@ function ReadingTemplate({
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
+        <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {passage && (
           <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
@@ -1725,10 +1744,10 @@ function OpenWorkspaceTemplate({
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
+        <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {/* Prompt bubble */}
         <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
-          <Text style={[styles.promptBubbleText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(activity.description)}</Text>
           {activity.instructions.map((step, i) => (
             <Text key={i} style={styles.promptInstructionText}>
               {i + 1}. {sanitizeText(step)}
@@ -1802,13 +1821,7 @@ function PuzzleBreakTemplate({
 
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
-
-        {/* Intro */}
-        <View style={[styles.puzzleIntroBox, { borderRadius: bc.cardRadius }]}>
-          <Text style={[styles.puzzleIntroText, { fontSize: bandTable[band].bodySize }]}>
-            {sanitizeText(activity.description)}
-          </Text>
-        </View>
+        <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}

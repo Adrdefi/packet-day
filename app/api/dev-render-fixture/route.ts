@@ -125,8 +125,14 @@ const props: PacketPDFProps = {
 };
 
 export async function GET(req: NextRequest) {
-  const grade = new URL(req.url).searchParams.get("grade");
-  const gradedProps = grade ? { ...props, childGrade: grade } : props;
+  const url = new URL(req.url);
+  const grade = url.searchParams.get("grade");
+  const withMascot = url.searchParams.get("mascot") === "1";
+  const gradedProps = {
+    ...props,
+    ...(grade ? { childGrade: grade } : null),
+    ...(withMascot ? { mascotImageUrl: `${url.origin}/landing/characters.png` } : null),
+  };
   const buf = await renderToBuffer(
     createElement(PacketPDF, gradedProps) as React.ReactElement<PacketPDFProps>
   );
