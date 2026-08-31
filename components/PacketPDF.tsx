@@ -289,15 +289,6 @@ function generateWordSearch(
   return { grid, placed };
 }
 
-// ─── Hidden mascot corner positions (cycle by page index) ────────────────────
-
-const HIDDEN_MASCOT_CORNERS = [
-  { bottom: 24, right: 12 },
-  { bottom: 24, left: 12 },
-  { top: 112, right: 12 },
-  { top: 112, left: 12 },
-] as const;
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -693,15 +684,6 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.characterStripText),
     color: color.textPrimary,
     fontStyle: 'italic',
-  },
-
-  // ── Hidden mascot (small, corner overlay) ───────────────────────────────────
-  hiddenMascotImage: {
-    position: 'absolute',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    opacity: 0.75,
   },
 
   // ── Reading passage ──────────────────────────────────────────────────────────
@@ -1390,25 +1372,6 @@ function CharacterStrip({
   );
 }
 
-// ─── Hidden mascot (small, corner) ────────────────────────────────────────────
-
-function HiddenMascot({
-  mascotImageUrl,
-  pageIndex,
-}: {
-  mascotImageUrl?: string | null;
-  pageIndex: number;
-}) {
-  if (!mascotImageUrl) return null;
-  const pos = HIDDEN_MASCOT_CORNERS[pageIndex % HIDDEN_MASCOT_CORNERS.length];
-  return (
-    <Image
-      src={mascotImageUrl}
-      style={[styles.hiddenMascotImage, pos]}
-    />
-  );
-}
-
 // ─── Mid-page mascot encouragement ────────────────────────────────────────────
 
 function MidPageEncouragement({
@@ -1563,14 +1526,12 @@ function WorksheetTemplate({
   childName,
   childGrade,
   mascotImageUrl,
-  pageIndex,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
-  pageIndex: number;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1579,8 +1540,6 @@ function WorksheetTemplate({
 
   return (
     <Page size="LETTER" experimentalPagination style={styles.activityPage}>
-      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
-
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1644,14 +1603,12 @@ function ReadingTemplate({
   childName,
   childGrade,
   mascotImageUrl,
-  pageIndex,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
-  pageIndex: number;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1670,8 +1627,6 @@ function ReadingTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
-      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
-
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1724,14 +1679,12 @@ function OpenWorkspaceTemplate({
   childName,
   childGrade,
   mascotImageUrl,
-  pageIndex,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
-  pageIndex: number;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1740,8 +1693,6 @@ function OpenWorkspaceTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
-      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
-
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1799,14 +1750,12 @@ function PuzzleBreakTemplate({
   childName,
   childGrade,
   mascotImageUrl,
-  pageIndex,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
-  pageIndex: number;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1817,8 +1766,6 @@ function PuzzleBreakTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
-      <HiddenMascot mascotImageUrl={mascotImageUrl} pageIndex={pageIndex} />
-
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1860,13 +1807,11 @@ function PuzzleBreakTemplate({
 
 function ActivityPage({
   activity,
-  index,
   childName,
   childGrade,
   mascotImageUrl,
 }: {
   activity: PDFActivity;
-  index: number;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
@@ -1874,7 +1819,7 @@ function ActivityPage({
   const contentType = resolveContentType(activity);
   const colors = accentFamily[familyForActivity(contentType)];
 
-  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, pageIndex: index };
+  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl };
 
   if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
   if (contentType === 'puzzle_break')     return <PuzzleBreakTemplate {...sharedProps} />;
@@ -2106,7 +2051,6 @@ export default function PacketPDF(props: PacketPDFProps) {
         <ActivityPage
           key={i}
           activity={activity}
-          index={i}
           childName={props.childName}
           childGrade={props.childGrade}
           mascotImageUrl={props.mascotImageUrl}
