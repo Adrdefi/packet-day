@@ -1352,7 +1352,7 @@ function ActivityHeader({
   const durationMaterials = `${activity.estimated_minutes} min${materials ? ' · ' + materials : ''}`;
 
   return (
-    <View>
+    <View minPresenceAhead={120}>
       <View style={styles.activityHeaderRow}>
         <View style={styles.activityHeaderLeft}>
           <Text style={[styles.activityHeaderSubject, { color: colors.label }]}>
@@ -1589,14 +1589,14 @@ function WorksheetTemplate({
           <MathSections instructions={activity.instructions} colors={colors} band={band} />
         ) : (
           <>
-            <Text style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
+            <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
             {activity.instructions.map((step, i) => (
               <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
                   <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                     <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
                   </View>
-                  <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+                  <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
                 </View>
                 <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
                   {Array.from({ length: answerLines }, (_, j) => (
@@ -1672,13 +1672,13 @@ function ReadingTemplate({
 
         {passage && (
           <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
-            <Text style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
+            <Text minPresenceAhead={90} style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
             <Text style={[styles.readingPassageText, { fontSize: bandTable[band].passageSize, lineHeight: bandTable[band].passageLineHeight }]}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
         {questions.length > 0 && (
-          <Text style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
+          <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
         )}
         {questions.map((step, i) => (
           <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
@@ -1686,7 +1686,7 @@ function ReadingTemplate({
               <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                 <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
               </View>
-              <Text style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+              <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
             <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
               <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
@@ -1766,7 +1766,7 @@ function OpenWorkspaceTemplate({
         {/* Response area */}
         {contentType === 'writing_prompt' && (
           <>
-            <Text style={styles.writingSpaceHeader}>My Writing Space</Text>
+            <Text minPresenceAhead={90} style={styles.writingSpaceHeader}>My Writing Space</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, flexBasis: 'auto', maxHeight: lineCount * bandTable[band].answerLinePitch * 1.5 }]}>
               {Array.from({ length: lineCount }, (_, i) => (
                 <View key={i} style={[styles.writingLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -1777,7 +1777,7 @@ function OpenWorkspaceTemplate({
 
         {contentType === 'movement_activity' && (
           <View wrap={false} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
-            <Text style={styles.movementReflectionLabel}>How did it go?</Text>
+            <Text minPresenceAhead={90} style={styles.movementReflectionLabel}>How did it go?</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
               {Array.from({ length: 3 }, (_, i) => (
                 <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -1843,7 +1843,7 @@ function PuzzleBreakTemplate({
         </View>
 
         {/* Word list */}
-        <Text style={styles.wordListLabel}>Find these words:</Text>
+        <Text minPresenceAhead={90} style={styles.wordListLabel}>Find these words:</Text>
         <View style={styles.wordListGrid}>
           {placed.map((word, i) => (
             <View key={i} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
