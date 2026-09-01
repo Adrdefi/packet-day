@@ -1913,8 +1913,13 @@ function PuzzleBreakTemplate({
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
-  const gridSize = band === '6-8' ? 12 : 10;
-  const cellSize = band === '6-8' ? 20 : 22;
+  // gridSize is intentionally NOT bandTable[band].wordSearchGrid — see the
+  // comment on that field in lib/pdf-tokens.ts for why. Only cell size (the
+  // visual box each letter renders in) is band-driven; the grid stays 10x10
+  // for every band since that's the only size that reliably places the
+  // generator's actual word lengths without silently dropping words.
+  const gridSize = 10;
+  const cellSize = bandTable[band].wordSearchCell;
 
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 

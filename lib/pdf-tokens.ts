@@ -397,8 +397,30 @@ export interface BandConfig {
   answerLinePitch: number;
   defaultLinesPerPrompt: number;
   writingPageLines: number;
+  /**
+   * NOT wired to PuzzleBreakTemplate (components/PacketPDF.tsx) — the grid
+   * there is hardcoded to 10 for every band, ignoring this value. Design
+   * specced 8 for K-2 (and 12 for 6-8) without knowing the generator's
+   * puzzle_break prompt (app/api/generate-packet/route.ts) can emit
+   * 10-character words for ANY band — there's no per-band length cap.
+   * Simulating generateWordSearch's actual placement algorithm against
+   * realistic word lists showed 8x8 places as few as 43-71% of words on
+   * long-word-heavy themes (9x9 fares little better, down to 57%), because
+   * words longer than the grid are silently dropped before placement is
+   * even attempted. Only a 10x10 grid placed 100% of words in every themed
+   * list tested. Do not wire this up until the generator gets a per-band
+   * word-length cap — see wordsToFind below for the matching gap.
+   */
   wordSearchGrid: number;
   wordSearchCell: number;
+  /**
+   * NOT wired into the puzzle_break generation prompt
+   * (app/api/generate-packet/route.ts) — every band is asked for the same
+   * 6-10 words regardless of this value. Fixing this (a per-band word count
+   * AND length cap in the prompt) is the real fix for wordSearchGrid above,
+   * and would make a smaller K-2 grid viable. Generator-side, not a PDF
+   * template concern — logged here, not built.
+   */
   wordsToFind: number;
   coverMascot: number;
   stripMascot: number;
