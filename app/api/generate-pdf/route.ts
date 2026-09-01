@@ -111,11 +111,9 @@ export async function GET(req: NextRequest) {
     title: content.packet_title ?? content.title ?? packet.theme,
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
-    specialNotes: packet.special_notes ?? null,
     mascotImageUrl: typedPacket.mascot_image_url ?? null,
     coloringImageUrl: typedPacket.coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
-    mascotEmojiCluster: content.mascot_emoji_cluster ?? null,
     coloringPage: content.coloring_page
       ? (content.coloring_page as PDFColoringPage)
       : null,

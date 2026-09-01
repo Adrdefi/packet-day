@@ -107,10 +107,8 @@ export interface PacketPDFProps {
   title: string;
   activities: PDFActivity[];
   createdAt: string;
-  specialNotes?: string | null;
   mascotImageUrl?: string | null;
   mascotName?: string | null;
-  mascotEmojiCluster?: string | null;
   coloringPage?: PDFColoringPage | null;
   coloringImageUrl?: string | null;
   greeting?: string | null;
@@ -430,22 +428,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Cover: footer ───────────────────────────────────────────────────────────
-  coverFooter: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  coverFooterText: {
-    ...typeStyle(typeScale.footerText),
-    color: color.textSecondary,
-  },
-  coverFooterDot: {
-    fontSize: 9,
-    color: color.faintDivider,
-  },
 
   // ── Activity page ───────────────────────────────────────────────────────────
   activityPage: {
@@ -581,13 +563,6 @@ const styles = StyleSheet.create({
     flexBasis: 0,
   },
 
-  // ── Work area ───────────────────────────────────────────────────────────────
-  workLine: {
-    borderBottomWidth: 1.5,
-    borderBottomStyle: 'dotted' as const,
-    borderBottomColor: color.answerRule,
-    marginBottom: 18,
-  },
 
   // ── Callouts (spec 5.8 / 5.9) ─────────────────────────────────────────────────
   // 10.5pt radius. The fun fact callout is minHeight:44 — fun_fact is capped
@@ -1031,25 +1006,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     opacity: 0.35,
   },
-  certStar: {
-    width: 36,
-    height: 36,
-    marginBottom: 12,
-  },
   certHeader: {
     ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 10,
-  },
-  certTitle: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 28,
-    color: color.textPrimary,
-    textAlign: 'center',
-    marginBottom: 6,
-    lineHeight: 1.2,
   },
   certPresented: {
     fontFamily: 'Nunito',
@@ -1239,15 +1200,6 @@ const styles = StyleSheet.create({
     borderBottomStyle: 'dotted' as const,
     borderBottomColor: color.answerRule,
     marginBottom: 26,
-  },
-  notesFooter: {
-    marginTop: 'auto',
-    paddingTop: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: color.faintDivider,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   footerText: {
     ...typeStyle(typeScale.footerText),
