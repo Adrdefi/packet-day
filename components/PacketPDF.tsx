@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   // Encouragement and self-assessment share this row shape — text left,
   // star row right. Only the fill color and left-text style differ.
   calloutRow: {
-    height: 44,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
