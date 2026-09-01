@@ -1940,9 +1940,13 @@ function PuzzleBreakTemplate({
           ))}
         </View>
 
-        {/* Word list */}
+        {/* Word list — wrap={false} so a longer word list (6-10 words,
+            generator-driven, not band-capped — see chunk 6) can't split
+            mid-row across pages. Latent correctness gap, not the near-empty
+            trailing page this chunk found; that block already moves whole
+            with no unguarded splitting, it's just genuinely small. */}
         <Text minPresenceAhead={90} style={styles.wordListLabel}>Find these words:</Text>
-        <View style={styles.wordListGrid}>
+        <View wrap={false} style={styles.wordListGrid}>
           {placed.map((word, i) => (
             <View key={i} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
               <Text style={[styles.wordListText, { color: colors.label }]}>{word}</Text>
@@ -2114,10 +2118,23 @@ function ParentNotesPage({
         </Text>
       </View>
 
-      <Text style={styles.observationsLabel}>My Observations</Text>
-      {Array.from({ length: 8 }, (_, i) => (
-        <View key={i} style={styles.ruledLine} />
-      ))}
+      {/* Spec 7.4 PUSH OR SPLIT. Without wrap={false} here, react-pdf's
+          default reflow split this block wherever it ran out of room on the
+          page, once stranding 7 of 8 lines on one page and the label-less
+          8th alone on an otherwise-blank next page. wrap={false} fixes the
+          split, but an 8-line (~216pt) block still didn't fit in what page 2
+          had left (already at 96% before this block), so it pushed whole to
+          its own page at only 30% fill — legal per PUSH OR SPLIT, but still
+          a near-empty sheet to print. Cut to 4 lines (~120pt) instead of
+          reaching for PULL FORWARD: less content, not smarter pagination.
+          Verified this fits on page 2 — see chunk 7 commit for the
+          measurement. */}
+      <View wrap={false}>
+        <Text style={styles.observationsLabel}>My Observations</Text>
+        {Array.from({ length: 4 }, (_, i) => (
+          <View key={i} style={styles.ruledLine} />
+        ))}
+      </View>
     </Page>
   );
 }
@@ -2194,10 +2211,15 @@ function CelebrationPage({
         </Text>
       </View>
 
-      {/* Writing lines */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <View key={i} style={styles.ruledLine} />
-      ))}
+      {/* Writing lines — spec 7.4 PUSH OR SPLIT, same fix as ParentNotesPage's
+          My Observations group: ~216pt, well under the 55% threshold, so it
+          must move whole rather than let react-pdf's default reflow split
+          it wherever it happens to run out of room. */}
+      <View wrap={false}>
+        {Array.from({ length: 8 }, (_, i) => (
+          <View key={i} style={styles.ruledLine} />
+        ))}
+      </View>
 
       {/* Hidden mascot hunt prompt */}
       {mascotImageUrl && mascotName && (
