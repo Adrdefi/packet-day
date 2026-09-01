@@ -1530,16 +1530,79 @@ function FunFactBox({ funFact, band }: { funFact: string; band: BandKey }) {
   );
 }
 
+// ─── Trailing-group height (spec 6.4 / chunk 8) ────────────────────────────────
+// react-pdf gives no way to know where pagination actually falls (confirmed
+// chunk 6 for total page count, chunk 8 Stage 1 for per-element position), so
+// this can't be measured exactly — it's a deliberately-labeled ESTIMATE,
+// calibrated against real rendered packets, not per-instance text
+// measurement. Feeds minPresenceAhead on the wrap={false} block immediately
+// before an activity's trailing group (fun fact / bonus challenge /
+// end-of-activity callout), so react-pdf pushes that whole block — and the
+// trailing group riding right after it — onto the next page together,
+// rather than letting the trailing group land alone on an otherwise-empty
+// page. That was the chunk 7 sweep's largest real defect: 12 bonus-challenge
+// tails and 3 self-assessment callouts of the 80-packet sweep's 17 genuine
+// trailing-callout cases.
+//
+// None of funFactBox, bonusChallengeBox, or calloutRow/selfAssessmentCallout
+// carry margins of their own except bonusChallengeBox (marginTop 8,
+// marginBottom 6, both folded into the 92 below) — react-pdf/Yoga doesn't
+// collapse margins, so these three figures just sum with no extra gap term.
+const TRAILING_HEIGHT = {
+  // minHeight 44 floor + typical short overflow. Assumed, not measured —
+  // most real fun facts run ~80-150 chars (1-2 lines) at the callout body
+  // size. Chunk 3 deferred the generator-side char cap that would make this
+  // exact; the box still grows correctly for longer text regardless.
+  funFact: 50,
+  // Padding + eyebrow header + ~2 lines of italic body text + its own
+  // 8pt/6pt top/bottom margins. Calibrated against a real rendered bonus
+  // challenge box (measured ~93pt total on packet 04043266).
+  bonusChallenge: 92,
+  // Typical 2-line encouragement at calloutBody size + padding — measured
+  // 52.9pt on a real encouragement-alone page (chunk 7 sweep, grade 7 band).
+  encouragement: 53,
+  // Fixed short string ("How did I do today? Circle your stars."), stays at
+  // the minHeight:44 floor — confirmed via glyph measurement in chunk 6.
+  selfAssessment: 44,
+} as const;
+
+/**
+ * Reserve height for minPresenceAhead on the block immediately before an
+ * activity's trailing group, so that group can't land alone on a fresh page.
+ * hasBonusChallenge should be true only for templates that ever render one
+ * (WorksheetTemplate) — the band !== '6-8' gate is applied internally.
+ * includeFunFact defaults to true; PuzzleBreakTemplate renders its fun fact
+ * box right after the character strip, well before the grid — not part of
+ * the trailing group there — so it passes false.
+ */
+function trailingGroupHeight(
+  activity: PDFActivity,
+  band: BandKey,
+  isBreak: boolean,
+  hasBonusChallenge: boolean,
+  includeFunFact: boolean = true
+): number {
+  let h = 0;
+  if (includeFunFact && activity.fun_fact) h += TRAILING_HEIGHT.funFact;
+  if (hasBonusChallenge && band !== '6-8') h += TRAILING_HEIGHT.bonusChallenge;
+  const encouragement = activity.encouragement?.trim();
+  if (encouragement) h += TRAILING_HEIGHT.encouragement;
+  else if (!isBreak) h += TRAILING_HEIGHT.selfAssessment;
+  return h;
+}
+
 // ─── Math sections ────────────────────────────────────────────────────────────
 
 function MathSections({
   instructions,
   colors,
   band,
+  trailingReserve,
 }: {
   instructions: string[];
   colors: ActivityColor;
   band: BandKey;
+  trailingReserve: number;
 }) {
   let quickCalcsLabel = 'Quick Calculations';
   let quickCalcs: string[] = [];
@@ -1590,7 +1653,12 @@ function MathSections({
         <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
       </View>
       {wordProblems.map((prob, i) => (
-        <View wrap={false} key={i} style={[styles.mathWordBox, { flexGrow: 1, flexBasis: 'auto' }]}>
+        <View
+          wrap={false}
+          key={i}
+          minPresenceAhead={drawAndSolve === '' && i === wordProblems.length - 1 ? trailingReserve : undefined}
+          style={[styles.mathWordBox, { flexGrow: 1, flexBasis: 'auto' }]}
+        >
           <Text style={[styles.mathWordText, { fontSize: bandTable[band].bodySize }]}>{prob}</Text>
           <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
             <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
@@ -1599,13 +1667,16 @@ function MathSections({
         </View>
       ))}
 
-      {/* Draw & Solve */}
+      {/* Draw & Solve — already wrap={false} as a whole unit (chunk 4), so
+          it's a safe minPresenceAhead anchor despite the stretch drawBox
+          inside it: unlike OpenWorkspaceTemplate's writing-lines/coloring
+          blocks, this one was already atomic before chunk 8 touched it. */}
       {drawAndSolve !== '' && (
         <>
           <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
             <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
           </View>
-          <View wrap={false} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
+          <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
             <View style={styles.mathDrawPromptBubble}>
               <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
             </View>
@@ -1675,6 +1746,9 @@ function WorksheetTemplate({
   const bc = getBandConfig(band);
   const answerLines = worksheetAnswerLines(band);
   const isMath = activity.subject.toLowerCase().includes('math');
+  // Spec 6.4 / chunk 8 — reserve so the fun fact / bonus challenge / end-of-
+  // activity callout can't land alone; see trailingGroupHeight's own comment.
+  const trailingReserve = trailingGroupHeight(activity, band, false, true);
 
   return (
     <Page size="LETTER" experimentalPagination style={styles.activityPage}>
@@ -1685,12 +1759,17 @@ function WorksheetTemplate({
 
         {/* Instructions */}
         {isMath ? (
-          <MathSections instructions={activity.instructions} colors={colors} band={band} />
+          <MathSections instructions={activity.instructions} colors={colors} band={band} trailingReserve={trailingReserve} />
         ) : (
           <>
             <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
             {activity.instructions.map((step, i) => (
-              <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
+              <View
+                wrap={false}
+                key={i}
+                minPresenceAhead={i === activity.instructions.length - 1 ? trailingReserve : undefined}
+                style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+              >
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
                   <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                     <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
@@ -1744,6 +1823,9 @@ function ReadingTemplate({
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
+  // Spec 6.4 / chunk 8 — see trailingGroupHeight's comment. ReadingTemplate
+  // never renders a bonus challenge.
+  const trailingReserve = trailingGroupHeight(activity, band, false, false);
 
   let passage: string | null = null;
   let questions: string[];
@@ -1775,7 +1857,12 @@ function ReadingTemplate({
           <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
         )}
         {questions.map((step, i) => (
-          <View wrap={false} key={i} style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}>
+          <View
+            wrap={false}
+            key={i}
+            minPresenceAhead={i === questions.length - 1 ? trailingReserve : undefined}
+            style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+          >
             <View style={[styles.instructionRow, { marginBottom: 2 }]}>
               <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
                 <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
@@ -1819,6 +1906,14 @@ function OpenWorkspaceTemplate({
   const bc = getBandConfig(band);
   const contentType = resolveContentType(activity);
   const lineCount = writingLineCount(band);
+  // Spec 6.4 / chunk 8 — see trailingGroupHeight's comment. OpenWorkspaceTemplate
+  // never renders a bonus challenge. Only applied to the movement_activity
+  // branch below: writing_prompt's writing lines and coloring's drawBox are
+  // both un-atomic flexGrow stretch blocks (chunk 7 already declined to wrap
+  // the former; the latter is the same shape), so there's no safe
+  // wrap={false} anchor to attach this to for those two content types —
+  // left unhandled, see chunk 8 report.
+  const trailingReserve = trailingGroupHeight(activity, band, contentType === 'movement_activity', false);
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
@@ -1866,7 +1961,7 @@ function OpenWorkspaceTemplate({
         )}
 
         {contentType === 'movement_activity' && (
-          <View wrap={false} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
+          <View wrap={false} minPresenceAhead={trailingReserve} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
             <Text minPresenceAhead={90} style={styles.movementReflectionLabel}>How did it go?</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
               {Array.from({ length: 3 }, (_, i) => (
@@ -1914,6 +2009,11 @@ function PuzzleBreakTemplate({
   // generator's actual word lengths without silently dropping words.
   const gridSize = 10;
   const cellSize = bandTable[band].wordSearchCell;
+  // Spec 6.4 / chunk 8 — see trailingGroupHeight's comment. PuzzleBreakTemplate
+  // never renders a bonus challenge, is always a break (no self-assessment,
+  // only shows if there's encouragement text), and its fun fact box isn't
+  // part of the trailing group here (see includeFunFact).
+  const trailingReserve = trailingGroupHeight(activity, band, true, false, false);
 
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 
@@ -1927,8 +2027,13 @@ function PuzzleBreakTemplate({
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
-        {/* Word search grid */}
-        <View style={styles.wordSearchGrid}>
+        {/* Word search grid — wrap={false} + minPresenceAhead so this,
+            not the word list below it, is the block that moves whole when
+            "Find these words:" + the chips + the callout don't fit: those
+            three landing alone on a near-empty page was the chunk 7 sweep's
+            K-2/6-8 finding (11.6%/19.1%/etc). The grid is what precedes that
+            trailing group, so it's the anchor, not a member of the group. */}
+        <View wrap={false} minPresenceAhead={trailingReserve} style={styles.wordSearchGrid}>
           {grid.map((row, r) => (
             <View key={r} style={styles.wordSearchRow}>
               {row.map((letter, c) => (
