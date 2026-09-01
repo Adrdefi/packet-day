@@ -130,6 +130,7 @@ export async function GET(req: NextRequest) {
   const grade = url.searchParams.get("grade");
   const withMascot = url.searchParams.get("mascot") === "1";
   const noEncourage = url.searchParams.get("noencourage") === "1";
+  const noAnswerKey = url.searchParams.get("noanswerkey") === "1";
   const gradedProps = {
     ...props,
     ...(grade ? { childGrade: grade } : null),
@@ -140,6 +141,9 @@ export async function GET(req: NextRequest) {
     // activity, so that path is otherwise silently untested.
     ...(noEncourage
       ? { activities: activities.map((a, i) => (i === 1 ? { ...a, encouragement: undefined } : a)) }
+      : null),
+    ...(noAnswerKey
+      ? { activities: activities.map((a) => ({ ...a, answer_key: null })) }
       : null),
   };
   const buf = await renderToBuffer(

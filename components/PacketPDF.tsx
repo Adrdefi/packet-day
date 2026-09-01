@@ -684,23 +684,99 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // ── Answer key ──────────────────────────────────────────────────────────────
-  answerKeyBox: {
-    backgroundColor: color.honeyTint,
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
+  // ── Child page footer ────────────────────────────────────────────────────────
+  // left/right come from each page's own content inset — see ChildPageFooter's
+  // `inset` prop. Pages have different padding (activity: band-dependent,
+  // cover/notes: 48, certificate: 56), so the footer can't share one fixed value
+  // without floating off the content edge on wider-margin pages.
+  childPageFooter: {
+    position: 'absolute',
+    bottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  // ── Parent answer sheet (spec 5.18) ─────────────────────────────────────────
+  parentSheetPage: {
+    backgroundColor: color.page,
+    paddingTop: 33,
+    paddingBottom: 33,
+    paddingLeft: 45,
+    paddingRight: 45,
+    flexDirection: 'column',
+  },
+  parentSheetHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+  parentSheetHeaderLeft: {
+    flexDirection: 'column',
+    gap: 3,
+  },
+  parentSheetEyebrow: {
+    ...typeStyle(typeScale.sectionLabel),
+    color: color.coralDark,
+  },
+  parentSheetTitle: {
+    ...typeStyle(typeScale.pageTitle),
+    color: color.textPrimary,
+  },
+  parentSheetHeaderRight: {
+    ...typeStyle(typeScale.durationMaterials),
+    color: color.textSecondary,
+  },
+  parentSheetRule: {
+    height: 2.25,
+    backgroundColor: color.coralRule,
+    marginTop: space.headerToRule,
+    marginBottom: space.ruleToContent,
+  },
+  parentSheetBanner: {
+    backgroundColor: color.coralTint,
     borderWidth: 1.5,
-    borderColor: color.honey,
+    borderColor: color.coralChip,
+    borderRadius: 10.5,
+    paddingVertical: 10.5,
+    paddingHorizontal: 13.5,
+    marginBottom: 16,
   },
-  answerKeyHeader: {
-    ...typeStyle(typeScale.calloutEyebrow),
-    color: color.honeyDark,
-    marginBottom: 6,
+  parentSheetBannerText: {
+    ...typeStyle(typeScale.calloutBody),
+    color: color.textPrimary,
   },
-  answerKeyText: {
+  parentSheetKeyStack: {
+    flexGrow: 1,
+    flexBasis: 'auto',
+    flexDirection: 'column',
+    gap: 9.75,
+  },
+  parentSheetGroup: {
+    flexDirection: 'column',
+    gap: 4,
+  },
+  parentSheetSubject: {
+    ...typeStyle(typeScale.sectionLabel),
+    color: color.sageDark,
+  },
+  parentSheetAnswerBody: {
     ...typeStyle(typeScale.answerKeyBody),
     color: color.textPrimary,
+  },
+  parentSheetDivider: {
+    borderBottomWidth: 0.75,
+    borderBottomColor: color.faintDivider,
+  },
+  parentSheetFooter: {
+    position: 'absolute',
+    bottom: 20,
+    left: 45,
+    right: 45,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
   // ── Reading passage ──────────────────────────────────────────────────────────
@@ -1273,9 +1349,12 @@ function CoverPage({
 }: PacketPDFProps) {
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
   const missionText = sanitizeText(packetMission) || sanitizeText(greeting) || greetingMessage(childName, theme);
+  const hasParentSheet = activities.some((a) => !!a.answer_key);
 
   return (
     <Page size="LETTER" style={styles.coverPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+
       {/* Decorative border frames */}
       <View style={styles.coverFrameOuter} />
       <View style={styles.coverFrameInner} />
@@ -1323,13 +1402,6 @@ function CoverPage({
           ) : null}
           <Text style={styles.greetingText}>{missionText}</Text>
         </View>
-      </View>
-
-      {/* Footer */}
-      <View style={styles.coverFooter}>
-        <Text style={styles.coverFooterText}>Made with love by Packet Day</Text>
-        <Text style={styles.coverFooterDot}>  ·  </Text>
-        <Text style={styles.coverFooterText}>packetday.com</Text>
       </View>
     </Page>
   );
@@ -1558,6 +1630,36 @@ function MathSections({
   );
 }
 
+// ─── Child page footer ────────────────────────────────────────────────────────
+// Spec 5.18 — every page of the child-facing packet (cover through
+// celebration) reads "N of M", where M excludes the parent answer sheet
+// (it's an appendix, not page M+1 of the packet). The parent sheet is always
+// the last page in the Document when it renders, so a page's pageNumber from
+// react-pdf's fixed/render callback is already correct as N without
+// adjustment — only totalPages needs the -1 for M.
+//
+// Must be the FIRST child of its <Page> — placed last, react-pdf's fixed/
+// render mechanism silently drops it from every page but the final one of a
+// multi-page activity (confirmed by render-checking Stage 1's chunk 6 work).
+//
+// `inset` matches the host page's own content padding so the footer sits at
+// that page's content edge rather than floating at a value borrowed from a
+// different page's margins.
+
+function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; inset: number }) {
+  return (
+    <View style={[styles.childPageFooter, { left: inset, right: inset }]} fixed>
+      <Text style={styles.footerText}>Made with love by Packet Day · packetday.com</Text>
+      <Text
+        style={styles.footerText}
+        render={({ pageNumber, totalPages }) =>
+          `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
+        }
+      />
+    </View>
+  );
+}
+
 // ─── Template A — Worksheet ───────────────────────────────────────────────────
 
 function WorksheetTemplate({
@@ -1566,12 +1668,14 @@ function WorksheetTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  hasParentSheet,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1580,6 +1684,7 @@ function WorksheetTemplate({
 
   return (
     <Page size="LETTER" experimentalPagination style={styles.activityPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1619,14 +1724,6 @@ function WorksheetTemplate({
           </View>
         )}
 
-        {/* Answer key */}
-        {activity.answer_key && (
-          <View wrap={false} style={styles.answerKeyBox}>
-            <Text style={styles.answerKeyHeader}>For Grown-Ups Only</Text>
-            <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
-          </View>
-        )}
-
         {/* End-of-activity callout — encouragement or self-assessment, with stars */}
         <EndOfActivityCallout activity={activity} isBreak={false} />
       </View>
@@ -1642,12 +1739,14 @@ function ReadingTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  hasParentSheet,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1666,6 +1765,7 @@ function ReadingTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1698,13 +1798,6 @@ function ReadingTemplate({
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
 
-        {activity.answer_key && (
-          <View wrap={false} style={styles.answerKeyBox}>
-            <Text style={styles.answerKeyHeader}>For Grown-Ups Only</Text>
-            <Text style={styles.answerKeyText}>{sanitizeText(activity.answer_key)}</Text>
-          </View>
-        )}
-
         <EndOfActivityCallout activity={activity} isBreak={false} />
       </View>
     </Page>
@@ -1719,12 +1812,14 @@ function OpenWorkspaceTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  hasParentSheet,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1733,6 +1828,7 @@ function OpenWorkspaceTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1806,12 +1902,14 @@ function PuzzleBreakTemplate({
   childName,
   childGrade,
   mascotImageUrl,
+  hasParentSheet,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -1822,6 +1920,7 @@ function PuzzleBreakTemplate({
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
       <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -1865,16 +1964,18 @@ function ActivityPage({
   childName,
   childGrade,
   mascotImageUrl,
+  hasParentSheet,
 }: {
   activity: PDFActivity;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
 }) {
   const contentType = resolveContentType(activity);
   const colors = accentFamily[familyForActivity(contentType)];
 
-  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl };
+  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet };
 
   if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
   if (contentType === 'puzzle_break')     return <PuzzleBreakTemplate {...sharedProps} />;
@@ -1891,14 +1992,19 @@ function CertificatePage({
   theme,
   createdAt,
   mascotImageUrl,
+  activities,
 }: {
   childName: string;
   theme: string;
   createdAt: string;
   mascotImageUrl?: string | null;
+  activities: PDFActivity[];
 }) {
+  const hasParentSheet = activities.some((a) => !!a.answer_key);
   return (
     <Page size="LETTER" style={styles.certificatePage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} />
+
       {/* Decorative frames */}
       <View style={styles.certFrameOuter} />
       <View style={styles.certFrameInner} />
@@ -1954,13 +2060,19 @@ function ParentNotesPage({
   childGrade,
   theme,
   activities,
-  createdAt,
   mascotImageUrl,
   parentNotes,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
+  const hasAnswerKeys = activities.some((a) => !!a.answer_key);
+  const noteBody = sanitizeText(parentNotes) || parentNote(childName, theme);
+  const answerKeySentence = hasAnswerKeys
+    ? ` Answer keys are on the last page — a separate parent sheet you don't need to print for ${childName}.`
+    : '';
   return (
     <Page size="LETTER" style={styles.notesPage}>
+      <ChildPageFooter hasParentSheet={hasAnswerKeys} inset={48} />
+
       {mascotImageUrl && (
         <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
       )}
@@ -1999,7 +2111,7 @@ function ParentNotesPage({
       </View>
       <View style={styles.parentNoteBox}>
         <Text style={styles.parentNoteText}>
-          {sanitizeText(parentNotes) || parentNote(childName, theme)}
+          {noteBody}{answerKeySentence}
         </Text>
       </View>
 
@@ -2007,11 +2119,6 @@ function ParentNotesPage({
       {Array.from({ length: 8 }, (_, i) => (
         <View key={i} style={styles.ruledLine} />
       ))}
-
-      <View style={styles.notesFooter}>
-        <Text style={styles.footerText}>Made with love by Packet Day</Text>
-        <Text style={styles.footerText}>packetday.com  ·  {formatPDFDate(createdAt)}</Text>
-      </View>
     </Page>
   );
 }
@@ -2023,16 +2130,20 @@ function ColoringPage({
   coloringImageUrl,
   mascotImageUrl,
   childGrade,
+  activities,
 }: {
   coloringPage: PDFColoringPage;
   coloringImageUrl?: string | null;
   mascotImageUrl?: string | null;
   childGrade: string;
+  activities: PDFActivity[];
 }) {
   const band = bandForGrade(childGrade);
   const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
+  const hasParentSheet = activities.some((a) => !!a.answer_key);
   return (
     <Page size="LETTER" style={styles.coloringPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
       <Text style={styles.coloringHeaderText}>Color me!</Text>
       <Text style={styles.coloringTitle}>{sanitizeText(coloringPage.title)}</Text>
       <View style={styles.coloringBox}>
@@ -2052,18 +2163,19 @@ function ColoringPage({
 // ─── Celebration / reflection page ────────────────────────────────────────────
 
 function CelebrationPage({
-  childName,
   childGrade,
   theme,
-  createdAt,
+  activities,
   dailyReflection,
   packetCelebration,
   mascotName,
   mascotImageUrl,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
+  const hasParentSheet = activities.some((a) => !!a.answer_key);
   return (
     <Page size="LETTER" style={styles.notesPage}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
       <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
 
@@ -2096,10 +2208,53 @@ function CelebrationPage({
           </Text>
         </View>
       )}
+    </Page>
+  );
+}
 
-      <View style={styles.notesFooter}>
-        <Text style={styles.footerText}>Made with love by Packet Day</Text>
-        <Text style={styles.footerText}>packetday.com  ·  {formatPDFDate(createdAt)}</Text>
+// ─── Parent answer sheet ──────────────────────────────────────────────────────
+// Spec 5.18 — every answer key in the packet, moved off the child-facing
+// activity pages and gathered here as a single appendix at the very back of
+// the document. Only renders when at least one activity has an answer_key.
+
+function ParentAnswerSheetPage({ activities }: { activities: PDFActivity[] }) {
+  const withKeys = activities.filter((a) => !!a.answer_key);
+  if (withKeys.length === 0) return null;
+
+  return (
+    <Page size="LETTER" style={styles.parentSheetPage}>
+      <View style={styles.parentSheetHeaderRow}>
+        <View style={styles.parentSheetHeaderLeft}>
+          <Text style={styles.parentSheetEyebrow}>For grown-ups only</Text>
+          <Text style={styles.parentSheetTitle}>Answer key and teaching notes</Text>
+        </View>
+        <Text style={styles.parentSheetHeaderRight}>Parent sheet</Text>
+      </View>
+      <View style={styles.parentSheetRule} />
+
+      <View style={styles.parentSheetBanner}>
+        <Text style={styles.parentSheetBannerText}>
+          <Text style={{ fontWeight: 700 }}>You do not need to print this page.</Text>
+          {' '}Keep it on your phone or print it separately.
+        </Text>
+      </View>
+
+      <View style={styles.parentSheetKeyStack}>
+        {withKeys.flatMap((activity, i) => {
+          const group = (
+            <View key={`group-${i}`} wrap={false} style={styles.parentSheetGroup}>
+              <Text style={styles.parentSheetSubject}>{sanitizeText(activity.subject)}</Text>
+              <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+            </View>
+          );
+          if (i === 0) return [group];
+          return [<View key={`div-${i}`} style={styles.parentSheetDivider} />, group];
+        })}
+      </View>
+
+      <View style={styles.parentSheetFooter} fixed>
+        <Text style={styles.footerText}>Made with love by Packet Day · packetday.com</Text>
+        <Text style={styles.footerText}>Parent sheet · not part of the packet</Text>
       </View>
     </Page>
   );
@@ -2108,6 +2263,7 @@ function CelebrationPage({
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function PacketPDF(props: PacketPDFProps) {
+  const hasParentSheet = props.activities.some((a) => !!a.answer_key);
   return (
     <Document
       title={props.title}
@@ -2124,6 +2280,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           childName={props.childName}
           childGrade={props.childGrade}
           mascotImageUrl={props.mascotImageUrl}
+          hasParentSheet={hasParentSheet}
         />
       ))}
       <CertificatePage
@@ -2131,6 +2288,7 @@ export default function PacketPDF(props: PacketPDFProps) {
         theme={props.theme}
         createdAt={props.createdAt}
         mascotImageUrl={props.mascotImageUrl}
+        activities={props.activities}
       />
       {props.coloringPage && (
         <ColoringPage
@@ -2138,9 +2296,11 @@ export default function PacketPDF(props: PacketPDFProps) {
           coloringImageUrl={props.coloringImageUrl}
           mascotImageUrl={props.mascotImageUrl}
           childGrade={props.childGrade}
+          activities={props.activities}
         />
       )}
       <CelebrationPage {...props} />
+      <ParentAnswerSheetPage activities={props.activities} />
     </Document>
   );
 }
