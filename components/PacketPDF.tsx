@@ -287,6 +287,34 @@ function generateWordSearch(
   return { grid, placed };
 }
 
+// ─── Child page footer position constants ──────────────────────────────────────
+//
+// FOOTER_BOTTOM is the distance from the page's bottom edge both footer
+// elements are meant to sit at.
+//
+// RENDER_PROP_Y_OFFSET compensates for an @react-pdf/renderer 4.8.1 bug: a
+// <Text fixed render={...}/> element renders measurably higher than a plain
+// <Text fixed> at the *same* declared `bottom`, regardless of nesting depth,
+// page type, or content (tested: shared flex row, fully decoupled sibling,
+// direct child of <Page> — same offset every time; tested that `bottom` is
+// otherwise respected linearly by moving it 400pt and confirming the element
+// moved by exactly 400pt). Matches a known upstream issue:
+// https://github.com/diegomura/react-pdf/issues/525 ("`render` method
+// doesn't get proper page numbers when inside a `View`").
+//
+// Measured 2026-09-01 on a real packet (16 pages, 3 grade bands): with both
+// texts at bottom=FOOTER_BOTTOM, the plain text lands at a constant y=21.647;
+// the render-prop text lands at y=108.03–108.10 (jitter is glyph-hinting
+// noise, not signal) — a gap of 86.38–86.45pt, averaging 86.423 across 15
+// samples. Subtracting that from FOOTER_BOTTOM and re-measuring landed the
+// render-prop text within 0.06pt of its sibling on all 15 pages, all 3 bands.
+//
+// This is a measured constant tied to react-pdf 4.8.1's specific behavior,
+// not a derived value — see the CLAUDE.md note on react-pdf render-prop
+// positioning for what to do before trusting it after a version bump.
+const FOOTER_BOTTOM = 20;
+const RENDER_PROP_Y_OFFSET = 86.42;
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -664,12 +692,23 @@ const styles = StyleSheet.create({
   // `inset` prop. Pages have different padding (activity: band-dependent,
   // cover/notes: 48, certificate: 56), so the footer can't share one fixed value
   // without floating off the content edge on wider-margin pages.
-  childPageFooter: {
+  childPageFooterLeft: {
     position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    bottom: FOOTER_BOTTOM,
+  },
+  // A shared flex row broke when paired with the render-callback Text below:
+  // react-pdf's render-prop mechanism doesn't lay that Text out on the same
+  // pass as its plain-text sibling, so alignItems:'center' centered it
+  // against a phantom height, landing it ~43pt off (verified: swapping in a
+  // plain static Text at the same spot lands correctly). Decoupled into two
+  // independently `fixed`, independently `position:absolute` elements
+  // instead — neither depends on the other's measured size. `bottom` here
+  // still needs RENDER_PROP_Y_OFFSET — see the constant's own comment above.
+  childPageFooterRight: {
+    position: 'absolute',
+    bottom: FOOTER_BOTTOM - RENDER_PROP_Y_OFFSET,
+    width: 60,
+    textAlign: 'right',
   },
 
   // ── Parent answer sheet (spec 5.18) ─────────────────────────────────────────
@@ -1600,15 +1639,18 @@ function MathSections({
 
 function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; inset: number }) {
   return (
-    <View style={[styles.childPageFooter, { left: inset, right: inset }]} fixed>
-      <Text style={styles.footerText}>Made with love by Packet Day · packetday.com</Text>
+    <>
+      <Text style={[styles.footerText, styles.childPageFooterLeft, { left: inset }]} fixed>
+        Made with love by Packet Day · packetday.com
+      </Text>
       <Text
-        style={styles.footerText}
+        style={[styles.footerText, styles.childPageFooterRight, { right: inset }]}
+        fixed
         render={({ pageNumber, totalPages }) =>
           `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
         }
       />
-    </View>
+    </>
   );
 }
 
