@@ -324,7 +324,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.page,
     padding: 48,
     flexDirection: 'column',
-    justifyContent: 'space-between',
   },
 
   // ── Cover: decorative frame ─────────────────────────────────────────────────
@@ -374,8 +373,6 @@ const styles = StyleSheet.create({
   coverCenter: {
     flexDirection: 'column',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
     paddingVertical: 12,
     gap: 10,
   },
@@ -414,26 +411,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  coverSubtitle: {
-    ...typeStyle(typeScale.footerText),
-    color: color.textSecondary,
-    textAlign: 'center',
-  },
 
-  // ── Cover: activity count badge ─────────────────────────────────────────────
-  activityBadge: {
-    backgroundColor: color.honey,
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 7,
+  // ── Cover: chip row (activity count / duration / grade) — spec 5.1 ─────────
+  coverChipRow: {
+    flexDirection: 'row',
+    gap: 10.5,
     alignSelf: 'center',
   },
-  activityBadgeText: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 12,
-    color: color.page,
-    letterSpacing: 0.2,
+  coverChip: {
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 13.5,
+  },
+  coverChipText: {
+    ...typeStyle(typeScale.chipLabel),
   },
 
   // ── Cover: greeting / mission box ───────────────────────────────────────────
@@ -455,6 +446,30 @@ const styles = StyleSheet.create({
     color: color.sageDark,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+
+  // ── Cover: name/date signature lines — spec 5.1 ─────────────────────────────
+  coverSignatureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 24,
+  },
+  coverSignatureColName: {
+    flexDirection: 'column',
+    flexGrow: 1,
+  },
+  coverSignatureColDate: {
+    flexDirection: 'column',
+    width: 142,
+  },
+  coverSignatureLabel: {
+    ...typeStyle(typeScale.subjectLabel),
+    color: color.sage,
+    marginBottom: 6,
+  },
+  coverSignatureRule: {
+    height: 1.5,
+    backgroundColor: color.signatureRule,
   },
 
 
@@ -1322,6 +1337,7 @@ function StarSvg({ color, size = 18 }: { color: string; size?: number }) {
 
 function CoverPage({
   childName,
+  childGrade,
   childEmoji,
   title,
   theme,
@@ -1350,7 +1366,8 @@ function CoverPage({
         <Text style={styles.coverDate}>{formatPDFDate(createdAt)}</Text>
       </View>
 
-      {/* Center block */}
+      {/* Center block — natural height, NOT flexGrow (chunk 4 bug pattern:
+          only the spacer below absorbs leftover page height). */}
       <View style={styles.coverCenter}>
         {/* Mascot hero image or fallback emoji circle */}
         {mascotImageUrl ? (
@@ -1369,23 +1386,44 @@ function CoverPage({
         {/* Packet title — Fraunces bold, large */}
         <Text style={styles.coverTitle}>{sanitizeText(title)}</Text>
 
-        <Text style={styles.coverSubtitle}>
-          {childName}&apos;s Learning Adventure
-        </Text>
-
-        {/* Activity count badge */}
-        <View style={styles.activityBadge}>
-          <Text style={styles.activityBadgeText}>
-            {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'} · {totalMinutes} min
-          </Text>
+        {/* Activity count / duration / grade chips — spec 5.1 */}
+        <View style={styles.coverChipRow}>
+          <View style={[styles.coverChip, { backgroundColor: color.sageChip }]}>
+            <Text style={[styles.coverChipText, { color: color.sageDark }]}>
+              {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'}
+            </Text>
+          </View>
+          <View style={[styles.coverChip, { backgroundColor: color.honeyChip }]}>
+            <Text style={[styles.coverChipText, { color: color.honeyDark }]}>{totalMinutes} min</Text>
+          </View>
+          <View style={[styles.coverChip, { backgroundColor: color.coralChip }]}>
+            <Text style={[styles.coverChipText, { color: color.coralDark }]}>{childGrade}</Text>
+          </View>
         </View>
 
-        {/* Mission / greeting box */}
+        {/* Mission / greeting box — natural height, never stretched */}
         <View style={styles.greetingBox}>
           {packetMission ? (
             <Text style={styles.greetingLabel}>Your Mission Today</Text>
           ) : null}
           <Text style={styles.greetingText}>{missionText}</Text>
+        </View>
+      </View>
+
+      {/* Spacer — the ONLY flexGrow element on this page. Collects all
+          leftover height so the name/date lines below pin to the bottom
+          without stretching the mission panel above (chunk 4 bug pattern). */}
+      <View style={{ flexGrow: 1 }} />
+
+      {/* Name / date signature lines — spec 5.1 */}
+      <View style={styles.coverSignatureRow}>
+        <View style={styles.coverSignatureColName}>
+          <Text style={styles.coverSignatureLabel}>Name</Text>
+          <View style={styles.coverSignatureRule} />
+        </View>
+        <View style={styles.coverSignatureColDate}>
+          <Text style={styles.coverSignatureLabel}>Date</Text>
+          <View style={styles.coverSignatureRule} />
         </View>
       </View>
     </Page>
