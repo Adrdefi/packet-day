@@ -1298,8 +1298,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  // Page-level eyebrow, not a section label — sized up from sectionLabel's
+  // 10pt base to read as the page's own heading treatment. letterSpacing is
+  // recomputed from sectionLabel's em value at the new fontSize (typeStyle
+  // bakes letterSpacing to absolute points from whatever fontSize is on the
+  // object passed in), so the tracking stays proportional, not frozen at 10pt.
   coloringHeaderText: {
-    ...typeStyle(typeScale.sectionLabel),
+    ...typeStyle({ ...typeScale.sectionLabel, fontSize: 14 }),
     color: color.sage,
     textAlign: 'center',
     marginBottom: 8,
