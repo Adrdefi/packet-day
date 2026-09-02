@@ -1169,6 +1169,7 @@ const styles = StyleSheet.create({
   },
   certDayTitle: {
     ...typeStyle(typeScale.certificateDayTitle),
+    color: color.sageDark,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -1218,6 +1219,7 @@ const styles = StyleSheet.create({
   },
   certSignoff: {
     ...typeStyle(typeScale.certificateSignoff),
+    color: color.sageDark,
     textAlign: 'center',
     marginTop: 22,
   },
@@ -1271,6 +1273,7 @@ const styles = StyleSheet.create({
   },
   summaryDuration: {
     ...typeStyle(typeScale.scheduleDuration),
+    color: color.textSecondary,
     textAlign: 'right',
     flexShrink: 0,
     marginLeft: 8,
