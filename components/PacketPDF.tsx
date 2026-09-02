@@ -1335,6 +1335,8 @@ const styles = StyleSheet.create({
   celebrationTextCol: {
     flexDirection: 'column',
     flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   celebrationLabel: {
     ...typeStyle(typeScale.calloutEyebrow),
