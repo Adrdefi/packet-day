@@ -1225,16 +1225,14 @@ const styles = StyleSheet.create({
     color: color.sageDark,
     fontStyle: 'italic',
   },
+  // Flattened — no border/background. The ruled writing lines below already
+  // mark this as a writing area; a heavy box around the question read as
+  // inconsistent with the activity pages, which don't box their prompts.
   reflectionBox: {
-    backgroundColor: color.honeyTint,
-    borderWidth: 2.5,
-    borderColor: color.honey,
-    borderRadius: 12,
-    padding: 22,
     marginBottom: 22,
   },
   reflectionLabel: {
-    ...typeStyle(typeScale.calloutEyebrow),
+    ...typeStyle(typeScale.sectionLabel),
     color: color.honeyDark,
     marginBottom: 10,
   },
@@ -1243,6 +1241,13 @@ const styles = StyleSheet.create({
     color: color.textPrimary,
     fontStyle: 'italic',
   },
+  // Rule under the page header, matching the activity pages — this page had
+  // none before.
+  dailyReflectionRule: {
+    height: 2.25,
+    backgroundColor: color.sageRule,
+    marginBottom: space.ruleToContent,
+  },
   celebrationBox: {
     backgroundColor: color.sageTint,
     borderWidth: 2,
@@ -1250,6 +1255,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 18,
     marginBottom: 18,
+  },
+  // Mascot + eyebrow/text column — spec 5.16.
+  celebrationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  celebrationMascotImage: {
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+  celebrationTextCol: {
+    flexDirection: 'column',
+    flexGrow: 1,
   },
   celebrationLabel: {
     ...typeStyle(typeScale.calloutEyebrow),
@@ -2490,16 +2509,30 @@ function CelebrationPage({
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
       <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
+      <View style={styles.dailyReflectionRule} />
 
-      {/* Celebration message from mascot */}
+      {/* Celebration message from mascot — mascot image + eyebrow/text
+          column, spec 5.16. Falls back to text-only (no image) when
+          mascotImageUrl is missing. */}
       {packetCelebration && (
         <View style={styles.celebrationBox}>
-          <Text style={styles.celebrationLabel}>{mascotName ? mascotName + ' says:' : 'Great work!'}</Text>
-          <Text style={styles.celebrationText}>{sanitizeText(packetCelebration)}</Text>
+          <View style={styles.celebrationRow}>
+            {mascotImageUrl && (
+              <Image
+                src={mascotImageUrl}
+                style={[styles.celebrationMascotImage, { width: bandTable[band].reflectionMascot, height: bandTable[band].reflectionMascot }]}
+              />
+            )}
+            <View style={styles.celebrationTextCol}>
+              <Text style={styles.celebrationLabel}>{mascotName ? mascotName + ' says:' : 'Great work!'}</Text>
+              <Text style={styles.celebrationText}>{sanitizeText(packetCelebration)}</Text>
+            </View>
+          </View>
         </View>
       )}
 
-      {/* Reflection question */}
+      {/* Reflection question — flattened, no border/background; the ruled
+          lines below already mark it as a writing area. */}
       <View style={styles.reflectionBox}>
         <Text style={styles.reflectionLabel}>Today&apos;s Question</Text>
         <Text style={[styles.reflectionText, { fontSize: bandTable[band].calloutBodySize }]}>
