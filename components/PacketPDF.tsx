@@ -555,7 +555,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
     flexShrink: 0,
-    marginTop: 1,
   },
   instructionBulletText: {
     ...typeStyle(typeScale.questionNumber),
@@ -565,7 +564,6 @@ const styles = StyleSheet.create({
   instructionBulletPlain: {
     ...typeStyle(typeScale.questionNumber),
     marginRight: 8,
-    marginTop: 1,
   },
   instructionText: {
     ...typeStyle(typeScale.instruction),
@@ -833,6 +831,9 @@ const styles = StyleSheet.create({
   promptInstructionText: {
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   writingSpaceHeader: {
     ...typeStyle(typeScale.sectionLabel),
@@ -1727,9 +1728,31 @@ function QuestionBullet({
   band: BandKey;
   colors: ActivityColor;
 }) {
+  // The bullet must center on the FIRST LINE of its instruction text, not
+  // align to the row's top edge — instructionRow uses alignItems:flex-start
+  // so a naive marginTop leaves the bullet low whenever it's taller (circle
+  // cases) or shorter (plain-number case) than one line of body text.
+  // Computed from actual line-height in points rather than a flat guess,
+  // since bodySize (and therefore line height) changes per band.
+  const bodyLineHeightPt = bandTable[band].bodySize * typeScale.instruction.lineHeight;
+
   if (band === '6-8') {
+    const numberLineHeightPt = typeScale.questionNumber.fontSize * typeScale.questionNumber.lineHeight;
+    // Clamped to 0: a negative marginTop here (the number's line-height at
+    // this band is already within ~1pt of the body text's) makes this Text
+    // disappear entirely in this template's stretch-row layout — reproduces
+    // on a fresh dev process, so it's a real react-pdf/Yoga quirk, not
+    // staleness. The correction is sub-pixel either way, so losing it costs
+    // nothing visible.
     return (
-      <Text style={[styles.instructionBulletPlain, { color: colors.label }]}>{index + 1}.</Text>
+      <Text
+        style={[
+          styles.instructionBulletPlain,
+          { color: colors.label, marginTop: Math.max(0, (bodyLineHeightPt - numberLineHeightPt) / 2) },
+        ]}
+      >
+        {index + 1}.
+      </Text>
     );
   }
   const size = bandTable[band].questionBulletSize;
@@ -1744,6 +1767,7 @@ function QuestionBullet({
           backgroundColor: band === 'K-2' ? (colors.chip ?? familyBg(colors)) : familyBg(colors),
           borderWidth: band === 'K-2' ? 1.5 : 1,
           borderColor: colors.label,
+          marginTop: (bodyLineHeightPt - size) / 2,
         },
       ]}
     >
@@ -1948,33 +1972,26 @@ function OpenWorkspaceTemplate({
         {/* Prompt bubble — chunk 9 stage 2: no container, band-scaled
             QuestionBullet instead of an inline "1. " prefix, matching stage
             1's question blocks rather than a second bullet implementation.
-            For movement_activity, the numbered steps are a MAY STRETCH
-            "Movement step list" (weight 1, cap = steps × 44pt) — the
-            flexGrow/flexBasis that used to sit on the bare Text now sits on
-            each row wrapper (styles.answerLineGroupLine) instead, so bullet
-            and text stay aligned as the row stretches. Every other content
-            type keeps the prompt text fixed. */}
-        {contentType === 'movement_activity' ? (
-          <View wrap={false} style={[styles.promptBubble, { flexGrow: 1, flexBasis: 'auto' }]}>
-            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: activity.instructions.length * 44 }]}>
-              {activity.instructions.map((step, i) => (
-                <View key={i} style={[styles.instructionRow, styles.answerLineGroupLine, { marginTop: 0 }]}>
-                  <QuestionBullet index={i} band={band} colors={colors} />
-                  <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
-                </View>
-              ))}
+            movement_activity's steps used to be a MAY STRETCH group (each
+            row an equal flexGrow share of a capped height, plus the
+            enclosing box itself stretching) so five steps would spread down
+            the page instead of bunching at the top. Chunk 9 sweep dropped
+            both layers: per-row stretch made single-line steps trail a
+            large empty gap while wrapped steps trailed almost none, and
+            even after fixing that, a still-stretching promptBubble just
+            moved the same slack to one gap after the last step. Per chunk
+            4's own usable-or-symmetric test, this space fails both — a
+            child never writes between steps — so it shouldn't stretch at
+            all. Steps take their natural height; leftover page space
+            collects at the bottom of the page as margin instead. */}
+        <View wrap={contentType === 'movement_activity' ? false : true} style={styles.promptBubble}>
+          {activity.instructions.map((step, i) => (
+            <View key={i} style={[styles.instructionRow, { marginBottom: 8 }]}>
+              <QuestionBullet index={i} band={band} colors={colors} />
+              <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
-          </View>
-        ) : (
-          <View style={styles.promptBubble}>
-            {activity.instructions.map((step, i) => (
-              <View key={i} style={[styles.instructionRow, { marginBottom: 8 }]}>
-                <QuestionBullet index={i} band={band} colors={colors} />
-                <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+          ))}
+        </View>
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
@@ -1992,11 +2009,19 @@ function OpenWorkspaceTemplate({
         )}
 
         {contentType === 'movement_activity' && (
-          <View wrap={false} minPresenceAhead={trailingReserve} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
+          <View wrap={false} minPresenceAhead={trailingReserve} style={styles.movementReflectionBox}>
             <Text minPresenceAhead={90} style={[styles.movementReflectionLabel, { color: colors.label }]}>How did it go?</Text>
+            {/* Chunk 9 sweep — dropped the equal-flexGrow-per-line pattern:
+                three lines splitting a capped, often-fully-grown height gave
+                each line its own ~45pt empty box with the ruled edge only at
+                the very bottom, reading as a void under the label instead of
+                a writing space. The group still stretches (cap unchanged),
+                but lines now sit at their natural pitch via movementReflectionLine's
+                own marginBottom, so unused height trails once below the
+                third line instead of inflating the gap above every line. */}
             <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
               {Array.from({ length: 3 }, (_, i) => (
-                <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
+                <View key={i} style={styles.movementReflectionLine} />
               ))}
             </View>
           </View>
