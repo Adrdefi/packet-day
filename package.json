@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "script": "node scripts/run-ts.mjs",
+    "test-pdf": "node scripts/run-ts.mjs scripts/test-pdf.ts",
+    "sweep": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/sweep-packets.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
@@ -30,6 +33,7 @@
     "@types/react-dom": "^19",
     "@types/stripe": "^8.0.416",
     "dotenv-cli": "^11.0.0",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",

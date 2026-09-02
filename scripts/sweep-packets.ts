@@ -17,12 +17,16 @@
  *
  * USAGE
  * -----
- *   npx dotenv -e .env.local -- npx tsx scripts/sweep-packets.ts [--limit N]
+ *   npm run sweep -- --limit N
  *
- * (Node 24+ can also run it natively via `node scripts/sweep-packets.ts`
- * with the same dotenv prefix, without tsx, if that's ever preferred — see
- * package.json's existing scripts/*.ts files for the established `npx tsx`
- * convention this repo already uses.)
+ * That runs `dotenv -e .env.local -- node scripts/run-ts.mjs
+ * scripts/sweep-packets.ts`, i.e. plain node, not tsx — see run-ts.mjs's own
+ * header for why: tsx cannot load this file's @react-pdf/renderer import on
+ * this repo's Node version (ERR_PACKAGE_PATH_NOT_EXPORTED on
+ * @react-pdf/hyphenate's `/en-us` subpath, confirmed across every tsx
+ * release from 4.0.0 through 4.23.13 — not a version-pinning problem).
+ * run-ts.mjs compiles this file with esbuild ahead of time and hands the
+ * plain-ESM result to node directly, no tsx involved.
  *
  *   --limit N   Only sweep the first N packets (by id order from the DB).
  *               Useful for a quick smoke-test before committing to a full
@@ -36,19 +40,6 @@
  * - No dev server needed. This renders directly in-process via
  *   @react-pdf/renderer, the same way app/api/dev-render-packet/route.ts
  *   does — it does not call that route or need it running.
- * - KNOWN ISSUE, pre-existing and not specific to this file: as of writing,
- *   `npx tsx` on this machine (tsx 4.23.13, Node 24.14.1) fails on ANY
- *   script that imports @react-pdf/renderer — including the already
- *   -committed scripts/test-pdf.ts, not just this one — with
- *   `ERR_PACKAGE_PATH_NOT_EXPORTED` on @react-pdf/hyphenate's `/en-us`
- *   subpath. Plain `node scripts/sweep-packets.ts` fails too, for an
- *   unrelated reason (ESM resolution needs explicit file extensions on
- *   relative imports, which this repo's extensionless-import style doesn't
- *   have). Neither was fixed here — the fix is a tsx-version or Node-version
- *   decision (or pinning tsx as a real devDependency instead of `npx`
- *   fetching latest each time) that's bigger than this script and affects
- *   every file in scripts/, not something to do silently as a side effect of
- *   adding one more script to that directory.
  * - If you're re-running this specifically to chase a dropped-character
  *   report from a previous sweep, see CLAUDE.md's react-pdf gotchas first —
  *   clear .next and Node's own compile cache
@@ -109,13 +100,19 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { inflateSync } from "zlib";
 import fs from "fs";
 import path from "path";
-import PacketPDF from "../components/PacketPDF";
+import { fileURLToPath, pathToFileURL } from "url";
+import PacketPDF, { resolveContentType } from "../components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "../components/PacketPDF";
 import type { PacketContent } from "../types";
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
-const OUT_DIR = path.join(__dirname, "..", "sweep-output");
+// No __dirname — this file runs compiled to ESM (see the isMainModule
+// comment near the bottom of this file for why), where __dirname isn't a
+// global. import.meta.url is the ESM-native equivalent.
+const __filenameEsm = fileURLToPath(import.meta.url);
+const __dirnameEsm = path.dirname(__filenameEsm);
+const OUT_DIR = path.join(__dirnameEsm, "..", "sweep-output");
 
 // ─── CLI args ───────────────────────────────────────────────────────────────
 
@@ -520,9 +517,16 @@ interface CheckableField {
 export function checkableFields(activities: PDFActivity[]): CheckableField[] {
   const fields: CheckableField[] = [];
   activities.forEach((activity, activityIndex) => {
+    // Real DB rows leave content_type null (confirmed against live data, not
+    // just a hypothetical) — resolveContentType's subject-keyword fallback is
+    // what actually decides rendering, so this MUST call the same function
+    // PacketPDF.tsx uses rather than checking activity.content_type directly,
+    // or this exclusion silently never fires and Math's MathSections
+    // -reformatted instructions get checked as if they render verbatim
+    // (they don't — this produced spurious findings in practice).
     const isMathWorksheet =
-      activity.content_type === "worksheet" && activity.subject.toLowerCase().includes("math");
-    const isPuzzle = activity.content_type === "puzzle_break";
+      resolveContentType(activity) === "worksheet" && activity.subject.toLowerCase().includes("math");
+    const isPuzzle = resolveContentType(activity) === "puzzle_break";
 
     // instructions[] render close to verbatim EXCEPT Math worksheets, whose
     // instructions get parsed/reformatted by MathSections (see
@@ -577,29 +581,68 @@ interface Finding {
   confidence: "CONFIRMED" | "SUSPECTED";
 }
 
-// Minimum anchor length (word minus its own first character) to search for.
-// 3 was chosen empirically: 4 missed a real, confirmed drop ("Real" from
-// Math's fun_fact "Real pirates...", a 4-letter word producing only a
-// 3-letter anchor) during validation against a known-real instance. Shorter
-// anchors do trade away some specificity, but stage 2's glyph-count check
-// plus human review of any CONFIRMED/SUSPECTED finding is exactly the
-// safety net for that — missing a real drop silently is the worse failure
-// mode for a detector whose whole purpose is fleet-wide discovery.
-const MIN_ANCHOR_LEN = 3;
+// The anchor is built from the field's OWN full text (skipping just its
+// first character), spanning multiple words up to ~20 non-space characters —
+// NOT just the tail of the first word. An earlier version anchored on the
+// first word's tail alone (e.g. "ove" from "Move"), which is a common
+// English substring and collided with unrelated text elsewhere on the same
+// page — most damagingly the fixed per-page footer ("Made with love by
+// Packet Day"), present on every page, which produced a wall of false
+// "CONFIRMED" findings against real fleet data (verified via PyMuPDF
+// rawdict cross-check: the flagged field was fully intact; the detector had
+// matched inside the footer instead). Spanning multiple words from the
+// field's actual sentence makes an accidental collision vanishingly
+// unlikely while still correctly catching a genuinely dropped first
+// character, since the anchor still starts at position 1 (skipping the
+// character under test) regardless of how many words it spans.
+const ANCHOR_TARGET_LEN = 20; // non-space characters to aim for
+const MIN_ANCHOR_LEN = 10; // non-space characters — below this, too short to anchor safely regardless of source
 
 function firstWord(text: string): string {
   return text.trim().split(/\s+/)[0] ?? "";
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+interface Anchor {
+  expectedFirstChar: string;
+  // Built with \s* between words rather than a literal-space match: pdfkit
+  // does not draw the space glyph at a line-wrap point (the break itself
+  // supplies the visual gap), so a multi-word anchor that happens to span a
+  // wrapped line would otherwise never match and silently produce a false
+  // negative. \s* tolerates that (zero or more) as well as ordinary single
+  // -space runs.
+  regex: RegExp;
+}
+
+/** Builds a match anchor from a checkable field's own text, or null if the
+ * field is too short to anchor safely (see MIN_ANCHOR_LEN). */
+function buildAnchor(text: string): Anchor | null {
+  const trimmed = text.trim();
+  if (trimmed.length < MIN_ANCHOR_LEN + 1) return null;
+  const expectedFirstChar = trimmed[0];
+  const words = trimmed.slice(1).split(/\s+/).filter(Boolean);
+
+  const anchorWords: string[] = [];
+  let nonSpaceLen = 0;
+  for (const w of words) {
+    anchorWords.push(w);
+    nonSpaceLen += w.length;
+    if (nonSpaceLen >= ANCHOR_TARGET_LEN) break;
+  }
+  if (nonSpaceLen < MIN_ANCHOR_LEN || anchorWords.length === 0) return null;
+
+  return { expectedFirstChar, regex: new RegExp(anchorWords.map(escapeRegExp).join("\\s*")) };
 }
 
 export function detectDroppedCharacters(fields: CheckableField[], pages: PageData[]): Finding[] {
   const findings: Finding[] = [];
 
   for (const f of fields) {
-    const word = firstWord(f.text);
-    if (word.length < MIN_ANCHOR_LEN + 1) continue; // too short to anchor safely
-    const expectedFirstChar = word[0];
-    const anchor = word.slice(1, Math.min(word.length, 1 + 12)); // skip position 0
-    if (anchor.length < MIN_ANCHOR_LEN) continue;
+    const anchor = buildAnchor(f.text);
+    if (!anchor) continue; // too short to anchor safely
 
     for (const page of pages) {
       // Build a flat char->run index so a match position can be traced back
@@ -613,11 +656,12 @@ export function detectDroppedCharacters(fields: CheckableField[], pages: PageDat
         }
       }
 
-      const idx = pageText.indexOf(anchor);
-      if (idx === -1) continue;
+      const match = anchor.regex.exec(pageText);
+      if (!match) continue;
+      const idx = match.index;
 
       const actualPrecedingChar = idx > 0 ? pageText[idx - 1] : "";
-      if (actualPrecedingChar === expectedFirstChar) continue; // matches — no finding
+      if (actualPrecedingChar === anchor.expectedFirstChar) continue; // matches — no finding
 
       // Mismatch — flag it. Verify against the specific run's raw glyph count.
       const run = charRunIndex[idx] ?? null;
@@ -628,10 +672,10 @@ export function detectDroppedCharacters(fields: CheckableField[], pages: PageDat
         field: f.field,
         activityIndex: f.activityIndex,
         activitySubject: f.activitySubject,
-        expectedFirstWord: word,
-        expectedFirstChar,
+        expectedFirstWord: firstWord(f.text),
+        expectedFirstChar: anchor.expectedFirstChar,
         pageNum: page.pageNum,
-        snippet: pageText.slice(Math.max(0, idx - 5), idx + anchor.length + 5),
+        snippet: pageText.slice(Math.max(0, idx - 5), idx + match[0].length + 5),
         confidence,
       });
       break; // one finding per field is enough to flag it
@@ -813,8 +857,14 @@ async function main() {
 // Guarded so this file can be imported (e.g. to unit-test the exported
 // introspectPdf/checkableFields/detectDroppedCharacters functions against an
 // existing PDF) without triggering a live Supabase connection and a real
-// sweep as a side effect of the import.
-if (require.main === module) {
+// sweep as a side effect of the import. ESM-native check (import.meta.url vs
+// the invoked script's path), not CJS's `require.main === module` — this
+// file runs compiled to ESM (see scripts/run-ts.mjs's header for why:
+// tsx's CJS require-hook cannot load @react-pdf/renderer's dependency
+// chain on this Node version, but native ESM resolves it correctly), and
+// `require`/`module` don't exist as globals in that context.
+const isMainModule = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMainModule) {
   main().catch((err) => {
     console.error("Sweep failed:", err instanceof Error ? err.message : err);
     process.exit(1);

@@ -237,7 +237,7 @@ function sanitizeText(text: string | null | undefined): string {
     .trim();
 }
 
-function resolveContentType(activity: PDFActivity): ContentType {
+export function resolveContentType(activity: PDFActivity): ContentType {
   if (activity.content_type) return activity.content_type;
   const s = activity.subject.toLowerCase();
   if (s.includes('reading') || s.includes('comprehension')) return 'reading_passage';
