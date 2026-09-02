@@ -543,12 +543,20 @@ const styles = StyleSheet.create({
 
 
   // ── Activity page ───────────────────────────────────────────────────────────
+  // padding lives on the <Page> itself (set inline per band at each call
+  // site, e.g. { padding: bc.cardPad + 24 }), NOT on activityContent below.
+  // react-pdf's page-fragmentation (splitPage) copies page.style verbatim to
+  // every physical-page fragment, so Page-level padding survives a
+  // continuation break intact. Padding on an inner View does not: splitNode
+  // strips paddingTop from a continuation-start fragment and paddingBottom
+  // from a continuation-end (non-final) fragment — see chunk 9 stage 4
+  // diagnosis (no top margin on continuation pages; a section label
+  // stranding under the footer on the page before one).
   activityPage: {
     flexDirection: 'column',
     backgroundColor: color.page,
   },
   activityContent: {
-    padding: 36,
     flex: 1,
     flexDirection: 'column',
   },
@@ -1972,9 +1980,9 @@ function WorksheetTemplate({
   const trailingReserve = trailingGroupHeight(activity, band, false, true);
 
   return (
-    <Page size="LETTER" experimentalPagination style={styles.activityPage}>
+    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
@@ -2059,9 +2067,9 @@ function ReadingTemplate({
   }
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
@@ -2148,9 +2156,9 @@ function OpenWorkspaceTemplate({
   const reflectionLabelHeight = 22;
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
@@ -2272,9 +2280,9 @@ function PuzzleBreakTemplate({
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
