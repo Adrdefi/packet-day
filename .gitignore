@@ -55,3 +55,6 @@ test-*.pdf
 
 # Ad-hoc PDF renders handed to the user for review
 /tmp-renders/
+
+# JSON reports from scripts/sweep-packets.ts
+/sweep-output/
