@@ -823,24 +823,22 @@ const styles = StyleSheet.create({
   },
 
   // ── Open workspace (writing / movement / coloring) ───────────────────────────
+  // Chunk 9 stage 2 — no container, separated by space instead of a border.
   promptBubble: {
-    borderWidth: 1.5,
-    borderColor: color.faintDivider,
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: color.page,
     marginBottom: 14,
   },
+  // Chunk 9 stage 2 — spacing moves from the text's own marginTop to the row
+  // wrapper (see QuestionBullet usage sites), since bullet and text are now
+  // row siblings that need to stay vertically aligned.
   promptInstructionText: {
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    marginTop: 6,
   },
   writingSpaceHeader: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 12,
   },
+  // Work surfaces, not decorative chrome — left alone per instructions.
   writingLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
@@ -863,17 +861,13 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
+  // Chunk 9 stage 2 — no container. Label and ruled lines, and the
+  // wrap={false}/stretch behavior on the JSX side, are unchanged.
   movementReflectionBox: {
-    borderWidth: 1.5,
-    borderColor: color.answerRule,
-    borderRadius: 10,
-    padding: 14,
     marginTop: 16,
-    backgroundColor: color.creamPanel,
   },
   movementReflectionLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 10,
   },
   movementReflectionLine: {
@@ -928,12 +922,11 @@ const styles = StyleSheet.create({
     color: color.textPrimary,
     marginBottom: 6,
   },
+  // Chunk 9 sweep — same pattern as the promptBubble flattened in stage 2:
+  // a light border + white background wrapping instructional text, not a
+  // work surface (the actual drawing area, mathDrawBox below, is untouched —
+  // that one holds the child's own drawing and its border is functional).
   mathDrawPromptBubble: {
-    borderWidth: 1.5,
-    borderColor: color.faintDivider,
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: color.page,
     marginBottom: 8,
   },
   mathDrawPromptText: {
@@ -993,7 +986,6 @@ const styles = StyleSheet.create({
   },
   wordListLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 8,
   },
   wordListGrid: {
@@ -1953,25 +1945,33 @@ function OpenWorkspaceTemplate({
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
-        {/* Prompt bubble — for movement_activity, the numbered steps are a
-            MAY STRETCH "Movement step list" (weight 1, cap = steps × 44pt);
-            for every other content type the prompt text stays fixed. */}
+        {/* Prompt bubble — chunk 9 stage 2: no container, band-scaled
+            QuestionBullet instead of an inline "1. " prefix, matching stage
+            1's question blocks rather than a second bullet implementation.
+            For movement_activity, the numbered steps are a MAY STRETCH
+            "Movement step list" (weight 1, cap = steps × 44pt) — the
+            flexGrow/flexBasis that used to sit on the bare Text now sits on
+            each row wrapper (styles.answerLineGroupLine) instead, so bullet
+            and text stay aligned as the row stretches. Every other content
+            type keeps the prompt text fixed. */}
         {contentType === 'movement_activity' ? (
-          <View wrap={false} style={[styles.promptBubble, { borderRadius: bc.cardRadius, flexGrow: 1, flexBasis: 'auto' }]}>
+          <View wrap={false} style={[styles.promptBubble, { flexGrow: 1, flexBasis: 'auto' }]}>
             <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: activity.instructions.length * 44 }]}>
               {activity.instructions.map((step, i) => (
-                <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize, marginTop: 0, flexGrow: 1, flexBasis: 'auto' }]}>
-                  {i + 1}. {sanitizeText(step)}
-                </Text>
+                <View key={i} style={[styles.instructionRow, styles.answerLineGroupLine, { marginTop: 0 }]}>
+                  <QuestionBullet index={i} band={band} colors={colors} />
+                  <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+                </View>
               ))}
             </View>
           </View>
         ) : (
-          <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
+          <View style={styles.promptBubble}>
             {activity.instructions.map((step, i) => (
-              <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>
-                {i + 1}. {sanitizeText(step)}
-              </Text>
+              <View key={i} style={[styles.instructionRow, { marginBottom: 8 }]}>
+                <QuestionBullet index={i} band={band} colors={colors} />
+                <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+              </View>
             ))}
           </View>
         )}
@@ -1982,7 +1982,7 @@ function OpenWorkspaceTemplate({
         {/* Response area */}
         {contentType === 'writing_prompt' && (
           <>
-            <Text minPresenceAhead={90} style={styles.writingSpaceHeader}>My Writing Space</Text>
+            <Text minPresenceAhead={90} style={[styles.writingSpaceHeader, { color: colors.label }]}>My writing space</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, flexBasis: 'auto', maxHeight: lineCount * bandTable[band].answerLinePitch * 1.5 }]}>
               {Array.from({ length: lineCount }, (_, i) => (
                 <View key={i} style={[styles.writingLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -1993,7 +1993,7 @@ function OpenWorkspaceTemplate({
 
         {contentType === 'movement_activity' && (
           <View wrap={false} minPresenceAhead={trailingReserve} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
-            <Text minPresenceAhead={90} style={styles.movementReflectionLabel}>How did it go?</Text>
+            <Text minPresenceAhead={90} style={[styles.movementReflectionLabel, { color: colors.label }]}>How did it go?</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
               {Array.from({ length: 3 }, (_, i) => (
                 <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -2081,7 +2081,7 @@ function PuzzleBreakTemplate({
             mid-row across pages. Latent correctness gap, not the near-empty
             trailing page this chunk found; that block already moves whole
             with no unguarded splitting, it's just genuinely small. */}
-        <Text minPresenceAhead={90} style={styles.wordListLabel}>Find these words:</Text>
+        <Text minPresenceAhead={90} style={[styles.wordListLabel, { color: colors.label }]}>Find these words</Text>
         <View wrap={false} style={styles.wordListGrid}>
           {placed.map((word, i) => (
             <View key={i} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
