@@ -125,18 +125,19 @@ export interface PacketPDFProps {
 interface BandConfig {
   cardPad: number;    // card padding
   cardRadius: number; // card border radius
-  borderW: number;    // border width
 }
 
 // Font-size fields (body, instrBody) moved to lib/pdf-tokens.ts's band table
 // in Stage 3 of the PDF token rebuild — these remaining fields are layout
 // values, out of scope for that migration. Line pitch now comes from
 // bandTable[band].answerLinePitch (chunk 4) — see the stretch-group caps.
+// borderW (question-box border width) removed in chunk 9 — questionBox lost
+// its border entirely, and it had no other caller.
 function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
   const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
-    'K-2': { cardPad: 14, cardRadius: 14, borderW: 3 },
-    '3-5': { cardPad: 12, cardRadius: 10, borderW: 2 },
-    '6-8': { cardPad: 10, cardRadius: 8, borderW: 1.5 },
+    'K-2': { cardPad: 14, cardRadius: 14 },
+    '3-5': { cardPad: 12, cardRadius: 10 },
+    '6-8': { cardPad: 10, cardRadius: 8 },
   };
   return configs[band];
 }
@@ -534,24 +535,22 @@ const styles = StyleSheet.create({
     color: color.textSecondary,
     marginBottom: 10,
   },
+  // Chunk 9 — no container. Questions are separated from each other by
+  // space, not a border/background box (spec deviation: this rebuild keeps
+  // color where a child engages with it — the bullet, the callouts, the
+  // strip — and removes it from adult-facing print chrome like this one).
   questionBox: {
-    backgroundColor: color.page,
-    borderRadius: 10,
-    padding: 12,
-    paddingBottom: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: color.faintDivider,
+    marginBottom: 16,
   },
   instructionRow: {
     flexDirection: 'row',
     marginBottom: 0,
     alignItems: 'flex-start',
   },
+  // width/height/borderRadius/borderWidth/backgroundColor are set inline per
+  // band (K-2/3-5 get a circle, sized via bandTable[band].questionBulletSize;
+  // 6-8 skips this style entirely for instructionBulletPlain below).
   instructionBullet: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -560,6 +559,13 @@ const styles = StyleSheet.create({
   },
   instructionBulletText: {
     ...typeStyle(typeScale.questionNumber),
+  },
+  // 6-8's plain-number treatment — no circle. questionNumber is already
+  // fontWeight:700 (bold), matching "just the number in bold".
+  instructionBulletPlain: {
+    ...typeStyle(typeScale.questionNumber),
+    marginRight: 8,
+    marginTop: 1,
   },
   instructionText: {
     ...typeStyle(typeScale.instruction),
@@ -798,17 +804,16 @@ const styles = StyleSheet.create({
   // it has no maxHeight, so when it competes with capped siblings (the
   // comprehension answer-line groups) it simply absorbs whatever they can't
   // use, and when it's the page's only stretcher it absorbs everything.
+  // Chunk 9 — plain text on the white page, no cream fill or left border.
+  // Stretch behavior (spec section 6, MAY STRETCH weight 1, no cap) is
+  // unchanged — flexGrow/flexBasis stay exactly as they were.
   readingPassageBlock: {
-    backgroundColor: color.creamPanel,
-    borderRadius: 8,
-    padding: 14,
     marginBottom: 14,
     flexGrow: 1,
     flexBasis: 'auto',
   },
   readingPassageLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.honeyDark,
     marginBottom: 8,
   },
   readingPassageText: {
@@ -879,16 +884,13 @@ const styles = StyleSheet.create({
   },
 
   // ── Math structured sections ─────────────────────────────────────────────────
-  mathSectionBar: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    marginBottom: 8,
+  // Chunk 9 — replaces the old filled section bar (solid family-color
+  // rectangle with a white bracketed label). Just the label now, in the
+  // family's label color, applied inline at each call site.
+  mathSectionLabel: {
+    ...typeStyle(typeScale.sectionLabel),
     marginTop: 10,
-  },
-  mathSectionBarText: {
-    ...typeStyle(typeScale.calloutEyebrow),
-    color: color.page,
+    marginBottom: 8,
   },
   mathCalcGrid: {
     flexDirection: 'row',
@@ -917,13 +919,9 @@ const styles = StyleSheet.create({
     width: 80,
     marginTop: 8,
   },
+  // Chunk 9 — no container, separated by space instead of a border.
   mathWordBox: {
-    backgroundColor: color.creamPanel,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: color.faintDivider,
+    marginBottom: 16,
   },
   mathWordText: {
     ...typeStyle(typeScale.instruction),
@@ -1604,7 +1602,7 @@ function MathSections({
   band: BandKey;
   trailingReserve: number;
 }) {
-  let quickCalcsLabel = 'Quick Calculations';
+  let quickCalcsLabel = 'Quick calculations';
   let quickCalcs: string[] = [];
   let wordProblems: string[] = [];
   let drawAndSolve = '';
@@ -1632,10 +1630,9 @@ function MathSections({
 
   return (
     <>
-      {/* Quick Calculations — 2-column grid */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-        <Text style={styles.mathSectionBarText}>{'[ ' + quickCalcsLabel + ' ]'}</Text>
-      </View>
+      {/* Quick Calculations — 2-column grid. Chunk 9: label only, no filled
+          bar, no brackets, colored to the activity family. */}
+      <Text style={[styles.mathSectionLabel, { color: colors.label }]}>{quickCalcsLabel}</Text>
       <View style={styles.mathCalcGrid}>
         {quickCalcs.map((prob, i) => (
           <View key={i} style={styles.mathCalcCell}>
@@ -1649,9 +1646,7 @@ function MathSections({
       </View>
 
       {/* Word Problems */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-        <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
-      </View>
+      <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Word problems</Text>
       {wordProblems.map((prob, i) => (
         <View
           wrap={false}
@@ -1673,9 +1668,7 @@ function MathSections({
           blocks, this one was already atomic before chunk 8 touched it. */}
       {drawAndSolve !== '' && (
         <>
-          <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-            <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
-          </View>
+          <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Draw & solve</Text>
           <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
             <View style={styles.mathDrawPromptBubble}>
               <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
@@ -1725,6 +1718,48 @@ function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; i
   );
 }
 
+// ─── Question bullet (chunk 9) ─────────────────────────────────────────────────
+// Band-scaled color, extending the same principle already used for mascots
+// (largest/most colorful for the youngest children): K-2 gets a filled
+// circle in the family's chip color; 3-5 keeps the pre-chunk-9 light-fill-
+// plus-border treatment; 6-8 drops the circle entirely for a plain bold
+// number. Shared by WorksheetTemplate's non-math branch and ReadingTemplate
+// so the two don't drift out of sync with each other.
+
+function QuestionBullet({
+  index,
+  band,
+  colors,
+}: {
+  index: number;
+  band: BandKey;
+  colors: ActivityColor;
+}) {
+  if (band === '6-8') {
+    return (
+      <Text style={[styles.instructionBulletPlain, { color: colors.label }]}>{index + 1}.</Text>
+    );
+  }
+  const size = bandTable[band].questionBulletSize;
+  return (
+    <View
+      style={[
+        styles.instructionBullet,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: band === 'K-2' ? (colors.chip ?? familyBg(colors)) : familyBg(colors),
+          borderWidth: band === 'K-2' ? 1.5 : 1,
+          borderColor: colors.label,
+        },
+      ]}
+    >
+      <Text style={[styles.instructionBulletText, { color: colors.label }]}>{index + 1}</Text>
+    </View>
+  );
+}
+
 // ─── Template A — Worksheet ───────────────────────────────────────────────────
 
 function WorksheetTemplate({
@@ -1762,18 +1797,16 @@ function WorksheetTemplate({
           <MathSections instructions={activity.instructions} colors={colors} band={band} trailingReserve={trailingReserve} />
         ) : (
           <>
-            <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
+            <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>How to do it</Text>
             {activity.instructions.map((step, i) => (
               <View
                 wrap={false}
                 key={i}
                 minPresenceAhead={i === activity.instructions.length - 1 ? trailingReserve : undefined}
-                style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+                style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
               >
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-                  <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
-                    <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
-                  </View>
+                  <QuestionBullet index={i} band={band} colors={colors} />
                   <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
                 </View>
                 <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
@@ -1847,26 +1880,24 @@ function ReadingTemplate({
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {passage && (
-          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
-            <Text minPresenceAhead={90} style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
+          <View style={styles.readingPassageBlock}>
+            <Text minPresenceAhead={90} style={[styles.readingPassageLabel, { color: colors.label }]}>Read this</Text>
             <Text style={[styles.readingPassageText, { fontSize: bandTable[band].passageSize, lineHeight: bandTable[band].passageLineHeight }]}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
         {questions.length > 0 && (
-          <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
+          <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>Comprehension questions</Text>
         )}
         {questions.map((step, i) => (
           <View
             wrap={false}
             key={i}
             minPresenceAhead={i === questions.length - 1 ? trailingReserve : undefined}
-            style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+            style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
           >
             <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-              <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
-                <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
-              </View>
+              <QuestionBullet index={i} band={band} colors={colors} />
               <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
             <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
