@@ -161,6 +161,13 @@ function roundUpToNearestTen(minutes: number): number {
   return Math.ceil(minutes / 10) * 10;
 }
 
+/** First name only, for a childName that turns out to contain more than one word. */
+function firstNameOnly(name: string): string {
+  const trimmed = name.trim();
+  const spaceIdx = trimmed.indexOf(' ');
+  return spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
+}
+
 /**
  * Strip emoji and non-renderable Unicode from text before PDF rendering.
  * Nunito/Fraunces covers Latin + Latin-Extended but not emoji blocks.
@@ -1063,11 +1070,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     opacity: 0.35,
   },
-  certHeader: {
+  certEyebrow: {
     ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 10,
+  },
+  certMascotImage: {
+    objectFit: 'contain',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   certPresented: {
     fontFamily: 'Nunito',
@@ -1092,26 +1104,24 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
     marginBottom: 6,
   },
-  certTheme: {
+  certDayTitle: {
     ...typeStyle(typeScale.certificateDayTitle),
-    color: color.honey,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   certDivider: {
-    width: 200,
-    height: 2,
-    backgroundColor: color.honey,
-    borderRadius: 1,
-    opacity: 0.5,
-    marginBottom: 24,
+    width: 105,
+    height: 3.75,
+    backgroundColor: color.coral,
+    borderRadius: 2,
+    marginBottom: 20,
     alignSelf: 'center',
   },
   certDateLine: {
     ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   certSignatureRow: {
     flexDirection: 'row',
@@ -1125,6 +1135,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 160,
   },
+  certSignatureDateBlock: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: 160,
+    alignSelf: 'center',
+    marginTop: 18,
+  },
   certSignatureLine: {
     borderBottomWidth: 1.5,
     borderBottomColor: color.textPrimary,
@@ -1135,6 +1152,11 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
+  },
+  certSignoff: {
+    ...typeStyle(typeScale.certificateSignoff),
+    textAlign: 'center',
+    marginTop: 22,
   },
 
   // ── Notes / reflection pages ─────────────────────────────────────────────────
@@ -2237,18 +2259,29 @@ function ActivityPage({
 
 function CertificatePage({
   childName,
-  theme,
+  childGrade,
+  title,
   createdAt,
   mascotImageUrl,
+  mascotName,
   activities,
 }: {
   childName: string;
-  theme: string;
+  childGrade: string;
+  title: string;
   createdAt: string;
   mascotImageUrl?: string | null;
+  mascotName?: string | null;
   activities: PDFActivity[];
 }) {
+  const band = bandForGrade(childGrade);
   const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
+  const childFirstName = firstNameOnly(childName);
+  const mascotSignoff = mascotName
+    ? `${sanitizeText(mascotName)} is proud of you, ${childFirstName}.`
+    : `We're proud of you, ${childFirstName}.`;
+
   return (
     <Page size="LETTER" style={styles.certificatePage}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} />
@@ -2263,40 +2296,53 @@ function CertificatePage({
           640pt shows up as symmetric margin around the wrapper instead of
           the wrapper itself growing further. */}
       <View style={{ flexGrow: 1, flexBasis: 'auto', maxHeight: 640, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        {/* Trophy star SVG */}
-        <View style={{ marginBottom: 16 }}>
-          <Svg width={48} height={48} viewBox="0 0 24 24">
-            <Polygon
-              points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-              fill={color.honey}
-              stroke={color.honeyDark}
-              strokeWidth="0.5"
-            />
-          </Svg>
-        </View>
+        <Text style={styles.certEyebrow}>Certificate of completion</Text>
 
-        <Text style={styles.certHeader}>Certificate of Completion</Text>
+        {mascotImageUrl && (
+          <Image
+            src={mascotImageUrl}
+            style={[styles.certMascotImage, { width: bandTable[band].certificateMascot, height: bandTable[band].certificateMascot }]}
+          />
+        )}
+
         <Text style={styles.certPresented}>This certifies that</Text>
         <Text style={styles.certChildName}>{sanitizeText(childName)}</Text>
-        <Text style={styles.certBody}>has successfully completed all activities in</Text>
-        <Text style={styles.certTheme}>{sanitizeText(theme)}</Text>
+        <Text style={styles.certBody}>has completed all activities in</Text>
+        {/* Day title (props.title), not theme — the previous version used
+            theme here, which reads as a shorter category name rather than
+            the actual day's title. Known generator-side quirk where
+            packet_title can end up equal to theme; not fixed here, this is
+            a template fix (use the field the rest of the packet already
+            treats as the day title, e.g. the cover page's title). */}
+        <Text style={styles.certDayTitle}>{sanitizeText(title)}</Text>
 
         <View style={styles.certDivider} />
-        <Text style={styles.certDateLine}>{formatPDFDate(createdAt)}</Text>
+        <Text style={styles.certDateLine}>
+          {formatPDFDate(createdAt)} · {activities.length} {activities.length === 1 ? 'activity' : 'activities'} · {totalMinutes} min
+        </Text>
 
-        {/* Signature lines */}
+        {/* Signature row — two blocks side by side (grown-up + child), plus
+            a separate date line beneath rather than a third column: three
+            signature blocks in one row read as too tight at this width. */}
         <View style={styles.certSignatureRow}>
           <View style={styles.certSignatureBlock}>
             <View style={styles.certSignatureLine} />
-            <Text style={styles.certSignatureLabel}>Grown-up Signature</Text>
+            <Text style={styles.certSignatureLabel}>Grown-up signature</Text>
+          </View>
+          <View style={styles.certSignatureBlock}>
+            <View style={styles.certSignatureLine} />
+            <Text style={styles.certSignatureLabel}>Child signature</Text>
           </View>
         </View>
-      </View>
+        <View style={styles.certSignatureDateBlock}>
+          <View style={styles.certSignatureLine} />
+          <Text style={styles.certSignatureLabel}>Date</Text>
+        </View>
 
-      {/* Small mascot at bottom */}
-      {mascotImageUrl && (
-        <Image src={mascotImageUrl} style={{ position: 'absolute', bottom: 48, right: 48, width: 64, height: 64, borderRadius: 32, opacity: 0.8 }} />
-      )}
+        {/* Mascot sign-off — falls back to a generic (non-mascot) line when
+            mascotName is missing, rather than rendering a broken sentence. */}
+        <Text style={styles.certSignoff}>{mascotSignoff}</Text>
+      </View>
     </Page>
   );
 }
@@ -2551,9 +2597,11 @@ export default function PacketPDF(props: PacketPDFProps) {
       ))}
       <CertificatePage
         childName={props.childName}
-        theme={props.theme}
+        childGrade={props.childGrade}
+        title={props.title}
         createdAt={props.createdAt}
         mascotImageUrl={props.mascotImageUrl}
+        mascotName={props.mascotName}
         activities={props.activities}
       />
       {props.coloringPage && (
