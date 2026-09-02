@@ -168,6 +168,59 @@ function firstNameOnly(name: string): string {
   return spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
 }
 
+interface MathAnswerKeySections {
+  quickCalculations: string;
+  wordProblems: string;
+  drawAndSolve: string;
+}
+
+/**
+ * Splits a Math activity's answer_key into its three labeled sub-sections.
+ *
+ * The generator (app/api/generate-packet/route.ts) has no explicit schema
+ * for answer_key beyond "Parent answers or null" — it free-writes this
+ * string. On real packets it comes back as one paragraph anchored by three
+ * labels, e.g.:
+ *
+ *   "Quick Calculations: 3/4 + 1/2 = 5/4 or 1 and 1/4 || 2.75 x 4 = 11 || ...
+ *    = 120. Word Problems: 1) Oliver: 240 x 3/8 = 90 coins; ... 200 acres.
+ *    Draw and Solve: Least to greatest: 1/4, 7/8, 1 and 1/2 -- wait, ..."
+ *
+ * Quick Calculations' own answers stay || -separated (mirroring the prompt
+ * separator instructions use); Word Problems and Draw and Solve are plain
+ * sentences. Casing on the three labels isn't guaranteed (free text), so
+ * matching is case-insensitive.
+ *
+ * Returns null — render the raw string as one paragraph, same as before —
+ * whenever the shape doesn't hold: a label is missing, out of order, or
+ * there's unexpected content before "Quick Calculations". Never throws,
+ * never drops content.
+ */
+function parseMathAnswerKey(raw: string): MathAnswerKeySections | null {
+  const upper = raw.toUpperCase();
+  const qcIdx = upper.indexOf('QUICK CALCULATIONS');
+  const wpIdx = upper.indexOf('WORD PROBLEMS');
+  let dsIdx = upper.indexOf('DRAW AND SOLVE');
+  if (dsIdx === -1) dsIdx = upper.indexOf('DRAW & SOLVE');
+
+  if (qcIdx === -1 || wpIdx === -1 || dsIdx === -1) return null;
+  if (!(qcIdx < wpIdx && wpIdx < dsIdx)) return null;
+  if (raw.slice(0, qcIdx).trim().length > 0) return null;
+
+  const qcColon = upper.indexOf(':', qcIdx);
+  const wpColon = upper.indexOf(':', wpIdx);
+  const dsColon = upper.indexOf(':', dsIdx);
+  if (qcColon === -1 || wpColon === -1 || dsColon === -1) return null;
+  if (!(qcColon < wpIdx && wpColon < dsIdx)) return null;
+
+  const quickCalculations = raw.slice(qcColon + 1, wpIdx).trim();
+  const wordProblems = raw.slice(wpColon + 1, dsIdx).trim();
+  const drawAndSolve = raw.slice(dsColon + 1).trim();
+  if (!quickCalculations || !wordProblems || !drawAndSolve) return null;
+
+  return { quickCalculations, wordProblems, drawAndSolve };
+}
+
 /**
  * Strip emoji and non-renderable Unicode from text before PDF rendering.
  * Nunito/Fraunces covers Latin + Latin-Extended but not emoji blocks.
@@ -812,6 +865,16 @@ const styles = StyleSheet.create({
   },
   parentSheetAnswerBody: {
     ...typeStyle(typeScale.answerKeyBody),
+    color: color.textPrimary,
+  },
+  // Math answer_key, split into labeled sub-sections (parseMathAnswerKey)
+  // instead of one wall-of-text paragraph.
+  parentSheetMathStack: {
+    flexDirection: 'column',
+    gap: 6,
+  },
+  parentSheetAnswerLabel: {
+    ...typeStyle(typeScale.answerKeyEmphasis),
     color: color.textPrimary,
   },
   parentSheetDivider: {
@@ -2567,9 +2630,11 @@ function CelebrationPage({
 // activity pages and gathered here as a single appendix at the very back of
 // the document. Only renders when at least one activity has an answer_key.
 
-function ParentAnswerSheetPage({ activities }: { activities: PDFActivity[] }) {
+function ParentAnswerSheetPage({ childName, activities }: { childName: string; activities: PDFActivity[] }) {
   const withKeys = activities.filter((a) => !!a.answer_key);
   if (withKeys.length === 0) return null;
+
+  const childFirstName = firstNameOnly(childName);
 
   return (
     <Page size="LETTER" style={styles.parentSheetPage}>
@@ -2584,17 +2649,37 @@ function ParentAnswerSheetPage({ activities }: { activities: PDFActivity[] }) {
 
       <View style={styles.parentSheetBanner}>
         <Text style={styles.parentSheetBannerText}>
-          <Text style={{ fontWeight: 700 }}>You do not need to print this page.</Text>
+          <Text style={{ fontWeight: 700 }}>You do not need to print this page for {childFirstName}.</Text>
           {' '}Keep it on your phone or print it separately.
         </Text>
       </View>
 
       <View style={styles.parentSheetKeyStack}>
         {withKeys.flatMap((activity, i) => {
+          const isMath = activity.subject.toLowerCase().includes('math');
+          const mathSections = isMath ? parseMathAnswerKey(sanitizeText(activity.answer_key)) : null;
+
           const group = (
             <View key={`group-${i}`} wrap={false} style={styles.parentSheetGroup}>
               <Text style={styles.parentSheetSubject}>{sanitizeText(activity.subject)}</Text>
-              <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+              {mathSections ? (
+                <View style={styles.parentSheetMathStack}>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Quick calculations: </Text>
+                    {mathSections.quickCalculations}
+                  </Text>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Word problems: </Text>
+                    {mathSections.wordProblems}
+                  </Text>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Draw and solve: </Text>
+                    {mathSections.drawAndSolve}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+              )}
             </View>
           );
           if (i === 0) return [group];
@@ -2652,7 +2737,7 @@ export default function PacketPDF(props: PacketPDFProps) {
         />
       )}
       <CelebrationPage {...props} />
-      <ParentAnswerSheetPage activities={props.activities} />
+      <ParentAnswerSheetPage childName={props.childName} activities={props.activities} />
     </Document>
   );
 }
