@@ -871,11 +871,14 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.sectionLabel),
     marginBottom: 10,
   },
+  // Pitch comes from minHeight (band-scaled, set per-instance — see
+  // reflectionLinePitch in OpenWorkspaceTemplate), not a flat marginBottom,
+  // so the resting gap between lines scales with the band like every other
+  // pitch value in this file.
   movementReflectionLine: {
     borderBottomWidth: 1,
     borderBottomStyle: 'dotted' as const,
     borderBottomColor: color.answerRule,
-    marginBottom: 22,
   },
 
   // ── Math structured sections ─────────────────────────────────────────────────
@@ -1961,6 +1964,21 @@ function OpenWorkspaceTemplate({
   // wrap={false} anchor to attach this to for those two content types —
   // left unhandled, see chunk 8 report.
   const trailingReserve = trailingGroupHeight(activity, band, contentType === 'movement_activity', false);
+  // Reflection lines are the one MAY STRETCH space on this page that passes
+  // chunk 4's usable-or-symmetric test — a child actually writes between
+  // them, unlike the step list above. Comfortable minimum pitch, scaled the
+  // same way answerLinePitch is (a flat +8pt keeps the same per-band shape
+  // while landing at ~34pt for 3-5, per spec).
+  const reflectionLinePitch = bandTable[band].answerLinePitch + 8;
+  // Modest headroom above the floor, not the old 1.75x-of-answerLinePitch —
+  // see the maxHeight comment on movementReflectionBox below for why this
+  // number alone doesn't tell the whole story.
+  const reflectionGroupCap = 3 * reflectionLinePitch * 1.2;
+  // movementReflectionLabel's own footprint (sectionLabel: 10pt font ×
+  // 1.2 line-height = 12pt, plus its 10pt marginBottom) — needed so the
+  // enclosing box's own maxHeight (below) can't exceed what its capped
+  // content actually uses.
+  const reflectionLabelHeight = 22;
 
   return (
     <Page size="LETTER" style={styles.activityPage}>
@@ -2009,19 +2027,32 @@ function OpenWorkspaceTemplate({
         )}
 
         {contentType === 'movement_activity' && (
-          <View wrap={false} minPresenceAhead={trailingReserve} style={styles.movementReflectionBox}>
+          // Chunk 9 follow-up — restored stretch here specifically, unlike
+          // the step list above: this is the one space on the page a child
+          // actually writes into, so chunk 4's usable-or-symmetric test
+          // calls for it to stretch, not sit fixed.
+          //
+          // The first attempt at this gave the BOX flexGrow with no cap of
+          // its own — it claimed its full share of the page's leftover
+          // space regardless of the inner group's cap, so shrinking the
+          // group just grew an invisible gap between the lines and the
+          // encouragement callout below instead of releasing that space as
+          // page-bottom margin. A flexGrow item always renders at its full
+          // computed share unless something caps IT, not just its content.
+          // Fixed by capping the box itself at exactly (label + group cap)
+          // — its own flexGrow can't claim more than its capped content
+          // can use, so genuine excess is left unclaimed by anything in
+          // this column and trails after the encouragement callout as page
+          // margin, the same way it does for the natural-height step list.
+          <View
+            wrap={false}
+            minPresenceAhead={trailingReserve}
+            style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto', maxHeight: reflectionLabelHeight + reflectionGroupCap }]}
+          >
             <Text minPresenceAhead={90} style={[styles.movementReflectionLabel, { color: colors.label }]}>How did it go?</Text>
-            {/* Chunk 9 sweep — dropped the equal-flexGrow-per-line pattern:
-                three lines splitting a capped, often-fully-grown height gave
-                each line its own ~45pt empty box with the ruled edge only at
-                the very bottom, reading as a void under the label instead of
-                a writing space. The group still stretches (cap unchanged),
-                but lines now sit at their natural pitch via movementReflectionLine's
-                own marginBottom, so unused height trails once below the
-                third line instead of inflating the gap above every line. */}
-            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
+            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: reflectionGroupCap }]}>
               {Array.from({ length: 3 }, (_, i) => (
-                <View key={i} style={styles.movementReflectionLine} />
+                <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { minHeight: reflectionLinePitch }]} />
               ))}
             </View>
           </View>
