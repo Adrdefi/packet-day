@@ -153,6 +153,15 @@ function worksheetAnswerLines(band: 'K-2' | '3-5' | '6-8'): number {
 // ─── Text helpers ─────────────────────────────────────────────────────────────
 
 /**
+ * Rounds a duration up to the nearest 10 minutes for "at a glance" display
+ * only (Today at a Glance schedule rows) — never the underlying data, never
+ * the exact duration shown in an activity's own header.
+ */
+function roundUpToNearestTen(minutes: number): number {
+  return Math.ceil(minutes / 10) * 10;
+}
+
+/**
  * Strip emoji and non-renderable Unicode from text before PDF rendering.
  * Nunito/Fraunces covers Latin + Latin-Extended but not emoji blocks.
  */
@@ -1174,6 +1183,12 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
     flex: 1,
+  },
+  summaryDuration: {
+    ...typeStyle(typeScale.scheduleDuration),
+    textAlign: 'right',
+    flexShrink: 0,
+    marginLeft: 8,
   },
   parentNoteBox: {
     backgroundColor: color.sageTint,
@@ -2327,13 +2342,13 @@ function ParentNotesPage({
               <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
               <Text style={[styles.summaryText, { fontSize: bandTable[band].bodySize }]}>
                 <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
-                {activity.title} — {activity.estimated_minutes} min
+                {activity.title}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
-                {[0, 1, 2, 3, 4].map((j) => (
-                  <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.label, borderRadius: 2, marginLeft: 5 }} />
-                ))}
-              </View>
+              {/* Rounded up to the nearest 10 min for at-a-glance scanning —
+                  never the exact figure from the underlying data (used
+                  as-is in the header total above and each activity's own
+                  page header). */}
+              <Text style={styles.summaryDuration}>{roundUpToNearestTen(activity.estimated_minutes)} min</Text>
             </View>
           );
         })}
