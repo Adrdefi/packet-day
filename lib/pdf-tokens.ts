@@ -430,6 +430,17 @@ export interface BandConfig {
   openAreaMinHeight: number;
   passageWordCeiling: number;
   reflectionLines: number;
+  /**
+   * Diameter of the circled question-number bullet (chunk 9, spec-deviation
+   * — Design's own spec doesn't band-scale this, but the principle already
+   * used for mascots — largest for the youngest children — applies here
+   * too). Unused at 6-8, which drops the circle entirely for a plain bold
+   * number; the value is kept at 0 there rather than omitted so every band
+   * still satisfies this interface, and reads as an explicit "not
+   * applicable" instead of a leftover number that might get used by
+   * accident.
+   */
+  questionBulletSize: number;
 }
 
 export const band: Record<BandKey, BandConfig> = {
@@ -440,6 +451,7 @@ export const band: Record<BandKey, BandConfig> = {
     wordSearchCell: 40, wordsToFind: 6, coverMascot: 202, stripMascot: 72,
     reflectionMascot: 112, certificateMascot: 120, quickCalcColumns: 1,
     openAreaMinHeight: 135, passageWordCeiling: 300, reflectionLines: 5,
+    questionBulletSize: 32,
   },
   '3-5': {
     bodySize: 12, passageSize: 12, passageLineHeight: 1.62, quickCalcSize: 13.5,
@@ -448,6 +460,7 @@ export const band: Record<BandKey, BandConfig> = {
     wordSearchCell: 28.5, wordsToFind: 10, coverMascot: 187, stripMascot: 63,
     reflectionMascot: 97, certificateMascot: 112, quickCalcColumns: 2,
     openAreaMinHeight: 98, passageWordCeiling: 600, reflectionLines: 8,
+    questionBulletSize: 26,
   },
   '6-8': {
     bodySize: 11, passageSize: 11, passageLineHeight: 1.6, quickCalcSize: 13,
@@ -456,6 +469,7 @@ export const band: Record<BandKey, BandConfig> = {
     wordSearchCell: 26, wordsToFind: 14, coverMascot: 158, stripMascot: 57,
     reflectionMascot: 90, certificateMascot: 105, quickCalcColumns: 2,
     openAreaMinHeight: 90, passageWordCeiling: 900, reflectionLines: 10,
+    questionBulletSize: 0,
   },
 };
 

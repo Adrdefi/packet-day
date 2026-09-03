@@ -1,5 +1,8 @@
 // Quick smoke-test: render 3 PDFs (K-2, 3-5, 6-8) and save to disk.
-// Run with: npx tsx scripts/test-pdf.ts
+// Run with: npm run test-pdf
+// (plain node via scripts/run-ts.mjs, not tsx — see that file's header for
+// why: tsx cannot load this file's @react-pdf/renderer import chain on this
+// repo's Node version.)
 
 import { createElement } from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';

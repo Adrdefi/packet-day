@@ -125,18 +125,19 @@ export interface PacketPDFProps {
 interface BandConfig {
   cardPad: number;    // card padding
   cardRadius: number; // card border radius
-  borderW: number;    // border width
 }
 
 // Font-size fields (body, instrBody) moved to lib/pdf-tokens.ts's band table
 // in Stage 3 of the PDF token rebuild — these remaining fields are layout
 // values, out of scope for that migration. Line pitch now comes from
 // bandTable[band].answerLinePitch (chunk 4) — see the stretch-group caps.
+// borderW (question-box border width) removed in chunk 9 — questionBox lost
+// its border entirely, and it had no other caller.
 function getBandConfig(band: 'K-2' | '3-5' | '6-8'): BandConfig {
   const configs: Record<'K-2' | '3-5' | '6-8', BandConfig> = {
-    'K-2': { cardPad: 14, cardRadius: 14, borderW: 3 },
-    '3-5': { cardPad: 12, cardRadius: 10, borderW: 2 },
-    '6-8': { cardPad: 10, cardRadius: 8, borderW: 1.5 },
+    'K-2': { cardPad: 14, cardRadius: 14 },
+    '3-5': { cardPad: 12, cardRadius: 10 },
+    '6-8': { cardPad: 10, cardRadius: 8 },
   };
   return configs[band];
 }
@@ -150,6 +151,75 @@ function worksheetAnswerLines(band: 'K-2' | '3-5' | '6-8'): number {
 }
 
 // ─── Text helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Rounds a duration up to the nearest 10 minutes for "at a glance" display
+ * only (Today at a Glance schedule rows) — never the underlying data, never
+ * the exact duration shown in an activity's own header.
+ */
+function roundUpToNearestTen(minutes: number): number {
+  return Math.ceil(minutes / 10) * 10;
+}
+
+/** First name only, for a childName that turns out to contain more than one word. */
+function firstNameOnly(name: string): string {
+  const trimmed = name.trim();
+  const spaceIdx = trimmed.indexOf(' ');
+  return spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
+}
+
+interface MathAnswerKeySections {
+  quickCalculations: string;
+  wordProblems: string;
+  drawAndSolve: string;
+}
+
+/**
+ * Splits a Math activity's answer_key into its three labeled sub-sections.
+ *
+ * The generator (app/api/generate-packet/route.ts) has no explicit schema
+ * for answer_key beyond "Parent answers or null" — it free-writes this
+ * string. On real packets it comes back as one paragraph anchored by three
+ * labels, e.g.:
+ *
+ *   "Quick Calculations: 3/4 + 1/2 = 5/4 or 1 and 1/4 || 2.75 x 4 = 11 || ...
+ *    = 120. Word Problems: 1) Oliver: 240 x 3/8 = 90 coins; ... 200 acres.
+ *    Draw and Solve: Least to greatest: 1/4, 7/8, 1 and 1/2 -- wait, ..."
+ *
+ * Quick Calculations' own answers stay || -separated (mirroring the prompt
+ * separator instructions use); Word Problems and Draw and Solve are plain
+ * sentences. Casing on the three labels isn't guaranteed (free text), so
+ * matching is case-insensitive.
+ *
+ * Returns null — render the raw string as one paragraph, same as before —
+ * whenever the shape doesn't hold: a label is missing, out of order, or
+ * there's unexpected content before "Quick Calculations". Never throws,
+ * never drops content.
+ */
+function parseMathAnswerKey(raw: string): MathAnswerKeySections | null {
+  const upper = raw.toUpperCase();
+  const qcIdx = upper.indexOf('QUICK CALCULATIONS');
+  const wpIdx = upper.indexOf('WORD PROBLEMS');
+  let dsIdx = upper.indexOf('DRAW AND SOLVE');
+  if (dsIdx === -1) dsIdx = upper.indexOf('DRAW & SOLVE');
+
+  if (qcIdx === -1 || wpIdx === -1 || dsIdx === -1) return null;
+  if (!(qcIdx < wpIdx && wpIdx < dsIdx)) return null;
+  if (raw.slice(0, qcIdx).trim().length > 0) return null;
+
+  const qcColon = upper.indexOf(':', qcIdx);
+  const wpColon = upper.indexOf(':', wpIdx);
+  const dsColon = upper.indexOf(':', dsIdx);
+  if (qcColon === -1 || wpColon === -1 || dsColon === -1) return null;
+  if (!(qcColon < wpIdx && wpColon < dsIdx)) return null;
+
+  const quickCalculations = raw.slice(qcColon + 1, wpIdx).trim();
+  const wordProblems = raw.slice(wpColon + 1, dsIdx).trim();
+  const drawAndSolve = raw.slice(dsColon + 1).trim();
+  if (!quickCalculations || !wordProblems || !drawAndSolve) return null;
+
+  return { quickCalculations, wordProblems, drawAndSolve };
+}
 
 /**
  * Strip emoji and non-renderable Unicode from text before PDF rendering.
@@ -167,7 +237,7 @@ function sanitizeText(text: string | null | undefined): string {
     .trim();
 }
 
-function resolveContentType(activity: PDFActivity): ContentType {
+export function resolveContentType(activity: PDFActivity): ContentType {
   if (activity.content_type) return activity.content_type;
   const s = activity.subject.toLowerCase();
   if (s.includes('reading') || s.includes('comprehension')) return 'reading_passage';
@@ -323,7 +393,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.page,
     padding: 48,
     flexDirection: 'column',
-    justifyContent: 'space-between',
   },
 
   // ── Cover: decorative frame ─────────────────────────────────────────────────
@@ -373,8 +442,6 @@ const styles = StyleSheet.create({
   coverCenter: {
     flexDirection: 'column',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
     paddingVertical: 12,
     gap: 10,
   },
@@ -413,26 +480,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  coverSubtitle: {
-    ...typeStyle(typeScale.footerText),
-    color: color.textSecondary,
-    textAlign: 'center',
-  },
 
-  // ── Cover: activity count badge ─────────────────────────────────────────────
-  activityBadge: {
-    backgroundColor: color.honey,
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 7,
+  // ── Cover: chip row (activity count / duration / grade) — spec 5.1 ─────────
+  coverChipRow: {
+    flexDirection: 'row',
+    gap: 10.5,
     alignSelf: 'center',
   },
-  activityBadgeText: {
-    fontFamily: 'Fraunces',
-    fontWeight: 700,
-    fontSize: 12,
-    color: color.page,
-    letterSpacing: 0.2,
+  coverChip: {
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 13.5,
+  },
+  coverChipText: {
+    ...typeStyle(typeScale.chipLabel),
   },
 
   // ── Cover: greeting / mission box ───────────────────────────────────────────
@@ -456,14 +517,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  // ── Cover: name/date signature lines — spec 5.1 ─────────────────────────────
+  coverSignatureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 24,
+  },
+  coverSignatureColName: {
+    flexDirection: 'column',
+    flexGrow: 1,
+  },
+  coverSignatureColDate: {
+    flexDirection: 'column',
+    width: 142,
+  },
+  coverSignatureLabel: {
+    ...typeStyle(typeScale.subjectLabel),
+    color: color.sage,
+    marginBottom: 6,
+  },
+  coverSignatureRule: {
+    height: 1.5,
+    backgroundColor: color.signatureRule,
+  },
+
 
   // ── Activity page ───────────────────────────────────────────────────────────
+  // padding lives on the <Page> itself (set inline per band at each call
+  // site, e.g. { padding: bc.cardPad + 24 }), NOT on activityContent below.
+  // react-pdf's page-fragmentation (splitPage) copies page.style verbatim to
+  // every physical-page fragment, so Page-level padding survives a
+  // continuation break intact. Padding on an inner View does not: splitNode
+  // strips paddingTop from a continuation-start fragment and paddingBottom
+  // from a continuation-end (non-final) fragment — see chunk 9 stage 4
+  // diagnosis (no top margin on continuation pages; a section label
+  // stranding under the footer on the page before one).
   activityPage: {
     flexDirection: 'column',
     backgroundColor: color.page,
   },
   activityContent: {
-    padding: 36,
     flex: 1,
     flexDirection: 'column',
   },
@@ -534,32 +627,35 @@ const styles = StyleSheet.create({
     color: color.textSecondary,
     marginBottom: 10,
   },
+  // Chunk 9 — no container. Questions are separated from each other by
+  // space, not a border/background box (spec deviation: this rebuild keeps
+  // color where a child engages with it — the bullet, the callouts, the
+  // strip — and removes it from adult-facing print chrome like this one).
   questionBox: {
-    backgroundColor: color.page,
-    borderRadius: 10,
-    padding: 12,
-    paddingBottom: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: color.faintDivider,
+    marginBottom: 16,
   },
   instructionRow: {
     flexDirection: 'row',
     marginBottom: 0,
     alignItems: 'flex-start',
   },
+  // width/height/borderRadius/borderWidth/backgroundColor are set inline per
+  // band (K-2/3-5 get a circle, sized via bandTable[band].questionBulletSize;
+  // 6-8 skips this style entirely for instructionBulletPlain below).
   instructionBullet: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
     flexShrink: 0,
-    marginTop: 1,
   },
   instructionBulletText: {
     ...typeStyle(typeScale.questionNumber),
+  },
+  // 6-8's plain-number treatment — no circle. questionNumber is already
+  // fontWeight:700 (bold), matching "just the number in bold".
+  instructionBulletPlain: {
+    ...typeStyle(typeScale.questionNumber),
+    marginRight: 8,
   },
   instructionText: {
     ...typeStyle(typeScale.instruction),
@@ -779,6 +875,16 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.answerKeyBody),
     color: color.textPrimary,
   },
+  // Math answer_key, split into labeled sub-sections (parseMathAnswerKey)
+  // instead of one wall-of-text paragraph.
+  parentSheetMathStack: {
+    flexDirection: 'column',
+    gap: 6,
+  },
+  parentSheetAnswerLabel: {
+    ...typeStyle(typeScale.answerKeyEmphasis),
+    color: color.textPrimary,
+  },
   parentSheetDivider: {
     borderBottomWidth: 0.75,
     borderBottomColor: color.faintDivider,
@@ -798,17 +904,16 @@ const styles = StyleSheet.create({
   // it has no maxHeight, so when it competes with capped siblings (the
   // comprehension answer-line groups) it simply absorbs whatever they can't
   // use, and when it's the page's only stretcher it absorbs everything.
+  // Chunk 9 — plain text on the white page, no cream fill or left border.
+  // Stretch behavior (spec section 6, MAY STRETCH weight 1, no cap) is
+  // unchanged — flexGrow/flexBasis stay exactly as they were.
   readingPassageBlock: {
-    backgroundColor: color.creamPanel,
-    borderRadius: 8,
-    padding: 14,
     marginBottom: 14,
     flexGrow: 1,
     flexBasis: 'auto',
   },
   readingPassageLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.honeyDark,
     marginBottom: 8,
   },
   readingPassageText: {
@@ -818,24 +923,25 @@ const styles = StyleSheet.create({
   },
 
   // ── Open workspace (writing / movement / coloring) ───────────────────────────
+  // Chunk 9 stage 2 — no container, separated by space instead of a border.
   promptBubble: {
-    borderWidth: 1.5,
-    borderColor: color.faintDivider,
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: color.page,
     marginBottom: 14,
   },
+  // Chunk 9 stage 2 — spacing moves from the text's own marginTop to the row
+  // wrapper (see QuestionBullet usage sites), since bullet and text are now
+  // row siblings that need to stay vertically aligned.
   promptInstructionText: {
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
-    marginTop: 6,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   writingSpaceHeader: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 12,
   },
+  // Work surfaces, not decorative chrome — left alone per instructions.
   writingLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
@@ -858,37 +964,33 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
+  // Chunk 9 stage 2 — no container. Label and ruled lines, and the
+  // wrap={false}/stretch behavior on the JSX side, are unchanged.
   movementReflectionBox: {
-    borderWidth: 1.5,
-    borderColor: color.answerRule,
-    borderRadius: 10,
-    padding: 14,
     marginTop: 16,
-    backgroundColor: color.creamPanel,
   },
   movementReflectionLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 10,
   },
+  // Pitch comes from minHeight (band-scaled, set per-instance — see
+  // reflectionLinePitch in OpenWorkspaceTemplate), not a flat marginBottom,
+  // so the resting gap between lines scales with the band like every other
+  // pitch value in this file.
   movementReflectionLine: {
     borderBottomWidth: 1,
     borderBottomStyle: 'dotted' as const,
     borderBottomColor: color.answerRule,
-    marginBottom: 22,
   },
 
   // ── Math structured sections ─────────────────────────────────────────────────
-  mathSectionBar: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    marginBottom: 8,
+  // Chunk 9 — replaces the old filled section bar (solid family-color
+  // rectangle with a white bracketed label). Just the label now, in the
+  // family's label color, applied inline at each call site.
+  mathSectionLabel: {
+    ...typeStyle(typeScale.sectionLabel),
     marginTop: 10,
-  },
-  mathSectionBarText: {
-    ...typeStyle(typeScale.calloutEyebrow),
-    color: color.page,
+    marginBottom: 8,
   },
   mathCalcGrid: {
     flexDirection: 'row',
@@ -917,25 +1019,20 @@ const styles = StyleSheet.create({
     width: 80,
     marginTop: 8,
   },
+  // Chunk 9 — no container, separated by space instead of a border.
   mathWordBox: {
-    backgroundColor: color.creamPanel,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: color.faintDivider,
+    marginBottom: 16,
   },
   mathWordText: {
     ...typeStyle(typeScale.instruction),
     color: color.textPrimary,
     marginBottom: 6,
   },
+  // Chunk 9 sweep — same pattern as the promptBubble flattened in stage 2:
+  // a light border + white background wrapping instructional text, not a
+  // work surface (the actual drawing area, mathDrawBox below, is untouched —
+  // that one holds the child's own drawing and its border is functional).
   mathDrawPromptBubble: {
-    borderWidth: 1.5,
-    borderColor: color.faintDivider,
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: color.page,
     marginBottom: 8,
   },
   mathDrawPromptText: {
@@ -995,7 +1092,6 @@ const styles = StyleSheet.create({
   },
   wordListLabel: {
     ...typeStyle(typeScale.sectionLabel),
-    color: color.textSecondary,
     marginBottom: 8,
   },
   wordListGrid: {
@@ -1045,11 +1141,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     opacity: 0.35,
   },
-  certHeader: {
+  certEyebrow: {
     ...typeStyle(typeScale.sectionLabel),
     color: color.textSecondary,
     textAlign: 'center',
     marginBottom: 10,
+  },
+  certMascotImage: {
+    objectFit: 'contain',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   certPresented: {
     fontFamily: 'Nunito',
@@ -1074,26 +1175,25 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
     marginBottom: 6,
   },
-  certTheme: {
+  certDayTitle: {
     ...typeStyle(typeScale.certificateDayTitle),
-    color: color.honey,
+    color: color.sageDark,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   certDivider: {
-    width: 200,
-    height: 2,
-    backgroundColor: color.honey,
-    borderRadius: 1,
-    opacity: 0.5,
-    marginBottom: 24,
+    width: 105,
+    height: 3.75,
+    backgroundColor: color.coral,
+    borderRadius: 2,
+    marginBottom: 20,
     alignSelf: 'center',
   },
   certDateLine: {
     ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   certSignatureRow: {
     flexDirection: 'row',
@@ -1107,6 +1207,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 160,
   },
+  certSignatureDateBlock: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: 160,
+    alignSelf: 'center',
+    marginTop: 18,
+  },
   certSignatureLine: {
     borderBottomWidth: 1.5,
     borderBottomColor: color.textPrimary,
@@ -1117,6 +1224,12 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.footerText),
     color: color.textSecondary,
     textAlign: 'center',
+  },
+  certSignoff: {
+    ...typeStyle(typeScale.certificateSignoff),
+    color: color.sageDark,
+    textAlign: 'center',
+    marginTop: 22,
   },
 
   // ── Notes / reflection pages ─────────────────────────────────────────────────
@@ -1166,6 +1279,13 @@ const styles = StyleSheet.create({
     color: color.textPrimary,
     flex: 1,
   },
+  summaryDuration: {
+    ...typeStyle(typeScale.scheduleDuration),
+    color: color.textSecondary,
+    textAlign: 'right',
+    flexShrink: 0,
+    marginLeft: 8,
+  },
   parentNoteBox: {
     backgroundColor: color.sageTint,
     borderRadius: 10,
@@ -1179,16 +1299,14 @@ const styles = StyleSheet.create({
     color: color.sageDark,
     fontStyle: 'italic',
   },
+  // Flattened — no border/background. The ruled writing lines below already
+  // mark this as a writing area; a heavy box around the question read as
+  // inconsistent with the activity pages, which don't box their prompts.
   reflectionBox: {
-    backgroundColor: color.honeyTint,
-    borderWidth: 2.5,
-    borderColor: color.honey,
-    borderRadius: 12,
-    padding: 22,
     marginBottom: 22,
   },
   reflectionLabel: {
-    ...typeStyle(typeScale.calloutEyebrow),
+    ...typeStyle(typeScale.sectionLabel),
     color: color.honeyDark,
     marginBottom: 10,
   },
@@ -1197,6 +1315,13 @@ const styles = StyleSheet.create({
     color: color.textPrimary,
     fontStyle: 'italic',
   },
+  // Rule under the page header, matching the activity pages — this page had
+  // none before.
+  dailyReflectionRule: {
+    height: 2.25,
+    backgroundColor: color.sageRule,
+    marginBottom: space.ruleToContent,
+  },
   celebrationBox: {
     backgroundColor: color.sageTint,
     borderWidth: 2,
@@ -1204,6 +1329,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 18,
     marginBottom: 18,
+  },
+  // Mascot + eyebrow/text column — spec 5.16.
+  celebrationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  celebrationMascotImage: {
+    objectFit: 'contain',
+    flexShrink: 0,
+  },
+  celebrationTextCol: {
+    flexDirection: 'column',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   celebrationLabel: {
     ...typeStyle(typeScale.calloutEyebrow),
@@ -1252,8 +1393,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  // Page-level eyebrow, not a section label — sized up from sectionLabel's
+  // 10pt base to read as the page's own heading treatment. letterSpacing is
+  // recomputed from sectionLabel's em value at the new fontSize (typeStyle
+  // bakes letterSpacing to absolute points from whatever fontSize is on the
+  // object passed in), so the tracking stays proportional, not frozen at 10pt.
   coloringHeaderText: {
-    ...typeStyle(typeScale.sectionLabel),
+    ...typeStyle({ ...typeScale.sectionLabel, fontSize: 14 }),
     color: color.sage,
     textAlign: 'center',
     marginBottom: 8,
@@ -1328,6 +1474,7 @@ function StarSvg({ color, size = 18 }: { color: string; size?: number }) {
 
 function CoverPage({
   childName,
+  childGrade,
   childEmoji,
   title,
   theme,
@@ -1356,7 +1503,8 @@ function CoverPage({
         <Text style={styles.coverDate}>{formatPDFDate(createdAt)}</Text>
       </View>
 
-      {/* Center block */}
+      {/* Center block — natural height, NOT flexGrow (chunk 4 bug pattern:
+          only the spacer below absorbs leftover page height). */}
       <View style={styles.coverCenter}>
         {/* Mascot hero image or fallback emoji circle */}
         {mascotImageUrl ? (
@@ -1375,23 +1523,44 @@ function CoverPage({
         {/* Packet title — Fraunces bold, large */}
         <Text style={styles.coverTitle}>{sanitizeText(title)}</Text>
 
-        <Text style={styles.coverSubtitle}>
-          {childName}&apos;s Learning Adventure
-        </Text>
-
-        {/* Activity count badge */}
-        <View style={styles.activityBadge}>
-          <Text style={styles.activityBadgeText}>
-            {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'} · {totalMinutes} min
-          </Text>
+        {/* Activity count / duration / grade chips — spec 5.1 */}
+        <View style={styles.coverChipRow}>
+          <View style={[styles.coverChip, { backgroundColor: color.sageChip }]}>
+            <Text style={[styles.coverChipText, { color: color.sageDark }]}>
+              {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'}
+            </Text>
+          </View>
+          <View style={[styles.coverChip, { backgroundColor: color.honeyChip }]}>
+            <Text style={[styles.coverChipText, { color: color.honeyDark }]}>{totalMinutes} min</Text>
+          </View>
+          <View style={[styles.coverChip, { backgroundColor: color.coralChip }]}>
+            <Text style={[styles.coverChipText, { color: color.coralDark }]}>{childGrade}</Text>
+          </View>
         </View>
 
-        {/* Mission / greeting box */}
+        {/* Mission / greeting box — natural height, never stretched */}
         <View style={styles.greetingBox}>
           {packetMission ? (
             <Text style={styles.greetingLabel}>Your Mission Today</Text>
           ) : null}
           <Text style={styles.greetingText}>{missionText}</Text>
+        </View>
+      </View>
+
+      {/* Spacer — the ONLY flexGrow element on this page. Collects all
+          leftover height so the name/date lines below pin to the bottom
+          without stretching the mission panel above (chunk 4 bug pattern). */}
+      <View style={{ flexGrow: 1 }} />
+
+      {/* Name / date signature lines — spec 5.1 */}
+      <View style={styles.coverSignatureRow}>
+        <View style={styles.coverSignatureColName}>
+          <Text style={styles.coverSignatureLabel}>Name</Text>
+          <View style={styles.coverSignatureRule} />
+        </View>
+        <View style={styles.coverSignatureColDate}>
+          <Text style={styles.coverSignatureLabel}>Date</Text>
+          <View style={styles.coverSignatureRule} />
         </View>
       </View>
     </Page>
@@ -1604,7 +1773,7 @@ function MathSections({
   band: BandKey;
   trailingReserve: number;
 }) {
-  let quickCalcsLabel = 'Quick Calculations';
+  let quickCalcsLabel = 'Quick calculations';
   let quickCalcs: string[] = [];
   let wordProblems: string[] = [];
   let drawAndSolve = '';
@@ -1632,10 +1801,9 @@ function MathSections({
 
   return (
     <>
-      {/* Quick Calculations — 2-column grid */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-        <Text style={styles.mathSectionBarText}>{'[ ' + quickCalcsLabel + ' ]'}</Text>
-      </View>
+      {/* Quick Calculations — 2-column grid. Chunk 9: label only, no filled
+          bar, no brackets, colored to the activity family. */}
+      <Text style={[styles.mathSectionLabel, { color: colors.label }]}>{quickCalcsLabel}</Text>
       <View style={styles.mathCalcGrid}>
         {quickCalcs.map((prob, i) => (
           <View key={i} style={styles.mathCalcCell}>
@@ -1649,9 +1817,7 @@ function MathSections({
       </View>
 
       {/* Word Problems */}
-      <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-        <Text style={styles.mathSectionBarText}>{'[ Word Problems ]'}</Text>
-      </View>
+      <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Word problems</Text>
       {wordProblems.map((prob, i) => (
         <View
           wrap={false}
@@ -1673,9 +1839,7 @@ function MathSections({
           blocks, this one was already atomic before chunk 8 touched it. */}
       {drawAndSolve !== '' && (
         <>
-          <View style={[styles.mathSectionBar, { backgroundColor: colors.label }]}>
-            <Text style={styles.mathSectionBarText}>{'[ Draw & Solve ]'}</Text>
-          </View>
+          <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Draw & solve</Text>
           <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
             <View style={styles.mathDrawPromptBubble}>
               <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
@@ -1725,6 +1889,71 @@ function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; i
   );
 }
 
+// ─── Question bullet (chunk 9) ─────────────────────────────────────────────────
+// Band-scaled color, extending the same principle already used for mascots
+// (largest/most colorful for the youngest children): K-2 gets a filled
+// circle in the family's chip color; 3-5 keeps the pre-chunk-9 light-fill-
+// plus-border treatment; 6-8 drops the circle entirely for a plain bold
+// number. Shared by WorksheetTemplate's non-math branch and ReadingTemplate
+// so the two don't drift out of sync with each other.
+
+function QuestionBullet({
+  index,
+  band,
+  colors,
+}: {
+  index: number;
+  band: BandKey;
+  colors: ActivityColor;
+}) {
+  // The bullet must center on the FIRST LINE of its instruction text, not
+  // align to the row's top edge — instructionRow uses alignItems:flex-start
+  // so a naive marginTop leaves the bullet low whenever it's taller (circle
+  // cases) or shorter (plain-number case) than one line of body text.
+  // Computed from actual line-height in points rather than a flat guess,
+  // since bodySize (and therefore line height) changes per band.
+  const bodyLineHeightPt = bandTable[band].bodySize * typeScale.instruction.lineHeight;
+
+  if (band === '6-8') {
+    const numberLineHeightPt = typeScale.questionNumber.fontSize * typeScale.questionNumber.lineHeight;
+    // Clamped to 0: a negative marginTop here (the number's line-height at
+    // this band is already within ~1pt of the body text's) makes this Text
+    // disappear entirely in this template's stretch-row layout — reproduces
+    // on a fresh dev process, so it's a real react-pdf/Yoga quirk, not
+    // staleness. The correction is sub-pixel either way, so losing it costs
+    // nothing visible.
+    return (
+      <Text
+        style={[
+          styles.instructionBulletPlain,
+          { color: colors.label, marginTop: Math.max(0, (bodyLineHeightPt - numberLineHeightPt) / 2) },
+        ]}
+      >
+        {index + 1}.
+      </Text>
+    );
+  }
+  const size = bandTable[band].questionBulletSize;
+  return (
+    <View
+      style={[
+        styles.instructionBullet,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: band === 'K-2' ? (colors.chip ?? familyBg(colors)) : familyBg(colors),
+          borderWidth: band === 'K-2' ? 1.5 : 1,
+          borderColor: colors.label,
+          marginTop: (bodyLineHeightPt - size) / 2,
+        },
+      ]}
+    >
+      <Text style={[styles.instructionBulletText, { color: colors.label }]}>{index + 1}</Text>
+    </View>
+  );
+}
+
 // ─── Template A — Worksheet ───────────────────────────────────────────────────
 
 function WorksheetTemplate({
@@ -1751,9 +1980,9 @@ function WorksheetTemplate({
   const trailingReserve = trailingGroupHeight(activity, band, false, true);
 
   return (
-    <Page size="LETTER" experimentalPagination style={styles.activityPage}>
+    <Page size="LETTER" experimentalPagination style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
@@ -1762,18 +1991,16 @@ function WorksheetTemplate({
           <MathSections instructions={activity.instructions} colors={colors} band={band} trailingReserve={trailingReserve} />
         ) : (
           <>
-            <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ How to do it ]'}</Text>
+            <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>How to do it</Text>
             {activity.instructions.map((step, i) => (
               <View
                 wrap={false}
                 key={i}
                 minPresenceAhead={i === activity.instructions.length - 1 ? trailingReserve : undefined}
-                style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+                style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
               >
                 <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-                  <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
-                    <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
-                  </View>
+                  <QuestionBullet index={i} band={band} colors={colors} />
                   <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
                 </View>
                 <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
@@ -1840,33 +2067,31 @@ function ReadingTemplate({
   }
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
         {passage && (
-          <View style={[styles.readingPassageBlock, { borderLeftWidth: 4, borderLeftColor: colors.rule, borderRadius: bc.cardRadius }]}>
-            <Text minPresenceAhead={90} style={styles.readingPassageLabel}>{'[ Read This ]'}</Text>
+          <View style={styles.readingPassageBlock}>
+            <Text minPresenceAhead={90} style={[styles.readingPassageLabel, { color: colors.label }]}>Read this</Text>
             <Text style={[styles.readingPassageText, { fontSize: bandTable[band].passageSize, lineHeight: bandTable[band].passageLineHeight }]}>{sanitizeText(passage)}</Text>
           </View>
         )}
 
         {questions.length > 0 && (
-          <Text minPresenceAhead={90} style={styles.instructionsLabel}>{'[ Comprehension Questions ]'}</Text>
+          <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>Comprehension questions</Text>
         )}
         {questions.map((step, i) => (
           <View
             wrap={false}
             key={i}
             minPresenceAhead={i === questions.length - 1 ? trailingReserve : undefined}
-            style={[styles.questionBox, { borderRadius: bc.cardRadius, borderWidth: bc.borderW, borderColor: colors.rule + '33', flexGrow: 1, flexBasis: 'auto' }]}
+            style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
           >
             <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-              <View style={[styles.instructionBullet, { backgroundColor: familyBg(colors), borderWidth: 1, borderColor: colors.label }]}>
-                <Text style={[styles.instructionBulletText, { color: colors.label }]}>{i + 1}</Text>
-              </View>
+              <QuestionBullet index={i} band={band} colors={colors} />
               <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
             <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
@@ -1914,36 +2139,52 @@ function OpenWorkspaceTemplate({
   // wrap={false} anchor to attach this to for those two content types —
   // left unhandled, see chunk 8 report.
   const trailingReserve = trailingGroupHeight(activity, band, contentType === 'movement_activity', false);
+  // Reflection lines are the one MAY STRETCH space on this page that passes
+  // chunk 4's usable-or-symmetric test — a child actually writes between
+  // them, unlike the step list above. Comfortable minimum pitch, scaled the
+  // same way answerLinePitch is (a flat +8pt keeps the same per-band shape
+  // while landing at ~34pt for 3-5, per spec).
+  const reflectionLinePitch = bandTable[band].answerLinePitch + 8;
+  // Modest headroom above the floor, not the old 1.75x-of-answerLinePitch —
+  // see the maxHeight comment on movementReflectionBox below for why this
+  // number alone doesn't tell the whole story.
+  const reflectionGroupCap = 3 * reflectionLinePitch * 1.2;
+  // movementReflectionLabel's own footprint (sectionLabel: 10pt font ×
+  // 1.2 line-height = 12pt, plus its 10pt marginBottom) — needed so the
+  // enclosing box's own maxHeight (below) can't exceed what its capped
+  // content actually uses.
+  const reflectionLabelHeight = 22;
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
-        {/* Prompt bubble — for movement_activity, the numbered steps are a
-            MAY STRETCH "Movement step list" (weight 1, cap = steps × 44pt);
-            for every other content type the prompt text stays fixed. */}
-        {contentType === 'movement_activity' ? (
-          <View wrap={false} style={[styles.promptBubble, { borderRadius: bc.cardRadius, flexGrow: 1, flexBasis: 'auto' }]}>
-            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: activity.instructions.length * 44 }]}>
-              {activity.instructions.map((step, i) => (
-                <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize, marginTop: 0, flexGrow: 1, flexBasis: 'auto' }]}>
-                  {i + 1}. {sanitizeText(step)}
-                </Text>
-              ))}
+        {/* Prompt bubble — chunk 9 stage 2: no container, band-scaled
+            QuestionBullet instead of an inline "1. " prefix, matching stage
+            1's question blocks rather than a second bullet implementation.
+            movement_activity's steps used to be a MAY STRETCH group (each
+            row an equal flexGrow share of a capped height, plus the
+            enclosing box itself stretching) so five steps would spread down
+            the page instead of bunching at the top. Chunk 9 sweep dropped
+            both layers: per-row stretch made single-line steps trail a
+            large empty gap while wrapped steps trailed almost none, and
+            even after fixing that, a still-stretching promptBubble just
+            moved the same slack to one gap after the last step. Per chunk
+            4's own usable-or-symmetric test, this space fails both — a
+            child never writes between steps — so it shouldn't stretch at
+            all. Steps take their natural height; leftover page space
+            collects at the bottom of the page as margin instead. */}
+        <View wrap={contentType === 'movement_activity' ? false : true} style={styles.promptBubble}>
+          {activity.instructions.map((step, i) => (
+            <View key={i} style={[styles.instructionRow, { marginBottom: 8 }]}>
+              <QuestionBullet index={i} band={band} colors={colors} />
+              <Text style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
             </View>
-          </View>
-        ) : (
-          <View style={[styles.promptBubble, { borderRadius: bc.cardRadius }]}>
-            {activity.instructions.map((step, i) => (
-              <Text key={i} style={[styles.promptInstructionText, { fontSize: bandTable[band].bodySize }]}>
-                {i + 1}. {sanitizeText(step)}
-              </Text>
-            ))}
-          </View>
-        )}
+          ))}
+        </View>
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
@@ -1951,7 +2192,7 @@ function OpenWorkspaceTemplate({
         {/* Response area */}
         {contentType === 'writing_prompt' && (
           <>
-            <Text minPresenceAhead={90} style={styles.writingSpaceHeader}>My Writing Space</Text>
+            <Text minPresenceAhead={90} style={[styles.writingSpaceHeader, { color: colors.label }]}>My writing space</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, flexBasis: 'auto', maxHeight: lineCount * bandTable[band].answerLinePitch * 1.5 }]}>
               {Array.from({ length: lineCount }, (_, i) => (
                 <View key={i} style={[styles.writingLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -1961,11 +2202,32 @@ function OpenWorkspaceTemplate({
         )}
 
         {contentType === 'movement_activity' && (
-          <View wrap={false} minPresenceAhead={trailingReserve} style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto' }]}>
-            <Text minPresenceAhead={90} style={styles.movementReflectionLabel}>How did it go?</Text>
-            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: 3 * bandTable[band].answerLinePitch * 1.75 }]}>
+          // Chunk 9 follow-up — restored stretch here specifically, unlike
+          // the step list above: this is the one space on the page a child
+          // actually writes into, so chunk 4's usable-or-symmetric test
+          // calls for it to stretch, not sit fixed.
+          //
+          // The first attempt at this gave the BOX flexGrow with no cap of
+          // its own — it claimed its full share of the page's leftover
+          // space regardless of the inner group's cap, so shrinking the
+          // group just grew an invisible gap between the lines and the
+          // encouragement callout below instead of releasing that space as
+          // page-bottom margin. A flexGrow item always renders at its full
+          // computed share unless something caps IT, not just its content.
+          // Fixed by capping the box itself at exactly (label + group cap)
+          // — its own flexGrow can't claim more than its capped content
+          // can use, so genuine excess is left unclaimed by anything in
+          // this column and trails after the encouragement callout as page
+          // margin, the same way it does for the natural-height step list.
+          <View
+            wrap={false}
+            minPresenceAhead={trailingReserve}
+            style={[styles.movementReflectionBox, { flexGrow: 1, flexBasis: 'auto', maxHeight: reflectionLabelHeight + reflectionGroupCap }]}
+          >
+            <Text minPresenceAhead={90} style={[styles.movementReflectionLabel, { color: colors.label }]}>How did it go?</Text>
+            <View style={[styles.answerLineGroup, { flexGrow: 1, maxHeight: reflectionGroupCap }]}>
               {Array.from({ length: 3 }, (_, i) => (
-                <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
+                <View key={i} style={[styles.movementReflectionLine, styles.answerLineGroupLine, { minHeight: reflectionLinePitch }]} />
               ))}
             </View>
           </View>
@@ -2018,9 +2280,9 @@ function PuzzleBreakTemplate({
   const { grid, placed } = generateWordSearch(activity.instructions, gridSize);
 
   return (
-    <Page size="LETTER" style={styles.activityPage}>
+    <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
-      <View style={[styles.activityContent, { padding: bc.cardPad + 24 }]}>
+      <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
 
@@ -2050,7 +2312,7 @@ function PuzzleBreakTemplate({
             mid-row across pages. Latent correctness gap, not the near-empty
             trailing page this chunk found; that block already moves whole
             with no unguarded splitting, it's just genuinely small. */}
-        <Text minPresenceAhead={90} style={styles.wordListLabel}>Find these words:</Text>
+        <Text minPresenceAhead={90} style={[styles.wordListLabel, { color: colors.label }]}>Find these words</Text>
         <View wrap={false} style={styles.wordListGrid}>
           {placed.map((word, i) => (
             <View key={i} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
@@ -2097,18 +2359,29 @@ function ActivityPage({
 
 function CertificatePage({
   childName,
-  theme,
+  childGrade,
+  title,
   createdAt,
   mascotImageUrl,
+  mascotName,
   activities,
 }: {
   childName: string;
-  theme: string;
+  childGrade: string;
+  title: string;
   createdAt: string;
   mascotImageUrl?: string | null;
+  mascotName?: string | null;
   activities: PDFActivity[];
 }) {
+  const band = bandForGrade(childGrade);
   const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
+  const childFirstName = firstNameOnly(childName);
+  const mascotSignoff = mascotName
+    ? `${sanitizeText(mascotName)} is proud of you, ${childFirstName}.`
+    : `We're proud of you, ${childFirstName}.`;
+
   return (
     <Page size="LETTER" style={styles.certificatePage}>
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} />
@@ -2123,40 +2396,53 @@ function CertificatePage({
           640pt shows up as symmetric margin around the wrapper instead of
           the wrapper itself growing further. */}
       <View style={{ flexGrow: 1, flexBasis: 'auto', maxHeight: 640, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        {/* Trophy star SVG */}
-        <View style={{ marginBottom: 16 }}>
-          <Svg width={48} height={48} viewBox="0 0 24 24">
-            <Polygon
-              points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-              fill={color.honey}
-              stroke={color.honeyDark}
-              strokeWidth="0.5"
-            />
-          </Svg>
-        </View>
+        <Text style={styles.certEyebrow}>Certificate of completion</Text>
 
-        <Text style={styles.certHeader}>Certificate of Completion</Text>
+        {mascotImageUrl && (
+          <Image
+            src={mascotImageUrl}
+            style={[styles.certMascotImage, { width: bandTable[band].certificateMascot, height: bandTable[band].certificateMascot }]}
+          />
+        )}
+
         <Text style={styles.certPresented}>This certifies that</Text>
         <Text style={styles.certChildName}>{sanitizeText(childName)}</Text>
-        <Text style={styles.certBody}>has successfully completed all activities in</Text>
-        <Text style={styles.certTheme}>{sanitizeText(theme)}</Text>
+        <Text style={styles.certBody}>has completed all activities in</Text>
+        {/* Day title (props.title), not theme — the previous version used
+            theme here, which reads as a shorter category name rather than
+            the actual day's title. Known generator-side quirk where
+            packet_title can end up equal to theme; not fixed here, this is
+            a template fix (use the field the rest of the packet already
+            treats as the day title, e.g. the cover page's title). */}
+        <Text style={styles.certDayTitle}>{sanitizeText(title)}</Text>
 
         <View style={styles.certDivider} />
-        <Text style={styles.certDateLine}>{formatPDFDate(createdAt)}</Text>
+        <Text style={styles.certDateLine}>
+          {formatPDFDate(createdAt)} · {activities.length} {activities.length === 1 ? 'activity' : 'activities'} · {totalMinutes} min
+        </Text>
 
-        {/* Signature lines */}
+        {/* Signature row — two blocks side by side (grown-up + child), plus
+            a separate date line beneath rather than a third column: three
+            signature blocks in one row read as too tight at this width. */}
         <View style={styles.certSignatureRow}>
           <View style={styles.certSignatureBlock}>
             <View style={styles.certSignatureLine} />
-            <Text style={styles.certSignatureLabel}>Grown-up Signature</Text>
+            <Text style={styles.certSignatureLabel}>Grown-up signature</Text>
+          </View>
+          <View style={styles.certSignatureBlock}>
+            <View style={styles.certSignatureLine} />
+            <Text style={styles.certSignatureLabel}>Child signature</Text>
           </View>
         </View>
-      </View>
+        <View style={styles.certSignatureDateBlock}>
+          <View style={styles.certSignatureLine} />
+          <Text style={styles.certSignatureLabel}>Date</Text>
+        </View>
 
-      {/* Small mascot at bottom */}
-      {mascotImageUrl && (
-        <Image src={mascotImageUrl} style={{ position: 'absolute', bottom: 48, right: 48, width: 64, height: 64, borderRadius: 32, opacity: 0.8 }} />
-      )}
+        {/* Mascot sign-off — falls back to a generic (non-mascot) line when
+            mascotName is missing, rather than rendering a broken sentence. */}
+        <Text style={styles.certSignoff}>{mascotSignoff}</Text>
+      </View>
     </Page>
   );
 }
@@ -2202,13 +2488,13 @@ function ParentNotesPage({
               <View style={[styles.summaryColorDot, { backgroundColor: colors.label }]} />
               <Text style={[styles.summaryText, { fontSize: bandTable[band].bodySize }]}>
                 <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
-                {activity.title} — {activity.estimated_minutes} min
+                {activity.title}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
-                {[0, 1, 2, 3, 4].map((j) => (
-                  <View key={j} style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: colors.label, borderRadius: 2, marginLeft: 5 }} />
-                ))}
-              </View>
+              {/* Rounded up to the nearest 10 min for at-a-glance scanning —
+                  never the exact figure from the underlying data (used
+                  as-is in the header total above and each activity's own
+                  page header). */}
+              <Text style={styles.summaryDuration}>{roundUpToNearestTen(activity.estimated_minutes)} min</Text>
             </View>
           );
         })}
@@ -2299,16 +2585,30 @@ function CelebrationPage({
       <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
       <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
+      <View style={styles.dailyReflectionRule} />
 
-      {/* Celebration message from mascot */}
+      {/* Celebration message from mascot — mascot image + eyebrow/text
+          column, spec 5.16. Falls back to text-only (no image) when
+          mascotImageUrl is missing. */}
       {packetCelebration && (
         <View style={styles.celebrationBox}>
-          <Text style={styles.celebrationLabel}>{mascotName ? mascotName + ' says:' : 'Great work!'}</Text>
-          <Text style={styles.celebrationText}>{sanitizeText(packetCelebration)}</Text>
+          <View style={styles.celebrationRow}>
+            {mascotImageUrl && (
+              <Image
+                src={mascotImageUrl}
+                style={[styles.celebrationMascotImage, { width: bandTable[band].reflectionMascot, height: bandTable[band].reflectionMascot }]}
+              />
+            )}
+            <View style={styles.celebrationTextCol}>
+              <Text style={styles.celebrationLabel}>{mascotName ? mascotName + ' says:' : 'Great work!'}</Text>
+              <Text style={styles.celebrationText}>{sanitizeText(packetCelebration)}</Text>
+            </View>
+          </View>
         </View>
       )}
 
-      {/* Reflection question */}
+      {/* Reflection question — flattened, no border/background; the ruled
+          lines below already mark it as a writing area. */}
       <View style={styles.reflectionBox}>
         <Text style={styles.reflectionLabel}>Today&apos;s Question</Text>
         <Text style={[styles.reflectionText, { fontSize: bandTable[band].calloutBodySize }]}>
@@ -2343,9 +2643,11 @@ function CelebrationPage({
 // activity pages and gathered here as a single appendix at the very back of
 // the document. Only renders when at least one activity has an answer_key.
 
-function ParentAnswerSheetPage({ activities }: { activities: PDFActivity[] }) {
+function ParentAnswerSheetPage({ childName, activities }: { childName: string; activities: PDFActivity[] }) {
   const withKeys = activities.filter((a) => !!a.answer_key);
   if (withKeys.length === 0) return null;
+
+  const childFirstName = firstNameOnly(childName);
 
   return (
     <Page size="LETTER" style={styles.parentSheetPage}>
@@ -2360,17 +2662,37 @@ function ParentAnswerSheetPage({ activities }: { activities: PDFActivity[] }) {
 
       <View style={styles.parentSheetBanner}>
         <Text style={styles.parentSheetBannerText}>
-          <Text style={{ fontWeight: 700 }}>You do not need to print this page.</Text>
+          <Text style={{ fontWeight: 700 }}>You do not need to print this page for {childFirstName}.</Text>
           {' '}Keep it on your phone or print it separately.
         </Text>
       </View>
 
       <View style={styles.parentSheetKeyStack}>
         {withKeys.flatMap((activity, i) => {
+          const isMath = activity.subject.toLowerCase().includes('math');
+          const mathSections = isMath ? parseMathAnswerKey(sanitizeText(activity.answer_key)) : null;
+
           const group = (
             <View key={`group-${i}`} wrap={false} style={styles.parentSheetGroup}>
               <Text style={styles.parentSheetSubject}>{sanitizeText(activity.subject)}</Text>
-              <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+              {mathSections ? (
+                <View style={styles.parentSheetMathStack}>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Quick calculations: </Text>
+                    {mathSections.quickCalculations}
+                  </Text>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Word problems: </Text>
+                    {mathSections.wordProblems}
+                  </Text>
+                  <Text style={styles.parentSheetAnswerBody}>
+                    <Text style={styles.parentSheetAnswerLabel}>Draw and solve: </Text>
+                    {mathSections.drawAndSolve}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+              )}
             </View>
           );
           if (i === 0) return [group];
@@ -2411,9 +2733,11 @@ export default function PacketPDF(props: PacketPDFProps) {
       ))}
       <CertificatePage
         childName={props.childName}
-        theme={props.theme}
+        childGrade={props.childGrade}
+        title={props.title}
         createdAt={props.createdAt}
         mascotImageUrl={props.mascotImageUrl}
+        mascotName={props.mascotName}
         activities={props.activities}
       />
       {props.coloringPage && (
@@ -2426,7 +2750,7 @@ export default function PacketPDF(props: PacketPDFProps) {
         />
       )}
       <CelebrationPage {...props} />
-      <ParentAnswerSheetPage activities={props.activities} />
+      <ParentAnswerSheetPage childName={props.childName} activities={props.activities} />
     </Document>
   );
 }
