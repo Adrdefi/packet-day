@@ -28,7 +28,17 @@ const pages = Array.from({ length: PAGE_COUNT }, (_, i) => {
 export default function SamplePage() {
   return (
     <main className="min-h-full">
-      <div className="mx-auto max-w-2xl px-4 pt-12 pb-8 text-center">
+      <div className="mx-auto max-w-2xl px-4 pt-8 text-center">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 font-display text-lg font-bold text-dark hover:text-sage transition-colors"
+        >
+          <span>📦</span>
+          <span>Packet Day</span>
+        </Link>
+      </div>
+
+      <div className="mx-auto max-w-2xl px-4 pt-6 pb-8 text-center">
         <h1 className="font-display text-3xl font-bold text-dark sm:text-4xl">
           This is a real packet, made for a real kid
         </h1>
@@ -96,6 +106,12 @@ export default function SamplePage() {
             Make one for your kid
           </Link>
         </div>
+
+        <p className="mt-6 text-sm">
+          <Link href="/" className="text-sage font-semibold hover:underline">
+            Learn more about Packet Day →
+          </Link>
+        </p>
       </div>
     </main>
   );

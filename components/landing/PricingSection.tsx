@@ -143,7 +143,7 @@ export default function PricingSection() {
         <p className="text-center text-sm text-muted mt-8 max-w-md mx-auto">
           That&apos;s less than $0.30/day for a full day of personalized, AI-crafted learning for every kid in your house.
         </p>
-        <p className="text-center text-sm mt-4">
+        <p className="text-center text-base mt-5">
           <Link href="/sample" className="text-sage font-semibold hover:underline">
             Not sure yet? See a real packet first.
           </Link>
