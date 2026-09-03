@@ -152,7 +152,7 @@ export default function Home() {
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
                 href="/signup"
                 className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
@@ -166,6 +166,14 @@ export default function Home() {
                 See the Magic
               </a>
             </div>
+
+            {/* Lower-commitment option */}
+            <p className="text-sm text-dark/60 mb-16">
+              or{" "}
+              <Link href="/sample" className="text-sage font-semibold hover:underline">
+                see a real packet first
+              </Link>
+            </p>
 
             {/* Stats row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
