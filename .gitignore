@@ -58,3 +58,8 @@ test-*.pdf
 
 # JSON reports from scripts/sweep-packets.ts
 /sweep-output/
+
+# Raw source PDFs dropped at repo root for one-time conversion scripts
+# (e.g. scripts/convert-sample-pdf.ts) — only the converted output belongs
+# in the repo, never the source file itself.
+/*.pdf
