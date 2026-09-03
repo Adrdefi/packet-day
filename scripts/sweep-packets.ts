@@ -92,6 +92,45 @@
  *      not assumed away), it's reported as SUSPECTED — needs a human pixel
  *      check, same as the original investigation's method, before acting
  *      on it.
+ *
+ * KNOWN FALSE-POSITIVE SHAPES — READ BEFORE ACTING ON A "CONFIRMED" FINDING
+ * --------------------------------------------------------------------------
+ * A full fleet sweep (82 packets, 2026-09-03) came back with 28 findings (20
+ * CONFIRMED) and every single one — verified with a PyMuPDF rawdict
+ * cross-check against a rendered copy of one representative packet per
+ * distinct snippet shape, not a spot check of one or two — turned out to be
+ * a detector artifact, not a real dropped character. Two known shapes to
+ * expect and discount on sight, both stemming from the fact that "CONFIRMED"
+ * only means the matched run's own glyph-count/decoded-length was
+ * self-consistent — it does NOT mean the match happened at the field's true
+ * start:
+ *   1. Span-boundary adjacency. pageText is built by flatly concatenating
+ *      every text run on the page with no separator. When a field is the
+ *      first thing drawn in its own box, its opening character can be
+ *      immediately preceded — in content-stream order, not visually — by
+ *      the last character of a *different*, unrelated span: a "DID YOU
+ *      KNOW ?" heading, a numbered-list digit ("2.", "3."), a duration
+ *      badge ("8 min"). There is no space glyph there because the visual
+ *      gap comes from box padding/margin, not a literal space character.
+ *      The flagged character (confirmed via rawdict origin data) is
+ *      genuinely present as the first glyph of its own span — nothing was
+ *      dropped. This produced the entire "A" cluster in the 2026-09-03
+ *      sweep (fun_fact boxes all start with "DID YOU KNOW ?", numbered
+ *      instructions all start with a bare digit).
+ *   2. Anchor non-uniqueness. The multi-word anchor (see MIN_ANCHOR_LEN /
+ *      buildAnchor below) is specific enough to avoid colliding with
+ *      generic page furniture like the footer, but it is NOT guaranteed
+ *      unique across an entire packet's own generated content. A themed
+ *      packet can legitimately reference the same phrase twice — e.g. a
+ *      parent note describing "the Dogman book series by Dav Pilkey" and a
+ *      Reading fun_fact independently opening with "The Dogman book series
+ *      by David Pilkey..." — and the naive first-page-first-match search
+ *      can land on the wrong occurrence.
+ * Neither shape is fixed here (comment-only change, per explicit
+ * instruction — "I would rather it cry wolf than miss something"). Treat
+ * any CONFIRMED/SUSPECTED finding as a lead to rawdict-verify, same
+ * discipline as the original R-drop investigation, not as a confirmed bug
+ * on its own.
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
