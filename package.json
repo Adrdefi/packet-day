@@ -9,7 +9,8 @@
     "lint": "eslint",
     "script": "node scripts/run-ts.mjs",
     "test-pdf": "node scripts/run-ts.mjs scripts/test-pdf.ts",
-    "sweep": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/sweep-packets.ts"
+    "sweep": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/sweep-packets.ts",
+    "convert-sample": "node scripts/run-ts.mjs scripts/convert-sample-pdf.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource/fraunces": "^5.3.0",
+    "@napi-rs/canvas": "^1.0.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -36,6 +38,7 @@
     "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "pdfjs-dist": "^6.3.289",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wawoff2": "^2.0.1"
