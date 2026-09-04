@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
@@ -112,9 +112,12 @@ function ProgressBar({ current }: { current: 1 | 2 | 3 }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const upgraded = searchParams.get("upgraded") === "true";
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [userId, setUserId] = useState<string | null>(null);
@@ -217,6 +220,13 @@ export default function OnboardingPage() {
       {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center px-6 py-10">
         <div className="w-full max-w-lg">
+          {upgraded && (
+            <div className="flex items-center gap-2.5 bg-sage/10 border border-sage/20 text-sage font-semibold text-sm rounded-xl px-4 py-3 mb-6">
+              <span aria-hidden="true">✓</span>
+              Payment confirmed — you&apos;re on Packet Day Unlimited.
+            </div>
+          )}
+
           <ProgressBar current={step} />
 
           {/* ── Step 1 — Welcome ─────────────────────────────────────── */}
@@ -325,5 +335,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-cream" />}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

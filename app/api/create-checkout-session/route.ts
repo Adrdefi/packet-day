@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe, PLANS } from "@/lib/stripe";
+import { PLANS, createCheckoutSessionUrl } from "@/lib/stripe";
 import { getBaseUrl } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
@@ -30,45 +30,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_customer_id, email")
-      .eq("id", user.id)
-      .single();
+    const url = await createCheckoutSessionUrl({
+      supabase,
+      userId: user.id,
+      userEmail: user.email,
+      priceId,
+      baseUrl: getBaseUrl(req.headers),
+    });
 
-    if (!profile) {
+    if (!url) {
       return NextResponse.json({ error: "Profile not found." }, { status: 404 });
     }
 
-    const stripe = getStripe();
-    let customerId = profile.stripe_customer_id;
-
-    // Create Stripe customer if we don't have one yet
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email ?? user.email,
-        metadata: { supabase_user_id: user.id },
-      });
-      customerId = customer.id;
-
-      await supabase
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
-    }
-
-    const baseUrl = getBaseUrl(req);
-
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      success_url: `${baseUrl}/dashboard?upgraded=true`,
-      cancel_url: `${baseUrl}/pricing`,
-      allow_promotion_codes: true,
-    });
-
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url });
   } catch (err) {
     console.error("[create-checkout-session]", err);
     return NextResponse.json(

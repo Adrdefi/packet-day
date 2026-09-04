@@ -4,11 +4,18 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isPlanSlug } from "@/lib/plans";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+
+  // A plan slug takes priority over `next` — it means the user picked a
+  // paid plan while logged out and should land in checkout, not wherever
+  // `next` would otherwise send them.
+  const rawPlan = searchParams.get("plan");
+  const plan = isPlanSlug(rawPlan) ? rawPlan : null;
+  const next = plan ? `/checkout-redirect?plan=${plan}` : searchParams.get("next") ?? "/dashboard";
   const linkExpired = searchParams.get("error") === "link-expired";
 
   const supabase = createClient();
@@ -119,7 +126,10 @@ function LoginForm() {
 
       <p className="text-center text-sm text-muted mt-6">
         New here?{" "}
-        <Link href="/signup" className="text-sage font-semibold hover:underline">
+        <Link
+          href={plan ? `/signup?plan=${plan}` : "/signup"}
+          className="text-sage font-semibold hover:underline"
+        >
           Create a free account
         </Link>
       </p>

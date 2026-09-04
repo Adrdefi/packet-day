@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 
 // ─── Password strength ────────────────────────────────────────────────────────
 
@@ -44,9 +45,19 @@ function PasswordStrengthBar({ password }: { password: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const rawPlan = searchParams.get("plan");
+  const plan = isPlanSlug(rawPlan) ? rawPlan : null;
+  const planDetail =
+    plan === "yearly"
+      ? `Unlimited Annual — $${PLAN_PRICE.yearly} billed yearly`
+      : plan === "monthly"
+        ? `Unlimited Monthly — $${PLAN_PRICE.monthly}/month`
+        : null;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -59,12 +70,20 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
+    // Carry the chosen plan through email confirmation as a `next` param on
+    // the callback route, so it lands on the checkout handoff instead of
+    // the dashboard. Never a raw Stripe price ID — only the "monthly" /
+    // "yearly" slug.
+    const emailRedirectTo = plan
+      ? `${window.location.origin}/auth/callback?next=/checkout-redirect%3Fplan%3D${plan}`
+      : `${window.location.origin}/auth/callback`;
+
     const { error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo,
       },
     });
 
@@ -83,18 +102,29 @@ export default function SignupPage() {
       setError(friendly);
       setLoading(false);
     } else {
-      router.push(`/check-email?email=${encodeURIComponent(email)}`);
+      const checkEmailUrl = plan
+        ? `/check-email?email=${encodeURIComponent(email)}&plan=${plan}`
+        : `/check-email?email=${encodeURIComponent(email)}`;
+      router.push(checkEmailUrl);
     }
   }
 
   return (
     <>
       <h1 className="font-display text-3xl font-bold text-dark mb-2">
-        Start your free account
+        {plan ? "You're two steps away" : "Start your free account"}
       </h1>
-      <p className="text-dark/60 text-sm mb-8">
-        1 free packet every month. No credit card needed.
-      </p>
+      {plan ? (
+        <p className="text-dark/60 text-sm mb-8">
+          Next you&apos;ll confirm your email, then check out.
+          <br />
+          <span className="font-semibold text-dark/80">{planDetail}</span>
+        </p>
+      ) : (
+        <p className="text-dark/60 text-sm mb-8">
+          1 free packet every month. No credit card needed.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Full name */}
@@ -163,16 +193,27 @@ export default function SignupPage() {
           disabled={loading}
           className="w-full bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors disabled:opacity-60 text-sm"
         >
-          {loading ? "Creating your account…" : "Create My Account →"}
+          {loading ? "Creating your account…" : plan ? "Continue to Checkout →" : "Create My Account →"}
         </button>
       </form>
 
       <p className="text-center text-sm text-muted mt-6">
         Already have an account?{" "}
-        <Link href="/login" className="text-sage font-semibold hover:underline">
+        <Link
+          href={plan ? `/login?plan=${plan}` : "/login"}
+          className="text-sage font-semibold hover:underline"
+        >
           Log in
         </Link>
       </p>
     </>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="text-muted text-sm">Loading…</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

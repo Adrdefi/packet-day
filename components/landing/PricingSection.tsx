@@ -22,9 +22,9 @@ const UNLIMITED_FEATURES = [
 export default function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
 
-  const unlimitedPrice = isAnnual ? 108 : 12;
-  const priceUnit = isAnnual ? "/yr" : "/mo";
-  const billingNote = isAnnual ? "Billed yearly — save $36 vs. paying monthly" : "Billed monthly";
+  const unlimitedPrice = isAnnual ? 9 : 12;
+  const priceUnit = "/mo";
+  const billingNote = isAnnual ? "$108 billed annually, save $36" : "Billed monthly";
 
   return (
     <section id="pricing" className="py-24 bg-cream px-6">

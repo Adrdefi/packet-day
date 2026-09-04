@@ -51,6 +51,26 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  // Dashboard requires onboarding to be complete. Redirect incomplete
+  // accounts to /onboarding here (not in app/dashboard/layout.tsx) because
+  // this proxy has full access to the request URL, while a Server Component
+  // layout does not receive `searchParams` — cloning the URL preserves any
+  // existing query string (e.g. ?upgraded=true from a just-completed Stripe
+  // checkout) instead of dropping it.
+  if (user && pathname.startsWith("/dashboard")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.onboarding_completed) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return res;
 }
 

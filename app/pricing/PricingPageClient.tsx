@@ -55,9 +55,9 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Pro
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const proPrice = isAnnual ? 108 : 12;
-  const priceUnit = isAnnual ? "/yr" : "/mo";
-  const billingNote = isAnnual ? "Billed yearly — save $36 vs. paying monthly" : "Billed monthly";
+  const proPrice = isAnnual ? 9 : 12;
+  const priceUnit = "/mo";
+  const billingNote = isAnnual ? "$108 billed annually, save $36" : "Billed monthly";
   const activePriceId = isAnnual ? yearlyPriceId : monthlyPriceId;
 
   async function handleUpgrade() {
@@ -75,7 +75,7 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Pro
 
       if (!res.ok) {
         if (res.status === 401) {
-          router.push("/login?next=/pricing");
+          router.push(`/signup?plan=${isAnnual ? "yearly" : "monthly"}`);
           return;
         }
         setError(data.error ?? "Something went sideways. Let's try that again.");

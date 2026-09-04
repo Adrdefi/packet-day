@@ -2,6 +2,21 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
+ * A same-origin relative path only — rejects absolute URLs
+ * ("https://evil.com/..."), protocol-relative ones ("//evil.com/..."), and
+ * the backslash variant browsers sometimes still treat as protocol-relative
+ * ("/\evil.com"), so `next` can't be turned into an open redirect.
+ */
+function isSafeNextPath(value: string | null): value is string {
+  return (
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.startsWith("/\\")
+  );
+}
+
+/**
  * Handles the OAuth / magic-link / email-confirmation callback from Supabase.
  * Supabase redirects here with ?code=... after the user clicks a link.
  *
@@ -11,7 +26,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next"); // e.g. set by password-reset flow
+  const rawNext = searchParams.get("next"); // e.g. set by password-reset flow or the checkout handoff
+  const next = isSafeNextPath(rawNext) ? rawNext : null;
 
   if (code) {
     const supabase = await createClient();
