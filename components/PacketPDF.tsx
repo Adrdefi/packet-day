@@ -2,11 +2,13 @@
 // Used exclusively by app/api/generate-pdf/route.ts via createElement().
 
 import path from 'path';
+import QRCode from 'qrcode';
 import {
   Document,
   Font,
   Image,
   Page,
+  Path,
   StyleSheet,
   Svg,
   Polygon,
@@ -384,6 +386,46 @@ function generateWordSearch(
 // positioning for what to do before trusting it after a version bump.
 const FOOTER_BOTTOM = 20;
 const RENDER_PROP_Y_OFFSET = 86.42;
+
+// ─── Footer QR code (certificate + coloring pages only) ────────────────────────
+//
+// Destination is a fixed constant, identical on every packet, so the module
+// matrix and its SVG path are computed once here at import time rather than
+// per-page-render — QRCode.create() is synchronous (unlike toDataURL/toFile),
+// so this needs no async plumbing into createElement()'s render call.
+//
+// 'Q' error correction (~25%) was chosen over the default 'M' (~15%) because
+// for this exact URL both produce the identical 29x29 module grid (verified
+// directly) — Q is strictly better resilience at zero size cost. 'H' would
+// bump the grid to 33x33, needlessly larger for a mark meant to be quiet.
+//
+// Rendered as a single <Path> of 1x1-unit squares in module-grid coordinates
+// (viewBox does the pt scaling), not a rasterized <Image> — stays crisp at
+// print resolution and avoids this file's documented <Image> caching/timing
+// concerns entirely. QR_QUIET_ZONE_MODULES adds a blank margin inside the
+// viewBox (a reduced 2-module zone, not the spec's usual 4 — acceptable here
+// since the mark already sits on a plain white page, which itself acts as
+// extra quiet zone).
+const QR_URL = 'https://packetday.com/?ref=qr';
+const QR_MARK_SIZE = 36;
+const QR_URL_TEXT_GAP = 6;
+const QR_QUIET_ZONE_MODULES = 2;
+const qrMatrix = QRCode.create(QR_URL, { errorCorrectionLevel: 'Q' });
+const QR_GRID_SIZE = qrMatrix.modules.size + QR_QUIET_ZONE_MODULES * 2;
+const QR_PATH_DATA = (() => {
+  const { size, data } = qrMatrix.modules;
+  let d = '';
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (data[row * size + col]) {
+        const x = col + QR_QUIET_ZONE_MODULES;
+        const y = row + QR_QUIET_ZONE_MODULES;
+        d += `M${x},${y}h1v1h-1z`;
+      }
+    }
+  }
+  return d;
+})();
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -805,6 +847,42 @@ const styles = StyleSheet.create({
     bottom: FOOTER_BOTTOM - RENDER_PROP_Y_OFFSET,
     width: 60,
     textAlign: 'right',
+  },
+
+  // ── QR page footer (certificate + coloring pages only) ──────────────────────
+  // Bespoke 3-zone layout, not a variant of ChildPageFooter above: every
+  // element here is independently `position:absolute` on purpose, same
+  // reasoning as childPageFooterLeft/Right's own decoupling above — the page
+  // counter is a <Text fixed render={...}/> and is not safe to share a flex
+  // row with a plain sibling (see childPageFooterRight's comment). Centering
+  // it instead of placing it next to either neighbor sidesteps that risk
+  // entirely rather than trading it for a new adjacency.
+  qrFooterCenter: {
+    position: 'absolute',
+    bottom: FOOTER_BOTTOM - RENDER_PROP_Y_OFFSET,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+  },
+  qrFooterUrlText: {
+    position: 'absolute',
+    bottom: FOOTER_BOTTOM,
+    textAlign: 'right',
+  },
+  // bottom:8, not FOOTER_BOTTOM(20) — independently tuned so the mark's own
+  // fixed QR_MARK_SIZE fits within BOTH pages' bottom padding (certificate:
+  // 56, coloring: 48 — checked directly in their Page styles below). At
+  // bottom:20 the mark's top edge would land exactly flush on the
+  // certificate page (56) but 8pt past the boundary on the coloring page
+  // (48) — a real risk given the coloring page's image box is one of the
+  // rebuild's MAY-STRETCH elements that can grow close to that edge. At
+  // bottom:8 the top edge lands at y=44 on both pages: 4pt of clearance on
+  // coloring, 12pt on certificate. This intentionally straddles rather than
+  // baseline-aligns with qrFooterUrlText next to it — normal for a graphic
+  // mark beside a text line, not a bug.
+  qrFooterMark: {
+    position: 'absolute',
+    bottom: 8,
   },
 
   // ── Parent answer sheet (spec 5.18) ─────────────────────────────────────────
@@ -1889,6 +1967,49 @@ function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; i
   );
 }
 
+// ─── QR page footer (certificate + coloring pages only) ────────────────────────
+// Not a variant of ChildPageFooter above — a separate component so the other
+// six page types that call ChildPageFooter stay completely unmodified. Same
+// "must be the first child of its <Page>" requirement applies here (see
+// ChildPageFooter's own comment above it) — every element below is `fixed`,
+// so this must be placed first, not last, at each of its two call sites.
+
+function QrPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; inset: number }) {
+  return (
+    <>
+      <Text style={[styles.footerText, styles.childPageFooterLeft, { left: inset }]} fixed>
+        Made with love by Packet Day
+      </Text>
+      <Text
+        style={[styles.footerText, styles.qrFooterCenter]}
+        fixed
+        render={({ pageNumber, totalPages }) =>
+          `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
+        }
+      />
+      <Text
+        style={[
+          styles.footerText,
+          styles.qrFooterUrlText,
+          { right: inset + QR_MARK_SIZE + QR_URL_TEXT_GAP },
+        ]}
+        fixed
+      >
+        packetday.com
+      </Text>
+      <Svg
+        style={[styles.qrFooterMark, { right: inset }]}
+        width={QR_MARK_SIZE}
+        height={QR_MARK_SIZE}
+        viewBox={`0 0 ${QR_GRID_SIZE} ${QR_GRID_SIZE}`}
+        fixed
+      >
+        <Path d={QR_PATH_DATA} fill={color.textPrimary} />
+      </Svg>
+    </>
+  );
+}
+
 // ─── Question bullet (chunk 9) ─────────────────────────────────────────────────
 // Band-scaled color, extending the same principle already used for mascots
 // (largest/most colorful for the youngest children): K-2 gets a filled
@@ -2384,7 +2505,7 @@ function CertificatePage({
 
   return (
     <Page size="LETTER" style={styles.certificatePage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} />
+      <QrPageFooter hasParentSheet={hasParentSheet} inset={56} />
 
       {/* Decorative frames */}
       <View style={styles.certFrameOuter} />
@@ -2550,7 +2671,7 @@ function ColoringPage({
   const hasParentSheet = activities.some((a) => !!a.answer_key);
   return (
     <Page size="LETTER" style={styles.coloringPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <QrPageFooter hasParentSheet={hasParentSheet} inset={48} />
       <Text style={styles.coloringHeaderText}>Color me!</Text>
       <Text style={styles.coloringTitle}>{sanitizeText(coloringPage.title)}</Text>
       <View style={styles.coloringBox}>
