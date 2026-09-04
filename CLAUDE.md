@@ -117,8 +117,8 @@ See `.env.local.example` for all variables and where to find them.
 | `STRIPE_SECRET_KEY` | Yes | **No** — server only |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Yes | Yes |
 | `STRIPE_WEBHOOK_SECRET` | Yes | **No** — server only |
-| `STRIPE_STARTER_PRICE_ID` | Yes | No | Monthly plan on /pricing |
-| `STRIPE_FAMILY_PRICE_ID` | Yes | No | Annual plan on /pricing |
+| `STRIPE_PRICE_MONTHLY` | Yes | No | Monthly price for Packet Day Unlimited on /pricing |
+| `STRIPE_PRICE_YEARLY` | Yes | No | Yearly price for Packet Day Unlimited on /pricing |
 | `ANTHROPIC_API_KEY` | Yes | **No** — server only |
 | `REPLICATE_API_TOKEN` | Optional | **No** — server only |
 | `RESEND_API_KEY` | Yes | **No** — server only |
@@ -131,8 +131,7 @@ See `.env.local.example` for all variables and where to find them.
 | Plan | Packets/month | Price |
 |------|--------------|-------|
 | Free | 1 | $0 |
-| Starter | 20 | $9/mo |
-| Family | Unlimited | $19/mo |
+| Packet Day Unlimited | Unlimited | $12/mo or $108/yr |
 
 ---
 

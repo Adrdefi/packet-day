@@ -35,7 +35,7 @@ const FAQ = [
   },
   {
     q: "What's the difference between annual and monthly?",
-    a: "Annual billing saves you 25% — that's $27 back in your pocket each year. Monthly gives you flexibility if you want to try it first.",
+    a: "Annual billing saves you 25% — that's $36 back in your pocket each year. Monthly gives you flexibility if you want to try it first.",
   },
   {
     q: "Can I use Packet Day for more than one kid?",
@@ -44,20 +44,21 @@ const FAQ = [
 ];
 
 interface Props {
-  annualPriceId: string;
   monthlyPriceId: string;
+  yearlyPriceId: string;
 }
 
-export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Props) {
+export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Props) {
   const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const proPrice = isAnnual ? 9 : 12;
-  const billingNote = isAnnual ? "Billed annually — save 25%" : "Billed monthly";
-  const activePriceId = isAnnual ? annualPriceId : monthlyPriceId;
+  const proPrice = isAnnual ? 108 : 12;
+  const priceUnit = isAnnual ? "/yr" : "/mo";
+  const billingNote = isAnnual ? "Billed yearly — save $36 vs. paying monthly" : "Billed monthly";
+  const activePriceId = isAnnual ? yearlyPriceId : monthlyPriceId;
 
   async function handleUpgrade() {
     setLoading(true);
@@ -188,7 +189,7 @@ export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Pro
               <p className="text-sm text-cream/75 mb-6">Every kid. Every day. Every wild idea.</p>
               <div className="mb-1">
                 <span className="font-display text-5xl font-bold text-cream">${proPrice}</span>
-                <span className="text-cream/75 text-lg ml-1">/mo</span>
+                <span className="text-cream/75 text-lg ml-1">{priceUnit}</span>
               </div>
               <p className="text-xs text-cream/60 mb-8">{billingNote}</p>
               <ul className="space-y-3 mb-8">
@@ -313,7 +314,7 @@ export default function PricingPageClient({ annualPriceId, monthlyPriceId }: Pro
           disabled={loading}
           className="bg-honey hover:bg-honey-dark text-dark font-bold py-4 px-8 rounded-xl transition-colors text-base disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? "Redirecting…" : `Get Unlimited for $${proPrice}/mo →`}
+          {loading ? "Redirecting…" : `Get Unlimited for $${proPrice}${priceUnit} →`}
         </button>
       </section>
     </div>

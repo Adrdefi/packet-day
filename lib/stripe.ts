@@ -18,27 +18,26 @@ export function getStripe(): Stripe {
 }
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
+// One paid plan — "Packet Day Unlimited" — billed either monthly or yearly.
 
 export const PLANS = {
   free: {
     id: "free" as const,
     name: "Free",
     packetsPerMonth: 1,
-    priceId: null,
     price: 0,
   },
-  starter: {
-    id: "starter" as const,
-    name: "Starter",
-    packetsPerMonth: 20,
-    priceId: process.env.STRIPE_STARTER_PRICE_ID ?? "",
-    price: 9,
-  },
-  family: {
-    id: "family" as const,
-    name: "Family",
+  unlimited: {
+    id: "unlimited" as const,
+    name: "Packet Day Unlimited",
     packetsPerMonth: -1, // unlimited
-    priceId: process.env.STRIPE_FAMILY_PRICE_ID ?? "",
-    price: 19,
+    monthly: {
+      priceId: process.env.STRIPE_PRICE_MONTHLY ?? "",
+      price: 12,
+    },
+    yearly: {
+      priceId: process.env.STRIPE_PRICE_YEARLY ?? "",
+      price: 108,
+    },
   },
 } as const;

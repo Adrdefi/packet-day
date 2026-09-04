@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function UpgradeCelebration() {
   const router = useRouter();
@@ -17,20 +18,27 @@ export default function UpgradeCelebration() {
   }, [router]);
 
   useEffect(() => {
-    // Generate confetti pieces
+    // Generate confetti pieces — pieces fall at a natural speed but keep
+    // starting throughout a ~12s window, so the fall reads as steady rather
+    // than a thin band in slow motion.
     const colors = ["#4A7C59", "#D4A843", "#E07A5F", "#FDFBF7", "#6A9E78", "#E6C26B"];
     setConfetti(
-      Array.from({ length: 60 }, (_, i) => ({
+      Array.from({ length: 180 }, (_, i) => ({
         id: i,
         x: Math.random() * 100,
         color: colors[Math.floor(Math.random() * colors.length)],
-        delay: Math.random() * 2,
-        duration: 2 + Math.random() * 2,
+        delay: Math.random() * 9,
+        duration: 3 + Math.random() * 2,
       }))
     );
+  }, []);
 
-    const timer = setTimeout(dismiss, 5000);
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") dismiss();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [dismiss]);
 
   if (!visible) return null;
@@ -66,20 +74,36 @@ export default function UpgradeCelebration() {
         className="relative bg-white rounded-3xl p-10 max-w-md w-full mx-4 text-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={dismiss}
+          aria-label="Close"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-dark/40 hover:text-dark hover:bg-cream transition-colors text-xl leading-none"
+        >
+          ×
+        </button>
+
         <div className="text-6xl mb-4">🎉</div>
         <h2 className="font-display text-3xl font-bold text-dark mb-3">
-          You&apos;re now Pro!
+          You&apos;re now Unlimited!
         </h2>
         <p className="text-dark/70 text-lg mb-8 leading-relaxed">
           Unlimited packets. All your kids. Every wild idea they have.
         </p>
-        <button
-          onClick={dismiss}
-          className="w-full bg-sage hover:bg-sage-dark text-cream font-bold py-4 px-6 rounded-xl transition-colors text-base"
-        >
-          Generate Your First Unlimited Packet →
-        </button>
-        <p className="text-xs text-muted mt-4">Auto-closing in 5 seconds</p>
+
+        <div className="space-y-3">
+          <Link
+            href="/dashboard/children/new"
+            className="block w-full bg-sage hover:bg-sage-dark text-cream font-bold py-4 px-6 rounded-xl transition-colors text-base"
+          >
+            Add a Child Profile →
+          </Link>
+          <Link
+            href="/generate"
+            className="block w-full bg-cream border-2 border-sage text-sage font-bold py-4 px-6 rounded-xl hover:bg-sage hover:text-cream transition-colors text-base"
+          >
+            Generate Your First Packet →
+          </Link>
+        </div>
       </div>
 
       <style>{`

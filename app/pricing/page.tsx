@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PLANS } from "@/lib/stripe";
 import PricingPageClient from "./PricingPageClient";
 
 export const metadata: Metadata = {
@@ -8,13 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  const annualPriceId = process.env.STRIPE_FAMILY_PRICE_ID ?? "";
-  const monthlyPriceId = process.env.STRIPE_STARTER_PRICE_ID ?? "";
-
   return (
     <PricingPageClient
-      annualPriceId={annualPriceId}
-      monthlyPriceId={monthlyPriceId}
+      monthlyPriceId={PLANS.unlimited.monthly.priceId}
+      yearlyPriceId={PLANS.unlimited.yearly.priceId}
     />
   );
 }

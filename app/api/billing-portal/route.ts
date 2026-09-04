@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { getBaseUrl } from "@/lib/config";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -33,7 +34,7 @@ export async function POST() {
     const stripe = getStripe();
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: "https://packetday.com/dashboard",
+      return_url: `${getBaseUrl(req)}/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });

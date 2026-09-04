@@ -43,6 +43,8 @@ export default function TopBar({
   const supabase = createClient();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { text: greetingText, emoji: greetingEmoji } = getGreeting();
@@ -66,6 +68,27 @@ export default function TopBar({
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  }
+
+  async function handleManageBilling() {
+    setBillingLoading(true);
+    setBillingError(false);
+
+    try {
+      const res = await fetch("/api/billing-portal", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        setBillingError(true);
+        setBillingLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setBillingError(true);
+      setBillingLoading(false);
+    }
   }
 
   return (
@@ -139,15 +162,33 @@ export default function TopBar({
                 My Account
               </Link>
 
-              <Link
-                href={isFree ? "/pricing" : "/api/billing-portal"}
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
-              >
-                <span aria-hidden="true">💳</span>
-                Manage Billing
-              </Link>
+              {isFree ? (
+                <Link
+                  href="/pricing"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
+                >
+                  <span aria-hidden="true">💳</span>
+                  Manage Billing
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleManageBilling}
+                  disabled={billingLoading}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <span aria-hidden="true">💳</span>
+                  {billingLoading ? "Redirecting…" : "Manage Billing"}
+                </button>
+              )}
+              {billingError && (
+                <p className="px-4 pb-2 text-xs text-coral">
+                  Couldn&apos;t open billing. Try that again in a sec.
+                </p>
+              )}
 
               <div className="border-t border-border">
                 <button

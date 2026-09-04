@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, PLANS } from "@/lib/stripe";
+import { getBaseUrl } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +21,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { priceId } = body;
 
-    if (!priceId || typeof priceId !== "string") {
+    const validPriceIds = [PLANS.unlimited.monthly.priceId, PLANS.unlimited.yearly.priceId];
+
+    if (!priceId || typeof priceId !== "string" || !validPriceIds.includes(priceId)) {
       return NextResponse.json(
         { error: "A valid price ID is required." },
         { status: 400 }
@@ -54,12 +57,14 @@ export async function POST(req: NextRequest) {
         .eq("id", user.id);
     }
 
+    const baseUrl = getBaseUrl(req);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: "https://packetday.com/dashboard?upgraded=true",
-      cancel_url: "https://packetday.com/pricing",
+      success_url: `${baseUrl}/dashboard?upgraded=true`,
+      cancel_url: `${baseUrl}/pricing`,
       allow_promotion_codes: true,
     });
 

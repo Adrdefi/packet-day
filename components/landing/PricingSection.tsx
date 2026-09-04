@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const STARTER_FEATURES = [
+const FREE_FEATURES = [
   "1 AI-generated packet per month",
   "1 child profile",
   "All subjects included",
@@ -22,8 +22,9 @@ const UNLIMITED_FEATURES = [
 export default function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
 
-  const unlimitedPrice = isAnnual ? 9 : 12;
-  const billingNote = isAnnual ? "Billed annually — save 25%" : "Billed monthly";
+  const unlimitedPrice = isAnnual ? 108 : 12;
+  const priceUnit = isAnnual ? "/yr" : "/mo";
+  const billingNote = isAnnual ? "Billed yearly — save $36 vs. paying monthly" : "Billed monthly";
 
   return (
     <section id="pricing" className="py-24 bg-cream px-6">
@@ -79,10 +80,10 @@ export default function PricingSection() {
 
         {/* Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {/* Starter */}
+          {/* Free */}
           <div className="bg-white rounded-2xl border border-border p-8 flex flex-col">
             <div>
-              <h3 className="font-display text-2xl font-bold text-dark mb-1">Starter</h3>
+              <h3 className="font-display text-2xl font-bold text-dark mb-1">Free</h3>
               <p className="text-sm text-muted mb-6">Dip your toes in — no card needed</p>
               <div className="mb-2">
                 <span className="font-display text-5xl font-bold text-dark">$0</span>
@@ -90,7 +91,7 @@ export default function PricingSection() {
               </div>
               <p className="text-xs text-muted mb-8">Always free</p>
               <ul className="space-y-3 mb-8">
-                {STARTER_FEATURES.map((f) => (
+                {FREE_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-dark/80">
                     <span className="text-sage mt-0.5 shrink-0">✓</span>
                     {f}
@@ -118,7 +119,7 @@ export default function PricingSection() {
                 <span className="font-display text-5xl font-bold text-cream">
                   ${unlimitedPrice}
                 </span>
-                <span className="text-cream/75 text-lg ml-1">/mo</span>
+                <span className="text-cream/75 text-lg ml-1">{priceUnit}</span>
               </div>
               <p className="text-xs text-cream/60 mb-8">{billingNote}</p>
               <ul className="space-y-3 mb-8">
