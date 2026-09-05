@@ -37,6 +37,7 @@ export const metadata: Metadata = {
     ],
     shortcut: "/favicon.ico",
   },
+  manifest: "/site.webmanifest",
 
   openGraph: {
     siteName: "Packet Day",
