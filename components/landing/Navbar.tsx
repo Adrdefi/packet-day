@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Wordmark from "@/components/layout/Wordmark";
 
 const NAV_LINKS = [
   { label: "How It Works", href: "#how-it-works" },
@@ -42,10 +43,9 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-display font-bold text-xl text-dark hover:text-sage transition-colors shrink-0"
+            className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors shrink-0"
           >
-            <span>📦</span>
-            <span>Packet Day</span>
+            <Wordmark size="xl" />
           </Link>
 
           {/* Center links — desktop only */}
@@ -109,10 +109,9 @@ export default function Navbar() {
             <Link
               href="/"
               onClick={closeMobile}
-              className="flex items-center gap-2 font-display font-bold text-xl text-dark"
+              className="flex items-center gap-2 font-display font-bold text-dark"
             >
-              <span>📦</span>
-              <span>Packet Day</span>
+              <Wordmark size="xl" />
             </Link>
             <button
               onClick={closeMobile}

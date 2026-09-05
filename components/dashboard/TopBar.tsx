@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Wordmark from "@/components/layout/Wordmark";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -97,10 +98,9 @@ export default function TopBar({
         {/* Logo */}
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 font-display font-bold text-lg text-dark hover:text-sage transition-colors shrink-0"
+          className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors shrink-0"
         >
-          <span>📦</span>
-          <span className="hidden sm:inline">Packet Day</span>
+          <Wordmark size="lg" hideTextOnMobile />
         </Link>
 
         {/* Greeting */}

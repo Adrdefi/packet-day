@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import Wordmark from "@/components/layout/Wordmark";
 
 export const metadata: Metadata = {
   title: "See a Sample Packet",
@@ -31,10 +32,9 @@ export default function SamplePage() {
       <div className="mx-auto max-w-2xl px-4 pt-8 text-center">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 font-display text-lg font-bold text-dark hover:text-sage transition-colors"
+          className="inline-flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors"
         >
-          <span>📦</span>
-          <span>Packet Day</span>
+          <Wordmark size="lg" />
         </Link>
       </div>
 

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Child, PacketContent } from "@/types";
+import Wordmark from "@/components/layout/Wordmark";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -144,8 +145,7 @@ function TopBar() {
           href="/dashboard"
           className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors"
         >
-          <span>📦</span>
-          <span className="hidden sm:inline">Packet Day</span>
+          <Wordmark size="base" hideTextOnMobile />
         </Link>
         <Link
           href="/dashboard"

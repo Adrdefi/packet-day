@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
+import Wordmark from "@/components/layout/Wordmark";
 
 // ─── Confetti burst ───────────────────────────────────────────────────────────
 
@@ -209,10 +210,9 @@ function OnboardingContent() {
       <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
         <Link
           href="/"
-          className="flex items-center gap-2 font-display font-bold text-lg text-dark hover:text-sage transition-colors"
+          className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors"
         >
-          <span>📦</span>
-          <span>Packet Day</span>
+          <Wordmark size="lg" />
         </Link>
         <span className="text-xs text-muted">Setting up your account</span>
       </div>

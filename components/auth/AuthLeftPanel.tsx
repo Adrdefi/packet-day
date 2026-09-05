@@ -1,5 +1,6 @@
 import Link from "next/link";
 import RotatingQuote from "./RotatingQuote";
+import Wordmark from "@/components/layout/Wordmark";
 
 export default function AuthLeftPanel() {
   return (
@@ -12,10 +13,9 @@ export default function AuthLeftPanel() {
       {/* Logo */}
       <Link
         href="/"
-        className="flex items-center gap-2.5 font-display font-bold text-xl text-cream hover:text-cream/80 transition-colors relative z-10"
+        className="flex items-center gap-2.5 font-display font-bold text-cream hover:text-cream/80 transition-colors relative z-10"
       >
-        <span>📦</span>
-        <span>Packet Day</span>
+        <Wordmark size="xl" variant="cream" />
       </Link>
 
       {/* Illustration — stacked packet cards */}

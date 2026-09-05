@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/landing/Navbar";
+import Wordmark from "@/components/layout/Wordmark";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
@@ -577,9 +578,8 @@ export default function Home() {
         <footer className="bg-dark px-6 py-14">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
-              <div className="flex items-center gap-2 font-display font-bold text-lg text-cream mb-2 justify-center md:justify-start">
-                <span>📦</span>
-                <span>Packet Day</span>
+              <div className="flex items-center gap-2 font-display font-bold text-cream mb-2 justify-center md:justify-start">
+                <Wordmark size="lg" />
               </div>
               <p className="text-cream/50 text-xs max-w-xs">
                 AI-powered learning packets, built by a homeschool family, tested on real kids,

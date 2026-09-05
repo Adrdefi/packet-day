@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Wordmark from "@/components/layout/Wordmark";
 
 const FREE_FEATURES = [
   "1 AI-generated packet per month",
@@ -96,8 +97,8 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Pro
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="px-6 py-5 flex items-center justify-between max-w-5xl mx-auto">
-        <Link href="/" className="font-display text-xl font-bold text-sage">
-          Packet Day
+        <Link href="/" className="font-display font-bold text-sage">
+          <Wordmark size="xl" />
         </Link>
         <Link
           href="/login"

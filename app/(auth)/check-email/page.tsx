@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { isPlanSlug, PLAN_LABEL } from "@/lib/plans";
+import Wordmark from "@/components/layout/Wordmark";
 
 export default async function CheckEmailPage({
   searchParams,
@@ -70,9 +71,10 @@ export default async function CheckEmailPage({
 
       <Link
         href="/"
-        className="text-sm text-muted hover:text-dark transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-dark transition-colors"
       >
-        ← Back to Packet Day
+        <span aria-hidden="true">←</span>
+        <Wordmark size="base" />
       </Link>
     </div>
   );
