@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Wordmark from "@/components/layout/Wordmark";
+import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 
 const FREE_FEATURES = [
   "1 AI-generated packet per month",
@@ -24,7 +24,7 @@ const PRO_FEATURES = [
 const FAQ = [
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Cancel straight from your billing portal — no hoops, no guilt. Your Pro access continues until the end of the billing period.",
+    a: "Yes. Cancel straight from your billing portal — no hoops, no guilt. Your Unlimited access continues until the end of the billing period.",
   },
   {
     q: "What happens to my packets if I cancel?",
@@ -40,58 +40,25 @@ const FAQ = [
   },
   {
     q: "Can I use Packet Day for more than one kid?",
-    a: "Free plan supports 1 child profile. Pro unlocks unlimited profiles — one for every kid in your house.",
+    a: "Free plan supports 1 child profile. Upgrading to Unlimited unlocks unlimited profiles — one for every kid in your house.",
   },
 ];
 
 interface Props {
   monthlyPriceId: string;
   yearlyPriceId: string;
+  /** Preselects the toggle, e.g. from a `?plan=` param on arrival. Defaults to annual when omitted. */
+  initialAnnual?: boolean;
 }
 
-export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Props) {
-  const router = useRouter();
-  const [isAnnual, setIsAnnual] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initialAnnual }: Props) {
+  const [isAnnual, setIsAnnual] = useState(initialAnnual ?? true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { loading, error, upgrade } = useUpgradeCheckout({ monthlyPriceId, yearlyPriceId });
 
   const proPrice = isAnnual ? 9 : 12;
   const priceUnit = "/mo";
   const billingNote = isAnnual ? "$108 billed annually, save $36" : "Billed monthly";
-  const activePriceId = isAnnual ? yearlyPriceId : monthlyPriceId;
-
-  async function handleUpgrade() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: activePriceId }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          router.push(`/signup?plan=${isAnnual ? "yearly" : "monthly"}`);
-          return;
-        }
-        setError(data.error ?? "Something went sideways. Let's try that again.");
-        return;
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch {
-      setError("Something went sideways. Let's try that again.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="min-h-screen bg-cream">
@@ -206,7 +173,7 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Pro
               <p className="text-coral-light text-sm mb-3 font-medium">{error}</p>
             )}
             <button
-              onClick={handleUpgrade}
+              onClick={() => upgrade(isAnnual)}
               disabled={loading}
               className="block w-full text-center bg-cream text-sage font-bold py-3 px-6 rounded-xl hover:bg-cream-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -311,7 +278,7 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId }: Pro
           Join families who stopped dreading the hard days.
         </p>
         <button
-          onClick={handleUpgrade}
+          onClick={() => upgrade(isAnnual)}
           disabled={loading}
           className="bg-honey hover:bg-honey-dark text-dark font-bold py-4 px-8 rounded-xl transition-colors text-base disabled:opacity-60 disabled:cursor-not-allowed"
         >

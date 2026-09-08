@@ -7,7 +7,7 @@ import Wordmark from "@/components/layout/Wordmark";
 const NAV_LINKS = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Reviews", href: "#reviews" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Pricing", href: "/pricing" },
 ];
 
 export default function Navbar() {

@@ -7,6 +7,7 @@ import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
 import { TESTIMONIALS } from "@/lib/testimonials";
+import { PLANS } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
@@ -542,7 +543,10 @@ export default function Home() {
         </section>
 
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
-        <PricingSection />
+        <PricingSection
+          monthlyPriceId={PLANS.unlimited.monthly.priceId}
+          yearlyPriceId={PLANS.unlimited.yearly.priceId}
+        />
 
         {/* ── FAQ ───────────────────────────────────────────────────────────── */}
         <FAQSection />

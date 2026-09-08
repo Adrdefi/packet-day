@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 
 const FREE_FEATURES = [
   "1 AI-generated packet per month",
   "1 child profile",
-  "All subjects included",
+  "All core subjects included",
   "Print-ready PDFs",
 ];
 
@@ -15,12 +16,18 @@ const UNLIMITED_FEATURES = [
   "Unlimited child profiles",
   "Infinite themes — anything they dream up",
   "Answer keys for every packet",
-  "Supply lists included",
+  "Supply lists with household items only",
   "First access to new features",
 ];
 
-export default function PricingSection() {
+interface Props {
+  monthlyPriceId: string;
+  yearlyPriceId: string;
+}
+
+export default function PricingSection({ monthlyPriceId, yearlyPriceId }: Props) {
   const [isAnnual, setIsAnnual] = useState(true);
+  const { loading, error, upgrade } = useUpgradeCheckout({ monthlyPriceId, yearlyPriceId });
 
   const unlimitedPrice = isAnnual ? 9 : 12;
   const priceUnit = "/mo";
@@ -131,12 +138,16 @@ export default function PricingSection() {
                 ))}
               </ul>
             </div>
-            <Link
-              href="/signup"
-              className="mt-auto block text-center bg-cream text-sage font-bold py-3 px-6 rounded-xl hover:bg-cream-dark transition-colors"
+            {error && (
+              <p className="text-coral-light text-sm mb-3 font-medium text-center">{error}</p>
+            )}
+            <button
+              onClick={() => upgrade(isAnnual)}
+              disabled={loading}
+              className="mt-auto block w-full text-center bg-cream text-sage font-bold py-3 px-6 rounded-xl hover:bg-cream-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Get Unlimited →
-            </Link>
+              {loading ? "Redirecting…" : "Get Unlimited →"}
+            </button>
           </div>
         </div>
 
