@@ -36,23 +36,22 @@ export async function GET(req: NextRequest) {
 
   const supabase = await createClient();
 
-  // ── Auth (optional: also allow share_token access) ────────────────────────
+  // ── Auth (required — no anonymous access to packet PDFs) ──────────────────
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ── Fetch packet ──────────────────────────────────────────────────────────
-  let packetQuery = supabase
-    .from("packets")
-    .select("*, children(avatar_emoji, special_notes)")
-    .eq("id", packetId);
-
-  // Enforce ownership if logged in; otherwise require share_token match
-  if (user) {
-    packetQuery = packetQuery.eq("user_id", user.id);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: packet, error: packetError } = await packetQuery.single();
+  // ── Fetch packet — always scoped to the authenticated owner ───────────────
+  const { data: packet, error: packetError } = await supabase
+    .from("packets")
+    .select("*, children(avatar_emoji, special_notes)")
+    .eq("id", packetId)
+    .eq("user_id", user.id)
+    .single();
 
   if (packetError || !packet) {
     return NextResponse.json({ error: "Packet not found." }, { status: 404 });
