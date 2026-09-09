@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { createElement } from "react";
-import { renderToBuffer } from "@react-pdf/renderer";
-import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
+import { renderAndCachePacketPdf } from "@/lib/packetPdfRender";
 
 export const maxDuration = 90; // 30s image poll + ~10s render + upload headroom
 // @react-pdf/renderer is Node-only — force Node runtime
@@ -56,6 +54,37 @@ export async function GET(req: NextRequest) {
   if (packetError || !packet) {
     return NextResponse.json({ error: "Packet not found." }, { status: 404 });
   }
+
+  // ── Cache hit: serve the already-rendered PDF straight from Storage ───────
+  // Skips the image-readiness poll and the render entirely — a cached PDF
+  // was already rendered with final images, and packet content is immutable
+  // after generation completes (see chunk 3 investigation).
+  if (packet.pdf_url) {
+    const { data: cached, error: downloadError } = await supabase.storage
+      .from("packets")
+      .download(packet.pdf_url);
+
+    if (!downloadError && cached) {
+      const buf = new Uint8Array(await cached.arrayBuffer());
+      const filename = buildFilename(packet.child_name, packet.theme, packet.created_at);
+      return new Response(buf.buffer as ArrayBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="${filename}"`,
+          "Content-Length": String(buf.byteLength),
+        },
+      });
+    }
+
+    console.error("[generate-pdf] Cached PDF download failed, falling back to fresh render:", {
+      message: downloadError?.message,
+      packetId,
+      storagePath: packet.pdf_url,
+    });
+  }
+
+  // ── Cache miss (or a failed cache read) — render fresh ────────────────────
 
   // ── Wait for images if they are still being generated ────────────────────
   // Image generation runs in after() and can take up to ~2 min after packet
@@ -123,73 +152,31 @@ export async function GET(req: NextRequest) {
     packetCelebration: content.packet_celebration ?? null,
   };
 
-  // ── Render to buffer ──────────────────────────────────────────────────────
+  // ── Render (and best-effort cache) ────────────────────────────────────────
+  // Storage path (inside renderAndCachePacketPdf) uses the packet's own
+  // UUID, not the child's name — the name would leak into the object key,
+  // and a name+theme+date path collides across two packets generated for
+  // the same child/theme on the same day.
+  const filename = buildFilename(
+    packet.child_name,
+    packet.theme,
+    packet.created_at
+  );
 
   let pdfBuffer: Uint8Array;
   try {
-    pdfBuffer = await renderToBuffer(
-      createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>
-    );
+    pdfBuffer = await renderAndCachePacketPdf({
+      supabase,
+      packetId,
+      userId: packet.user_id,
+      props,
+    });
   } catch (err) {
     console.error("[generate-pdf] Render failed:", err);
     return NextResponse.json(
       { error: "Something went wrong generating the PDF. Please try again." },
       { status: 500 }
     );
-  }
-
-  // ── Optionally upload to Supabase Storage ─────────────────────────────────
-  // Storage path uses the packet's own UUID, not the child's name — the name
-  // would leak into the object key, and a name+theme+date path collides
-  // across two packets generated for the same child/theme on the same day.
-  const filename = buildFilename(
-    packet.child_name,
-    packet.theme,
-    packet.created_at
-  );
-  const storagePath = `${packet.user_id}/${packet.id}.pdf`;
-
-  try {
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("packets")
-      .upload(storagePath, pdfBuffer, {
-        contentType: "application/pdf",
-        upsert: true,
-      });
-
-    if (uploadError || !uploadData) {
-      console.error("[generate-pdf] Storage upload failed:", {
-        message: uploadError?.message,
-        packetId,
-        userId: packet.user_id,
-        storagePath,
-      });
-    } else {
-      // Save the storage path for future requests (fire-and-forget — does not
-      // block the PDF response). The bucket is private, so there is no public
-      // URL to store — a later chunk that reads this back will do so via the
-      // service-role client.
-      supabase
-        .from("packets")
-        .update({ pdf_url: uploadData.path })
-        .eq("id", packetId)
-        .then(({ error: pdfUrlUpdateError }) => {
-          if (pdfUrlUpdateError) {
-            console.error("[generate-pdf] Failed to save pdf_url after upload:", {
-              message: pdfUrlUpdateError.message,
-              packetId,
-              storagePath,
-            });
-          }
-        });
-    }
-  } catch (err) {
-    console.error("[generate-pdf] Storage upload threw:", {
-      message: err instanceof Error ? err.message : String(err),
-      packetId,
-      userId: packet.user_id,
-      storagePath,
-    });
   }
 
   // ── Return PDF ────────────────────────────────────────────────────────────

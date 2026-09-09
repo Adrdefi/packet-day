@@ -6,6 +6,8 @@ import type { Child, PacketContent } from "@/types";
 import { generateBothImages } from "@/lib/generateMascotImage";
 import { MODEL } from "@/lib/config";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { renderAndCachePacketPdf } from "@/lib/packetPdfRender";
+import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
@@ -581,6 +583,49 @@ export async function POST(req: NextRequest) {
           }
         } else {
           console.warn("[generate-packet] No mascot_description — skipping image generation");
+        }
+
+        // Pre-warm the PDF cache so a download (or, later, an email) never
+        // has to wait on a first render. Best-effort and non-fatal: the
+        // packet already exists and is valid at this point, so a failure
+        // here must never surface as a generation failure — it just means
+        // the first real download falls back to rendering on demand, same
+        // as today's behavior.
+        send({ type: "progress", message: `Getting ${child.name}'s packet ready to print...` });
+        try {
+          const gradeDisplay =
+            child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
+          const pdfProps: PacketPDFProps = {
+            childName: child.name,
+            childEmoji: child.avatar_emoji ?? "🌟",
+            childGrade: gradeDisplay,
+            theme: savedPacket.theme,
+            title: generatedContent.packet_title ?? generatedContent.title ?? savedPacket.theme,
+            activities: generatedContent.activities as PDFActivity[],
+            createdAt: savedPacket.created_at,
+            mascotImageUrl: mascotImageUrl,
+            coloringImageUrl: coloringImageUrl,
+            mascotName: generatedContent.mascot_name ?? null,
+            coloringPage: generatedContent.coloring_page
+              ? (generatedContent.coloring_page as PDFColoringPage)
+              : null,
+            greeting: generatedContent.greeting ?? null,
+            parentNotes: generatedContent.parent_notes ?? null,
+            dailyReflection: generatedContent.daily_reflection ?? null,
+            packetMission: generatedContent.packet_mission ?? null,
+            packetCelebration: generatedContent.packet_celebration ?? null,
+          };
+          await renderAndCachePacketPdf({
+            supabase,
+            packetId,
+            userId: user.id,
+            props: pdfProps,
+          });
+        } catch (err) {
+          console.error("[generate-packet] Inline PDF pre-render failed (non-fatal):", {
+            message: err instanceof Error ? err.message : String(err),
+            packetId,
+          });
         }
 
         send({
