@@ -2,25 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
-import { renderAndCachePacketPdf } from "@/lib/packetPdfRender";
+import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 
 export const maxDuration = 90; // 30s image poll + ~10s render + upload headroom
 // @react-pdf/renderer is Node-only — force Node runtime
 export const runtime = "nodejs";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function buildFilename(childName: string, theme: string, date: string): string {
-  const d = date ? date.slice(0, 10) : new Date().toISOString().slice(0, 10);
-  return `${slugify(childName)}-${slugify(theme)}-${d}.pdf`;
-}
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 

@@ -5,9 +5,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateBothImages } from "@/lib/generateMascotImage";
 import { MODEL } from "@/lib/config";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { renderAndCachePacketPdf } from "@/lib/packetPdfRender";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
+import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
+import { sendPacketReadyEmail } from "@/lib/resend";
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
@@ -358,6 +359,83 @@ function encodeSSE(event: SSEEvent): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
 }
 
+// ─── Mascot image upload (for the packet-ready email) ─────────────────────────
+
+/**
+ * Decodes and uploads the mascot image to the public "packet-mascots" bucket
+ * so the packet-ready email can reference it as a hosted <img src>, not a
+ * base64 data URL (which most email clients block, and which would blow past
+ * Gmail's ~102KB HTML clipping threshold on its own).
+ *
+ * `mascotImageUrl` has three possible shapes coming out of generateMascotImage:
+ * a "data:image/...;base64,..." URL (the normal case), a direct Replicate URL
+ * (the fallback used when generateMascotImage's own base64 fetch fails —
+ * expires in ~1hr, not worth re-hosting as a "permanent" email asset), or
+ * null (mascot generation failed or was skipped entirely). Only the first
+ * case produces a hosted URL; the other two are treated as "no mascot image"
+ * and return null so the email still sends without a hero image.
+ *
+ * Never throws — every failure path logs and returns null.
+ */
+async function uploadMascotImage(
+  supabase: SupabaseClient,
+  mascotImageUrl: string | null,
+  userId: string,
+  packetId: string
+): Promise<string | null> {
+  if (!mascotImageUrl) return null;
+
+  if (!mascotImageUrl.startsWith("data:")) {
+    console.warn(
+      "[generate-packet] mascotImageUrl is not a data URL (likely the expiring-Replicate-URL fallback) — skipping mascot upload for email",
+      { packetId }
+    );
+    return null;
+  }
+
+  const match = mascotImageUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) {
+    console.error(
+      "[generate-packet] mascotImageUrl data URL didn't match the expected format — skipping mascot upload",
+      { packetId }
+    );
+    return null;
+  }
+
+  const [, contentType, base64Payload] = match;
+  const storagePath = `${userId}/${packetId}.png`;
+
+  try {
+    const buffer = Buffer.from(base64Payload, "base64");
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("packet-mascots")
+      .upload(storagePath, buffer, { contentType, upsert: true });
+
+    if (uploadError || !uploadData) {
+      console.error("[generate-packet] Mascot image upload failed:", {
+        message: uploadError?.message,
+        packetId,
+        userId,
+        storagePath,
+      });
+      return null;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("packet-mascots").getPublicUrl(uploadData.path);
+    return publicUrl;
+  } catch (err) {
+    console.error("[generate-packet] Mascot image upload threw:", {
+      message: err instanceof Error ? err.message : String(err),
+      packetId,
+      userId,
+      storagePath,
+    });
+    return null;
+  }
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -615,12 +693,44 @@ export async function POST(req: NextRequest) {
             packetMission: generatedContent.packet_mission ?? null,
             packetCelebration: generatedContent.packet_celebration ?? null,
           };
-          await renderAndCachePacketPdf({
+          const pdfBuffer = await renderAndCachePacketPdf({
             supabase,
             packetId,
             userId: user.id,
             props: pdfProps,
           });
+
+          if (user.email) {
+            try {
+              const filename = buildFilename(child.name, savedPacket.theme, savedPacket.created_at);
+              const subjects = generatedContent.activities.map((a) => a.subject);
+              const heroImageUrl = await uploadMascotImage(
+                supabase,
+                mascotImageUrl,
+                user.id,
+                packetId
+              );
+              await sendPacketReadyEmail({
+                to: user.email,
+                childName: child.name,
+                theme: savedPacket.theme,
+                mascotName: generatedContent.mascot_name ?? null,
+                heroImageUrl,
+                subjects,
+                pdfBuffer,
+                filename,
+              });
+            } catch (err) {
+              console.error("[generate-packet] Packet-ready email failed (non-fatal):", {
+                message: err instanceof Error ? err.message : String(err),
+                packetId,
+              });
+            }
+          } else {
+            console.warn("[generate-packet] No user.email on session — skipping packet-ready email", {
+              packetId,
+            });
+          }
         } catch (err) {
           console.error("[generate-packet] Inline PDF pre-render failed (non-fatal):", {
             message: err instanceof Error ? err.message : String(err),

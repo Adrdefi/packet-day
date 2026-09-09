@@ -11,6 +11,23 @@ interface RenderAndCachePacketPdfParams {
   props: PacketPDFProps;
 }
 
+// ─── Filename helpers ───────────────────────────────────────────────────────
+// Shared by generate-pdf (download Content-Disposition) and generate-packet
+// (the packet-ready email attachment) so both produce the identical
+// human-readable filename for the same packet.
+
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function buildFilename(childName: string, theme: string, date: string): string {
+  const d = date ? date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  return `${slugify(childName)}-${slugify(theme)}-${d}.pdf`;
+}
+
 /**
  * Renders a packet's PDF and best-effort uploads it to Storage at
  * `${userId}/${packetId}.pdf`, updating packets.pdf_url on success.
