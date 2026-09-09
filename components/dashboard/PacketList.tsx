@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Child, Packet } from "@/types";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/ui/Toast";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -16,11 +18,14 @@ function formatDate(iso: string): string {
 function PacketRow({
   packet,
   childEmoji,
+  onDownloadError,
 }: {
   packet: Packet;
   childEmoji: string;
+  onDownloadError: (message: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   async function copyShareLink() {
@@ -31,6 +36,37 @@ function PacketRow({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: select text manually isn't needed in modern browsers, silently ignore
+    }
+  }
+
+  async function downloadPDF() {
+    if (downloading) return; // one render in flight per row at a time
+    setDownloading(true);
+    try {
+      // iOS Safari doesn't support the `download` attribute on anchor tags.
+      // Detect iOS and navigate directly to the API URL — bypasses the blob
+      // entirely and lets Safari open the PDF natively.
+      if (isIOS) {
+        window.location.href = `/api/generate-pdf?packetId=${packet.id}`;
+      } else {
+        const res = await fetch(`/api/generate-pdf?packetId=${packet.id}`);
+        if (!res.ok) throw new Error("PDF generation failed");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const filename =
+          res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ??
+          "packet.pdf";
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        // Delay revoke so the browser has time to open it
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }
+    } catch {
+      onDownloadError("Couldn't build that PDF right now. Give it another try in a moment.");
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -54,17 +90,14 @@ function PacketRow({
 
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0">
-        {packet.pdf_url && (
-          <a
-            href={packet.pdf_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={isIOS ? "Opens in Safari — tap share to save" : "Download PDF"}
-            className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 px-3 py-2.5 rounded-lg transition-colors"
-          >
-            {isIOS ? "Open PDF" : "PDF ↓"}
-          </a>
-        )}
+        <button
+          onClick={downloadPDF}
+          disabled={downloading}
+          title={isIOS ? "Opens in Safari — tap share to save" : "Download PDF"}
+          className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2.5 rounded-lg transition-colors"
+        >
+          {downloading ? "Building..." : isIOS ? "Open PDF" : "PDF ↓"}
+        </button>
         <button
           onClick={copyShareLink}
           className="text-xs font-semibold text-muted border border-border hover:border-sage/50 hover:text-sage px-3 py-2.5 rounded-lg transition-colors min-w-[60px]"
@@ -84,6 +117,8 @@ interface PacketListProps {
 }
 
 export default function PacketList({ packets, children }: PacketListProps) {
+  const { toasts, toast, dismiss } = useToast();
+
   if (packets.length === 0) {
     const firstChild = children[0];
     return (
@@ -113,6 +148,7 @@ export default function PacketList({ packets, children }: PacketListProps) {
 
   return (
     <div className="bg-white rounded-xl border border-border shadow-sm px-5">
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
       {packets.map((packet) => {
         const child = packet.child_id
           ? childMap.get(packet.child_id)
@@ -122,6 +158,7 @@ export default function PacketList({ packets, children }: PacketListProps) {
             key={packet.id}
             packet={packet}
             childEmoji={child?.avatar_emoji ?? "📦"}
+            onDownloadError={toast.error}
           />
         );
       })}

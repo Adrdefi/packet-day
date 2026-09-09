@@ -139,34 +139,57 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Optionally upload to Supabase Storage ─────────────────────────────────
+  // Storage path uses the packet's own UUID, not the child's name — the name
+  // would leak into the object key, and a name+theme+date path collides
+  // across two packets generated for the same child/theme on the same day.
   const filename = buildFilename(
     packet.child_name,
     packet.theme,
     packet.created_at
   );
+  const storagePath = `${packet.user_id}/${packet.id}.pdf`;
 
   try {
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("packets")
-      .upload(`${packet.user_id}/${filename}`, pdfBuffer, {
+      .upload(storagePath, pdfBuffer, {
         contentType: "application/pdf",
         upsert: true,
       });
 
-    if (!uploadError && uploadData) {
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("packets").getPublicUrl(uploadData.path);
-
-      // Save url for future requests (fire-and-forget)
+    if (uploadError || !uploadData) {
+      console.error("[generate-pdf] Storage upload failed:", {
+        message: uploadError?.message,
+        packetId,
+        userId: packet.user_id,
+        storagePath,
+      });
+    } else {
+      // Save the storage path for future requests (fire-and-forget — does not
+      // block the PDF response). The bucket is private, so there is no public
+      // URL to store — a later chunk that reads this back will do so via the
+      // service-role client.
       supabase
         .from("packets")
-        .update({ pdf_url: publicUrl })
+        .update({ pdf_url: uploadData.path })
         .eq("id", packetId)
-        .then(() => {});
+        .then(({ error: pdfUrlUpdateError }) => {
+          if (pdfUrlUpdateError) {
+            console.error("[generate-pdf] Failed to save pdf_url after upload:", {
+              message: pdfUrlUpdateError.message,
+              packetId,
+              storagePath,
+            });
+          }
+        });
     }
-  } catch {
-    // Storage upload is optional — continue even if it fails
+  } catch (err) {
+    console.error("[generate-pdf] Storage upload threw:", {
+      message: err instanceof Error ? err.message : String(err),
+      packetId,
+      userId: packet.user_id,
+      storagePath,
+    });
   }
 
   // ── Return PDF ────────────────────────────────────────────────────────────
