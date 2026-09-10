@@ -3,6 +3,8 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
 import { stripMarkdown } from "@/lib/blog";
+import { getSituationEntry } from "@/lib/situations/registry";
+import { buildSituationMetadata } from "@/lib/situations/metadata";
 import SituationHero from "@/components/landing/SituationHero";
 import SituationTextSection from "@/components/landing/SituationTextSection";
 import SituationChecklist from "@/components/landing/SituationChecklist";
@@ -20,19 +22,10 @@ import {
   faq,
 } from "@/lib/situations/road-trip";
 
-export const metadata: Metadata = {
-  // `absolute` bypasses the root layout's "%s | Packet Day" title template —
-  // titleTag already ends in "| Packet Day", so the template would otherwise
-  // double it up. Same reason /sick-day does this.
-  title: { absolute: roadTripMetadata.titleTag },
-  description: roadTripMetadata.metaDescription,
-  alternates: { canonical: roadTripMetadata.canonical },
-  openGraph: {
-    title: roadTripMetadata.titleTag,
-    description: roadTripMetadata.metaDescription,
-    url: roadTripMetadata.canonical,
-  },
-};
+export const metadata: Metadata = buildSituationMetadata(
+  getSituationEntry("road-trip"),
+  roadTripMetadata
+);
 
 export default function RoadTripPage() {
   // Computed here (a Server Component), not inside SituationFAQ (a "use

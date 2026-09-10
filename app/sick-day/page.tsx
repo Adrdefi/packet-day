@@ -3,6 +3,8 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
 import { stripMarkdown } from "@/lib/blog";
+import { getSituationEntry } from "@/lib/situations/registry";
+import { buildSituationMetadata } from "@/lib/situations/metadata";
 import SituationHero from "@/components/landing/SituationHero";
 import SituationSteps from "@/components/landing/SituationSteps";
 import SituationTextSection from "@/components/landing/SituationTextSection";
@@ -22,19 +24,10 @@ import {
   faq,
 } from "@/lib/situations/sick-day";
 
-export const metadata: Metadata = {
-  // `absolute` bypasses the root layout's "%s | Packet Day" title template —
-  // titleTag already ends in "| Packet Day", so the template would otherwise
-  // double it up. Same reason the blog pages do this.
-  title: { absolute: sickDayMetadata.titleTag },
-  description: sickDayMetadata.metaDescription,
-  alternates: { canonical: sickDayMetadata.canonical },
-  openGraph: {
-    title: sickDayMetadata.titleTag,
-    description: sickDayMetadata.metaDescription,
-    url: sickDayMetadata.canonical,
-  },
-};
+export const metadata: Metadata = buildSituationMetadata(
+  getSituationEntry("sick-day"),
+  sickDayMetadata
+);
 
 export default function SickDayPage() {
   // Computed here (a Server Component), not inside SituationFAQ (a "use

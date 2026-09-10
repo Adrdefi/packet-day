@@ -22,3 +22,14 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     emoji: "🚗",
   },
 ];
+
+/** Looks up a registry entry by slug. Throws if the slug isn't registered — a
+ * page importing this always knows its own slug, so a miss is a bug, not a
+ * runtime condition to handle gracefully. */
+export function getSituationEntry(slug: string): SituationRegistryEntry {
+  const entry = SITUATIONS.find((situation) => situation.slug === slug);
+  if (!entry) {
+    throw new Error(`No situation registered for slug "${slug}"`);
+  }
+  return entry;
+}
