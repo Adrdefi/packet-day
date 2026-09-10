@@ -9,6 +9,7 @@
  * answers ("road trip activity book" and "print in color") reworded.
  */
 import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
   HeroContent,
@@ -22,7 +23,7 @@ export const metadata: SituationPageMetadata = {
   titleTag: "Road Trip Activities for Kids Without a Tablet | Packet Day",
   metaDescription:
     "Backseat dread? Generate a personalized 13 to 18 page learning packet per kid, themed to their obsession, with a character woven through every subject. Print it tonight, free, no card.",
-  canonical: "https://packetday.com/road-trip",
+  canonical: `${SITE_URL}/road-trip`,
 };
 
 const CTA_LABEL = "Make My Road Trip Packet — Free";

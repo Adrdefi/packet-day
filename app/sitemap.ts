@@ -1,13 +1,15 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
 import { SITUATIONS } from "@/lib/situations/registry";
+import { SITE_URL } from "@/lib/site";
 
-// Hardcoded, not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
+// Not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
 // sitemap must always state the canonical production domain no matter which
 // environment (preview, staging, misconfigured prod) produced the build. If the
 // env var were wrong here, every URL in the live sitemap would silently point at
-// the wrong domain with no build error to catch it.
-const BASE_URL = "https://packetday.com";
+// the wrong domain with no build error to catch it. SITE_URL is hardcoded for
+// the same reason — see lib/site.ts.
+const BASE_URL = SITE_URL;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getAllPosts();

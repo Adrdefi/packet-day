@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito, Fraunces } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -18,7 +19,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://packetday.com"),
+  metadataBase: new URL(SITE_URL),
 
   title: {
     default: "Packet Day — Your backup plan for the hard days",

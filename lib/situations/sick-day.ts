@@ -9,6 +9,7 @@
  * mention removed from the low-energy section (it lives in step 3).
  */
 import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
   HeroContent,
@@ -23,7 +24,7 @@ export const metadata: SituationPageMetadata = {
   titleTag: "Sick Day Activities for Kids: A Full School Day in About a Minute | Packet Day",
   metaDescription:
     "Your kid is home sick but not sick enough to sleep. Generate a personalized 13 to 18 page learning packet around their obsession: math, reading, science, art. Free, no card required.",
-  canonical: "https://packetday.com/sick-day",
+  canonical: `${SITE_URL}/sick-day`,
 };
 
 const CTA_LABEL = "Make My Sick Day Packet — Free";

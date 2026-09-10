@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Child, PacketContent } from "@/types";
 import Wordmark from "@/components/layout/Wordmark";
+import { SITE_URL } from "@/lib/site";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -365,7 +366,7 @@ function ResultView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://packetday.com"}/packets/${packet.share_token}`;
+  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL}/packets/${packet.share_token}`;
 
   async function downloadPDF() {
     setDownloading(true);

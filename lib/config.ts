@@ -1,5 +1,7 @@
 /** Central config — import from here instead of hardcoding strings in route files. */
 
+import { SITE_URL } from "@/lib/site";
+
 export const MODEL = "claude-sonnet-4-6";
 
 /**
@@ -23,5 +25,5 @@ export function getBaseUrl(headers: Headers): string {
     return `${proto}://${host}`;
   }
 
-  return (process.env.NEXT_PUBLIC_APP_URL ?? "https://packetday.com").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL).replace(/\/$/, "");
 }

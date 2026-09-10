@@ -8,6 +8,7 @@ import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
+import { SITE_URL } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -96,7 +97,7 @@ export async function generateMetadata({
   const post = getPostBySlug(slug);
   if (!post) return {};
 
-  const url = `https://packetday.com/blog/${post.slug}`;
+  const url = `${SITE_URL}/blog/${post.slug}`;
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" title
@@ -127,7 +128,7 @@ export default async function BlogPostPage({
     notFound();
   }
 
-  const postUrl = `https://packetday.com/blog/${post.slug}`;
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -156,15 +157,15 @@ export default async function BlogPostPage({
     author: {
       "@type": "Organization",
       name: "Packet Day",
-      url: "https://packetday.com",
+      url: SITE_URL,
     },
     publisher: {
       "@type": "Organization",
       name: "Packet Day",
-      url: "https://packetday.com",
+      url: SITE_URL,
       logo: {
         "@type": "ImageObject",
-        url: "https://packetday.com/logo-mark.png",
+        url: `${SITE_URL}/logo-mark.png`,
       },
     },
   };

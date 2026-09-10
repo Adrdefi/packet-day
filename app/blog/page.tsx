@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { getAllPosts } from "@/lib/blog";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the root layout's "%s | Packet Day" title template —
@@ -11,13 +12,13 @@ export const metadata: Metadata = {
   description:
     "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.",
   alternates: {
-    canonical: "https://packetday.com/blog",
+    canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
     title: "The Packet Day Blog | Homeschool Ideas and Real Talk",
     description:
       "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.",
-    url: "https://packetday.com/blog",
+    url: `${SITE_URL}/blog`,
   },
 };
 
