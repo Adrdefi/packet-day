@@ -1,4 +1,4 @@
-import SituationCard from "@/components/landing/SituationCard";
+import SituationCardRow from "@/components/landing/SituationCardRow";
 import { SITUATIONS } from "@/lib/situations/registry";
 
 interface Props {
@@ -21,16 +21,7 @@ export default function SituationCrossLinks({ currentSlug, bgClassName = "bg-whi
           Packets for every kind of day
         </h2>
 
-        <div
-          className={[
-            "grid sm:grid-cols-2 lg:grid-cols-3 gap-6",
-            others.length === 1 ? "max-w-sm mx-auto" : "",
-          ].join(" ")}
-        >
-          {others.map((situation) => (
-            <SituationCard key={situation.slug} situation={situation} />
-          ))}
-        </div>
+        <SituationCardRow situations={others} />
       </div>
     </section>
   );

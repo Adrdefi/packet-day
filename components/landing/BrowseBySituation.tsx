@@ -1,4 +1,4 @@
-import SituationCard from "@/components/landing/SituationCard";
+import SituationCardRow from "@/components/landing/SituationCardRow";
 import { SITUATIONS } from "@/lib/situations/registry";
 
 export default function BrowseBySituation() {
@@ -17,11 +17,7 @@ export default function BrowseBySituation() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SITUATIONS.map((situation) => (
-            <SituationCard key={situation.slug} situation={situation} />
-          ))}
-        </div>
+        <SituationCardRow situations={SITUATIONS} />
       </div>
     </section>
   );

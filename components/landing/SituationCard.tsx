@@ -3,13 +3,14 @@ import type { SituationRegistryEntry } from "@/lib/situations/types";
 
 interface Props {
   situation: SituationRegistryEntry;
+  className?: string;
 }
 
-export default function SituationCard({ situation }: Props) {
+export default function SituationCard({ situation, className = "" }: Props) {
   return (
     <Link
       href={situation.href}
-      className="group block rounded-2xl bg-white border border-border p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+      className={`group block rounded-2xl bg-white border border-border p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 ${className}`}
     >
       <div className="text-4xl mb-4" aria-hidden="true">
         {situation.emoji}
