@@ -44,7 +44,7 @@ What makes it work as a *basket replacement* specifically: it's fresh every day.
 
 One packet a month is free, no card required — and if morning work becomes your daily ritual, unlimited is $9/month.
 
-**[Try a free morning packet →](/)**
+**[Try a free morning packet →](/signup)**
 
 ## Building the ritual (the part that matters)
 
@@ -63,7 +63,7 @@ If some part of you feels guilty that your morning doesn't look like the photos 
 
 The ritual is the gift. The tray was never required.
 
-**[Make my free morning packet →](/)** — 60 seconds while the coffee brews. One per month free, no card.
+**[Make my free morning packet →](/signup)** — 60 seconds while the coffee brews. One per month free, no card.
 
 ---
 

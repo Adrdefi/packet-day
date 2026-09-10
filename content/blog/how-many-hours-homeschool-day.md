@@ -59,7 +59,7 @@ For a K–2 kid, one packet *is* most of the day's hours. For a 6th grader, it's
 
 One packet a month is free, no card required. Daily coverage is $9/month unlimited.
 
-**[Fill tomorrow's hours free →](/)**
+**[Fill tomorrow's hours free →](/signup)**
 
 ## When to do more (and when to do less)
 
@@ -77,7 +77,7 @@ If yes — your hours are right, whatever they are. If no — the answer is almo
 
 Trust the short day. It's not cutting corners — it's the whole advantage of doing this at home. 💛
 
-**[Make my free packet →](/)** — 60 seconds, tomorrow's learning block handled. One per month free, no card.
+**[Make my free packet →](/signup)** — 60 seconds, tomorrow's learning block handled. One per month free, no card.
 
 ---
 

@@ -60,7 +60,7 @@ It's not the whole curriculum. It doesn't have to be. It's one decision you'll n
 
 One packet a month is free, no card required. If you need every morning covered for a while, unlimited is $9/month.
 
-**[Take mornings off my plate →](/)**
+**[Take mornings off my plate →](/signup)**
 
 ## The thing nobody says
 
@@ -70,7 +70,7 @@ Every veteran homeschooler has a burnout story. Ask around. They'll tell you abo
 
 Rest. Shrink the day. Take the permission slip. The love for this comes back — it just needs room to breathe. 💛
 
-**[Make my free packet →](/)** — 60 seconds, one less decision, every morning. One per month free, no card.
+**[Make my free packet →](/signup)** — 60 seconds, one less decision, every morning. One per month free, no card.
 
 ---
 

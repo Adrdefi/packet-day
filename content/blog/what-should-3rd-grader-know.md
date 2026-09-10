@@ -87,7 +87,7 @@ It's not test prep. It's the opposite — it's the wobbly topics, practiced insi
 
 One packet a month is free, no card required. A fresh one whenever a new wobble appears: $9/month unlimited.
 
-**[Make a free 3rd-grade packet →](/)**
+**[Make a free 3rd-grade packet →](/signup)**
 
 ## The panic is lying to you
 
@@ -97,7 +97,7 @@ Your job isn't to keep them exactly on the line. It's to keep them learning, cur
 
 You've got this. And so do they. ⭐
 
-**[Generate my free packet →](/)** — 60 seconds, 3rd-grade level, their obsession. One per month free, no card.
+**[Generate my free packet →](/signup)** — 60 seconds, 3rd-grade level, their obsession. One per month free, no card.
 
 ---
 
