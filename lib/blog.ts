@@ -101,7 +101,7 @@ function parsePost(fileName: string, raw: string): BlogPost {
 
   // Strip the trailing "*Word count: ... *" footer line (and the `---`
   // fence immediately before it, which exists only to set the footer off).
-  const footerPattern = /\n*---\s*\n+\*Word count:.*\*\s*$/s;
+  const footerPattern = /\n*---\s*\n+\*Word count:.*\*\s*$/;
   if (!footerPattern.test(content)) {
     fail(fileName, "missing the trailing `*Word count: ...*` footer line");
   }
@@ -142,10 +142,18 @@ function parsePost(fileName: string, raw: string): BlogPost {
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / WORDS_PER_MINUTE));
 
+  // The spec block's Meta description ends with an author-facing char-count
+  // note (e.g. "... actually help. (143 chars)") that must never reach a
+  // reader — strip it here so every consumer gets clean, publishable text.
+  const metaDescription = specValues["Meta description"]!.replace(
+    /\s*\(\d+\s*chars?\)\s*$/i,
+    ""
+  );
+
   return {
     title,
     slug,
-    metaDescription: specValues["Meta description"]!,
+    metaDescription,
     primaryKeyword: specValues["Primary keyword"]!,
     internalLinks: specValues["Internal links"]!,
     publishDate,
