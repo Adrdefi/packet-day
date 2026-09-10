@@ -6,6 +6,7 @@ import Wordmark from "@/components/layout/Wordmark";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
+import BrowseBySituation from "@/components/landing/BrowseBySituation";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -373,6 +374,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── BROWSE BY SITUATION ──────────────────────────────────────────── */}
+        <BrowseBySituation />
 
         {/* ── FEATURES ──────────────────────────────────────────────────────── */}
         <section className="py-24 bg-white px-6">

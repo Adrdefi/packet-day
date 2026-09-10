@@ -10,6 +10,7 @@ import SituationChecklist from "@/components/landing/SituationChecklist";
 import SituationPricingCTA from "@/components/landing/SituationPricingCTA";
 import SituationFAQ from "@/components/landing/SituationFAQ";
 import SituationIllustration from "@/components/landing/SituationIllustration";
+import SituationCrossLinks from "@/components/landing/SituationCrossLinks";
 import {
   metadata as sickDayMetadata,
   hero,
@@ -73,6 +74,7 @@ export default function SickDayPage() {
         <SituationChecklist content={checklist} bgClassName="bg-white" />
         <SituationPricingCTA content={pricing} />
         <SituationFAQ content={faq} bgClassName="bg-paper" />
+        <SituationCrossLinks currentSlug="sick-day" bgClassName="bg-cream" />
       </main>
 
       <Footer />

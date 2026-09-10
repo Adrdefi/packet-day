@@ -12,11 +12,13 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     href: "/sick-day",
     label: "Sick days",
     teaser: "Home sick? Generate their whole school day in about a minute.",
+    emoji: "🛋️",
   },
   {
     slug: "road-trip",
     href: "/road-trip",
     label: "Road trips",
     teaser: 'Turn "are we there yet?" into learning they actually want.',
+    emoji: "🚗",
   },
 ];

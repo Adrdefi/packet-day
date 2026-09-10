@@ -9,6 +9,7 @@ import SituationChecklist from "@/components/landing/SituationChecklist";
 import SituationPricingCTA from "@/components/landing/SituationPricingCTA";
 import SituationFAQ from "@/components/landing/SituationFAQ";
 import SituationIllustration from "@/components/landing/SituationIllustration";
+import SituationCrossLinks from "@/components/landing/SituationCrossLinks";
 import {
   metadata as roadTripMetadata,
   hero,
@@ -70,6 +71,7 @@ export default function RoadTripPage() {
         <SituationChecklist content={checklist} bgClassName="bg-cream" />
         <SituationPricingCTA content={pricing} />
         <SituationFAQ content={faq} bgClassName="bg-white" />
+        <SituationCrossLinks currentSlug="road-trip" bgClassName="bg-paper" />
       </main>
 
       <Footer />

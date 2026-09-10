@@ -5,6 +5,8 @@ export interface SituationRegistryEntry {
   href: string;
   label: string;
   teaser: string;
+  /** Decorative emoji for the situation card — rendered in an aria-hidden span. */
+  emoji: string;
 }
 
 /** A run of text within a paragraph — `italic` renders as <em>. */
