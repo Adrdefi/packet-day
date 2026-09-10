@@ -22,21 +22,38 @@ export interface SituationPageMetadata {
   canonical: string;
 }
 
+/**
+ * A short run of text paired with an optional decorative emoji. The emoji is
+ * always a separate field, never baked into `text` — components render it in
+ * its own aria-hidden span. At most one per heading/label; never used on an
+ * h1, title tag, meta description, openGraph field, JSON-LD, or FAQ content.
+ */
+export interface EmojiText {
+  text: string;
+  emoji?: string;
+}
+
 export interface HeroContent {
+  /** Pill badge above the h1, e.g. "Your sick day backup plan". */
+  badge?: EmojiText;
+  /** Never carries an emoji — see EmojiText's doc comment. */
   h1: string;
-  leadParagraphs: string[];
+  leadParagraphs: EmojiText[];
   ctaLabel: string;
+  ctaEmoji?: string;
   trustLine: string;
 }
 
 export interface TextSectionContent {
   heading: string;
+  headingEmoji?: string;
   paragraphs: Paragraph[];
 }
 
 export interface Step {
   title: string;
   body: string;
+  emoji?: string;
 }
 
 export interface StepsContent {
@@ -46,14 +63,17 @@ export interface StepsContent {
 
 export interface ChecklistContent {
   heading: string;
+  headingEmoji?: string;
   items: string[];
 }
 
 export interface PricingCTAContent {
   heading: string;
+  headingEmoji?: string;
   /** Copy leading up to the price figures — the component appends the live prices from PLAN_PRICE. */
   intro: string;
   ctaLabel: string;
+  ctaEmoji?: string;
 }
 
 export interface Faq {

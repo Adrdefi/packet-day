@@ -59,17 +59,20 @@ export default function SickDayPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        <SituationHero content={hero} />
-        <SituationSteps content={steps} />
+        {/* Alternating backgrounds (cream/white/paper) so adjacent sections
+            never share a background — borrowed from app/page.tsx's own
+            section-to-section alternation. */}
+        <SituationHero content={hero} bgClassName="bg-cream" />
+        <SituationSteps content={steps} bgClassName="bg-white" />
         <SituationTextSection
           content={lowEnergySection}
-          bgClassName="bg-white"
+          bgClassName="bg-paper"
           illustration={<SituationIllustration className="w-48 h-48 md:w-56 md:h-56" />}
         />
-        <SituationTextSection content={notADownloadSection} bgClassName="bg-paper" />
-        <SituationChecklist content={checklist} />
+        <SituationTextSection content={notADownloadSection} bgClassName="bg-cream" />
+        <SituationChecklist content={checklist} bgClassName="bg-white" />
         <SituationPricingCTA content={pricing} />
-        <SituationFAQ content={faq} />
+        <SituationFAQ content={faq} bgClassName="bg-paper" />
       </main>
 
       <Footer />

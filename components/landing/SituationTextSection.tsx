@@ -46,6 +46,11 @@ export default function SituationTextSection({
         <div>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight">
             {content.heading}
+            {content.headingEmoji && (
+              <span className="ml-2" aria-hidden="true">
+                {content.headingEmoji}
+              </span>
+            )}
           </h2>
           {content.paragraphs.map((paragraph, i) => renderParagraph(paragraph, i))}
         </div>

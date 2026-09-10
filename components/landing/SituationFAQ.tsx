@@ -7,11 +7,16 @@ import type { FAQContent } from "@/lib/situations/types";
 // Component) via buildFaqJsonLd below, the same split the blog post page
 // uses — stripMarkdown/lib/blog.ts touches Node's fs/path, so it must never
 // be imported from a "use client" component or the client bundle breaks.
-export default function SituationFAQ({ content }: { content: FAQContent }) {
+interface Props {
+  content: FAQContent;
+  bgClassName?: string;
+}
+
+export default function SituationFAQ({ content, bgClassName = "bg-white" }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="py-24 px-6 bg-white">
+    <section className={`py-24 px-6 ${bgClassName}`}>
       <div className="max-w-3xl mx-auto">
         <h2 className="font-display text-3xl md:text-4xl font-bold text-dark text-center mb-12 leading-tight">
           {content.heading}

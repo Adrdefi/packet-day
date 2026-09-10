@@ -27,14 +27,22 @@ export const metadata: SituationPageMetadata = {
 };
 
 const CTA_LABEL = "Make My Sick Day Packet — Free";
+const CTA_EMOJI = "✨";
 
 export const hero: HeroContent = {
+  badge: { text: "Your sick day backup plan", emoji: "💛" },
   h1: "Home Sick? Generate Their Whole School Day in About a Minute.",
   leadParagraphs: [
-    "It's 7am, the school called, and your kid is on the couch with a blanket fort. They're not sick enough to sleep all day, but they're not well enough for school either. You're tired, the day's already derailed, and the guilt is whispering that learning just evaporated for today.",
-    "It doesn't have to. Give us about a minute and we'll generate a full school day you don't have to plan, teach, or supervise beyond handing it over.",
+    {
+      text: "It's 7am, the school called, and your kid is on the couch with a blanket fort. They're not sick enough to sleep all day, but they're not well enough for school either. You're tired, the day's already derailed, and the guilt is whispering that learning just evaporated for today.",
+      emoji: "🏠",
+    },
+    {
+      text: "It doesn't have to. Give us about a minute and we'll generate a full school day you don't have to plan, teach, or supervise beyond handing it over.",
+    },
   ],
   ctaLabel: CTA_LABEL,
+  ctaEmoji: CTA_EMOJI,
   trustLine: "One free packet a month · No card required",
 };
 
@@ -44,20 +52,24 @@ export const steps: StepsContent = {
     {
       title: "Tell us two things.",
       body: "Your kid's grade level and what they're obsessed with right now — dinosaurs, cats, Minecraft, space, whatever's running the show this month.",
+      emoji: "📝",
     },
     {
       title: "We build their day from scratch.",
       body: `${PAGE_RANGE_TEXT} — math, reading, science, art, calm movement breaks — with a character we invent just for them, woven through every subject. Nothing here existed before you asked for it.`,
+      emoji: "✨",
     },
     {
       title: "Print it. Done.",
       body: "Hand it over with some crayons and go make tea. Answer keys included, so there's no hovering over the couch.",
+      emoji: "🎉",
     },
   ],
 };
 
 export const lowEnergySection: TextSectionContent = {
   heading: "Built for low-energy days — for both of you",
+  headingEmoji: "🌿",
   paragraphs: [
     "Sick days have a particular shape: a kid who needs calm, quiet activities, and a parent with absolutely nothing left in the tank. That's who this is for.",
     `One packet. ${PAGE_RANGE_TEXT}. Math, reading, science, art, and gentle movement breaks that won't disturb the blanket fort. Everything at their level (K–8), everything printable. You print it once and you're done. The whole day is handled.`,
@@ -66,6 +78,7 @@ export const lowEnergySection: TextSectionContent = {
 
 export const notADownloadSection: TextSectionContent = {
   heading: "This isn't a download. Nothing here existed before you asked.",
+  headingEmoji: "🌟",
   paragraphs: [
     "You searched for sick day worksheets. Here's something better than worksheets.",
     'Every printable pack on Etsy, every "50 free sick day printables" listicle — they’re all pre-made. Same pages for every kid. You scroll, you guess, you print half a bundle hoping some of it fits.',
@@ -84,6 +97,7 @@ export const notADownloadSection: TextSectionContent = {
 
 export const checklist: ChecklistContent = {
   heading: "What you get",
+  headingEmoji: "📚",
   items: [
     `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in about a minute — made fresh for your kid, never pre-made`,
     `Math, reading, science, art, and calm movement breaks — roughly ${HOURS_RANGE_TEXT} of quiet learning`,
@@ -96,9 +110,11 @@ export const checklist: ChecklistContent = {
 
 export const pricing: PricingCTAContent = {
   heading: "Free to start. Guilt-free to try.",
+  headingEmoji: "⭐",
   intro:
     "One packet a month is free — no card required. When the next sick day hits, upgrade to unlimited packets and unlimited kids for",
   ctaLabel: CTA_LABEL,
+  ctaEmoji: CTA_EMOJI,
 };
 
 export const faq: FAQContent = {

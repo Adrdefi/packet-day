@@ -10,6 +10,11 @@ export default function SituationPricingCTA({ content }: { content: PricingCTACo
       <div className="max-w-2xl mx-auto">
         <h2 className="font-display text-3xl md:text-4xl font-bold text-cream mb-6 leading-tight">
           {content.heading}
+          {content.headingEmoji && (
+            <span className="ml-2" aria-hidden="true">
+              {content.headingEmoji}
+            </span>
+          )}
         </h2>
         <p className="text-cream/80 text-lg leading-relaxed mb-10">
           {content.intro} ${annualMonthlyRate}/month annual or ${PLAN_PRICE.monthly}/month monthly.
@@ -19,6 +24,11 @@ export default function SituationPricingCTA({ content }: { content: PricingCTACo
           className="inline-block bg-cream text-sage font-bold text-base px-8 py-4 rounded-full hover:bg-cream-dark transition-colors shadow-sm"
         >
           {content.ctaLabel}
+          {content.ctaEmoji && (
+            <span className="ml-1.5" aria-hidden="true">
+              {content.ctaEmoji}
+            </span>
+          )}
         </Link>
       </div>
     </section>
