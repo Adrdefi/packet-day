@@ -12,6 +12,31 @@ export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
 }
 
+// Strips inline markdown syntax (bold, italic, links, inline code) down to
+// plain text, for the one place plain text is required: FAQ schema. Google's
+// FAQPage spec wants the accepted answer as clean text, not markdown source.
+function stripMarkdownForSchema(text: string): string {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
+// Renders a JSON-LD <script> tag the way Next.js's own App Router guide
+// recommends: JSON.stringify the data, then escape "<" so a literal
+// "</script>" inside any field value can't prematurely close the tag.
+function JsonLd({ data }: { data: object }) {
+  const json = JSON.stringify(data).replace(/</g, "\\u003c");
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: json }}
+    />
+  );
+}
+
 function formatPublishDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -126,8 +151,53 @@ export default async function BlogPostPage({
     notFound();
   }
 
+  const postUrl = `https://packetday.com/blog/${post.slug}`;
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: post.faqs.map((faq) => ({
+      "@type": "Question",
+      name: stripMarkdownForSchema(faq.question),
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: stripMarkdownForSchema(faq.answer),
+      },
+    })),
+  };
+
+  // No `image` field: none of these posts have an associated image, and
+  // no `author` person name exists in the content model (the spec block
+  // has no author field) — so author is the organization itself rather
+  // than an invented byline.
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.metaDescription,
+    datePublished: post.publishDate,
+    url: postUrl,
+    author: {
+      "@type": "Organization",
+      name: "Packet Day",
+      url: "https://packetday.com",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Packet Day",
+      url: "https://packetday.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://packetday.com/logo-mark.png",
+      },
+    },
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-paper">
+      <JsonLd data={articleJsonLd} />
+      <JsonLd data={faqJsonLd} />
+
       <SiteHeader />
 
       <main className="flex-1">
