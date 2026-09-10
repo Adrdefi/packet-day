@@ -18,6 +18,7 @@ export default function SituationPricingCTA({ content }: { content: PricingCTACo
         </h2>
         <p className="text-cream/80 text-lg leading-relaxed mb-10">
           {content.intro} ${annualMonthlyRate}/month annual or ${PLAN_PRICE.monthly}/month monthly.
+          {content.closingSentence && ` ${content.closingSentence}`}
         </p>
         <Link
           href="/signup"

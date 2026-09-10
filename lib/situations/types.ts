@@ -72,6 +72,8 @@ export interface PricingCTAContent {
   headingEmoji?: string;
   /** Copy leading up to the price figures — the component appends the live prices from PLAN_PRICE. */
   intro: string;
+  /** Optional sentence rendered after the price sentence, e.g. a closing reassurance line. */
+  closingSentence?: string;
   ctaLabel: string;
   ctaEmoji?: string;
 }

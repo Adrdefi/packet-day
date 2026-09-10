@@ -85,6 +85,7 @@ export const pricing: PricingCTAContent = {
   headingEmoji: "⭐",
   intro:
     "One free packet a month — no card required. Unlimited packets and unlimited kids are",
+  closingSentence: "Print one for each kid, each trip, however often you travel.",
   ctaLabel: CTA_LABEL,
   ctaEmoji: CTA_EMOJI,
 };
