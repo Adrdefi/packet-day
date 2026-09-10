@@ -26,6 +26,7 @@ export function buildSituationMetadata(
       title: pageMeta.titleTag,
       description: pageMeta.metaDescription,
       url: pageMeta.canonical,
+      type: "website",
       images: [
         {
           url: imageUrl,

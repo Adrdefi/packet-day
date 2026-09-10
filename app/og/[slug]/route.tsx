@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
 import path from "path";
 import { SITUATIONS } from "@/lib/situations/registry";
+import { OG_HEADLINES } from "@/lib/situations/og-content";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,10 @@ export async function GET(
   if (!situation) {
     return new Response("Not found", { status: 404 });
   }
+
+  // Falls back to the short registry label only if a slug is ever missing
+  // from OG_HEADLINES — keeps the image rendering instead of erroring.
+  const headline = OG_HEADLINES[situation.slug] ?? situation.label;
 
   const [frauncesExtraBold, frauncesBold, nunitoRegular, nunitoBold] =
     await fontsPromise;
@@ -88,8 +93,8 @@ export async function GET(
             flexDirection: "column",
             flex: 1,
             justifyContent: "center",
-            gap: "28px",
-            maxWidth: "960px",
+            gap: "24px",
+            maxWidth: "1020px",
           }}
         >
           <div
@@ -102,27 +107,15 @@ export async function GET(
           />
           <div
             style={{
-              fontSize: "96px",
+              fontSize: "60px",
               fontWeight: 800,
               fontFamily: "Fraunces",
               color: "#1A1A2E",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
             }}
           >
-            {situation.label}
-          </div>
-          <div
-            style={{
-              fontSize: "32px",
-              fontWeight: 400,
-              fontFamily: "Nunito",
-              color: "#6B7280",
-              lineHeight: 1.45,
-              maxWidth: "820px",
-            }}
-          >
-            {situation.teaser}
+            {headline}
           </div>
         </div>
 
