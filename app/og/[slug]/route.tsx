@@ -1,19 +1,25 @@
 import { ImageResponse } from "next/og";
-import { NextRequest } from "next/server";
+import { readFile } from "fs/promises";
+import path from "path";
 import { SITUATIONS } from "@/lib/situations/registry";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
-async function loadFont(origin: string, filename: string): Promise<ArrayBuffer> {
-  const res = await fetch(new URL(`/fonts/${filename}`, origin));
-  if (!res.ok) {
-    throw new Error(`Failed to load font ${filename}: ${res.status}`);
-  }
-  return res.arrayBuffer();
+function loadFont(filename: string): Promise<Buffer> {
+  return readFile(path.join(process.cwd(), "public", "fonts", filename));
 }
 
+// Read once per server instance and reused across requests — same file,
+// same bytes, no reason to hit disk again on every image render.
+const fontsPromise = Promise.all([
+  loadFont("Fraunces-ExtraBold.ttf"),
+  loadFont("Fraunces-Bold.ttf"),
+  loadFont("Nunito-Regular.ttf"),
+  loadFont("Nunito-Bold.ttf"),
+]);
+
 export async function GET(
-  request: NextRequest,
+  _request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
@@ -23,14 +29,8 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const origin = request.nextUrl.origin;
   const [frauncesExtraBold, frauncesBold, nunitoRegular, nunitoBold] =
-    await Promise.all([
-      loadFont(origin, "Fraunces-ExtraBold.ttf"),
-      loadFont(origin, "Fraunces-Bold.ttf"),
-      loadFont(origin, "Nunito-Regular.ttf"),
-      loadFont(origin, "Nunito-Bold.ttf"),
-    ]);
+    await fontsPromise;
 
   return new ImageResponse(
     (
