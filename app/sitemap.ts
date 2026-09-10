@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
+import { SITUATIONS } from "@/lib/situations/registry";
 
 // Hardcoded, not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
 // sitemap must always state the canonical production domain no matter which
@@ -59,5 +60,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...postPages];
+  const situationPages: MetadataRoute.Sitemap = SITUATIONS.map((situation) => ({
+    url: `${BASE_URL}${situation.href}`,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...postPages, ...situationPages];
 }

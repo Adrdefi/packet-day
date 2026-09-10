@@ -6,23 +6,11 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
+import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
-}
-
-// Renders a JSON-LD <script> tag the way Next.js's own App Router guide
-// recommends: JSON.stringify the data, then escape "<" so a literal
-// "</script>" inside any field value can't prematurely close the tag.
-function JsonLd({ data }: { data: object }) {
-  const json = JSON.stringify(data).replace(/</g, "\\u003c");
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: json }}
-    />
-  );
 }
 
 function formatPublishDate(dateStr: string): string {
