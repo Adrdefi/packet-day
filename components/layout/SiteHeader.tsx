@@ -9,14 +9,22 @@ export default function SiteHeader() {
           href="/"
           className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors shrink-0"
         >
-          <Wordmark size="xl" />
+          <Wordmark size="xl" hideTextOnMobile />
         </Link>
-        <Link
-          href="/login"
-          className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
-        >
-          Log in
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link
+            href="/blog"
+            className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
+          >
+            Blog
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
+          >
+            Log in
+          </Link>
+        </div>
       </div>
     </nav>
   );
