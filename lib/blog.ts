@@ -32,6 +32,19 @@ export interface BlogPost {
 
 const WORDS_PER_MINUTE = 220;
 
+// Strips inline markdown syntax (bold, italic, links, inline code) down to
+// plain text. Used both here (so a post title can never carry a stray
+// emphasis marker into any of its six display surfaces) and by the post
+// page's JSON-LD schema (FAQ question/answer text must be plain text).
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
 function fail(fileName: string, message: string): never {
   throw new Error(`Blog post "${fileName}": ${message}`);
 }
@@ -45,7 +58,7 @@ function parsePost(fileName: string, raw: string): BlogPost {
   if (!titleLine.startsWith("# ")) {
     fail(fileName, "missing H1 title on the first non-empty line");
   }
-  const title = titleLine.slice(2).trim();
+  const title = stripMarkdown(titleLine.slice(2).trim());
   if (!title) {
     fail(fileName, "H1 title is empty");
   }

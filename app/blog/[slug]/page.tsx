@@ -6,22 +6,10 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
-import { getAllPosts, getPostBySlug } from "@/lib/blog";
+import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
-}
-
-// Strips inline markdown syntax (bold, italic, links, inline code) down to
-// plain text, for the one place plain text is required: FAQ schema. Google's
-// FAQPage spec wants the accepted answer as clean text, not markdown source.
-function stripMarkdownForSchema(text: string): string {
-  return text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .trim();
 }
 
 // Renders a JSON-LD <script> tag the way Next.js's own App Router guide
@@ -158,10 +146,10 @@ export default async function BlogPostPage({
     "@type": "FAQPage",
     mainEntity: post.faqs.map((faq) => ({
       "@type": "Question",
-      name: stripMarkdownForSchema(faq.question),
+      name: stripMarkdown(faq.question),
       acceptedAnswer: {
         "@type": "Answer",
-        text: stripMarkdownForSchema(faq.answer),
+        text: stripMarkdown(faq.answer),
       },
     })),
   };
