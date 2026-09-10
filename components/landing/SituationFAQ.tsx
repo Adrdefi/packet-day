@@ -50,9 +50,7 @@ export default function SituationFAQ({ content, bgClassName = "bg-white" }: Prop
                   </span>
                 </button>
                 <div id={answerId} role="region" aria-labelledby={questionId} hidden={!isOpen}>
-                  {isOpen && (
-                    <p className="pb-5 text-dark/70 text-sm leading-relaxed">{faq.answer}</p>
-                  )}
+                  <p className="pb-5 text-dark/70 text-sm leading-relaxed">{faq.answer}</p>
                 </div>
               </div>
             );

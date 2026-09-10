@@ -13,4 +13,10 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     label: "Sick days",
     teaser: "Home sick? Generate their whole school day in about a minute.",
   },
+  {
+    slug: "road-trip",
+    href: "/road-trip",
+    label: "Road trips",
+    teaser: 'Turn "are we there yet?" into learning they actually want.',
+  },
 ];
