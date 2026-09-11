@@ -3,7 +3,12 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignOutButton() {
+interface SignOutButtonProps {
+  /** "quiet" is a small, unobtrusive text link for chrome like the onboarding header. */
+  variant?: "default" | "quiet";
+}
+
+export default function SignOutButton({ variant = "default" }: SignOutButtonProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -11,6 +16,17 @@ export default function SignOutButton() {
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  }
+
+  if (variant === "quiet") {
+    return (
+      <button
+        onClick={handleSignOut}
+        className="text-xs text-muted hover:text-dark transition-colors underline underline-offset-2"
+      >
+        Log out
+      </button>
+    );
   }
 
   return (

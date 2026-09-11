@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
 import Wordmark from "@/components/layout/Wordmark";
+import SignOutButton from "@/components/dashboard/SignOutButton";
 
 // ─── Confetti burst ───────────────────────────────────────────────────────────
 
@@ -214,7 +215,12 @@ function OnboardingContent() {
         >
           <Wordmark size="lg" />
         </Link>
-        <span className="text-xs text-muted">Setting up your account</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline text-xs text-muted">
+            Setting up your account
+          </span>
+          <SignOutButton variant="quiet" />
+        </div>
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────── */}
