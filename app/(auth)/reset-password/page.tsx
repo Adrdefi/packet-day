@@ -32,7 +32,7 @@ function ResetPasswordForm() {
         setReady(true);
       } else {
         setError(
-          "This link didn't work. It may have expired, already been used, or been opened in a different browser than the one you requested it from."
+          "This link didn't work. It may have expired or already been used."
         );
       }
     });
