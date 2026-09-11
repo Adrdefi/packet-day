@@ -2,12 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [ready, setReady] = useState(false);
@@ -17,25 +16,30 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Exchange the one-time code from the email link for a live session
+  // The Supabase browser client auto-detects the `code` param on the URL and
+  // exchanges it for a session as soon as it initializes (detectSessionInUrl
+  // defaults to true) — that happens before this effect ever runs, so we
+  // don't exchange the code ourselves. getSession() awaits that same
+  // initialization internally, so it's safe to use as "is there a session
+  // yet" without racing the automatic exchange or re-consuming the
+  // already-used one-time code on a second attempt.
   useEffect(() => {
-    const code = searchParams.get("code");
-    if (!code) {
-      setError(
-        "This link isn't valid. Request a new one from the forgot-password page."
-      );
-      return;
-    }
-    supabase.auth.exchangeCodeForSession(code).then(({ error: exchErr }) => {
-      if (exchErr) {
-        setError(
-          "This link has expired. Request a new one — they only last 1 hour."
-        );
-      } else {
+    let cancelled = false;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) {
         setReady(true);
+      } else {
+        setError(
+          "This link didn't work. It may have expired, already been used, or been opened in a different browser than the one you requested it from."
+        );
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -87,7 +91,7 @@ function ResetPasswordForm() {
           🔗
         </div>
         <h1 className="font-display text-3xl font-bold text-dark mb-3">
-          Link expired
+          That link didn&apos;t work
         </h1>
         <p className="text-dark/70 text-sm leading-relaxed mb-8">{error}</p>
         <Link

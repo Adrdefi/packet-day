@@ -2,13 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 const PROTECTED = ["/onboarding", "/dashboard", "/generate"];
-const AUTH_ROUTES = [
-  "/login",
-  "/signup",
-  "/forgot-password",
-  "/reset-password",
-  "/check-email",
-];
+const AUTH_ROUTES = ["/login", "/signup", "/check-email"];
+
+// Excluded from AUTH_ROUTES on purpose: a valid password-recovery link signs
+// the user in (it's a real Supabase session) while they're still on these two
+// pages. Bouncing an authenticated session away from them, like AUTH_ROUTES
+// does elsewhere, would dead-end the recovery flow into /dashboard before the
+// user ever sets a new password.
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next({ request: req });
