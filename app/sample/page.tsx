@@ -2,11 +2,29 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import Wordmark from "@/components/layout/Wordmark";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
+
+const TITLE = "See a Sample Packet";
+const DESCRIPTION =
+  "Browse a real, full-length Packet Day packet — every page, no signup required.";
 
 export const metadata: Metadata = {
-  title: "See a Sample Packet",
-  description:
-    "Browse a real, full-length Packet Day packet — every page, no signup required.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/sample` },
+  openGraph: {
+    ...DEFAULT_OPEN_GRAPH,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${SITE_URL}/sample`,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    ...DEFAULT_TWITTER,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
+  },
 };
 
 // Every page in public/sample/ was rasterized at the same width by

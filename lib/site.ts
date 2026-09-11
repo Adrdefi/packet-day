@@ -16,3 +16,29 @@
  * that redirects away.
  */
 export const SITE_URL = "https://www.packetday.com";
+
+/**
+ * openGraph/twitter fields that app/layout.tsx sets at the root
+ * (siteName/locale/type, card/site) — a page-level `openGraph` or `twitter`
+ * object in Next.js metadata REPLACES the parent's entirely rather than
+ * merging, so any page that needs its own `url` or `images` has to spread
+ * these back in or it silently loses the inherited tags.
+ */
+export const DEFAULT_OPEN_GRAPH = {
+  siteName: "Packet Day",
+  locale: "en_US",
+  type: "website" as const,
+};
+
+export const DEFAULT_TWITTER = {
+  card: "summary_large_image" as const,
+  site: "@packetday",
+};
+
+/** Homepage share image, reused as the default for pages with no image of their own. */
+export const DEFAULT_OG_IMAGE = {
+  url: "/og",
+  width: 1200,
+  height: 630,
+  alt: "Packet Day — AI-powered learning packets for homeschool families",
+};

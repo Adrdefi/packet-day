@@ -2,23 +2,33 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { getAllPosts } from "@/lib/blog";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
+
+const TITLE = "The Packet Day Blog | Homeschool Ideas and Real Talk";
+const DESCRIPTION =
+  "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the root layout's "%s | Packet Day" title template —
   // this title already ends in "Packet Day", so the template would otherwise
   // double it up to "... | Packet Day | Packet Day".
-  title: { absolute: "The Packet Day Blog | Homeschool Ideas and Real Talk" },
-  description:
-    "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.",
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
   alternates: {
     canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
-    title: "The Packet Day Blog | Homeschool Ideas and Real Talk",
-    description:
-      "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.",
+    ...DEFAULT_OPEN_GRAPH,
+    title: TITLE,
+    description: DESCRIPTION,
     url: `${SITE_URL}/blog`,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    ...DEFAULT_TWITTER,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
   },
 };
 

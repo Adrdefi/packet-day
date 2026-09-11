@@ -14,11 +14,12 @@ import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
   description:
-    "Generate a full day of personalized, printable learning activities for your homeschooled child in 60 seconds. Free to start.",
+    "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
+  alternates: { canonical: SITE_URL },
   openGraph: {
     title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in 60 seconds. Free to start.",
+      "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
     url: SITE_URL,
     siteName: "Packet Day",
     images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day — AI-powered learning packets for homeschool families" }],
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in 60 seconds. Free to start.",
+      "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
     images: ["/og"],
   },
 };
@@ -72,7 +73,7 @@ const STEPS = [
     icon: "⚡",
     step: "STEP 2",
     title: 'Hit \u201cGenerate\u201d',
-    desc: "Our AI creates a complete, original packet in about 60 seconds — math, reading, science, art, and PE breaks, all themed to their world.",
+    desc: "Our AI creates a complete, original packet in about a minute — math, reading, science, art, and PE breaks, all themed to their world.",
   },
   {
     icon: "🖨️",
@@ -150,7 +151,7 @@ export default function Home() {
               <strong className="text-dark font-bold">
                 AI to create personalized, print-ready learning packets
               </strong>{" "}
-              themed to whatever your kids are obsessed with — in under 60 seconds.
+              themed to whatever your kids are obsessed with — in about a minute.
               Sharks? Ancient Egypt? Minecraft? If they can imagine it, we can build
               a school day around it.
             </p>

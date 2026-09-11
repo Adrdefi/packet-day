@@ -101,7 +101,7 @@ export async function GET() {
               }}
             >
               AI-powered learning packets for homeschool families —
-              personalized, printable, in 60 seconds.
+              personalized, printable, in about a minute.
             </div>
 
             {/* Stats row */}

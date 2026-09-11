@@ -366,7 +366,7 @@ function ResultView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL}/packets/${packet.share_token}`;
+  const shareUrl = `${SITE_URL}/packets/${packet.share_token}`;
 
   async function downloadPDF() {
     setDownloading(true);

@@ -20,7 +20,7 @@ export default function SituationIllustration({ className = "", variant = "sick-
         {/* Winding road */}
         <path
           d="M20 190 C 50 140, 10 110, 50 80 C 90 50, 50 30, 90 10"
-          className="stroke-border"
+          className="stroke-sage-light"
           strokeWidth="26"
           fill="none"
         />
@@ -46,7 +46,7 @@ export default function SituationIllustration({ className = "", variant = "sick-
         />
         {/* Leaf accent */}
         <path
-          d="M120 190 C 135 180, 145 190, 140 205 C 125 205, 115 200, 120 190 Z"
+          d="M70 183 C 85 173, 95 183, 90 198 C 75 198, 65 193, 70 183 Z"
           className="fill-sage"
         />
       </svg>

@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
+
+const TITLE = "Contact — Packet Day";
+const DESCRIPTION =
+  "Get in touch with the Packet Day team — we typically reply within a couple of business days.";
 
 export const metadata: Metadata = {
-  title: "Contact — Packet Day",
-  description:
-    "Get in touch with the Packet Day team — we typically reply within a couple of business days.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/contact` },
+  openGraph: {
+    ...DEFAULT_OPEN_GRAPH,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${SITE_URL}/contact`,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    ...DEFAULT_TWITTER,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
+  },
 };
 
 export default function ContactPage() {

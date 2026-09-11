@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
+
+const TITLE = "Privacy Policy — Packet Day";
+const DESCRIPTION =
+  "How Packet Day collects, uses, and protects your family's information.";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Packet Day",
-  description:
-    "How Packet Day collects, uses, and protects your family's information.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/privacy` },
+  openGraph: {
+    ...DEFAULT_OPEN_GRAPH,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${SITE_URL}/privacy`,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    ...DEFAULT_TWITTER,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
+  },
 };
 
 export default function PrivacyPage() {

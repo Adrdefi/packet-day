@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
+import { SITE_URL } from "@/lib/site";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,10 +101,13 @@ export async function generateMetadata({
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
   const title = `${packet.theme} Learning Packet — ${gradeLabel} • Packet Day`;
   const description = `A full day of personalized learning about ${packet.theme}, created by AI for a homeschool family. Free to try.`;
-  const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/og-packet?theme=${encodeURIComponent(packet.theme)}&grade=${encodeURIComponent(gradeLabel)}`;
+  const ogImageUrl = `${SITE_URL}/api/og-packet?theme=${encodeURIComponent(packet.theme)}&grade=${encodeURIComponent(gradeLabel)}`;
 
   return {
-    title,
+    // `absolute` bypasses the root layout's "%s | Packet Day" title template —
+    // `title` already ends in "Packet Day", so the template would otherwise
+    // double it up to "... • Packet Day | Packet Day".
+    title: { absolute: title },
     description,
     openGraph: {
       title,
@@ -187,7 +191,7 @@ export default async function SharePage({
   const preview = activities.slice(0, 2);
   const locked = activities.slice(2);
   const gradeLabel = GRADE_LABELS[p.grade_level] ?? `Grade ${p.grade_level}`;
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/packets/${p.share_token}`;
+  const shareUrl = `${SITE_URL}/packets/${p.share_token}`;
 
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const pinterestShare = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${p.theme} learning packet for ${gradeLabel} — made with Packet Day`)}`;
@@ -335,7 +339,7 @@ export default async function SharePage({
             </h2>
             <p className="text-muted max-w-lg mx-auto mb-6 leading-relaxed">
               Packet Day creates personalized, printable learning packets for
-              your child in seconds. Pick any theme — your kid&apos;s favorite
+              your child in about a minute. Pick any theme — your kid&apos;s favorite
               topic, today&apos;s mood, or whatever gets them out of bed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
