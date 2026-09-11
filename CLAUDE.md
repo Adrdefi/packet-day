@@ -25,6 +25,8 @@ Packet Day generates personalized, printable daily learning packets for homescho
 - ✅ "You made it. Let's build something good today."
 - ❌ "Your packet is ready."
 - ✅ "Aria's Ocean Adventure packet is ready to print!"
+- **Keep factual copy honest.** `/sample` features Noah, a real kid who is NOT Natalie's child.
+- **Never add, edit, or mark testimonials as verified in `lib/testimonials.ts`** without Andy confirming the person and quote are real.
 
 ---
 
@@ -63,7 +65,7 @@ lib/
     client.ts           # Browser Supabase client
     server.ts           # Server Supabase client (uses cookies)
   stripe.ts             # Stripe instance + plan definitions
-  anthropic.ts          # Claude client + packet generation logic
+  config.ts             # Generation model, base URL helper
   resend.ts             # Resend email client + email helpers
   pdf.ts                # PDF utilities and shared constants
 hooks/
@@ -126,12 +128,37 @@ See `.env.local.example` for all variables and where to find them.
 
 ---
 
+## Domain, hosting & environments
+
+- **Official address:** https://www.packetday.com. Bare `packetday.com` 308-redirects to `www`. All absolute URLs, canonicals, `metadataBase`, and email links use `www`.
+- **DNS:** Netlify (NS1 nameservers). **Registrar:** Porkbun. Never enable Vercel DNS.
+- **Hosting:** Vercel Pro.
+- **One Supabase project** serves both local dev and production. Stripe sandbox actions change real production profiles — be careful testing checkout locally.
+- **Test accounts** use `adrdefi+...` addresses and are kept on purpose. `test2`/`test3` show as "pro" from sandbox testing — exclude them from user counts.
+- `.env.local` has trailing inline `#` comments on some lines. Next.js strips them; any custom script reading that file must strip them too.
+
+---
+
+## Server code
+
+- **Never use `after()`** or any unawaited fire-and-forget server work — everything stays on the awaited chain of the live request. (Past attempts caused silent timeouts and crashes.)
+- Supabase Storage's `upload()` compiles to `INSERT ... RETURNING`, so every bucket needs a SELECT RLS policy for authenticated writes — even public buckets.
+- `packets.pdf_url` stores a Storage **path**, not a URL. The `packets` bucket is private; objects live at `{user_id}/{packet_id}.pdf`. The `packet-mascots` bucket is public on purpose (mascots carry no child name).
+- `lib/packetPdfRender.ts` requires a session-bound Supabase client, never service role — RLS is what catches a wrong `userId`.
+- Claude API JSON responses: strip markdown code fences before parsing.
+- The generation model is set in `lib/config.ts` (`MODEL`).
+- Stripe checkout only accepts the two price IDs in the server-side allow list (monthly and yearly). Never loosen or bypass that check.
+
+---
+
 ## Subscription plans
 
 | Plan | Packets/month | Price |
 |------|--------------|-------|
 | Free | 1 | $0 |
 | Packet Day Unlimited | Unlimited | $12/mo or $108/yr |
+
+Free tier is 1 packet/month per **account**, not per child.
 
 ---
 
@@ -188,6 +215,21 @@ Examples:
 - **Stop after two failed tooling attempts.** If an approach to a tooling or environment problem fails twice, stop and report back rather than trying a third variant.
 - **State hypothesis outcomes explicitly.** When debugging, say plainly whether each hypothesis was CONFIRMED or FAILED before moving to the next one. Never move on silently from a failed test.
 - **Test through the real app when possible.** Prefer `npm run dev` plus the actual API route over hand-built scratch harnesses. The dev server resolves modules correctly; hand-rolled Node invocations on Windows often don't.
+- **Andy is a beginner.** Explain results in plain English, not jargon.
+- **Only commit and push when the prompt asks for it.** Riskier changes go on a preview branch and get tested on the Vercel preview URL before merging to main.
+- **When asked to show a file or code, show the raw text** — never a summary.
+- **"Read only" means no edits, no new files, no commits.**
+
+---
+
+## PDF and packets
+
+- Serve PDFs with `Content-Disposition: inline` through a direct API route (`/api/generate-pdf`), not a blob URL — iOS Safari blocks blob URLs. (The desktop download button briefly uses `URL.createObjectURL`, but iOS is detected and sent straight to the API route instead.)
+- Recraft v3's pinned version has no `vector_illustration` style option — don't use it.
+- The child's name must be scrubbed before any text reaches the image model (IP guard, `lib/generateMascotImage.ts`). Printed text on the PDF keeps the real name.
+- Existing packets in the database are the render regression suite. Never delete them as part of cleanup.
+- PDF text has emoji stripped before rendering because the fonts don't cover emoji. Don't try to render emoji in PDFs.
+- PDF images must be PNG or JPEG. The mascot is requested from Replicate as PNG. The coloring page comes back as webp and is converted with sharp.
 
 ---
 
@@ -220,3 +262,18 @@ Examples:
   3. Kill the *entire* dev-server process tree (cmd wrapper → `next dev` → `start-server.js` — trace with `wmic process where "ParentProcessId=<pid>"` and `taskkill /F` every PID, not just the one holding port 3000).
   4. `npm run dev`, wait for "Ready in", render the same packet, re-check the same string at the pixel level. Repeat 2-3 times independently before trusting a "fixed" or "still broken" result either way.
   5. Only once the drop reproduces reliably across multiple independent fresh restarts, comment out `Font.registerHyphenationCallback(...)` entirely and repeat step 4 to see if it clears. If it does, that's the first genuinely verified result on this bug — report it before writing a real fix, since "disable hyphenation differently" and "guard in `sanitizeText`" are different fixes with different costs.
+
+---
+
+## Email
+
+- The packet-ready email sends once, no retry, inside its own try/catch — an email failure must never fail packet generation.
+- Email HTML: table-based layout, fully inline styles. No `@font-face`, no `data:` URI images, no `cid:` images — use hosted image URLs.
+
+---
+
+## Site, SEO & share images
+
+- Situation pages (`/sick-day`, `/road-trip`) are a shared kit. Every new situation page also needs an entry in `lib/situations/og-content.ts`.
+- Share images: situation pages use `app/og/[slug]`; blog posts use `app/og/blog/[slug]`, prerendered with `generateStaticParams`. New blog posts get an image automatically.
+- The spec block in `content/blog/*.md` is metadata only — it must never render on the page.
