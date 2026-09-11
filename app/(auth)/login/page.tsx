@@ -16,7 +16,7 @@ function LoginForm() {
   const rawPlan = searchParams.get("plan");
   const plan = isPlanSlug(rawPlan) ? rawPlan : null;
   const next = plan ? `/checkout-redirect?plan=${plan}` : searchParams.get("next") ?? "/dashboard";
-  const linkExpired = searchParams.get("error") === "link-expired";
+  const authError = searchParams.get("error");
 
   const supabase = createClient();
 
@@ -24,7 +24,11 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
-    linkExpired ? "That link has expired. Log in below to get back in." : ""
+    authError === "link-expired"
+      ? "That link has expired. Log in below to get back in."
+      : authError === "confirmed-elsewhere"
+        ? "Your email is confirmed! Log in below to get started."
+        : ""
   );
 
   async function handleSubmit(e: React.FormEvent) {

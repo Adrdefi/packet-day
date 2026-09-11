@@ -44,6 +44,16 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.redirect(`${origin}/dashboard`);
     }
+
+    // A missing PKCE code verifier means this browser never held it — the
+    // link was opened on a different device/browser than the one that
+    // started signup. Supabase only appends `code` to the redirect after
+    // its own verify step already succeeded, so the email is confirmed;
+    // there's just no session here yet. Give an honest message instead of
+    // "expired" for this case specifically.
+    if (error.code === "pkce_code_verifier_not_found") {
+      return NextResponse.redirect(`${origin}/login?error=confirmed-elsewhere`);
+    }
   }
 
   // Something went wrong — send them back to login with an error flag
