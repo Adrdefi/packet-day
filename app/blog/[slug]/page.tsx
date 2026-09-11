@@ -8,7 +8,7 @@ import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_TWITTER } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -98,6 +98,7 @@ export async function generateMetadata({
   if (!post) return {};
 
   const url = `${SITE_URL}/blog/${post.slug}`;
+  const imageUrl = `${SITE_URL}/og/blog/${post.slug}`;
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" title
@@ -113,6 +114,20 @@ export async function generateMetadata({
       url,
       type: "article",
       publishedTime: post.publishDate,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      ...DEFAULT_TWITTER,
+      title: post.title,
+      description: post.metaDescription,
+      images: [imageUrl],
     },
   };
 }
