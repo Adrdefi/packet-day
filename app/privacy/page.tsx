@@ -8,7 +8,10 @@ const DESCRIPTION =
   "How Packet Day collects, uses, and protects your family's information.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // Bare page name here, not TITLE — the layout's "%s | Packet Day" template
+  // already appends the brand; using TITLE (which also ends in "Packet Day")
+  // would double it up to "Privacy Policy — Packet Day | Packet Day".
+  title: "Privacy Policy",
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/privacy` },
   openGraph: {

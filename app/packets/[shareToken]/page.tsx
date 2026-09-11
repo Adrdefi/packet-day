@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,9 +109,12 @@ export async function generateMetadata({
     // double it up to "... • Packet Day | Packet Day".
     title: { absolute: title },
     description,
+    alternates: { canonical: `${SITE_URL}/packets/${shareToken}` },
     openGraph: {
+      ...DEFAULT_OPEN_GRAPH,
       title,
       description,
+      url: `${SITE_URL}/packets/${shareToken}`,
       images: [
         {
           url: ogImageUrl,
@@ -120,10 +123,9 @@ export async function generateMetadata({
           alt: title,
         },
       ],
-      type: "website",
     },
     twitter: {
-      card: "summary_large_image",
+      ...DEFAULT_TWITTER,
       title,
       description,
       images: [ogImageUrl],

@@ -77,13 +77,13 @@ export async function GET(req: NextRequest) {
               marginBottom: "32px",
             }}
           >
-            📦 Packet Day
+            Packet Day
           </div>
 
           {/* Grade badge */}
           <div
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
               backgroundColor: "#EFF6F1",
               color: "#2E5238",
@@ -92,10 +92,10 @@ export async function GET(req: NextRequest) {
               padding: "8px 20px",
               borderRadius: "100px",
               marginBottom: "24px",
-              width: "fit-content",
+              alignSelf: "flex-start",
             }}
           >
-            🎓 {grade} Learning Packet
+            {grade} Learning Packet
           </div>
 
           {/* Theme headline */}

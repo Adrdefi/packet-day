@@ -9,7 +9,10 @@ const DESCRIPTION =
   "Simple, affordable pricing for homeschool families. Start free, upgrade when you're ready.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // Bare page name here, not TITLE — the layout's "%s | Packet Day" template
+  // already appends the brand; using TITLE (which also ends in "Packet Day")
+  // would double it up to "Pricing — Packet Day | Packet Day".
+  title: "Pricing",
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {

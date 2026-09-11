@@ -8,7 +8,10 @@ const DESCRIPTION =
   "The terms that govern your use of Packet Day's AI-generated learning packets.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // Bare page name here, not TITLE — the layout's "%s | Packet Day" template
+  // already appends the brand; using TITLE (which also ends in "Packet Day")
+  // would double it up to "Terms of Service — Packet Day | Packet Day".
+  title: "Terms of Service",
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/terms` },
   openGraph: {

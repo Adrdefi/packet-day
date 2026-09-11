@@ -8,7 +8,10 @@ const DESCRIPTION =
   "Get in touch with the Packet Day team — we typically reply within a couple of business days.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // Bare page name here, not TITLE — the layout's "%s | Packet Day" template
+  // already appends the brand; using TITLE (which also ends in "Packet Day")
+  // would double it up to "Contact — Packet Day | Packet Day".
+  title: "Contact",
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/contact` },
   openGraph: {
