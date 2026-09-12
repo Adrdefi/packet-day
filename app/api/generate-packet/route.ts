@@ -360,23 +360,26 @@ function encodeSSE(event: SSEEvent): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-// ─── Mascot image upload (for the packet-ready email) ─────────────────────────
+// ─── Mascot image upload ────────────────────────────────────────────────────
 
 /**
- * Decodes and uploads the mascot image to the public "packet-mascots" bucket
- * so the packet-ready email can reference it as a hosted <img src>, not a
- * base64 data URL (which most email clients block, and which would blow past
- * Gmail's ~102KB HTML clipping threshold on its own).
+ * Decodes and uploads the mascot image to the public "packet-mascots" bucket,
+ * returning a short hosted URL to store in packets.mascot_image_url (instead
+ * of the ~500KB base64 data URL) and to hand the packet-ready email as a
+ * hosted <img src> (most email clients block data URLs outright, and one
+ * would blow past Gmail's ~102KB HTML clipping threshold on its own).
  *
  * `mascotImageUrl` has three possible shapes coming out of generateMascotImage:
  * a "data:image/...;base64,..." URL (the normal case), a direct Replicate URL
  * (the fallback used when generateMascotImage's own base64 fetch fails —
- * expires in ~1hr, not worth re-hosting as a "permanent" email asset), or
- * null (mascot generation failed or was skipped entirely). Only the first
- * case produces a hosted URL; the other two are treated as "no mascot image"
- * and return null so the email still sends without a hero image.
+ * expires in ~1hr, not worth re-hosting as a "permanent" asset), or null
+ * (mascot generation failed or was skipped entirely). Only the first case
+ * produces a hosted URL; the other two are treated as "no hosted image" and
+ * return null — the caller falls back to writing the base64 (or nothing) to
+ * the column, and the email falls back to sending without a hero image.
  *
- * Never throws — every failure path logs and returns null.
+ * Never throws — every failure path logs and returns null. A failed upload
+ * must never leave the packet worse off than storing the base64 directly.
  */
 async function uploadMascotImage(
   supabase: SupabaseClient,
@@ -667,6 +670,11 @@ export async function POST(req: NextRequest) {
         // the connection active so the SDK's fetch calls complete normally.
         let mascotImageUrl: string | null = null;
         let coloringImageUrl: string | null = null;
+        // Hosted packet-mascots URL for the in-memory base64 above, if the
+        // upload succeeds — null means "no hosted copy," not "no mascot."
+        // Kept separate from mascotImageUrl so the PDF render below always
+        // uses the in-memory base64 and never depends on network access.
+        let hostedMascotUrl: string | null = null;
 
         if (mascotDescription) {
           send({ type: "progress", message: "Generating mascot and coloring page images..." });
@@ -676,8 +684,15 @@ export async function POST(req: NextRequest) {
             child.name
           ));
 
+          if (mascotImageUrl) {
+            hostedMascotUrl = await uploadMascotImage(supabase, mascotImageUrl, user.id, packetId);
+          }
+
           const updates: Record<string, string> = {};
-          if (mascotImageUrl) updates.mascot_image_url = mascotImageUrl;
+          // Prefer the hosted URL for the column; fall back to the base64
+          // exactly as before if the upload didn't produce one — a failed
+          // upload must leave the packet no worse off than today.
+          if (mascotImageUrl) updates.mascot_image_url = hostedMascotUrl ?? mascotImageUrl;
           if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
           if (Object.keys(updates).length > 0) {
             const { error: updateError } = await supabase
@@ -733,18 +748,13 @@ export async function POST(req: NextRequest) {
             try {
               const filename = buildFilename(child.name, savedPacket.theme, savedPacket.created_at);
               const subjects = generatedContent.activities.map((a) => a.subject);
-              const heroImageUrl = await uploadMascotImage(
-                supabase,
-                mascotImageUrl,
-                user.id,
-                packetId
-              );
+              // Reuse the hosted URL from the upload above — never upload twice.
               await sendPacketReadyEmail({
                 to: user.email,
                 childName: child.name,
                 theme: savedPacket.theme,
                 mascotName: generatedContent.mascot_name ?? null,
-                heroImageUrl,
+                heroImageUrl: hostedMascotUrl,
                 subjects,
                 pdfBuffer,
                 filename,
@@ -779,7 +789,9 @@ export async function POST(req: NextRequest) {
           type: "complete",
           packet: {
             ...savedPacket,
-            mascot_image_url: mascotImageUrl,
+            // Match exactly what was written to the column above: hosted
+            // URL when the upload succeeded, base64 fallback otherwise.
+            mascot_image_url: hostedMascotUrl ?? mascotImageUrl,
             coloring_image_url: coloringImageUrl,
           },
         });
