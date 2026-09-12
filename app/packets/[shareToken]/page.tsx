@@ -16,6 +16,7 @@ interface PacketData {
   share_token: string;
   created_at: string;
   generated_content: PacketContent;
+  mascot_image_url: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -76,6 +77,17 @@ function subjectColor(subject: string): string {
   if (s.includes("pe") || s.includes("physical") || s.includes("movement"))
     return "bg-coral/10 text-coral-dark border-coral/20";
   return "bg-sage/10 text-sage-dark border-sage/20";
+}
+
+// A mascot image is only ever safe to render if it's a real hosted URL —
+// never a base64 "data:" blob (up to ~900KB of inline text) and never a
+// temporary replicate.delivery link (expires, and was never meant to be
+// a permanent asset). Anything else falls back to the emoji circle below.
+function resolveMascotUrl(url: string | null): string | null {
+  if (!url) return null;
+  if (!url.startsWith("https://")) return null;
+  if (url.includes("replicate.delivery")) return null;
+  return url;
 }
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
@@ -193,6 +205,25 @@ export default async function SharePage({
   const gradeLabel = GRADE_LABELS[p.grade_level] ?? `Grade ${p.grade_level}`;
   const shareUrl = `${SITE_URL}/packets/${p.share_token}`;
 
+  // Only the fields a locked card needs (subject + minutes) ever reach the
+  // client. Title and description are never sent to the browser for these —
+  // no server-rendered HTML to scrape, unlike the old CSS-only blur.
+  const lockedPreview = locked.slice(0, 2).map((activity) => ({
+    subject: activity.subject,
+    estimated_minutes: activity.estimated_minutes,
+  }));
+
+  const mascotUrl = resolveMascotUrl(p.mascot_image_url);
+  const mascotName = p.generated_content.mascot_name;
+  const emojiCluster = p.generated_content.mascot_emoji_cluster;
+  const fallbackEmoji = emojiCluster ? Array.from(emojiCluster)[0] : "✨";
+
+  // We don't have a clean child-first-name field to build this from (see
+  // the assistant's report), so this is always the theme/mascot version.
+  const originLine = mascotName
+    ? `A full day built around ${p.theme}, with ${mascotName} as the guide.`
+    : null;
+
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const pinterestShare = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${p.theme} learning packet for ${gradeLabel} — made with Packet Day`)}`;
   const smsShare = `sms:?body=${encodeURIComponent(`Check out this ${p.theme} learning packet I made with Packet Day! ${shareUrl}`)}`;
@@ -225,6 +256,26 @@ export default async function SharePage({
             <div className="h-3 bg-gradient-to-r from-sage via-honey to-coral" />
 
             <div className="p-8 md:p-10">
+              {/* Mascot hero */}
+              <div className="flex justify-center mb-6">
+                {mascotUrl ? (
+                  <img
+                    src={mascotUrl}
+                    alt={mascotName ? `${mascotName}, this packet's mascot` : "This packet's mascot"}
+                    width={160}
+                    height={160}
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-cream shadow-md bg-cream"
+                  />
+                ) : (
+                  <div
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-sage/15 via-honey/10 to-coral/10 border-4 border-cream shadow-md flex items-center justify-center"
+                    aria-hidden="true"
+                  >
+                    <span className="text-5xl md:text-6xl">{fallbackEmoji}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
@@ -235,6 +286,11 @@ export default async function SharePage({
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-dark leading-tight mb-2">
                     {p.generated_content.packet_title ?? p.generated_content.title}
                   </h1>
+                  {originLine && (
+                    <p className="font-display text-lg md:text-xl text-sage-dark italic mb-3">
+                      {originLine}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 text-sm text-muted">
                     <span className="flex items-center gap-1">
                       <span>🎓</span> {gradeLabel}
@@ -249,35 +305,6 @@ export default async function SharePage({
                       {p.packet_length === "half" ? "Half day" : "Full day"}
                     </span>
                   </div>
-                </div>
-
-                {/* Share icons */}
-                <div className="flex items-center gap-2">
-                  <a
-                    href={fbShare}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Share on Facebook"
-                    className="w-9 h-9 rounded-full bg-[#1877F2]/10 hover:bg-[#1877F2]/20 flex items-center justify-center transition-colors text-[#1877F2] text-lg"
-                  >
-                    f
-                  </a>
-                  <a
-                    href={pinterestShare}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Share on Pinterest"
-                    className="w-9 h-9 rounded-full bg-[#E60023]/10 hover:bg-[#E60023]/20 flex items-center justify-center transition-colors text-[#E60023] font-bold"
-                  >
-                    P
-                  </a>
-                  <a
-                    href={smsShare}
-                    aria-label="Share via text message"
-                    className="w-9 h-9 rounded-full bg-sage/10 hover:bg-sage/20 flex items-center justify-center transition-colors text-sage text-base"
-                  >
-                    💬
-                  </a>
                 </div>
               </div>
 
@@ -303,10 +330,10 @@ export default async function SharePage({
           {/* ── Locked activities ─────────────────────────────────────────── */}
           {locked.length > 0 && (
             <div className="relative mb-10">
-              {/* Blurred ghost cards */}
+              {/* Blurred ghost cards — subject + minutes only, no title/description ever sent to the client */}
               <div className="space-y-4 blur-sm pointer-events-none select-none opacity-70">
-                {locked.slice(0, 2).map((activity, i) => (
-                  <ActivityPreviewCard key={i} activity={activity} />
+                {lockedPreview.map((activity, i) => (
+                  <LockedActivityCard key={i} activity={activity} />
                 ))}
               </div>
 
@@ -317,15 +344,9 @@ export default async function SharePage({
                   <p className="font-semibold text-dark mb-1">
                     See {locked.length} more activit{locked.length === 1 ? "y" : "ies"} in this packet
                   </p>
-                  <p className="text-sm text-muted mb-4">
+                  <p className="text-sm text-muted">
                     Create a free account to generate full packets like this one.
                   </p>
-                  <Link
-                    href="/signup"
-                    className="block bg-sage text-cream font-bold px-6 py-3 rounded-xl hover:bg-sage-dark transition-colors text-sm"
-                  >
-                    Generate a Packet Like This for FREE →
-                  </Link>
                 </div>
               </div>
             </div>
@@ -344,7 +365,10 @@ export default async function SharePage({
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
+                id="share-page-bottom-cta"
                 href="/signup"
+                data-theme={p.theme}
+                data-grade={gradeLabel}
                 className="bg-sage text-cream font-bold px-8 py-3.5 rounded-xl hover:bg-sage-dark transition-colors text-base"
               >
                 Start free — 1 packet on us →
@@ -358,6 +382,35 @@ export default async function SharePage({
             </div>
           </div>
 
+          {/* ── Share buttons ─────────────────────────────────────────────── */}
+          <div className="flex items-center justify-center gap-2 mb-10">
+            <a
+              href={fbShare}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share on Facebook"
+              className="w-9 h-9 rounded-full bg-[#1877F2]/10 hover:bg-[#1877F2]/20 flex items-center justify-center transition-colors text-[#1877F2] text-lg"
+            >
+              f
+            </a>
+            <a
+              href={pinterestShare}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share on Pinterest"
+              className="w-9 h-9 rounded-full bg-[#E60023]/10 hover:bg-[#E60023]/20 flex items-center justify-center transition-colors text-[#E60023] font-bold"
+            >
+              P
+            </a>
+            <a
+              href={smsShare}
+              aria-label="Share via text message"
+              className="w-9 h-9 rounded-full bg-sage/10 hover:bg-sage/20 flex items-center justify-center transition-colors text-sage text-base"
+            >
+              💬
+            </a>
+          </div>
+
           {/* ── Footer ────────────────────────────────────────────────────── */}
           <div className="text-center text-sm text-muted pb-6">
             <span>Created with </span>
@@ -368,11 +421,24 @@ export default async function SharePage({
           </div>
         </div>
       </div>
+
+      {/* This page is a Server Component, so the client `track()` helper from
+          @vercel/analytics can't be used directly here without adding a new
+          client component file (out of scope). This calls window.va the same
+          way that helper does internally. Theme/grade are read back from
+          data-* attributes, which React already HTML-escaped — no raw value
+          is interpolated into this script's text. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "(function(){var el=document.getElementById('share-page-bottom-cta');if(!el)return;el.addEventListener('click',function(){if(window.va){window.va('event',{name:'share_page_cta_click',data:{theme:el.dataset.theme||'',grade:el.dataset.grade||''}});}});})();",
+        }}
+      />
     </>
   );
 }
 
-// ─── Activity preview card ────────────────────────────────────────────────────
+// ─── Activity preview card (readable) ─────────────────────────────────────────
 
 function ActivityPreviewCard({ activity }: { activity: PacketContent["activities"][number] }) {
   return (
@@ -391,6 +457,37 @@ function ActivityPreviewCard({ activity }: { activity: PacketContent["activities
       <div className="px-5 py-4">
         <h3 className="font-bold text-dark text-base mb-1">{activity.title}</h3>
         <p className="text-sm text-muted leading-relaxed">{activity.description}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Locked activity card (subject + minutes only — no title/description) ────
+
+function LockedActivityCard({
+  activity,
+}: {
+  activity: { subject: string; estimated_minutes: number };
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
+        <span className="text-xl">{subjectEmoji(activity.subject)}</span>
+        <span
+          className={`text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border ${subjectColor(activity.subject)}`}
+        >
+          {activity.subject}
+        </span>
+        <span className="ml-auto text-xs text-muted">
+          ~{activity.estimated_minutes} min
+        </span>
+      </div>
+      {/* Decorative placeholder bars stand in for the hidden title/description —
+          no real activity text is ever rendered here. */}
+      <div className="px-5 py-4 space-y-2.5">
+        <div className="h-4 w-2/3 rounded-full bg-dark/10" />
+        <div className="h-3 w-full rounded-full bg-dark/10" />
+        <div className="h-3 w-5/6 rounded-full bg-dark/10" />
       </div>
     </div>
   );
