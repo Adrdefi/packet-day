@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
 import Wordmark from "@/components/layout/Wordmark";
@@ -121,6 +122,10 @@ function OnboardingContent() {
 
   const upgraded = searchParams.get("upgraded") === "true";
 
+  // Guards the effect below so the completion write + event fire at most
+  // once per user, even if the effect re-runs (e.g. React Strict Mode).
+  const onboardingMarkedRef = useRef(false);
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -160,12 +165,22 @@ function OnboardingContent() {
 
   // Mark onboarding complete as soon as we reach step 3
   useEffect(() => {
-    if (step === 3 && userId) {
-      supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("id", userId)
-        .then(() => {});
+    if (step === 3 && userId && !onboardingMarkedRef.current) {
+      onboardingMarkedRef.current = true;
+
+      (async () => {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ onboarding_completed: true })
+          .eq("id", userId);
+
+        if (error) {
+          console.error("[onboarding] Failed to mark onboarding complete:", error.message);
+          return;
+        }
+
+        track("onboarding_completed");
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, userId]);

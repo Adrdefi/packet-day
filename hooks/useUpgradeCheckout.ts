@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 
 interface UseUpgradeCheckoutArgs {
   monthlyPriceId: string;
@@ -18,6 +19,8 @@ export function useUpgradeCheckout({ monthlyPriceId, yearlyPriceId }: UseUpgrade
   const [error, setError] = useState<string | null>(null);
 
   async function upgrade(isAnnual: boolean) {
+    track("checkout_started", { plan: isAnnual ? "yearly" : "monthly" });
+
     setLoading(true);
     setError(null);
 

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 
@@ -77,6 +78,8 @@ function SignupForm() {
     const emailRedirectTo = plan
       ? `${window.location.origin}/auth/callback?next=/checkout-redirect%3Fplan%3D${plan}`
       : `${window.location.origin}/auth/callback`;
+
+    track("signup_started", { plan: plan ?? "free" });
 
     const { error: signupError } = await supabase.auth.signUp({
       email,
