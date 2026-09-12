@@ -113,7 +113,7 @@ export async function generateMetadata({
 
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
   const title = `${packet.theme} Learning Packet — ${gradeLabel} • Packet Day`;
-  const description = `A full day of personalized learning about ${packet.theme}, created by AI for a homeschool family. Free to try.`;
+  const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
   const ogImageUrl = `${SITE_URL}/api/og-packet?theme=${encodeURIComponent(packet.theme)}&grade=${encodeURIComponent(gradeLabel)}`;
 
   return {
@@ -281,7 +281,7 @@ export default async function SharePage({
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-                      Homeschool Learning Packet
+                      A Learning Day Built for One Kid
                     </span>
                   </div>
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-dark leading-tight mb-2">
@@ -345,9 +345,6 @@ export default async function SharePage({
                   <p className="font-semibold text-dark mb-1">
                     See {locked.length} more activit{locked.length === 1 ? "y" : "ies"} in this packet
                   </p>
-                  <p className="text-sm text-muted">
-                    Create a free account to generate full packets like this one.
-                  </p>
                 </div>
               </div>
             </div>
@@ -355,13 +352,12 @@ export default async function SharePage({
 
           {/* ── Big CTA ───────────────────────────────────────────────────── */}
           <div className="bg-white border border-border rounded-2xl p-8 md:p-10 text-center mb-10">
-            <div className="text-4xl mb-4">📦</div>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-dark mb-3">
-              Generate a Packet Like This for FREE
+              Make one for your kid
             </h2>
             <p className="text-muted max-w-lg mx-auto mb-6 leading-relaxed">
               Packet Day creates personalized, printable learning packets for
-              your child in about a minute. Pick any theme — your kid&apos;s favorite
+              your kid in about a minute. Pick any theme — your kid&apos;s favorite
               topic, today&apos;s mood, or whatever gets them out of bed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
