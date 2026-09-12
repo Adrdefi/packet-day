@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
 import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
+import { resolveMascotImageForRender } from "@/lib/resolveMascotImageForRender";
 
 export const maxDuration = 90; // 30s image poll + ~10s render + upload headroom
 // @react-pdf/renderer is Node-only — force Node runtime
@@ -117,6 +118,14 @@ export async function GET(req: NextRequest) {
       ? "Kindergarten"
       : `Grade ${packet.grade_level}`;
 
+  // Fetched here (not left for react-pdf to fetch at render time) so a
+  // failure is visible in our own logs and the render never makes a
+  // network call of its own — see resolveMascotImageForRender's header.
+  const resolvedMascotImageUrl = await resolveMascotImageForRender(
+    typedPacket.mascot_image_url ?? null,
+    packetId
+  );
+
   const props: PacketPDFProps = {
     childName: packet.child_name,
     childEmoji: child?.avatar_emoji ?? "🌟",
@@ -125,7 +134,7 @@ export async function GET(req: NextRequest) {
     title: content.packet_title ?? content.title ?? packet.theme,
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
-    mascotImageUrl: typedPacket.mascot_image_url ?? null,
+    mascotImageUrl: resolvedMascotImageUrl,
     coloringImageUrl: typedPacket.coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page

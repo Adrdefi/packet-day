@@ -12,6 +12,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
+import { resolveMascotImageForRender } from "@/lib/resolveMascotImageForRender";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,14 @@ export async function GET(req: NextRequest) {
   const gradeDisplay =
     packet.grade_level === "K" ? "Kindergarten" : `Grade ${packet.grade_level}`;
 
+  // Fetched here (not left for react-pdf to fetch at render time) so a
+  // failure is visible in our own logs and the render never makes a
+  // network call of its own — see resolveMascotImageForRender's header.
+  const resolvedMascotImageUrl = await resolveMascotImageForRender(
+    packet.mascot_image_url ?? null,
+    packetId
+  );
+
   const props: PacketPDFProps = {
     childName: packet.child_name,
     childEmoji: child?.avatar_emoji ?? "🌟",
@@ -65,7 +74,7 @@ export async function GET(req: NextRequest) {
     title: content.packet_title ?? content.title ?? packet.theme,
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
-    mascotImageUrl: packet.mascot_image_url ?? null,
+    mascotImageUrl: resolvedMascotImageUrl,
     coloringImageUrl: packet.coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page ? (content.coloring_page as PDFColoringPage) : null,
