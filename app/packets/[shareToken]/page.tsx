@@ -88,11 +88,11 @@ export async function generateMetadata({
   const { shareToken } = await params;
   const supabase = await createClient();
 
-  const { data: packet } = await supabase
-    .from("packets")
-    .select("theme, grade_level, generated_content")
-    .eq("share_token", shareToken)
-    .single();
+  const { data, error } = await supabase.rpc("get_packet_by_share_token", { token: shareToken });
+  if (error) {
+    console.error("get_packet_by_share_token failed:", error);
+  }
+  const packet = data?.[0] ?? null;
 
   if (!packet) {
     return { title: "Packet Not Found" };
@@ -143,13 +143,11 @@ export default async function SharePage({
   const { shareToken } = await params;
   const supabase = await createClient();
 
-  const { data: packet } = await supabase
-    .from("packets")
-    .select(
-      "id, theme, grade_level, packet_length, share_token, created_at, generated_content"
-    )
-    .eq("share_token", shareToken)
-    .single();
+  const { data, error } = await supabase.rpc("get_packet_by_share_token", { token: shareToken });
+  if (error) {
+    console.error("get_packet_by_share_token failed:", error);
+  }
+  const packet = data?.[0] ?? null;
 
   if (!packet) {
     return (
