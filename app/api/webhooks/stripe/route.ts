@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
+import { track } from "@vercel/analytics/server";
 
 // Raw body required for Stripe signature verification
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ function mapStripeStatusToProfileStatus(
 async function syncProfileFromSubscription(
   supabase: ReturnType<typeof getServiceClient>,
   subscriptionId: string
-) {
+): Promise<{ interval: Stripe.Price.Recurring.Interval | null }> {
   const subscription = await getStripe().subscriptions.retrieve(subscriptionId, {
     expand: ["items"],
   });
@@ -50,6 +51,7 @@ async function syncProfileFromSubscription(
   const periodEnd = firstItem
     ? new Date(firstItem.current_period_end * 1000).toISOString()
     : null;
+  const interval = firstItem?.price?.recurring?.interval ?? null;
   const mappedStatus = mapStripeStatusToProfileStatus(subscription.status);
 
   const update: { stripe_customer_id: string; subscription_period_end: string | null; subscription_status?: "pro" | "cancelled" } = {
@@ -72,6 +74,8 @@ async function syncProfileFromSubscription(
       `No profile found with stripe_customer_id=${customerId} — nothing was synced`
     );
   }
+
+  return { interval };
 }
 
 export async function POST(req: NextRequest) {
@@ -106,7 +110,18 @@ export async function POST(req: NextRequest) {
         // mode) — nothing to sync in that case.
         if (!subscriptionId) break;
 
-        await syncProfileFromSubscription(supabase, subscriptionId);
+        const { interval } = await syncProfileFromSubscription(supabase, subscriptionId);
+
+        try {
+          if (interval) {
+            await track("paid", { interval });
+          } else {
+            await track("paid");
+          }
+        } catch (err) {
+          console.error("[stripe-webhook] Failed to record paid event:", err);
+        }
+
         break;
       }
 
