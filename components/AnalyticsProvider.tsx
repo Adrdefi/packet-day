@@ -51,12 +51,23 @@ function isOptedOut(): boolean {
   }
 }
 
+// A share token is an access credential (anyone holding it can view that
+// packet), not an identifier we want sitting in an analytics dashboard —
+// and left as-is, every share link fragments the path report into its own
+// row instead of rolling up under one /packets/[shareToken] line.
+const SHARE_PAGE_PATH = /^\/packets\/[^/]+$/;
+
+function normalizeSharePagePath(pathname: string): string {
+  return SHARE_PAGE_PATH.test(pathname) ? "/packets/[shareToken]" : pathname;
+}
+
 function stripSensitiveParams(url: string): string {
   try {
     const parsed = new URL(url, window.location.origin);
     for (const key of SENSITIVE_PARAMS) {
       parsed.searchParams.delete(key);
     }
+    parsed.pathname = normalizeSharePagePath(parsed.pathname);
     return parsed.toString();
   } catch {
     // Not a parseable URL — send it through unmodified rather than throw.
