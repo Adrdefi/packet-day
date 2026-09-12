@@ -48,7 +48,9 @@ export default async function DashboardPage({
 
   const childList = (children as Child[]) ?? [];
   const packetList = (packets as Packet[]) ?? [];
-  const isFree = (profile?.subscription_status ?? "free") === "free";
+  // Anyone not on pro is on the free tier — cancelled included, since
+  // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
+  const isFree = (profile?.subscription_status ?? "free") !== "pro";
 
   return (
     <div className="space-y-8">

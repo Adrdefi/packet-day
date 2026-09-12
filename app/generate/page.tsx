@@ -810,7 +810,9 @@ function GenerateContent() {
 
   // ── Form ───────────────────────────────────────────────────────────────────
 
-  const isFree = subscriptionStatus === "free";
+  // Anyone not on pro is on the free tier — cancelled included, since
+  // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
+  const isFree = subscriptionStatus !== "pro";
   const atLimit = isFree && packetsUsed >= 1;
   // atLimit still drives the informational copy below — it is a hint, not a
   // gate. The server's atomic check is the real enforcement; disabling the
