@@ -9,6 +9,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import { sendPacketReadyEmail } from "@/lib/resend";
+import { track } from "@vercel/analytics/server";
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
@@ -511,6 +512,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (!usageRows || usageRows.length === 0) {
+    try {
+      await track("limit_reached");
+    } catch (err) {
+      console.error("[generate-packet] Failed to record limit_reached event:", err);
+    }
     return NextResponse.json(
       {
         error: "limit_reached",
@@ -632,6 +638,29 @@ export async function POST(req: NextRequest) {
         const mascotDescription = generatedContent.mascot_description;
         const coloringScene = generatedContent.coloring_page?.coloring_scene ?? null;
 
+        // "First packet ever" for the packet_rendered event below — a count
+        // of this user's rows now that the insert above landed; the just-
+        // inserted row makes 1 mean "first ever." An error is treated as
+        // "unknown" (null), not "false" — the event is skipped rather than
+        // guessing in either direction.
+        let isFirstPacket: boolean | null = null;
+        try {
+          const { count, error: countError } = await supabase
+            .from("packets")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id);
+          if (countError) {
+            console.error("[generate-packet] First-packet count query failed:", countError.message);
+          } else {
+            isFirstPacket = count === 1;
+          }
+        } catch (err) {
+          console.error(
+            "[generate-packet] First-packet count query threw:",
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+
         // Generate images in the foreground while the SSE connection is still alive.
         // Replicate's internal polling loop hangs inside after() because Vercel's
         // connection pool degrades after the response is sent. Running here keeps
@@ -736,6 +765,14 @@ export async function POST(req: NextRequest) {
             message: err instanceof Error ? err.message : String(err),
             packetId,
           });
+        }
+
+        if (isFirstPacket !== null) {
+          try {
+            await track("packet_rendered", { first: isFirstPacket });
+          } catch (err) {
+            console.error("[generate-packet] Failed to record packet_rendered event:", err);
+          }
         }
 
         send({

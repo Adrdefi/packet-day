@@ -3,6 +3,7 @@ import { isSafeNextPath } from "@/lib/safe-redirect";
 import { isPlanSlug } from "@/lib/plans";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { track } from "@vercel/analytics/server";
 
 // Allow list of OTP types this route will verify. Add an entry here (and
 // nowhere else) to support another flow. `email` is the non-deprecated type
@@ -46,6 +47,13 @@ export async function GET(req: NextRequest) {
         } = await supabase.auth.getUser();
 
         const plan = user?.user_metadata?.plan;
+
+        try {
+          await track("email_confirmed", { plan: isPlanSlug(plan) ? plan : "free" });
+        } catch (err) {
+          console.error("[auth-confirm] Failed to record email_confirmed event:", err);
+        }
+
         if (isPlanSlug(plan)) {
           return NextResponse.redirect(`${origin}/checkout-redirect?plan=${plan}`);
         }
