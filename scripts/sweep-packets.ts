@@ -143,6 +143,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import PacketPDF, { resolveContentType } from "../components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "../components/PacketPDF";
 import type { PacketContent } from "../types";
+import { resolveMascotImageForRender } from "../lib/resolveMascotImageForRender";
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
@@ -187,9 +188,16 @@ interface PacketRow {
   children: { avatar_emoji: string; special_notes: string | null } | null;
 }
 
-function buildProps(packet: PacketRow): PacketPDFProps {
+async function buildProps(packet: PacketRow): Promise<PacketPDFProps> {
   const content = packet.generated_content;
   const gradeDisplay = packet.grade_level === "K" ? "Kindergarten" : `Grade ${packet.grade_level}`;
+  // Fetched here (not left for react-pdf to fetch at render time) so a
+  // failure is visible in the sweep's own output instead of silently
+  // passing as a clean render — see resolveMascotImageForRender's header.
+  const resolvedMascotImageUrl = await resolveMascotImageForRender(
+    packet.mascot_image_url ?? null,
+    packet.id
+  );
   return {
     childName: packet.child_name,
     childEmoji: packet.children?.avatar_emoji ?? "🌟",
@@ -198,7 +206,7 @@ function buildProps(packet: PacketRow): PacketPDFProps {
     title: content.packet_title ?? content.title ?? packet.theme,
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
-    mascotImageUrl: packet.mascot_image_url ?? null,
+    mascotImageUrl: resolvedMascotImageUrl,
     coloringImageUrl: packet.coloring_image_url ?? null,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page ? (content.coloring_page as PDFColoringPage) : null,
@@ -748,7 +756,7 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
   const start = Date.now();
   let buf: Uint8Array;
   try {
-    const props = buildProps(packet);
+    const props = await buildProps(packet);
     buf = await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
   } catch (err) {
     return {
