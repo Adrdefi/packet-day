@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito, Fraunces } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -70,6 +71,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-cream text-dark">
         {children}
+        <AnalyticsProvider />
       </body>
     </html>
   );
