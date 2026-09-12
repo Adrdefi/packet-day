@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
+import { BottomCtaLink } from "./BottomCtaLink";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -364,15 +365,14 @@ export default async function SharePage({
               topic, today&apos;s mood, or whatever gets them out of bed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                id="share-page-bottom-cta"
+              <BottomCtaLink
                 href="/signup"
-                data-theme={p.theme}
-                data-grade={gradeLabel}
+                theme={p.theme}
+                grade={gradeLabel}
                 className="bg-sage text-cream font-bold px-8 py-3.5 rounded-xl hover:bg-sage-dark transition-colors text-base"
               >
                 Start free — 1 packet on us →
-              </Link>
+              </BottomCtaLink>
               <Link
                 href="/"
                 className="border border-border text-dark font-semibold px-8 py-3.5 rounded-xl hover:border-sage/50 transition-colors text-base"
@@ -421,19 +421,6 @@ export default async function SharePage({
           </div>
         </div>
       </div>
-
-      {/* This page is a Server Component, so the client `track()` helper from
-          @vercel/analytics can't be used directly here without adding a new
-          client component file (out of scope). This calls window.va the same
-          way that helper does internally. Theme/grade are read back from
-          data-* attributes, which React already HTML-escaped — no raw value
-          is interpolated into this script's text. */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html:
-            "(function(){var el=document.getElementById('share-page-bottom-cta');if(!el)return;el.addEventListener('click',function(){if(window.va){window.va('event',{name:'share_page_cta_click',data:{theme:el.dataset.theme||'',grade:el.dataset.grade||''}});}});})();",
-        }}
-      />
     </>
   );
 }
