@@ -516,7 +516,7 @@ function ResultView({
             {shareToast && (
               <div className="flex items-center gap-2 bg-sage text-cream text-sm font-semibold px-5 py-2.5 rounded-full shadow-md animate-fade-in">
                 <span>📦</span>
-                <span>Link copied! Share it with your homeschool friends.</span>
+                <span>Link copied! Share it with a friend who needs a good day.</span>
               </div>
             )}
             <div className="flex items-center gap-2 text-sm text-muted">
