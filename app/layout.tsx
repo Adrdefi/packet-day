@@ -50,6 +50,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@packetday",
   },
+
+  verification: {
+    other: {
+      "p:domain_verify": "c37ba0b996fef58770cd390f05d9f8f0",
+    },
+  },
 };
 
 export default function RootLayout({
