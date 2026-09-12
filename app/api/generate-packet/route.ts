@@ -30,7 +30,7 @@ function getServiceClient() {
 const PACKET_LIMITS: Record<string, number | null> = {
   free: 1,
   pro: null, // null = unlimited — RPC params are JSON, which has no Infinity
-  cancelled: 0,
+  cancelled: 1, // cancelling drops you back to the free tier, not below it
 };
 
 // ─── System prompt ────────────────────────────────────────────────────────────
