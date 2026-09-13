@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
 import { BottomCtaLink } from "./BottomCtaLink";
-import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 import { GRADE_LABELS } from "@/lib/gradeLabels";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 
@@ -93,7 +93,6 @@ export async function generateMetadata({
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
   const title = `${packet.theme} Learning Packet — ${gradeLabel} • Packet Day`;
   const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
-  const ogImageUrl = `${SITE_URL}/api/og-packet?token=${encodeURIComponent(shareToken)}`;
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" title template —
@@ -107,20 +106,19 @@ export async function generateMetadata({
       title,
       description,
       url: `${SITE_URL}/packets/${shareToken}`,
-      images: [
-        {
-          url: ogImageUrl,
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
+      // DIAGNOSTIC (diag/og-static-image): temporarily using the site's
+      // static default image instead of /api/og-packet, to test whether
+      // Facebook's image-substitution behavior is specific to dynamically
+      // generated /api image URLs. Revert to the per-packet ogImageUrl
+      // (`${SITE_URL}/api/og-packet?token=${encodeURIComponent(shareToken)}`)
+      // once the test is done — do not merge this as-is.
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       ...DEFAULT_TWITTER,
       title,
       description,
-      images: [ogImageUrl],
+      images: [DEFAULT_OG_IMAGE.url],
     },
   };
 }
