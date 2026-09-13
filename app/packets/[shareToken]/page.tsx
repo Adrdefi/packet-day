@@ -6,6 +6,8 @@ import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
 import { BottomCtaLink } from "./BottomCtaLink";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
+import { GRADE_LABELS } from "@/lib/gradeLabels";
+import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,18 +23,6 @@ interface PacketData {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const GRADE_LABELS: Record<string, string> = {
-  K: "Kindergarten",
-  "1": "1st Grade",
-  "2": "2nd Grade",
-  "3": "3rd Grade",
-  "4": "4th Grade",
-  "5": "5th Grade",
-  "6": "6th Grade",
-  "7": "7th Grade",
-  "8": "8th Grade",
-};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -80,17 +70,6 @@ function subjectColor(subject: string): string {
   return "bg-sage/10 text-sage-dark border-sage/20";
 }
 
-// A mascot image is only ever safe to render if it's a real hosted URL —
-// never a base64 "data:" blob (up to ~900KB of inline text) and never a
-// temporary replicate.delivery link (expires, and was never meant to be
-// a permanent asset). Anything else falls back to the emoji circle below.
-function resolveMascotUrl(url: string | null): string | null {
-  if (!url) return null;
-  if (!url.startsWith("https://")) return null;
-  if (url.includes("replicate.delivery")) return null;
-  return url;
-}
-
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
@@ -114,7 +93,7 @@ export async function generateMetadata({
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
   const title = `${packet.theme} Learning Packet — ${gradeLabel} • Packet Day`;
   const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
-  const ogImageUrl = `${SITE_URL}/api/og-packet?theme=${encodeURIComponent(packet.theme)}&grade=${encodeURIComponent(gradeLabel)}`;
+  const ogImageUrl = `${SITE_URL}/api/og-packet?token=${encodeURIComponent(shareToken)}`;
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" title template —
