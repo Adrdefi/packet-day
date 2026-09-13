@@ -396,7 +396,7 @@ function ResultView({
         setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
     } catch {
-      toast.error("Couldn't build the PDF right now. Try again, or use the Print button as a backup.");
+      toast.error("Couldn't build the PDF right now. Give it another try, or check your email, we sent you a copy.");
     } finally {
       setDownloading(false);
     }
@@ -421,7 +421,7 @@ function ResultView({
         <ConfettiBurst />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 py-10">
-          {/* Header */}
+          {/* Header — celebration moment: mascot, mascot name, packet title, date */}
           <div className="text-center mb-10">
             {mascotImageUrl ? (
               // Mascot hero image
@@ -429,10 +429,10 @@ function ResultView({
                 <img
                   src={mascotImageUrl}
                   alt={packet.generated_content.mascot_name ?? "Today's mascot"}
-                  className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg"
+                  className="w-[180px] h-[180px] rounded-full object-cover border-4 border-white shadow-lg"
                 />
                 {packet.generated_content.mascot_name && (
-                  <p className="text-sm font-bold text-sage">
+                  <p className="text-base font-bold text-sage">
                     {packet.generated_content.mascot_name}
                   </p>
                 )}
@@ -445,13 +445,13 @@ function ResultView({
             ) : mascotLoading ? (
               // Mascot generating — pulsing placeholder
               <div className="flex flex-col items-center gap-2 mb-4">
-                <div className="w-36 h-36 rounded-full bg-sage/10 border-4 border-sage/20 flex items-center justify-center animate-pulse">
+                <div className="w-[180px] h-[180px] rounded-full bg-sage/10 border-4 border-sage/20 flex items-center justify-center animate-pulse">
                   {packet.generated_content.mascot_emoji_cluster ? (
-                    <span className="text-3xl">
+                    <span className="text-4xl">
                       {packet.generated_content.mascot_emoji_cluster.split(" ")[0]}
                     </span>
                   ) : (
-                    <span className="text-4xl">{childEmoji}</span>
+                    <span className="text-5xl">{childEmoji}</span>
                   )}
                 </div>
                 <p className="text-xs text-muted animate-pulse">
@@ -478,18 +478,12 @@ function ResultView({
             </p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-3 justify-center mb-6 print:hidden">
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-sage text-cream font-bold px-6 py-3 rounded-xl hover:bg-sage-dark transition-colors text-sm"
-            >
-              🖨️ Print This Packet
-            </button>
+          {/* Primary action */}
+          <div className="flex flex-col items-center gap-3 mb-10 print:hidden">
             <button
               onClick={downloadPDF}
               disabled={downloading}
-              className="flex items-center gap-2 bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm disabled:opacity-70 disabled:cursor-wait min-w-[180px] justify-center"
+              className="flex items-center justify-center gap-2 w-full max-w-md bg-sage text-cream font-bold px-6 py-4 rounded-xl hover:bg-sage-dark transition-colors text-base shadow-sm disabled:opacity-70 disabled:cursor-wait"
             >
               {downloading ? (
                 <>
@@ -500,27 +494,45 @@ function ResultView({
                   Preparing your PDF...
                 </>
               ) : (
-                <>📤 Download PDF</>
+                <>📤 Download &amp; Print Your Packet</>
               )}
             </button>
+            <p className="text-xs text-muted">
+              Already sent to your email with the PDF attached.
+            </p>
+
             <button
               onClick={copyShareLink}
               className="flex items-center gap-2 border border-border bg-white text-dark font-semibold px-6 py-3 rounded-xl hover:border-sage/50 transition-colors text-sm min-w-[180px] justify-center"
             >
-              🔗 {shareToast ? "Link copied!" : "Copy Share Link"}
+              🔗 {shareToast ? "Link copied!" : "Send this to a friend"}
             </button>
-          </div>
-
-          {/* Share toast + social icons */}
-          <div className="flex flex-col items-center gap-3 mb-10 print:hidden">
             {shareToast && (
               <div className="flex items-center gap-2 bg-sage text-cream text-sm font-semibold px-5 py-2.5 rounded-full shadow-md animate-fade-in">
                 <span>📦</span>
                 <span>Link copied! Share it with a friend who needs a good day.</span>
               </div>
             )}
+          </div>
+
+          {/* Activity cards */}
+          <h2 className="text-center text-xs font-bold text-muted uppercase tracking-wider mb-4">
+            Inside today&apos;s packet
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            {packet.generated_content.activities.map((activity, i) => (
+              <ActivityCard key={i} activity={activity} index={i} />
+            ))}
+          </div>
+
+          {/* upgrade nudge slot, intentionally empty for now */}
+
+          {/* Social share row */}
+          <div className="flex flex-col items-center gap-3 mb-10 print:hidden">
+            <p className="text-sm text-muted">
+              Made someone&apos;s day easier? Pass it on.
+            </p>
             <div className="flex items-center gap-2 text-sm text-muted">
-              <span>Share:</span>
               <a
                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
                 target="_blank"
@@ -540,20 +552,13 @@ function ResultView({
                 P
               </a>
               <a
-                href={`sms:?body=${encodeURIComponent(`Check out this learning packet I made with Packet Day! ${shareUrl}`)}`}
-                className="w-8 h-8 rounded-full bg-sage/10 hover:bg-sage/20 flex items-center justify-center transition-colors"
+                href={`sms:?body=${encodeURIComponent(`Check out this ${packet.theme} learning packet I made with Packet Day! ${shareUrl}`)}`}
+                className="w-9 h-9 rounded-full bg-sage/10 hover:bg-sage/20 flex items-center justify-center transition-colors text-sage text-base"
                 aria-label="Share via text message"
               >
                 💬
               </a>
             </div>
-          </div>
-
-          {/* Activity cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-            {packet.generated_content.activities.map((activity, i) => (
-              <ActivityCard key={i} activity={activity} index={i} />
-            ))}
           </div>
 
           {/* Secondary actions */}
