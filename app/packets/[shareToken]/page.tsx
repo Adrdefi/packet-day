@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
 import { BottomCtaLink } from "./BottomCtaLink";
@@ -239,20 +240,22 @@ export default async function SharePage({
               {/* Mascot hero */}
               <div className="flex justify-center mb-6">
                 {mascotUrl ? (
-                  <img
+                  <Image
                     src={mascotUrl}
                     alt={mascotName ? `${mascotName}, this packet's mascot` : "This packet's mascot"}
                     width={160}
                     height={160}
-                    // React 19's server renderer auto-emits <link rel="preload" as="image">
-                    // for any <img> with a string src unless fetchPriority="low" or
-                    // loading="lazy" is set (react-dom-server.node.development.js's "img"
-                    // case). That preload was landing before our og:image meta tag and
-                    // Facebook's first scrape was using it instead of our OG card.
-                    // fetchPriority="low" (not loading="lazy") because it only demotes
-                    // the browser's fetch priority — it doesn't defer *when* the image
-                    // starts loading the way loading="lazy" would, so real visitors still
-                    // see the mascot render exactly as before.
+                    // Same preload concern as before, ported to next/image: with no
+                    // loading/priority/preload props at all, next/image defaults
+                    // loading to "lazy", which only avoids the preload by deferring
+                    // this hero image until near-viewport — a real regression here.
+                    // loading="eager" keeps it loading immediately. fetchPriority="low"
+                    // is what keeps React 19's own automatic per-<img> preload heuristic
+                    // off (react-dom-server.node.development.js's "img" case) — the same
+                    // tag removed this morning, which must not come back. priority/preload
+                    // are deliberately omitted — either would trigger next/image's own
+                    // explicit ReactDOM.preload() call.
+                    loading="eager"
                     fetchPriority="low"
                     className="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-cream shadow-md bg-cream"
                   />
