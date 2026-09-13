@@ -83,7 +83,7 @@ types/
 |-------|-----------|
 | `profiles` | `id` (= auth.users.id), `email`, `full_name`, `avatar_url` |
 | `children` | `id`, `user_id`, `name`, `age`, `grade_level`, `interests` (array), `learning_style`, `notes` |
-| `packets` | `id`, `user_id`, `child_id`, `title`, `theme`, `date`, `subjects` (array), `activities` (jsonb), `status`, `pdf_url` |
+| `packets` | `id`, `user_id`, `child_id`, `title`, `theme`, `date`, `subjects` (array), `activities` (jsonb), `pdf_url` |
 | `subscriptions` | `id`, `user_id`, `stripe_subscription_id`, `stripe_customer_id`, `plan_id`, `status`, `packets_used_this_month`, `packets_limit` |
 
 **RLS:** All tables have Row Level Security enabled. Users can only read/write their own rows.

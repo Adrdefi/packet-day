@@ -244,6 +244,16 @@ export default async function SharePage({
                     alt={mascotName ? `${mascotName}, this packet's mascot` : "This packet's mascot"}
                     width={160}
                     height={160}
+                    // React 19's server renderer auto-emits <link rel="preload" as="image">
+                    // for any <img> with a string src unless fetchPriority="low" or
+                    // loading="lazy" is set (react-dom-server.node.development.js's "img"
+                    // case). That preload was landing before our og:image meta tag and
+                    // Facebook's first scrape was using it instead of our OG card.
+                    // fetchPriority="low" (not loading="lazy") because it only demotes
+                    // the browser's fetch priority — it doesn't defer *when* the image
+                    // starts loading the way loading="lazy" would, so real visitors still
+                    // see the mascot render exactly as before.
+                    fetchPriority="low"
                     className="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-cream shadow-md bg-cream"
                   />
                 ) : (

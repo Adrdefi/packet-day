@@ -26,6 +26,19 @@ const fontsPromise = Promise.all([
 const RPC_TIMEOUT_MS = 3000;
 const MASCOT_FETCH_TIMEOUT_MS = 3000;
 
+// The rendered card is only ever final once a real mascot is in it: theme,
+// grade, and mascot_image_url are all written once at packet-generation time
+// and never edited afterward, so a mascot-card response can be cached hard
+// and indefinitely. A no-mascot response is ambiguous — mascot generation
+// happens asynchronously after the packet row (and its share_token) already
+// exists, so "no mascot yet" and "will never have one" render identically
+// and are indistinguishable here. Caching that response hard would risk
+// freezing a share link on the fallback card even after its real mascot
+// finishes uploading moments later, so it gets effectively no CDN cache —
+// the same "always revalidate" behavior this route already had.
+const MASCOT_CACHE_CONTROL = "public, s-maxage=31536000, stale-while-revalidate=86400";
+const NO_MASCOT_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+
 // Mascot-card layout constants, shared between the JSX below and the
 // subject-row width budget — the row has to fit the same column the JSX
 // actually gives it.
@@ -525,6 +538,9 @@ export async function GET(req: Request) {
         { name: "Nunito", data: nunitoRegular, weight: 400, style: "normal" },
         { name: "Nunito", data: nunitoBold, weight: 700, style: "normal" },
       ],
+      headers: {
+        "cache-control": mascotDataUrl ? MASCOT_CACHE_CONTROL : NO_MASCOT_CACHE_CONTROL,
+      },
     }
   );
 }
