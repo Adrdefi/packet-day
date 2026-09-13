@@ -4,6 +4,7 @@ import path from "path";
 import { createClient } from "@/lib/supabase/server";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { GRADE_LABELS } from "@/lib/gradeLabels";
+import type { PacketContent } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -25,10 +26,89 @@ const fontsPromise = Promise.all([
 const RPC_TIMEOUT_MS = 3000;
 const MASCOT_FETCH_TIMEOUT_MS = 3000;
 
+// Mascot-card layout constants, shared between the JSX below and the
+// subject-row width budget — the row has to fit the same column the JSX
+// actually gives it.
+const CARD_WIDTH = 1200;
+const CARD_PADDING_X = 90;
+const MASCOT_SIZE = 260;
+const MASCOT_TEXT_GAP = 56;
+const TEXT_COLUMN_WIDTH = CARD_WIDTH - CARD_PADDING_X * 2 - MASCOT_SIZE - MASCOT_TEXT_GAP;
+
 interface PacketOgRow {
   theme: string;
   grade_level: string;
   mascot_image_url: string | null;
+  generated_content: PacketContent;
+}
+
+// Same sentence the share page renders under its H1 (app/packets/[shareToken]/page.tsx).
+// Never touches packet_title/title — those can carry the child's first name,
+// which the RPC deliberately never returns anyway.
+export function buildOriginLine(theme: string, mascotName: string | undefined): string {
+  return mascotName
+    ? `A full day built around ${theme}, with ${mascotName} as the guide.`
+    : `A full day built around ${theme}.`;
+}
+
+// Steps down the same way app/og/blog/[slug]/route.tsx's headlineFontSize
+// does, tuned for this card's narrower text column (704px vs. that route's
+// 1020px) and for the origin line's longer, template-padded text.
+export function originLineFontSize(length: number): number {
+  if (length <= 55) return 46;
+  if (length <= 75) return 40;
+  if (length <= 100) return 35;
+  if (length <= 125) return 30;
+  return 26;
+}
+
+const SUBJECT_ROW_FONT_SIZE = 20;
+// Satori has no text-measurement API before layout, so this is a documented
+// approximation rather than a real one — ~0.5em average glyph advance width
+// is a common rule of thumb for proportional sans-serif faces like Nunito.
+const SUBJECT_ROW_CHAR_WIDTH = SUBJECT_ROW_FONT_SIZE * 0.5;
+const SUBJECT_ROW_SEPARATOR = " · ";
+const SUBJECT_ROW_SUFFIX = " · and more";
+
+// De-duplicates subjects (preserving activity order) and joins them with a
+// middot, truncating to whatever fits the given width and appending
+// "· and more" rather than clipping mid-word. Returns null when there are
+// no subjects at all, so the caller can omit the row instead of leaving a
+// gap where it would have been.
+export function buildSubjectRow(
+  activities: PacketContent["activities"] | undefined,
+  maxWidthPx: number
+): string | null {
+  if (!activities || activities.length === 0) return null;
+
+  const seen = new Set<string>();
+  const subjects: string[] = [];
+  for (const activity of activities) {
+    const subject = activity.subject?.trim();
+    if (subject && !seen.has(subject)) {
+      seen.add(subject);
+      subjects.push(subject);
+    }
+  }
+  if (subjects.length === 0) return null;
+
+  const estimateWidth = (text: string) => text.length * SUBJECT_ROW_CHAR_WIDTH;
+
+  const included: string[] = [];
+  for (let i = 0; i < subjects.length; i++) {
+    const candidate = [...included, subjects[i]].join(SUBJECT_ROW_SEPARATOR);
+    const isLast = i === subjects.length - 1;
+    const projectedWidth = estimateWidth(candidate) + (isLast ? 0 : estimateWidth(SUBJECT_ROW_SUFFIX));
+
+    if (projectedWidth <= maxWidthPx || included.length === 0) {
+      included.push(subjects[i]);
+    } else {
+      break;
+    }
+  }
+
+  const row = included.join(SUBJECT_ROW_SEPARATOR);
+  return included.length < subjects.length ? `${row}${SUBJECT_ROW_SUFFIX}` : row;
 }
 
 // Single attempt, bounded by its own timeout — a slow or failing RPC must
@@ -226,25 +306,29 @@ function TextOnlyCard({ theme, grade }: { theme: string; grade: string }) {
 // Same brand row / gold accent bar / Fraunces headline / bottom-right domain
 // pattern established by app/og/[slug]/route.tsx and app/og/blog/[slug]/route.tsx,
 // with the mascot seated alongside the text instead of those routes' plain
-// headline-only layout.
+// headline-only layout. The headline is the origin line, not the bare theme
+// — "Parrots" is a filing label, "A full day built around Parrots, with
+// Pepper as the guide." is a reason to click.
 function MascotCard({
-  theme,
+  originLine,
   grade,
+  subjectRow,
   mascotDataUrl,
 }: {
-  theme: string;
+  originLine: string;
   grade: string;
+  subjectRow: string | null;
   mascotDataUrl: string;
 }) {
   return (
     <div
       style={{
-        width: "1200px",
+        width: `${CARD_WIDTH}px`,
         height: "630px",
         background: "#FDFBF7",
         display: "flex",
         flexDirection: "column",
-        padding: "70px 90px",
+        padding: `70px ${CARD_PADDING_X}px`,
       }}
     >
       {/* Brand row */}
@@ -284,22 +368,22 @@ function MascotCard({
         </span>
       </div>
 
-      {/* Main content: mascot alongside text */}
+      {/* Main content: mascot on the left, text column filling the rest */}
       <div
         style={{
           display: "flex",
           flex: 1,
           alignItems: "center",
-          gap: "56px",
+          gap: `${MASCOT_TEXT_GAP}px`,
         }}
       >
         <img
           src={mascotDataUrl}
-          width={260}
-          height={260}
+          width={MASCOT_SIZE}
+          height={MASCOT_SIZE}
           style={{
-            width: "260px",
-            height: "260px",
+            width: `${MASCOT_SIZE}px`,
+            height: `${MASCOT_SIZE}px`,
             borderRadius: "50%",
             objectFit: "cover",
             border: "6px solid white",
@@ -311,7 +395,7 @@ function MascotCard({
           style={{
             display: "flex",
             flexDirection: "column",
-            flex: 1,
+            width: `${TEXT_COLUMN_WIDTH}px`,
             gap: "20px",
           }}
         >
@@ -325,15 +409,15 @@ function MascotCard({
           />
           <div
             style={{
-              fontSize: "56px",
+              fontSize: `${originLineFontSize(originLine.length)}px`,
               fontWeight: 800,
               fontFamily: "Fraunces",
               color: "#1A1A2E",
-              lineHeight: 1.15,
+              lineHeight: 1.2,
               letterSpacing: "-0.01em",
             }}
           >
-            {theme}
+            {originLine}
           </div>
           <div
             style={{
@@ -351,6 +435,19 @@ function MascotCard({
           >
             {grade} Learning Packet
           </div>
+          {subjectRow && (
+            <div
+              style={{
+                display: "flex",
+                fontSize: `${SUBJECT_ROW_FONT_SIZE}px`,
+                fontWeight: 400,
+                fontFamily: "Nunito",
+                color: "#9CA3AF",
+              }}
+            >
+              {subjectRow}
+            </div>
+          )}
         </div>
       </div>
 
@@ -387,12 +484,19 @@ export async function GET(req: Request) {
 
   const [frauncesExtraBold, frauncesBold, nunitoRegular, nunitoBold] = await fontsPromise;
 
+  const card = mascotDataUrl ? (
+    <MascotCard
+      originLine={buildOriginLine(theme, packet?.generated_content?.mascot_name)}
+      grade={grade}
+      subjectRow={buildSubjectRow(packet?.generated_content?.activities, TEXT_COLUMN_WIDTH)}
+      mascotDataUrl={mascotDataUrl}
+    />
+  ) : (
+    <TextOnlyCard theme={theme} grade={grade} />
+  );
+
   return new ImageResponse(
-    mascotDataUrl ? (
-      <MascotCard theme={theme} grade={grade} mascotDataUrl={mascotDataUrl} />
-    ) : (
-      <TextOnlyCard theme={theme} grade={grade} />
-    ),
+    card,
     {
       width: 1200,
       height: 630,
