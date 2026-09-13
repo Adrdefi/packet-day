@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito, Fraunces } from "next/font/google";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/site";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
 import "./globals.css";
 
@@ -45,11 +45,13 @@ export const metadata: Metadata = {
     siteName: "Packet Day",
     locale: "en_US",
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
 
   twitter: {
     card: "summary_large_image",
     site: "@packetday",
+    images: [DEFAULT_OG_IMAGE.url],
   },
 
   verification: {
