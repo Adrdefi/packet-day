@@ -31,7 +31,12 @@ const MASCOT_FETCH_TIMEOUT_MS = 3000;
 // actually gives it.
 const CARD_WIDTH = 1200;
 const CARD_PADDING_X = 90;
-const MASCOT_SIZE = 260;
+// ~11% larger than the original 260px — big enough to compete with the
+// Fraunces headline and read at feed-thumbnail size, without narrowing the
+// text column enough to push the longest real origin line (Hogwarts
+// Legacy and Golf / Cosmo the Caddy Owl, 3 lines at 35px) into a 4th line.
+// If the mascot ever grows further, re-check that case before raising this.
+const MASCOT_SIZE = 290;
 const MASCOT_TEXT_GAP = 56;
 const TEXT_COLUMN_WIDTH = CARD_WIDTH - CARD_PADDING_X * 2 - MASCOT_SIZE - MASCOT_TEXT_GAP;
 
@@ -368,11 +373,21 @@ function MascotCard({
         </span>
       </div>
 
+      {/*
+        Vertical centering: two equal flex:1 spacers around the fixed-size
+        content row, rather than flex:1 on the row itself. Both approaches
+        are mathematically equivalent, but this one doesn't depend on
+        alignItems:"center" correctly cross-centering two children of
+        different intrinsic heights (mascot vs. text column) against each
+        other — it centers the whole row as one block between two anchors
+        (brand row above, URL row below) regardless of the row's own height.
+      */}
+      <div style={{ display: "flex", flex: 1 }} />
+
       {/* Main content: mascot on the left, text column filling the rest */}
       <div
         style={{
           display: "flex",
-          flex: 1,
           alignItems: "center",
           gap: `${MASCOT_TEXT_GAP}px`,
         }}
@@ -396,7 +411,6 @@ function MascotCard({
             display: "flex",
             flexDirection: "column",
             width: `${TEXT_COLUMN_WIDTH}px`,
-            gap: "20px",
           }}
         >
           <div
@@ -409,6 +423,7 @@ function MascotCard({
           />
           <div
             style={{
+              marginTop: "20px",
               fontSize: `${originLineFontSize(originLine.length)}px`,
               fontWeight: 800,
               fontFamily: "Fraunces",
@@ -423,6 +438,7 @@ function MascotCard({
             style={{
               display: "flex",
               alignItems: "center",
+              marginTop: "24px",
               backgroundColor: "#EFF6F1",
               color: "#2E5238",
               fontSize: "20px",
@@ -439,6 +455,7 @@ function MascotCard({
             <div
               style={{
                 display: "flex",
+                marginTop: "30px",
                 fontSize: `${SUBJECT_ROW_FONT_SIZE}px`,
                 fontWeight: 400,
                 fontFamily: "Nunito",
@@ -450,6 +467,8 @@ function MascotCard({
           )}
         </div>
       </div>
+
+      <div style={{ display: "flex", flex: 1 }} />
 
       {/* Bottom row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
