@@ -45,6 +45,29 @@ const GRADE_LABELS: Record<string, string> = {
   "8": "8th Grade",
 };
 
+// ─── Recovery copy ──────────────────────────────────────────────────────────
+// Shown when a client-side generation failure is resolved by finding the
+// packet the server actually finished (see attemptRecovery in
+// GenerateContent). Kept in one place so it can be edited without hunting
+// through the component. "Ceiling hit" copy must read as uncertain, not as
+// a broken-product apology — the server may genuinely still be working.
+
+const RECOVERY_COPY = {
+  found: "Found it. Your packet finished while your screen was off.",
+  stillWorking: "Still working. Hang tight — bigger packets can take a couple of minutes.",
+  ceilingHit: "We couldn't confirm that one. Check your recent packets, or try again.",
+} as const;
+
+// Measured from two real full-day generations on 2026-09-14 (~106s and
+// ~109s from request start to the packet row existing in the DB) — not a
+// computed p95, the sample is too small for that, but real production
+// timings rather than a guess. The ceiling leaves real margin over both
+// while staying well under the route's own 300s maxDuration, so a request
+// that's genuinely never coming back doesn't leave the user waiting for
+// the full server-side cap.
+const RECOVERY_POLL_INTERVAL_MS = 4000;
+const RECOVERY_CEILING_MS = 180_000;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Phase = "form" | "generating" | "result";
@@ -169,12 +192,17 @@ function LoadingView({
   theme,
   progress,
   msgIndex,
+  fixedMessage,
 }: {
   childName: string;
   childEmoji: string;
   theme: string;
   progress: number;
   msgIndex: number;
+  // Overrides the rotating message below — used while recovery is polling
+  // for a packet after a lost connection, where the normal "Picking
+  // activities..." cycle no longer describes what's actually happening.
+  fixedMessage?: string;
 }) {
   const messages = [
     `Picking the best activities for ${childName}...`,
@@ -200,10 +228,10 @@ function LoadingView({
 
       {/* Rotating message */}
       <p
-        key={msgIndex}
+        key={fixedMessage ?? msgIndex}
         className="text-muted text-sm mb-8 min-h-[20px]"
       >
-        {messages[msgIndex % messages.length]}
+        {fixedMessage ?? messages[msgIndex % messages.length]}
       </p>
 
       {/* Progress bar — animates via CSS transition */}
@@ -221,7 +249,7 @@ function LoadingView({
       </div>
 
       <p className="text-xs text-muted/70">
-        Great packets take about 60 seconds. Worth it. ✨
+        Great packets take a minute or two. Worth it. ✨
       </p>
     </div>
   );
@@ -615,10 +643,31 @@ function GenerateContent() {
 
   // Identifies the in-flight generate request so a lost connection (iOS
   // backgrounding mid-generation) can be matched back to its packet later —
-  // see the recovery path in handleGenerate.
+  // see attemptRecovery below.
   const requestIdRef = useRef<string | null>(null);
+  // When handleGenerate fired — the ceiling in attemptRecovery is measured
+  // from here, not from whenever recovery happens to kick in (a wake five
+  // minutes into generation shouldn't get a fresh 180s allowance).
+  const generationStartRef = useRef<number | null>(null);
+  // Captured once at mount (see load() below) so attemptRecovery can scope
+  // its query by user_id without a redundant getUser() round trip on the
+  // failure path. RLS is the real boundary either way — this is belt and
+  // suspenders, matching how the rest of this file already queries.
+  const userIdRef = useRef<string | null>(null);
+  // Guards attemptRecovery against running twice concurrently — the catch
+  // block and the visibilitychange listener (added in the next step) will
+  // both be able to call it.
+  const recoveryInFlightRef = useRef(false);
+  // Flipped on unmount so an in-flight recovery poll stops touching state
+  // after the component is gone (navigating away mid-poll, etc).
+  const recoveryCancelledRef = useRef(false);
+  const recoveryPollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [phase, setPhase] = useState<Phase>("form");
+  // True while attemptRecovery is polling — swaps LoadingView's rotating
+  // "Picking activities..." messages for the fixed recovery copy, since
+  // that cycle no longer describes what's actually happening.
+  const [recovering, setRecovering] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [packetsUsed, setPacketsUsed] = useState(0);
@@ -652,6 +701,8 @@ function GenerateContent() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return router.push("/login");
+
+      userIdRef.current = user.id;
 
       const [{ data: childrenData }, { data: profileData }] =
         await Promise.all([
@@ -713,11 +764,100 @@ function GenerateContent() {
     };
   }, [phase]);
 
+  // Stop an in-flight recovery poll from touching state once this
+  // component is gone.
+  useEffect(() => {
+    return () => {
+      recoveryCancelledRef.current = true;
+      if (recoveryPollTimeoutRef.current) clearTimeout(recoveryPollTimeoutRef.current);
+    };
+  }, []);
+
+  // ── Recovery ──────────────────────────────────────────────────────────────
+  //
+  // Called when the client loses track of an in-flight generation (a killed
+  // fetch, a page that comes back from being suspended, a reload that finds
+  // a pending request in sessionStorage). The server has no concept of "the
+  // client is gone" — it runs the request to completion regardless — so
+  // this asks the one question that actually matters: does the packet from
+  // *this* request exist yet?
+  //
+  // Gate: a row matching client_request_id, with generated_content present,
+  // is treated as complete enough to show. Deliberately NOT gated on
+  // mascot_image_url, coloring_image_url, or pdf_url:
+  //   - generated_content is written once, in the same insert that writes
+  //     client_request_id (app/api/generate-packet/route.ts) — there is no
+  //     intermediate state where the row exists with a partial/null
+  //     generated_content, so this check is a correctness guard against a
+  //     future change to that insert, not something expected to ever be
+  //     false in practice today.
+  //   - mascot_image_url can be null in the normal, non-recovery flow too,
+  //     whenever both mascot-generation attempts fail — ResultView already
+  //     handles that (mascotLoading state below, its own bounded poll
+  //     against /api/packets/[id]/mascot, and a graceful emoji-cluster
+  //     fallback). Recovery reuses that existing, already-shipped path
+  //     rather than duplicating it.
+  //   - pdf_url is never read by ResultView at all (downloadPDF always
+  //     calls /api/generate-pdf on demand) — gating on it would make users
+  //     wait for a column that has no bearing on what they'd see.
+  // "Found but incomplete" is therefore not a real third state for this
+  // schema — it collapses to "found" or "not found yet."
+  async function attemptRecovery() {
+    if (recoveryInFlightRef.current) return; // already running — no-op
+    const requestId = requestIdRef.current;
+    const startedAt = generationStartRef.current;
+    if (!requestId || !startedAt) return; // nothing was ever sent to recover
+
+    recoveryInFlightRef.current = true;
+    recoveryCancelledRef.current = false;
+    setError("");
+    setRecovering(true);
+    setPhase("generating"); // reuse LoadingView, driven by fixedMessage below
+
+    try {
+      while (!recoveryCancelledRef.current) {
+        if (Date.now() - startedAt > RECOVERY_CEILING_MS) {
+          setError(RECOVERY_COPY.ceilingHit);
+          setPhase("form");
+          return;
+        }
+
+        const { data, error: queryError } = await supabase
+          .from("packets")
+          .select("*")
+          .eq("client_request_id", requestId)
+          .eq("user_id", userIdRef.current ?? "")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (recoveryCancelledRef.current) return;
+
+        if (!queryError && data && data.generated_content) {
+          setResult(data as SavedPacket);
+          setPhase("result");
+          return;
+        }
+        // A query error here isn't necessarily fatal — a flaky connection
+        // is exactly the situation being recovered from. Keep polling;
+        // only the ceiling above ends the loop on its own.
+
+        await new Promise<void>((resolve) => {
+          recoveryPollTimeoutRef.current = setTimeout(resolve, RECOVERY_POLL_INTERVAL_MS);
+        });
+      }
+    } finally {
+      recoveryInFlightRef.current = false;
+      setRecovering(false);
+    }
+  }
+
   async function handleGenerate() {
     if (!selectedChild || !theme.trim()) return;
 
     const requestId = crypto.randomUUID();
     requestIdRef.current = requestId;
+    generationStartRef.current = Date.now();
 
     setError("");
     setPhase("generating");
@@ -830,6 +970,7 @@ function GenerateContent() {
         theme={theme}
         progress={progress}
         msgIndex={msgIndex}
+        fixedMessage={recovering ? RECOVERY_COPY.stillWorking : undefined}
       />
     );
   }
