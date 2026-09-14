@@ -68,13 +68,61 @@ const RECOVERY_COPY = {
 const RECOVERY_POLL_INTERVAL_MS = 4000;
 const RECOVERY_CEILING_MS = 180_000;
 
+// ─── Pending-request persistence ────────────────────────────────────────────
+// Survives a page reload mid-generation (the in-memory refs don't). Does NOT
+// need to survive closing the tab — sessionStorage is cleared by the browser
+// when the tab closes, which is exactly the lifetime a pending generation
+// request should have. The ceiling check on read is a second, explicit layer
+// on top of that for the same-tab case: a reload minutes later, on a session
+// old enough that generation has certainly already resolved one way or
+// another, should find nothing rather than start a phantom recovery poll.
+
+const PENDING_REQUEST_STORAGE_KEY = "packetday:pendingGeneration";
+
+interface PendingRequest {
+  requestId: string;
+  startedAt: number;
+}
+
+function readPendingRequest(): PendingRequest | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_REQUEST_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.requestId === "string" && typeof parsed?.startedAt === "number") {
+      return parsed as PendingRequest;
+    }
+    return null;
+  } catch {
+    return null; // sessionStorage unavailable (private mode, etc.) — reload recovery just can't happen; nothing crashes
+  }
+}
+
+function writePendingRequest(entry: PendingRequest): void {
+  try {
+    sessionStorage.setItem(PENDING_REQUEST_STORAGE_KEY, JSON.stringify(entry));
+  } catch {
+    // best effort only
+  }
+}
+
+function clearPendingRequest(): void {
+  try {
+    sessionStorage.removeItem(PENDING_REQUEST_STORAGE_KEY);
+  } catch {
+    // best effort only
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Phase = "form" | "generating" | "result";
 
 interface SavedPacket {
   id: string;
+  child_id: string | null;
   child_name: string;
+  grade_level: string;
   theme: string;
   packet_length: string;
   share_token: string;
@@ -662,6 +710,16 @@ function GenerateContent() {
   // after the component is gone (navigating away mid-poll, etc).
   const recoveryCancelledRef = useRef(false);
   const recoveryPollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Whether *anything* has already delivered a result for the current
+  // request — the live stream and a concurrently-running recovery poll (a
+  // benign background/foreground blip during otherwise-healthy generation)
+  // both check-and-set this immediately before rendering a result, so
+  // exactly one of them wins regardless of timing.
+  const deliveredRef = useRef(false);
+  // Mirrors the `children` state so attemptRecovery can resolve the real
+  // avatar_emoji for a recovered packet even on a fresh page load, where
+  // selectedChild was never set by the form.
+  const childrenRef = useRef<Child[]>([]);
 
   const [phase, setPhase] = useState<Phase>("form");
   // True while attemptRecovery is polling — swaps LoadingView's rotating
@@ -720,6 +778,7 @@ function GenerateContent() {
 
       const kids = (childrenData as Child[]) ?? [];
       setChildren(kids);
+      childrenRef.current = kids;
       setPacketsUsed(profileData?.packets_used_this_month ?? 0);
       setSubscriptionStatus(profileData?.subscription_status ?? "free");
 
@@ -729,6 +788,24 @@ function GenerateContent() {
       }
 
       setLoadingData(false);
+
+      // A generation was in flight when this tab last unloaded (a reload,
+      // not a tab close — sessionStorage doesn't survive that). Check the
+      // ceiling before doing anything else: a reload minutes later, on an
+      // entry old enough that generation has certainly already resolved,
+      // must not start a phantom recovery poll.
+      const pending = readPendingRequest();
+      if (pending) {
+        if (Date.now() - pending.startedAt > RECOVERY_CEILING_MS) {
+          clearPendingRequest();
+        } else {
+          requestIdRef.current = pending.requestId;
+          generationStartRef.current = pending.startedAt;
+          deliveredRef.current = false;
+          recoveryCancelledRef.current = false;
+          attemptRecovery();
+        }
+      }
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -772,6 +849,29 @@ function GenerateContent() {
       if (recoveryPollTimeoutRef.current) clearTimeout(recoveryPollTimeoutRef.current);
     };
   }, []);
+
+  // Recovery trigger #2: the page becoming visible again while a
+  // generation was left in flight. This is the one that matters most —
+  // it covers the case a rejected promise never happens at all (a tab
+  // restored from bfcache after a suspension, where the fetch/reader is
+  // just gone with no exception to catch), which would otherwise leave
+  // the loading screen spinning forever. attemptRecovery's own
+  // recoveryInFlightRef guard makes this a no-op if the catch block in
+  // handleGenerate is already recovering — never a second, competing poll.
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && phase === "generating") {
+        attemptRecovery();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    // attemptRecovery reads everything it needs through refs and stable
+    // setState functions, never closed-over state — it doesn't need to be
+    // a dependency, and re-subscribing on its identity would just churn
+    // the listener every render for no behavioral difference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // ── Recovery ──────────────────────────────────────────────────────────────
   //
@@ -817,6 +917,7 @@ function GenerateContent() {
     try {
       while (!recoveryCancelledRef.current) {
         if (Date.now() - startedAt > RECOVERY_CEILING_MS) {
+          clearPendingRequest();
           setError(RECOVERY_COPY.ceilingHit);
           setPhase("form");
           return;
@@ -834,7 +935,35 @@ function GenerateContent() {
         if (recoveryCancelledRef.current) return;
 
         if (!queryError && data && data.generated_content) {
-          setResult(data as SavedPacket);
+          // The live stream (if it's still healthy — a benign background
+          // blip, not an actual disconnect) may have delivered this exact
+          // packet a moment earlier. Whichever path gets here first wins;
+          // this makes the loser a no-op rather than a double-render.
+          if (deliveredRef.current) return;
+          deliveredRef.current = true;
+          clearPendingRequest();
+
+          const row = data as SavedPacket;
+          // We may not have a selectedChild at all (recovering after a
+          // fresh page reload) — resolve the real one from the already-
+          // fetched children list so ResultView gets the child's actual
+          // avatar_emoji, not a placeholder, whenever possible.
+          const matchedChild = childrenRef.current.find((c) => c.id === row.child_id) ?? null;
+          setSelectedChild(
+            matchedChild ?? {
+              id: row.child_id ?? "",
+              user_id: userIdRef.current ?? "",
+              name: row.child_name,
+              grade_level: row.grade_level as Child["grade_level"],
+              learning_style: "mixed",
+              favorite_subjects: [],
+              special_notes: null,
+              avatar_emoji: "🌟",
+              display_order: 0,
+              created_at: row.created_at,
+            }
+          );
+          setResult(row);
           setPhase("result");
           return;
         }
@@ -852,12 +981,28 @@ function GenerateContent() {
     }
   }
 
+  // Shows a genuine, server-declared failure immediately — no recovery
+  // check, because the server has told us definitively what happened (a
+  // rejected request, a quota cap, a generation error it already rolled
+  // the quota back for). Recovery exists for the opposite situation: the
+  // client losing track of the answer, not receiving a clear one.
+  function showGenuineFailure(message: string) {
+    clearPendingRequest();
+    setError(message);
+    setPhase("form");
+    setProgress(0);
+  }
+
   async function handleGenerate() {
     if (!selectedChild || !theme.trim()) return;
 
     const requestId = crypto.randomUUID();
+    const startedAt = Date.now();
     requestIdRef.current = requestId;
-    generationStartRef.current = Date.now();
+    generationStartRef.current = startedAt;
+    deliveredRef.current = false;
+    recoveryCancelledRef.current = false;
+    writePendingRequest({ requestId, startedAt });
 
     setError("");
     setPhase("generating");
@@ -882,7 +1027,10 @@ function GenerateContent() {
       const isSSE = (res.headers.get("content-type") ?? "").includes("text/event-stream");
 
       if (!isSSE) {
-        // Plain JSON error (auth 401, quota 403, validation 400, etc.)
+        // Plain JSON error (auth 401, quota 403, validation 400, etc.) —
+        // the server has spoken. Show it now, don't poll for a packet that
+        // was never created (or that failed a path which already rolled
+        // its own quota back).
         let message = "Something went sideways. Let's try that again.";
         try {
           const data = await res.json();
@@ -890,14 +1038,21 @@ function GenerateContent() {
         } catch {
           // Body isn't valid JSON — use the default message
         }
-        throw new Error(message);
+        showGenuineFailure(message);
+        return;
       }
 
       if (!res.body) {
-        throw new Error("Something went sideways. Let's try that again.");
+        // Fires immediately after the fetch resolves, before any reading —
+        // a browser-capability issue, not a mid-generation connection loss.
+        showGenuineFailure("Something went sideways. Let's try that again.");
+        return;
       }
 
-      // Read SSE stream — keeps connection alive during ~60s Claude generation
+      // Read SSE stream — keeps connection alive during ~60-110s of
+      // generation. reader.read() throwing below (a killed connection —
+      // iOS backgrounding, a dropped cellular connection) is the case
+      // recovery exists for.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -925,6 +1080,13 @@ function GenerateContent() {
           }
 
           if (event.type === "complete" && event.packet) {
+            // A concurrently-running recovery poll (a benign background
+            // blip during otherwise-healthy generation, not an actual
+            // disconnect) may already have delivered this exact packet —
+            // see attemptRecovery. Whichever gets here first wins.
+            if (deliveredRef.current) return;
+            deliveredRef.current = true;
+            clearPendingRequest();
             setProgress(100);
             await new Promise((r) => setTimeout(r, 700));
             setResult(event.packet);
@@ -933,22 +1095,28 @@ function GenerateContent() {
           }
 
           if (event.type === "error") {
-            throw new Error(event.message ?? "Something went sideways. Let's try that again.");
+            // The server sent a structured error frame — it's telling us
+            // definitively what happened, same as the non-SSE JSON case
+            // above. Show it now rather than polling.
+            showGenuineFailure(event.message ?? "Something went sideways. Let's try that again.");
+            return;
           }
 
           // "progress" events keep the connection warm — no UI action needed
         }
       }
 
-      throw new Error("Something went sideways. Let's try that again.");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went sideways. Let's try that again."
-      );
-      setPhase("form");
-      setProgress(0);
+      // The stream ended (done) without ever seeing a complete or error
+      // event — ambiguous, not a clear failure. This is the "quietly cut
+      // without throwing" shape a suspended/bfcache-restored tab can
+      // produce. Ask the server rather than assuming failure.
+      await attemptRecovery();
+    } catch {
+      // fetch() or reader.read() threw natively (iOS Safari's "Load
+      // failed", Chromium's "Failed to fetch", etc.) — a killed
+      // connection, not a server-declared failure. The server ran (or is
+      // still running) regardless; ask it, don't guess with browser text.
+      await attemptRecovery();
     }
   }
 
@@ -972,6 +1140,25 @@ function GenerateContent() {
         msgIndex={msgIndex}
         fixedMessage={recovering ? RECOVERY_COPY.stillWorking : undefined}
       />
+    );
+  }
+
+  // Recovering after a fresh page reload: a generation was in flight when
+  // the tab last unloaded, but this mount never had a selectedChild (the
+  // form starts empty). attemptRecovery resolves the real child the moment
+  // it finds the packet — until then, show a minimal, honest state rather
+  // than guessing at LoadingView's child-specific copy.
+  if (phase === "generating") {
+    return (
+      <div className="fixed inset-0 bg-cream z-50 flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-24 h-24 rounded-full bg-sage/10 border-4 border-sage/20 flex items-center justify-center text-5xl mb-6 animate-pulse">
+          🌟
+        </div>
+        <h2 className="font-display text-2xl font-bold text-dark mb-2">
+          Checking on your packet...
+        </h2>
+        <p className="text-muted text-sm">{RECOVERY_COPY.stillWorking}</p>
+      </div>
     );
   }
 
