@@ -5,10 +5,12 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Child, PacketContent } from "@/types";
 import Wordmark from "@/components/layout/Wordmark";
 import { SITE_URL } from "@/lib/site";
+import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -426,11 +428,33 @@ function ResultView({
             {mascotImageUrl ? (
               // Mascot hero image
               <div className="flex flex-col items-center gap-3 mb-4">
-                <img
-                  src={mascotImageUrl}
-                  alt={packet.generated_content.mascot_name ?? "Today's mascot"}
-                  className="w-[180px] h-[180px] rounded-full object-cover border-4 border-white shadow-lg"
-                />
+                {resolveMascotUrl(mascotImageUrl) ? (
+                  // Hosted Supabase Storage URL — safe to optimize via next/image.
+                  // Props mirror the share page's mascot hero exactly: loading="eager"
+                  // + fetchPriority="low" loads immediately without next/image's own
+                  // preload injection (priority/preload are deliberately unset).
+                  <Image
+                    src={resolveMascotUrl(mascotImageUrl)!}
+                    alt={packet.generated_content.mascot_name ?? "Today's mascot"}
+                    width={180}
+                    height={180}
+                    loading="eager"
+                    fetchPriority="low"
+                    className="w-[180px] h-[180px] rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                ) : (
+                  // Base64 data URL or a still-live replicate.delivery link — the
+                  // packet is seconds old here, so both still display fine. Neither
+                  // shape is safe to hand to next/image (data URLs get zero
+                  // optimization benefit; replicate.delivery isn't in remotePatterns
+                  // and next/image throws on an unconfigured hostname).
+                  <img
+                    src={mascotImageUrl}
+                    alt={packet.generated_content.mascot_name ?? "Today's mascot"}
+                    fetchPriority="low"
+                    className="w-[180px] h-[180px] rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                )}
                 {packet.generated_content.mascot_name && (
                   <p className="text-base font-bold text-sage">
                     {packet.generated_content.mascot_name}
