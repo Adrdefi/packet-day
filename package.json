@@ -11,7 +11,8 @@
     "test-pdf": "node scripts/run-ts.mjs scripts/test-pdf.ts",
     "sweep": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/sweep-packets.ts",
     "convert-sample": "node scripts/run-ts.mjs scripts/convert-sample-pdf.ts",
-    "backfill-images": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/backfill-image-storage.ts"
+    "backfill-images": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/backfill-image-storage.ts",
+    "verify-image-backfill": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/verify-image-backfill.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",

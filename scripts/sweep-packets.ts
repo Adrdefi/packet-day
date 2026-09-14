@@ -177,7 +177,7 @@ function getServiceClient(): SupabaseClient {
   return createClient(url, key);
 }
 
-interface PacketRow {
+export interface PacketRow {
   id: string;
   child_name: string;
   grade_level: string;
@@ -189,7 +189,11 @@ interface PacketRow {
   children: { avatar_emoji: string; special_notes: string | null } | null;
 }
 
-async function buildProps(packet: PacketRow): Promise<PacketPDFProps> {
+// Exported so scripts/verify-image-backfill.ts renders through the exact
+// same path the sweep itself uses — including the resolveMascotImageForRender
+// / resolveColoringImageForRender calls below — rather than a re-implemented
+// copy that could silently drift from the real render path over time.
+export async function buildProps(packet: PacketRow): Promise<PacketPDFProps> {
   const content = packet.generated_content;
   const gradeDisplay = packet.grade_level === "K" ? "Kindergarten" : `Grade ${packet.grade_level}`;
   // Fetched here (not left for react-pdf to fetch at render time) so a
@@ -266,6 +270,24 @@ function parsePdfObjects(buf: Buffer): Map<number, PdfObject> {
     objects.set(num, { num, dictText, streamBytes });
   }
   return objects;
+}
+
+// pdfkit embeds each image once as a shared XObject and references it via
+// a `Do` operator from every page it appears on — so this is a whole
+// -document count of distinct embedded images, not a per-page count. A
+// fully-populated packet (mascot + coloring) has 2; one missing image (a
+// silently-failed fetch, or a format react-pdf can't decode — see
+// resolveMascotImageForRender's header) has 1 or 0. Used by
+// scripts/verify-image-backfill.ts to prove an image was actually painted,
+// not just that render() didn't throw — react-pdf swallows a bad image src
+// with a bare console.warn and just omits it, no error, no crash.
+export function countImageXObjects(buf: Buffer): number {
+  const objects = parsePdfObjects(buf);
+  let count = 0;
+  for (const obj of objects.values()) {
+    if (/\/Subtype\s*\/Image\b/.test(obj.dictText)) count++;
+  }
+  return count;
 }
 
 function getStreamData(obj: PdfObject): Buffer | null {
