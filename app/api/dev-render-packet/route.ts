@@ -13,6 +13,7 @@ import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
 import { resolveMascotImageForRender } from "@/lib/resolveMascotImageForRender";
+import { resolveColoringImageForRender } from "@/lib/resolveColoringImageForRender";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +66,10 @@ export async function GET(req: NextRequest) {
     packet.mascot_image_url ?? null,
     packetId
   );
+  const resolvedColoringImageUrl = await resolveColoringImageForRender(
+    packet.coloring_image_url ?? null,
+    packetId
+  );
 
   const props: PacketPDFProps = {
     childName: packet.child_name,
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
     mascotImageUrl: resolvedMascotImageUrl,
-    coloringImageUrl: packet.coloring_image_url ?? null,
+    coloringImageUrl: resolvedColoringImageUrl,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page ? (content.coloring_page as PDFColoringPage) : null,
     greeting: content.greeting ?? null,

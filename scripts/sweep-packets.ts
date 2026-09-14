@@ -144,6 +144,7 @@ import PacketPDF, { resolveContentType } from "../components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "../components/PacketPDF";
 import type { PacketContent } from "../types";
 import { resolveMascotImageForRender } from "../lib/resolveMascotImageForRender";
+import { resolveColoringImageForRender } from "../lib/resolveColoringImageForRender";
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,10 @@ async function buildProps(packet: PacketRow): Promise<PacketPDFProps> {
     packet.mascot_image_url ?? null,
     packet.id
   );
+  const resolvedColoringImageUrl = await resolveColoringImageForRender(
+    packet.coloring_image_url ?? null,
+    packet.id
+  );
   return {
     childName: packet.child_name,
     childEmoji: packet.children?.avatar_emoji ?? "🌟",
@@ -207,7 +212,7 @@ async function buildProps(packet: PacketRow): Promise<PacketPDFProps> {
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
     mascotImageUrl: resolvedMascotImageUrl,
-    coloringImageUrl: packet.coloring_image_url ?? null,
+    coloringImageUrl: resolvedColoringImageUrl,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page ? (content.coloring_page as PDFColoringPage) : null,
     greeting: content.greeting ?? null,

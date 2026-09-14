@@ -4,6 +4,7 @@ import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/
 import type { PacketContent } from "@/types";
 import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import { resolveMascotImageForRender } from "@/lib/resolveMascotImageForRender";
+import { resolveColoringImageForRender } from "@/lib/resolveColoringImageForRender";
 
 export const maxDuration = 90; // 30s image poll + ~10s render + upload headroom
 // @react-pdf/renderer is Node-only — force Node runtime
@@ -125,6 +126,10 @@ export async function GET(req: NextRequest) {
     typedPacket.mascot_image_url ?? null,
     packetId
   );
+  const resolvedColoringImageUrl = await resolveColoringImageForRender(
+    typedPacket.coloring_image_url ?? null,
+    packetId
+  );
 
   const props: PacketPDFProps = {
     childName: packet.child_name,
@@ -135,7 +140,7 @@ export async function GET(req: NextRequest) {
     activities: content.activities as PDFActivity[],
     createdAt: packet.created_at,
     mascotImageUrl: resolvedMascotImageUrl,
-    coloringImageUrl: typedPacket.coloring_image_url ?? null,
+    coloringImageUrl: resolvedColoringImageUrl,
     mascotName: content.mascot_name ?? null,
     coloringPage: content.coloring_page
       ? (content.coloring_page as PDFColoringPage)
