@@ -463,12 +463,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { childId, theme, packetLength, specialNotes, date } = body as {
+  const { childId, theme, packetLength, specialNotes, date, clientRequestId } = body as {
     childId?: string;
     theme?: string;
     packetLength?: string;
     specialNotes?: string;
     date?: string;
+    clientRequestId?: string;
   };
 
   if (
@@ -609,6 +610,9 @@ export async function POST(req: NextRequest) {
             packet_length: typedPacketLength,
             special_notes: specialNotes?.trim() || null,
             generated_content: generatedContent,
+            // Nullable column (migration 013) — older/cached clients that
+            // don't send this must still insert successfully.
+            client_request_id: clientRequestId ?? null,
           })
           .select()
           .single();

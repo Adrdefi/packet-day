@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -613,6 +613,11 @@ function GenerateContent() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
+  // Identifies the in-flight generate request so a lost connection (iOS
+  // backgrounding mid-generation) can be matched back to its packet later —
+  // see the recovery path in handleGenerate.
+  const requestIdRef = useRef<string | null>(null);
+
   const [phase, setPhase] = useState<Phase>("form");
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -711,6 +716,9 @@ function GenerateContent() {
   async function handleGenerate() {
     if (!selectedChild || !theme.trim()) return;
 
+    const requestId = crypto.randomUUID();
+    requestIdRef.current = requestId;
+
     setError("");
     setPhase("generating");
 
@@ -724,6 +732,7 @@ function GenerateContent() {
           packetLength,
           specialNotes: todayNote.trim() || undefined,
           date: new Date().toISOString().split("T")[0],
+          clientRequestId: requestId,
         }),
       });
 
