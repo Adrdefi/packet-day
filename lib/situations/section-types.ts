@@ -30,7 +30,17 @@ export interface ComparisonColumn {
 }
 
 export interface CharacterCardContent {
-  avatarEmoji: string;
+  /** Rendered when no `image` is given. */
+  avatarEmoji?: string;
+  /** A real character photo/illustration, shown instead of avatarEmoji when present. */
+  image?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
+  /** Small warm-gray line under the image, e.g. crediting the real packet it came from. */
+  caption?: string;
   tag: string;
   title: string;
   body: Paragraph;

@@ -1,7 +1,7 @@
 ---
 slug: /fun-friday
 page_title: Fun Friday: The Homeschool Tradition That Started Packet Day | Packet Day
-meta_description: Every Friday was packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.
+meta_description: Every Friday is packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.
 canonical: https://www.packetday.com/fun-friday
 target_keyword: fun friday activities (secondary: fun friday homeschool)
 internal_links:
@@ -85,10 +85,11 @@ I remember the old way: six browser tabs, three printers' worth of ink, and a Th
 - ✅ Built around their obsession
 
 **Character card**
-- Avatar: 🧁
-- Tag: MEET YOUR KID'S CHARACTER
-- Title: Whisk, the runaway cookbook
-- Body: We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is baking-obsessed (mine are — we bake together constantly), and we invent Whisk: a runaway cookbook character racing to finish a recipe book before the big bake-off. Your kid measures fractions *with* Whisk, reads the recipe rescue story *with* Whisk, studies kitchen chemistry *with* Whisk. It's the packet I used to build by hand — generated while the coffee brews.
+- Image: /images/situations/dazzle-the-donut.webp (Dazzle the Donut, from Vivian's real packet)
+- Tag: A REAL PACKET DAY CHARACTER
+- Title: Dazzle the Donut & the sprinkle shop
+- Caption: From a real packet made for Vivian, 3rd grade
+- Body: We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is donut-obsessed (mine are; we bake together constantly), and we invent Dazzle the Donut, who runs the busiest sprinkle shop in town. Your kid solves multiplication in Dazzle's shop *with* Dazzle, reads the story of the sprinkled donut *with* Dazzle, and figures out what makes a donut rise *with* Dazzle. It's the packet I used to make, upgraded, and generated while the coffee brews. ☕
 
 **Closing line:**
 New obsession next Friday? New packet. Same obsession all year? Still a brand-new packet every time, never repeated, never a rerun.

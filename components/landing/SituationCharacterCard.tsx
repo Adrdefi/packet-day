@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Paragraph } from "@/lib/situations/types";
 import type { CharacterCardContent } from "@/lib/situations/section-types";
 
@@ -22,11 +23,31 @@ export default function SituationCharacterCard({ content }: Props) {
   return (
     <div className="bg-paper rounded-2xl border-2 border-dashed border-coral-light p-8 md:p-10">
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-        <div
-          className="w-20 h-20 rounded-full bg-coral/15 flex items-center justify-center text-4xl shrink-0"
-          aria-hidden="true"
-        >
-          {content.avatarEmoji}
+        <div className="flex flex-col items-center gap-2 shrink-0">
+          <div
+            className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden ${
+              content.image ? "bg-white p-2" : "bg-coral/15"
+            }`}
+          >
+            {content.image ? (
+              <Image
+                src={content.image.src}
+                alt={content.image.alt}
+                width={content.image.width}
+                height={content.image.height}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <span className="text-4xl" aria-hidden="true">
+                {content.avatarEmoji}
+              </span>
+            )}
+          </div>
+          {content.caption && (
+            <p className="text-xs text-muted text-center max-w-[9rem] leading-snug">
+              {content.caption}
+            </p>
+          )}
         </div>
         <div>
           <span className="inline-block bg-coral/15 text-coral-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">

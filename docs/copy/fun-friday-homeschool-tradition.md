@@ -1,7 +1,7 @@
 ---
 slug: /blog/fun-friday-homeschool-tradition
 page_title: "Fun Friday: The Weekly Tradition That Saved My Homeschool | Packet Day Blog"
-meta_description: "Every Friday was packet day in our homeschool. Here's how to start your own Fun Friday tradition, without the Thursday night assembly line I used to run."
+meta_description: "Every Friday is packet day in our homeschool. Here's how to start your own Fun Friday tradition, without the Thursday night assembly line I used to run."
 canonical: https://www.packetday.com/blog/fun-friday-homeschool-tradition
 target_keyword: fun friday homeschool (secondary: fun friday activities)
 internal_links:

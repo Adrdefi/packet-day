@@ -30,7 +30,7 @@ import type { ReasonsContent, ComparisonContent, ClosingCTAContent } from "./sec
 export const metadata: SituationPageMetadata = {
   titleTag: "Fun Friday: The Homeschool Tradition That Started Packet Day | Packet Day",
   metaDescription:
-    "Every Friday was packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.",
+    "Every Friday is packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.",
   canonical: `${SITE_URL}/fun-friday`,
 };
 
@@ -128,19 +128,25 @@ export const comparisonSection: ComparisonContent = {
     ],
   },
   characterCard: {
-    avatarEmoji: "🧁",
-    tag: "MEET YOUR KID'S CHARACTER",
-    title: "Whisk, the runaway cookbook",
+    image: {
+      src: "/images/situations/dazzle-the-donut.webp",
+      alt: "Dazzle the Donut, a smiling pink sprinkled donut character waving",
+      width: 400,
+      height: 400,
+    },
+    caption: "From a real packet made for Vivian, 3rd grade",
+    tag: "A REAL PACKET DAY CHARACTER",
+    title: "Dazzle the Donut & the sprinkle shop",
     body: [
       {
-        text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is baking-obsessed (mine are — we bake together constantly), and we invent Whisk: a runaway cookbook character racing to finish a recipe book before the big bake-off. Your kid measures fractions ",
+        text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is donut-obsessed (mine are; we bake together constantly), and we invent Dazzle the Donut, who runs the busiest sprinkle shop in town. Your kid solves multiplication in Dazzle's shop ",
       },
       { text: "with", italic: true },
-      { text: " Whisk, reads the recipe rescue story " },
+      { text: " Dazzle, reads the story of the sprinkled donut " },
       { text: "with", italic: true },
-      { text: " Whisk, studies kitchen chemistry " },
+      { text: " Dazzle, and figures out what makes a donut rise " },
       { text: "with", italic: true },
-      { text: " Whisk. It's the packet I used to build by hand — generated while the coffee brews." },
+      { text: " Dazzle. It's the packet I used to make, upgraded, and generated while the coffee brews. ☕" },
     ],
   },
   closingParagraph:
