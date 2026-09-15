@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,25 +49,42 @@ const GRADE_LABELS: Record<string, string> = {
 // ─── Recovery copy ──────────────────────────────────────────────────────────
 // Shown when a client-side generation failure is resolved by finding the
 // packet the server actually finished (see attemptRecovery in
-// GenerateContent). Kept in one place so it can be edited without hunting
-// through the component. "Ceiling hit" copy must read as uncertain, not as
-// a broken-product apology — the server may genuinely still be working.
+// GenerateContent), plus the one generic-failure string handleGenerate
+// falls back to everywhere else. All four generation-outcome strings live
+// here so they can be edited without hunting through the component.
+// "Ceiling hit" and "still working" must both read as uncertain, not as a
+// broken-product apology — the server may genuinely still be working, and
+// "found" must read as good news, not as an apology for something that
+// wasn't actually broken.
 
-const RECOVERY_COPY = {
+const GENERATION_COPY = {
   found: "Found it. Your packet finished while your screen was off.",
   stillWorking: "Still working. Hang tight — bigger packets can take a couple of minutes.",
   ceilingHit: "We couldn't confirm that one. Check your recent packets, or try again.",
+  genuineFailure: "Something went sideways. Let's try that again.",
 } as const;
 
 // Measured from two real full-day generations on 2026-09-14 (~106s and
-// ~109s from request start to the packet row existing in the DB) — not a
-// computed p95, the sample is too small for that, but real production
-// timings rather than a guess. The ceiling leaves real margin over both
-// while staying well under the route's own 300s maxDuration, so a request
-// that's genuinely never coming back doesn't leave the user waiting for
-// the full server-side cap.
+// ~109s from request start to the packet row existing in the DB). Real
+// iPhone repro runs on 2026-09-15 (piano, full-day) came in faster —
+// 85-89s — so this has real margin already; not a computed p95 either way
+// (sample's too small), and not to be re-tuned until packet_delivered vs.
+// packet_recovered gives a real distribution to tune it against. The
+// ceiling leaves real margin over the slowest measurement while staying
+// well under the route's own 300s maxDuration, so a request that's
+// genuinely never coming back doesn't leave the user waiting for the full
+// server-side cap.
 const RECOVERY_POLL_INTERVAL_MS = 4000;
 const RECOVERY_CEILING_MS = 180_000;
+// How many polls attemptRecovery runs with nothing found before it admits
+// (via the UI copy) that something might be wrong. Purely a display
+// decision — the query and the ceiling check above run on the same
+// schedule regardless of this value, so it can never delay an actual
+// recovery, only how soon the copy stops looking like a normal
+// generation. Chosen so a healthy stream surviving a benign background
+// blip (the common case — most traffic is iOS, and backgrounding during a
+// ~90s wait is routine) almost always wins before this is ever reached.
+const RECOVERY_SPEAK_AFTER_POLLS = 2;
 
 // ─── Pending-request persistence ────────────────────────────────────────────
 // Survives a page reload mid-generation (the in-memory refs don't). Does NOT
@@ -396,14 +414,28 @@ function ResultView({
   packet,
   childEmoji,
   onGenerateAnother,
+  recovered,
 }: {
   packet: SavedPacket;
   childEmoji: string;
   onGenerateAnother: () => void;
+  // True when this packet was delivered by recovery rather than the live
+  // stream — the user saw a loading screen (possibly a "Still working"
+  // one) and is now landing here without ever having seen a red banner.
+  // Worth a quiet, good-news toast; not worth treating as noteworthy
+  // beyond that, since nothing was actually broken.
+  recovered?: boolean;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const { toasts, toast, dismiss } = useToast();
+
+  useEffect(() => {
+    if (recovered) toast.success(GENERATION_COPY.found);
+    // Fire once on mount only — ResultView mounts fresh each time phase
+    // transitions into "result", so this can't refire on a later re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Poll for mascot image until it's ready (generated async after packet save)
   const [mascotImageUrl, setMascotImageUrl] = useState<string | null>(
@@ -722,10 +754,17 @@ function GenerateContent() {
   const childrenRef = useRef<Child[]>([]);
 
   const [phase, setPhase] = useState<Phase>("form");
-  // True while attemptRecovery is polling — swaps LoadingView's rotating
-  // "Picking activities..." messages for the fixed recovery copy, since
-  // that cycle no longer describes what's actually happening.
+  // True once attemptRecovery has polled a couple of times with nothing
+  // found — swaps LoadingView's rotating "Picking activities..." messages
+  // for the fixed recovery copy. Deliberately NOT set the instant recovery
+  // starts: a healthy stream surviving a benign background blip should
+  // keep looking like a normal generation, not announce a problem that
+  // may resolve within one poll. See RECOVERY_SPEAK_AFTER_POLLS.
   const [recovering, setRecovering] = useState(false);
+  // Whether the packet currently in `result` was delivered by the live
+  // stream or by recovery — drives ResultView's one-time "Found it..."
+  // toast. Reset at the start of every new handleGenerate call.
+  const [resultWasRecovered, setResultWasRecovered] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [packetsUsed, setPacketsUsed] = useState(0);
@@ -911,14 +950,15 @@ function GenerateContent() {
     recoveryInFlightRef.current = true;
     recoveryCancelledRef.current = false;
     setError("");
-    setRecovering(true);
-    setPhase("generating"); // reuse LoadingView, driven by fixedMessage below
+    setPhase("generating"); // reuse LoadingView (or the reload "checking" state)
+
+    let pollsWithoutDelivery = 0;
 
     try {
       while (!recoveryCancelledRef.current) {
         if (Date.now() - startedAt > RECOVERY_CEILING_MS) {
           clearPendingRequest();
-          setError(RECOVERY_COPY.ceilingHit);
+          setError(GENERATION_COPY.ceilingHit);
           setPhase("form");
           return;
         }
@@ -942,6 +982,8 @@ function GenerateContent() {
           if (deliveredRef.current) return;
           deliveredRef.current = true;
           clearPendingRequest();
+          track("packet_recovered");
+          setResultWasRecovered(true);
 
           const row = data as SavedPacket;
           // We may not have a selectedChild at all (recovering after a
@@ -970,6 +1012,16 @@ function GenerateContent() {
         // A query error here isn't necessarily fatal — a flaky connection
         // is exactly the situation being recovered from. Keep polling;
         // only the ceiling above ends the loop on its own.
+
+        pollsWithoutDelivery++;
+        if (pollsWithoutDelivery >= RECOVERY_SPEAK_AFTER_POLLS) {
+          // Only now admit anything might be wrong. A healthy stream
+          // surviving a benign background blip has almost always already
+          // won by this point; this doesn't change when the query above
+          // runs or when the ceiling fires, only how soon the copy stops
+          // looking like a normal generation.
+          setRecovering(true);
+        }
 
         await new Promise<void>((resolve) => {
           recoveryPollTimeoutRef.current = setTimeout(resolve, RECOVERY_POLL_INTERVAL_MS);
@@ -1002,6 +1054,7 @@ function GenerateContent() {
     generationStartRef.current = startedAt;
     deliveredRef.current = false;
     recoveryCancelledRef.current = false;
+    setResultWasRecovered(false);
     writePendingRequest({ requestId, startedAt });
 
     setError("");
@@ -1031,7 +1084,7 @@ function GenerateContent() {
         // the server has spoken. Show it now, don't poll for a packet that
         // was never created (or that failed a path which already rolled
         // its own quota back).
-        let message = "Something went sideways. Let's try that again.";
+        let message: string = GENERATION_COPY.genuineFailure;
         try {
           const data = await res.json();
           message = data.message ?? data.error ?? message;
@@ -1045,7 +1098,7 @@ function GenerateContent() {
       if (!res.body) {
         // Fires immediately after the fetch resolves, before any reading —
         // a browser-capability issue, not a mid-generation connection loss.
-        showGenuineFailure("Something went sideways. Let's try that again.");
+        showGenuineFailure(GENERATION_COPY.genuineFailure);
         return;
       }
 
@@ -1087,6 +1140,7 @@ function GenerateContent() {
             if (deliveredRef.current) return;
             deliveredRef.current = true;
             clearPendingRequest();
+            track("packet_delivered");
             setProgress(100);
             await new Promise((r) => setTimeout(r, 700));
             setResult(event.packet);
@@ -1098,7 +1152,7 @@ function GenerateContent() {
             // The server sent a structured error frame — it's telling us
             // definitively what happened, same as the non-SSE JSON case
             // above. Show it now rather than polling.
-            showGenuineFailure(event.message ?? "Something went sideways. Let's try that again.");
+            showGenuineFailure(event.message ?? GENERATION_COPY.genuineFailure);
             return;
           }
 
@@ -1138,7 +1192,7 @@ function GenerateContent() {
         theme={theme}
         progress={progress}
         msgIndex={msgIndex}
-        fixedMessage={recovering ? RECOVERY_COPY.stillWorking : undefined}
+        fixedMessage={recovering ? GENERATION_COPY.stillWorking : undefined}
       />
     );
   }
@@ -1157,7 +1211,7 @@ function GenerateContent() {
         <h2 className="font-display text-2xl font-bold text-dark mb-2">
           Checking on your packet...
         </h2>
-        <p className="text-muted text-sm">{RECOVERY_COPY.stillWorking}</p>
+        <p className="text-muted text-sm">{GENERATION_COPY.stillWorking}</p>
       </div>
     );
   }
@@ -1170,6 +1224,7 @@ function GenerateContent() {
         packet={result}
         childEmoji={selectedChild.avatar_emoji}
         onGenerateAnother={resetForm}
+        recovered={resultWasRecovered}
       />
     );
   }
