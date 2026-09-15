@@ -23,7 +23,7 @@ import type {
 export const metadata: SituationPageMetadata = {
   titleTag: "Sick Day Activities for Kids: A Full School Day in About a Minute | Packet Day",
   metaDescription:
-    "Your kid is home sick but not sick enough to sleep. Generate a personalized 13 to 18 page learning packet around their obsession: math, reading, science, art. Free, no card required.",
+    "Your kid is home sick but not sick enough to sleep. Generate a personalized 11 to 17 page learning packet around their obsession: math, reading, science, art. Free, no card required.",
   canonical: `${SITE_URL}/sick-day`,
 };
 

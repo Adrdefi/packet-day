@@ -37,6 +37,15 @@ export async function GET(
   const [frauncesExtraBold, frauncesBold, nunitoRegular, nunitoBold] =
     await fontsPromise;
 
+  // Situation headlines vary a lot in length (road-trip's is 60 characters,
+  // fun-friday's is 79) — a fixed font size that fit the shorter ones would
+  // clip or overflow the longer ones now that the emoji badge has also
+  // narrowed the available text column. Same scaling approach as
+  // app/og/blog/[slug]/route.tsx's headlineFontSize, tuned to this route's
+  // own headline lengths instead of blog titles'.
+  const fontSize =
+    headline.length <= 45 ? 60 : headline.length <= 60 ? 54 : headline.length <= 72 ? 46 : 40;
+
   return new ImageResponse(
     (
       <div
@@ -86,36 +95,60 @@ export async function GET(
           </span>
         </div>
 
-        {/* Main content */}
+        {/* Main content — situation emoji badge beside the headline column */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
+            alignItems: "center",
             flex: 1,
-            justifyContent: "center",
-            gap: "24px",
+            gap: "40px",
             maxWidth: "1020px",
           }}
         >
           <div
             style={{
-              width: "64px",
-              height: "6px",
-              borderRadius: "3px",
-              background: "#D4A843",
-            }}
-          />
-          <div
-            style={{
-              fontSize: "60px",
-              fontWeight: 800,
-              fontFamily: "Fraunces",
-              color: "#1A1A2E",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
+              width: "140px",
+              height: "140px",
+              borderRadius: "9999px",
+              background: "#F5F0E8",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "76px",
+              flexShrink: 0,
             }}
           >
-            {headline}
+            {situation.emoji}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+              maxWidth: "840px",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "6px",
+                borderRadius: "3px",
+                background: "#D4A843",
+              }}
+            />
+            <div
+              style={{
+                fontSize: `${fontSize}px`,
+                fontWeight: 800,
+                fontFamily: "Fraunces",
+                color: "#1A1A2E",
+                lineHeight: 1.15,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {headline}
+            </div>
           </div>
         </div>
 
@@ -143,6 +176,11 @@ export async function GET(
     {
       width: 1200,
       height: 630,
+      // Built-in emoji rasterization (next/og's ImageResponse option) rather
+      // than a custom font — the situation emoji (🛋️, 🚗, 🍕) render as color
+      // glyphs Satori can't otherwise draw from the Fraunces/Nunito files
+      // loaded above.
+      emoji: "twemoji",
       fonts: [
         { name: "Fraunces", data: frauncesExtraBold, weight: 800, style: "normal" },
         { name: "Fraunces", data: frauncesBold, weight: 700, style: "normal" },

@@ -21,6 +21,13 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     teaser: 'Turn "are we there yet?" into learning they actually want.',
     emoji: "🚗",
   },
+  {
+    slug: "fun-friday",
+    href: "/fun-friday",
+    label: "Fun Fridays",
+    teaser: "Friday packet day, the tradition that started Packet Day.",
+    emoji: "🍕",
+  },
 ];
 
 /** Looks up a registry entry by slug. Throws if the slug isn't registered — a
