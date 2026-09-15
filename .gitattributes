@@ -1,0 +1,2 @@
+# Blog posts must stay LF: lib/blog.ts's FAQ parser requires bare \n
+content/blog/*.md text eol=lf
