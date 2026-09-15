@@ -6,13 +6,13 @@
  * that file, with page/hour figures pulled from lib/situations/figures.ts
  * the same way sick-day.ts and road-trip.ts do, instead of hand-typed.
  *
- * Chunk 1 deliberately omits the copy file's "Built for the Friday feeling"
- * section (its three lead-ins — "It's theirs.", "It's at their pace.",
- * "It's the reward." — are bold in the approved copy, and the shared
- * TextSegment type only supports `italic`, not bold; extending it was out of
- * scope for this chunk per Andy's decision, Sep 15 2026). The copy file
- * itself is untouched — that section is only missing from this data file and
- * from app/fun-friday/page.tsx's render, both to be revisited later.
+ * Chunk 1 built hero/storySection/steps/checklist/pricing/faq using only
+ * pre-existing components. Chunk 2 adds reasonsSection, comparisonSection,
+ * and closingCta — each needed a new component (SituationReasons,
+ * SituationComparison + SituationCharacterCard, SituationClosingCTA in
+ * components/landing/) and new types (lib/situations/section-types.ts),
+ * since the copy's bold lead-ins and character-card layout have no slot in
+ * the original shared types/components.
  */
 import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
 import { SITE_URL } from "@/lib/site";
@@ -25,6 +25,7 @@ import type {
   PricingCTAContent,
   FAQContent,
 } from "./types";
+import type { ReasonsContent, ComparisonContent, ClosingCTAContent } from "./section-types";
 
 export const metadata: SituationPageMetadata = {
   titleTag: "Fun Friday: The Homeschool Tradition That Started Packet Day | Packet Day",
@@ -37,6 +38,7 @@ const CTA_LABEL = "Make My Fun Friday Packet — Free";
 const CTA_EMOJI = "✨";
 
 export const hero: HeroContent = {
+  badge: { text: "Packet Day + pizza night", emoji: "🍕" },
   h1: "Fun Friday: The Packet Day That Started It All. Generated in a Minute or Two.",
   leadParagraphs: [
     {
@@ -51,11 +53,11 @@ export const hero: HeroContent = {
 export const storySection: TextSectionContent = {
   heading: "Hi, I'm Natalie.",
   paragraphs: [
-    "Every Friday in our homeschool was packet day. I would spend my week painstakingly building packets out of online resources — a math page from here, a reading passage from there, a science activity from somewhere else entirely. Hours of hunting, printing, and stapling, usually finished way too late on Thursday night.",
+    "Every Friday in our homeschool is packet day. For years, I would spend my week painstakingly building packets out of online resources — a math page from here, a reading passage from there, a science activity from somewhere else entirely. Hours of hunting, printing, and stapling, usually finished way too late on Thursday night.",
     [
-      { text: "And on Fridays, Oliver (5th grade) and Vivian (3rd grade) got the whole thing: a full day they could work through at their own pace. No lessons. No hovering. Just their packet, their crayons, and the quiet pride of finishing something themselves. They " },
-      { text: "loved", italic: true },
-      { text: " it. It was the reward at the end of the week — finish your packet, and it's the weekend. And Friday pizza night, of course. (We bake together a lot in this house — the kids would tell you that's the real tradition.)" },
+      { text: "On Fridays, Oliver (5th grade) and Vivian (3rd grade) get the whole thing: a full day they work through at their own pace. No lessons. No hovering. Just their packet, their crayons, and the quiet pride of finishing something themselves. They " },
+      { text: "love", italic: true },
+      { text: " it. It's the reward at the end of the week — finish your packet, and it's the weekend. And Friday pizza night, of course. (We bake together a lot in this house — the kids would tell you that's the real tradition.)" },
     ],
     "Then I did the math nobody wants to do: I was spending more time assembling packets than teaching the full week's curriculum.",
     "That's when my husband Andy had the thought that became this company: what if the packet built itself? What if every family could have packet day Fridays — or any day — without the 11pm Thursday assembly line?",
@@ -80,6 +82,79 @@ export const steps: StepsContent = {
       body: "Hand it over Friday morning. They work at their own pace. You get your week back. Pizza night is still on you.",
     },
   ],
+};
+
+export const reasonsSection: ReasonsContent = {
+  heading: "Built for the Friday feeling",
+  headingEmoji: "🎉",
+  intro: "Packet day Fridays worked because of three things, and we kept all three:",
+  cards: [
+    {
+      title: "It's theirs.",
+      body: "Not a worksheet — a packet built around their obsession, with a character carrying them through every subject. The thing they look forward to, not the thing they endure.",
+    },
+    {
+      title: "It's at their pace.",
+      body: "No bells, no schedule, no keeping up with anyone. Fast finishers fly. Slow-and-steady kids take their time. Friday doesn't care.",
+    },
+    {
+      title: "It's the reward.",
+      body: "The week is done. This is the fun part — and then the weekend starts. That framing matters more than any curriculum choice I ever made.",
+    },
+  ],
+  closingParagraph: `One packet. ${PAGE_RANGE_TEXT}. A full school day of real learning (K–8), roughly ${HOURS_RANGE_TEXT} with breaks, disguised as the best day of the week. Answer keys included, so Friday stays relaxing for you too.`,
+};
+
+export const comparisonSection: ComparisonContent = {
+  eyebrow: "The difference",
+  heading: "This isn't a download. I used to spend hours on what now takes a minute or two.",
+  headingEmoji: "📝",
+  leadParagraph:
+    "I remember the old way: six browser tabs, three printers' worth of ink, and a Thursday night spent deciding whether page 7 was too hard for a 3rd grader.",
+  leftColumn: {
+    heading: "📚 My old Thursday nights",
+    items: [
+      "❌ Hours of hunting, printing, and stapling",
+      "❌ Guessing whether each page fit their grade",
+      "❌ Done at 11pm, if I was lucky",
+    ],
+  },
+  rightColumn: {
+    heading: "✨ Packet Day",
+    items: [
+      "✅ Generated fresh, one kid at a time",
+      "✅ One packet, a minute or two, done",
+      "✅ Built around their obsession",
+    ],
+  },
+  characterCard: {
+    avatarEmoji: "🧁",
+    tag: "MEET YOUR KID'S CHARACTER",
+    title: "Whisk, the runaway cookbook",
+    body: [
+      {
+        text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is baking-obsessed (mine are — we bake together constantly), and we invent Whisk: a runaway cookbook character racing to finish a recipe book before the big bake-off. Your kid measures fractions ",
+      },
+      { text: "with", italic: true },
+      { text: " Whisk, reads the recipe rescue story " },
+      { text: "with", italic: true },
+      { text: " Whisk, studies kitchen chemistry " },
+      { text: "with", italic: true },
+      { text: " Whisk. It's the packet I used to build by hand — generated while the coffee brews." },
+    ],
+  },
+  closingParagraph:
+    "New obsession next Friday? New packet. Same obsession all year? Still a brand-new packet every time, never repeated, never a rerun.",
+};
+
+export const closingCta: ClosingCTAContent = {
+  heading: "Pizza night is waiting.",
+  headingEmoji: "🍕",
+  line: "A minute or two from now, Friday could be handled. Go preheat the oven.",
+  ctaLabel: CTA_LABEL,
+  ctaEmoji: CTA_EMOJI,
+  ctaHref: "/signup",
+  trustLine: "One free packet a month · No card required",
 };
 
 export const checklist: ChecklistContent = {
@@ -111,7 +186,7 @@ export const faq: FAQContent = {
     {
       question: "Is this really how Packet Day started?",
       answer:
-        "Yes. Friday packet day was a real tradition in our homeschool before it was a product. I built every packet by hand from online resources until the assembling was eating more time than the teaching. Packet Day is that tradition, automated — the Friday feeling, minus the Thursday night.",
+        "Yes. Friday packet day was a real tradition in our homeschool long before it was a product, and it still is. I built every packet by hand from online resources until the assembling was eating more time than the teaching. Packet Day is that tradition, automated — the Friday feeling, minus the Thursday night.",
     },
     {
       question: "How is this different from the packets you used to make?",

@@ -17,15 +17,17 @@ status: FINAL. Approved by Andy and Natalie, Sep 15 2026. Use verbatim.
 
 ## HERO
 
+**Badge:** Packet Day + pizza night 🍕
+
 ### H1: Fun Friday: The Packet Day That Started It All. Generated in a Minute or Two.
 
 ### This one is personal. It's how Packet Day was born — and I'm the one who lived it.
 
 Hi, I'm Natalie.
 
-Every Friday in our homeschool was packet day. I would spend my week painstakingly building packets out of online resources — a math page from here, a reading passage from there, a science activity from somewhere else entirely. Hours of hunting, printing, and stapling, usually finished way too late on Thursday night.
+Every Friday in our homeschool is packet day. For years, I would spend my week painstakingly building packets out of online resources — a math page from here, a reading passage from there, a science activity from somewhere else entirely. Hours of hunting, printing, and stapling, usually finished way too late on Thursday night.
 
-And on Fridays, Oliver (5th grade) and Vivian (3rd grade) got the whole thing: a full day they could work through at their own pace. No lessons. No hovering. Just their packet, their crayons, and the quiet pride of finishing something themselves. They *loved* it. It was the reward at the end of the week — finish your packet, and it's the weekend. And Friday pizza night, of course. (We bake together a lot in this house — the kids would tell you that's the real tradition.)
+On Fridays, Oliver (5th grade) and Vivian (3rd grade) get the whole thing: a full day they work through at their own pace. No lessons. No hovering. Just their packet, their crayons, and the quiet pride of finishing something themselves. They *love* it. It's the reward at the end of the week — finish your packet, and it's the weekend. And Friday pizza night, of course. (We bake together a lot in this house — the kids would tell you that's the real tradition.)
 
 Then I did the math nobody wants to do: I was spending more time assembling packets than teaching the full week's curriculum.
 
@@ -117,7 +119,7 @@ One packet a month is free — no card required. For every-Friday packet days, u
 (FAQPage JSON-LD built from these exact questions and answers.)
 
 **Is this really how Packet Day started?**
-Yes. Friday packet day was a real tradition in our homeschool before it was a product. I built every packet by hand from online resources until the assembling was eating more time than the teaching. Packet Day is that tradition, automated — the Friday feeling, minus the Thursday night.
+Yes. Friday packet day was a real tradition in our homeschool long before it was a product, and it still is. I built every packet by hand from online resources until the assembling was eating more time than the teaching. Packet Day is that tradition, automated — the Friday feeling, minus the Thursday night.
 
 **How is this different from the packets you used to make?**
 Same love, none of the labor. I built each one by hunting down resources for hours; the generator builds one around your kid's grade level and obsession in a minute or two, with a character woven through every subject — something even my hand-built packets rarely had.
