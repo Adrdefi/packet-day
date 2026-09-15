@@ -25,8 +25,10 @@ export default function SituationCharacterCard({ content }: Props) {
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
         <div className="flex flex-col items-center gap-2 shrink-0">
           <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden ${
-              content.image ? "bg-white p-2" : "bg-coral/15"
+            className={`rounded-full flex items-center justify-center overflow-hidden ${
+              content.image
+                ? "w-[180px] h-[180px] md:w-[220px] md:h-[220px] bg-white p-4 md:p-5"
+                : "w-20 h-20 bg-coral/15"
             }`}
           >
             {content.image ? (
@@ -44,12 +46,16 @@ export default function SituationCharacterCard({ content }: Props) {
             )}
           </div>
           {content.caption && (
-            <p className="text-xs text-muted text-center max-w-[9rem] leading-snug">
+            <p
+              className={`text-xs text-muted text-center leading-snug ${
+                content.image ? "max-w-[180px] md:max-w-[220px]" : "max-w-[9rem]"
+              }`}
+            >
               {content.caption}
             </p>
           )}
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <span className="inline-block bg-coral/15 text-coral-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">
             {content.tag}
           </span>

@@ -131,8 +131,8 @@ export const comparisonSection: ComparisonContent = {
     image: {
       src: "/images/situations/dazzle-the-donut.webp",
       alt: "Dazzle the Donut, a smiling pink sprinkled donut character waving",
-      width: 400,
-      height: 400,
+      width: 600,
+      height: 600,
     },
     caption: "From a real packet made for Vivian, 3rd grade",
     tag: "A REAL PACKET DAY CHARACTER",
