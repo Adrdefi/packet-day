@@ -27,6 +27,7 @@ export default async function DashboardPage({
     { data: children },
     { data: packets },
     { data: profile },
+    { data: usageRows, error: usageError },
   ] = await Promise.all([
     supabase
       .from("children")
@@ -44,13 +45,27 @@ export default async function DashboardPage({
       .select("subscription_status, packets_used_this_month, packets_reset_date")
       .eq("id", user.id)
       .single(),
+    // Reads the same month boundary check_and_increment_packet_usage uses
+    // (migration 014) — profiles.packets_used_this_month/packets_reset_date
+    // only actually reset on a user's next generation, so reading them raw
+    // shows last month's count until then. Falls back to the raw columns
+    // below if the RPC errors, so the page never breaks over this.
+    supabase.rpc("get_my_packet_usage"),
   ]);
+
+  if (usageError) {
+    console.error("[dashboard] get_my_packet_usage failed, falling back to raw profile columns:", usageError.message);
+  }
+  const usage = usageRows?.[0];
 
   const childList = (children as Child[]) ?? [];
   const packetList = (packets as Packet[]) ?? [];
   // Anyone not on pro is on the free tier — cancelled included, since
   // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
   const isFree = (profile?.subscription_status ?? "free") !== "pro";
+  const packetsUsed = usage?.packets_used ?? profile?.packets_used_this_month ?? 0;
+  const resetDate =
+    usage?.reset_date ?? profile?.packets_reset_date ?? new Date().toISOString().slice(0, 10);
 
   return (
     <div className="space-y-8">
@@ -104,11 +119,7 @@ export default async function DashboardPage({
 
       {/* ── Free tier usage banner ──────────────────────────────────── */}
       {isFree && (
-        <UsageBanner
-          used={profile?.packets_used_this_month ?? 0}
-          limit={1}
-          resetDate={profile?.packets_reset_date ?? new Date().toISOString().slice(0, 10)}
-        />
+        <UsageBanner used={packetsUsed} limit={1} resetDate={resetDate} />
       )}
     </div>
   );

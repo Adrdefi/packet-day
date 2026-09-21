@@ -801,7 +801,7 @@ function GenerateContent() {
 
       userIdRef.current = user.id;
 
-      const [{ data: childrenData }, { data: profileData }] =
+      const [{ data: childrenData }, { data: profileData }, { data: usageRows, error: usageError }] =
         await Promise.all([
           supabase
             .from("children")
@@ -813,12 +813,23 @@ function GenerateContent() {
             .select("subscription_status, packets_used_this_month")
             .eq("id", user.id)
             .single(),
+          // Reads the same month boundary check_and_increment_packet_usage
+          // uses (migration 014) — profiles.packets_used_this_month only
+          // actually resets on this user's next generation, so reading it
+          // raw shows last month's count until then. Falls back to the raw
+          // column below if the RPC errors, so this page never breaks.
+          supabase.rpc("get_my_packet_usage"),
         ]);
+
+      if (usageError) {
+        console.error("[generate] get_my_packet_usage failed, falling back to raw profile column:", usageError.message);
+      }
+      const usage = usageRows?.[0];
 
       const kids = (childrenData as Child[]) ?? [];
       setChildren(kids);
       childrenRef.current = kids;
-      setPacketsUsed(profileData?.packets_used_this_month ?? 0);
+      setPacketsUsed(usage?.packets_used ?? profileData?.packets_used_this_month ?? 0);
       setSubscriptionStatus(profileData?.subscription_status ?? "free");
 
       if (preSelectedId) {
