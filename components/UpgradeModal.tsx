@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { track } from "@vercel/analytics";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 
@@ -23,6 +24,10 @@ interface PlanPriceIds {
   yearlyPriceId: string;
 }
 
+interface PlansResponse extends PlanPriceIds {
+  isPaid: boolean;
+}
+
 export default function UpgradeModal({
   open,
   onClose,
@@ -34,6 +39,10 @@ export default function UpgradeModal({
 }: UpgradeModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<Plan>(defaultPlan);
   const [priceIds, setPriceIds] = useState<PlanPriceIds | null>(null);
+  // True from the moment the modal opens until /api/plans answers — the
+  // button stays disabled and shows a quiet loading label the whole time,
+  // per the hardening pass: no clickable button that can't work yet.
+  const [checkingPlan, setCheckingPlan] = useState(true);
   const [priceIdsError, setPriceIdsError] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -46,40 +55,64 @@ export default function UpgradeModal({
   });
 
   // Resets to the caller's chosen default each time the modal opens fresh,
-  // and fetches the two Stripe price IDs the checkout button needs — see
-  // app/api/plans/route.ts for why this fetches rather than taking them as
-  // props.
+  // then asks /api/plans for a fresh, server-side isPaid read alongside the
+  // two Stripe price IDs — this is the final word on every trigger,
+  // including the generate page's, which otherwise only has client-held
+  // subscription state to decide whether to open at all. If the server
+  // says isPaid, the modal closes immediately without ever revealing
+  // prices or firing the open event below.
   useEffect(() => {
     if (!open) return;
     setSelectedPlan(defaultPlan);
     setPriceIdsError(false);
+    setCheckingPlan(true);
+    setPriceIds(null);
 
     let cancelled = false;
     fetch("/api/plans")
       .then((res) => {
-        if (!res.ok) throw new Error("plans fetch failed");
-        return res.json();
+        if (!res.ok) throw new Error(`plans fetch failed: ${res.status}`);
+        return res.json() as Promise<PlansResponse>;
       })
-      .then((data: PlanPriceIds) => {
-        if (!cancelled) setPriceIds(data);
+      .then((data) => {
+        if (cancelled) return;
+
+        if (data.isPaid) {
+          onClose();
+          return;
+        }
+
+        setPriceIds({ monthlyPriceId: data.monthlyPriceId, yearlyPriceId: data.yearlyPriceId });
+
+        // Fires once per open, not once per render, and never for a paid
+        // user (the isPaid branch above returns before reaching here).
+        if (!openedTrackedRef.current) {
+          openedTrackedRef.current = true;
+          track("upgrade_modal_opened", { source, capped });
+        }
       })
       .catch(() => {
         if (!cancelled) setPriceIdsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingPlan(false);
       });
 
     return () => {
       cancelled = true;
     };
+    // source/capped/onClose are set by the caller in the same event handler
+    // that flips `open` true, so this effect's closure already has their
+    // current values whenever it actually runs — they don't need to be
+    // deps, and listing onClose (a fresh arrow function most renders)
+    // would refetch on every unrelated parent re-render while open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultPlan]);
 
-  // Fires once per open, not once per render.
+  // Resets the one-track-per-open guard when the modal closes.
   useEffect(() => {
-    if (open && !openedTrackedRef.current) {
-      openedTrackedRef.current = true;
-      track("upgrade_modal_opened", { source, capped });
-    }
     if (!open) openedTrackedRef.current = false;
-  }, [open, source, capped]);
+  }, [open]);
 
   // Body scroll locked while open.
   useEffect(() => {
@@ -223,20 +256,26 @@ export default function UpgradeModal({
         {error && (
           <p className="text-coral text-sm font-medium text-center">{error}</p>
         )}
-        {priceIdsError && !error && (
-          <p className="text-coral text-sm font-medium text-center">
-            Something went sideways. Let&apos;s try that again.
-          </p>
-        )}
 
         <div className="space-y-2">
-          <button
-            onClick={() => upgrade(selectedPlan === "yearly")}
-            disabled={loading || !priceIds}
-            className="w-full bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm"
-          >
-            {loading ? "Redirecting…" : "Go Unlimited"}
-          </button>
+          {priceIdsError ? (
+            // /api/plans failed or the session expired mid-modal (401) —
+            // never leave a button that looks clickable but can't work.
+            <Link
+              href="/pricing"
+              className="block w-full text-center bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors text-sm"
+            >
+              See plans
+            </Link>
+          ) : (
+            <button
+              onClick={() => upgrade(selectedPlan === "yearly")}
+              disabled={checkingPlan || loading || !priceIds}
+              className="w-full bg-sage text-cream font-bold py-3.5 rounded-xl hover:bg-sage-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm"
+            >
+              {checkingPlan ? "Checking your plan…" : loading ? "Redirecting…" : "Go Unlimited"}
+            </button>
+          )}
           <p className="text-center text-xs text-muted">
             One price covers all your kids. Cancel anytime.
           </p>
