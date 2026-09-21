@@ -292,14 +292,14 @@ Quick note from me, Natalie. It's a new month, which means your free Packet Day 
 
 Last month ${r.childName} got a packet all about ${r.theme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in about a minute.
 
-[ Make ${r.possessiveChild} packet ]  → ${GENERATE_URL}
+Make ${r.possessiveChild} packet: ${GENERATE_URL}
 
 Thanks so much for giving Packet Day a try. It means the world to our little family.
 
 Natalie
 Co-founder, Packet Day
 
-P.S. If one packet a month isn't enough, Unlimited is just $9 a month billed yearly, and covers every kid in your house. [See Unlimited] → ${UPGRADE_URL}
+P.S. If one packet a month isn't enough, Unlimited is just $9 a month billed yearly, and covers every kid in your house. See Unlimited: ${UPGRADE_URL}
 
 Reply "stop" and I won't email you again.`;
 }
