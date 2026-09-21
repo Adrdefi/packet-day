@@ -82,6 +82,15 @@ export default function UpgradeModal({
           return;
         }
 
+        // A missing env var (e.g. STRIPE_PRICE_MONTHLY/YEARLY unset for
+        // this environment) resolves server side to an empty string, not
+        // a missing key — this app never has a legitimate reason to hand
+        // back an empty price ID, so treat it exactly like a failed fetch
+        // and fall into the catch below, regardless of why it happened.
+        if (!data.monthlyPriceId || !data.yearlyPriceId) {
+          throw new Error("plans response missing a price ID");
+        }
+
         setPriceIds({ monthlyPriceId: data.monthlyPriceId, yearlyPriceId: data.yearlyPriceId });
 
         // Fires once per open, not once per render, and never for a paid
