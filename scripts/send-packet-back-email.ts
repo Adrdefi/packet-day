@@ -21,6 +21,13 @@
  *                   any email already in that file.
  *   --include-new   Also include recipients the query found who are NOT in
  *                   OVERRIDES below (normally excluded — see "NEW" logic).
+ *   --plain         Send the minimal HTML variant instead of the styled one
+ *                   (no header/wordmark, no button, no background colors or
+ *                   boxes, default font, plain black text; the two links
+ *                   become normal underlined text links on their own lines).
+ *                   Same exact words either way. Combine with --dry-run,
+ *                   --test, or --schedule; the plain text version and
+ *                   headers are unaffected by this flag.
  *
  * ENV
  * ---
@@ -351,8 +358,31 @@ function renderHtml(r: Resolved): string {
 </table>`;
 }
 
-function renderEmail(r: Resolved): { subject: string; html: string; text: string } {
-  return { subject: SUBJECT, html: renderHtml(r), text: renderPlainText(r) };
+// Minimal variant for --plain: same exact words as renderHtml, but no
+// header/wordmark, no button, no background colors or boxes, default font,
+// plain black text. The two links become normal underlined text links on
+// their own lines instead of a styled button / inline sentence link.
+function renderHtmlPlain(r: Resolved): string {
+  const greeting = escapeHtml(r.greeting);
+  const childName = escapeHtml(r.childName);
+  const theme = escapeHtml(r.theme);
+  const possessiveChild = escapeHtml(r.possessiveChild);
+
+  return `<div style="color:#000000;">
+<p>${greeting}</p>
+<p>Quick note from me, Natalie. It's a new month, which means your free Packet Day packet is back!</p>
+<p>Last month ${childName} got a packet all about ${theme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in about a minute.</p>
+<p><a href="${GENERATE_URL}">Make ${possessiveChild} packet</a></p>
+<p>Thanks so much for giving Packet Day a try. It means the world to our little family.</p>
+<p>Natalie<br>Co-founder, Packet Day</p>
+<p>P.S. If one packet a month isn't enough, Unlimited is just $9 a month billed yearly, and covers every kid in your house.</p>
+<p><a href="${UPGRADE_URL}">See Unlimited</a></p>
+<p>Reply "stop" and I won't email you again.</p>
+</div>`;
+}
+
+function renderEmail(r: Resolved, plain: boolean): { subject: string; html: string; text: string } {
+  return { subject: SUBJECT, html: plain ? renderHtmlPlain(r) : renderHtml(r), text: renderPlainText(r) };
 }
 
 // ─── Sent log (for --schedule only) ────────────────────────────────────────
@@ -379,7 +409,7 @@ function saveSentLog(log: Record<string, SentEntry>): void {
 
 // ─── Modes ──────────────────────────────────────────────────────────────────
 
-function printDryRun(finalList: Resolved[], newOnes: Resolved[]): void {
+function printDryRun(finalList: Resolved[], newOnes: Resolved[], plain: boolean): void {
   console.log(`Recipients (${finalList.length}):\n`);
   for (const r of finalList) {
     console.log(`- ${r.email}`);
@@ -405,7 +435,7 @@ function printDryRun(finalList: Resolved[], newOnes: Resolved[]): void {
 
   if (finalList.length > 0) {
     const example = finalList[0];
-    const { subject, text } = renderEmail(example);
+    const { subject, text } = renderEmail(example, plain);
     console.log(`\n--- Example rendering (${example.email}) ---`);
     console.log(`Subject: ${subject}`);
     console.log("");
@@ -415,13 +445,13 @@ function printDryRun(finalList: Resolved[], newOnes: Resolved[]): void {
   console.log(`\nTotal final recipient count: ${finalList.length}`);
 }
 
-async function runTest(finalList: Resolved[], testEmail: string): Promise<void> {
+async function runTest(finalList: Resolved[], testEmail: string, plain: boolean): Promise<void> {
   if (finalList.length === 0) {
     console.error("No recipients found to source template data from. Nothing sent.");
     process.exit(1);
   }
   const template = finalList[0];
-  const { subject, html, text } = renderEmail(template);
+  const { subject, html, text } = renderEmail(template, plain);
 
   const result = await resend.emails.send({
     from: FROM,
@@ -442,7 +472,7 @@ async function runTest(finalList: Resolved[], testEmail: string): Promise<void> 
   console.log(`Resend id: ${result.data?.id}`);
 }
 
-async function runSchedule(finalList: Resolved[]): Promise<void> {
+async function runSchedule(finalList: Resolved[], plain: boolean): Promise<void> {
   if (finalList.length === 0) {
     console.log("No recipients to schedule.");
     return;
@@ -474,7 +504,7 @@ async function runSchedule(finalList: Resolved[]): Promise<void> {
   }
 
   for (const r of toSend) {
-    const { subject, html, text } = renderEmail(r);
+    const { subject, html, text } = renderEmail(r, plain);
     const result = await resend.emails.send({
       from: FROM,
       to: r.email,
@@ -506,6 +536,7 @@ async function runSchedule(finalList: Resolved[]): Promise<void> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const includeNew = args.includes("--include-new");
+  const plain = args.includes("--plain");
 
   let mode: "dry-run" | "test" | "schedule" = "dry-run";
   let testEmail: string | null = null;
@@ -531,17 +562,17 @@ async function main(): Promise<void> {
   const finalList = includeNew ? resolved : known;
 
   if (mode === "dry-run") {
-    printDryRun(finalList, newOnes);
+    printDryRun(finalList, newOnes, plain);
     return;
   }
 
   if (mode === "test") {
-    await runTest(finalList, testEmail as string);
+    await runTest(finalList, testEmail as string, plain);
     return;
   }
 
   if (mode === "schedule") {
-    await runSchedule(finalList);
+    await runSchedule(finalList, plain);
     return;
   }
 }
