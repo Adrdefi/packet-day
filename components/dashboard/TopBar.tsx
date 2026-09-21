@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Wordmark from "@/components/layout/Wordmark";
+import { isPaidStatus } from "@/lib/isPaid";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -147,8 +148,8 @@ export default function TopBar({
                 <p className="text-sm font-semibold text-dark truncate">
                   {fullName ?? firstName}
                 </p>
-                <p className="text-xs text-muted mt-0.5 capitalize">
-                  {subscriptionStatus} plan
+                <p className="text-xs text-muted mt-0.5">
+                  {isPaidStatus(subscriptionStatus) ? "Unlimited" : "Free"} plan
                 </p>
               </div>
 

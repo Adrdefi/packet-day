@@ -1,9 +1,10 @@
-import Link from "next/link";
+"use client";
 
 interface UsageBannerProps {
   used: number;
   limit: number;
   resetDate: string; // profiles.packets_reset_date, e.g. "2026-08-01"
+  onUpgradeClick: () => void;
 }
 
 function firstOfMonthAfter(resetDate: string): string {
@@ -16,7 +17,7 @@ function firstOfMonthAfter(resetDate: string): string {
   });
 }
 
-export default function UsageBanner({ used, limit, resetDate }: UsageBannerProps) {
+export default function UsageBanner({ used, limit, resetDate, onUpgradeClick }: UsageBannerProps) {
   const exhausted = used >= limit;
   const pct = Math.min((used / limit) * 100, 100);
 
@@ -56,8 +57,9 @@ export default function UsageBanner({ used, limit, resetDate }: UsageBannerProps
           </div>
         </div>
 
-        <Link
-          href="/pricing"
+        <button
+          type="button"
+          onClick={onUpgradeClick}
           className={[
             "shrink-0 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors text-center",
             exhausted
@@ -65,8 +67,8 @@ export default function UsageBanner({ used, limit, resetDate }: UsageBannerProps
               : "bg-sage text-cream hover:bg-sage-dark",
           ].join(" ")}
         >
-          Upgrade to Pro →
-        </Link>
+          Upgrade to Unlimited →
+        </button>
       </div>
     </div>
   );

@@ -12,6 +12,9 @@ import type { Child, PacketContent } from "@/types";
 import Wordmark from "@/components/layout/Wordmark";
 import { SITE_URL } from "@/lib/site";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
+import { isPaidStatus } from "@/lib/isPaid";
+import { nextFreeDateLabel } from "@/lib/nextFreeDate";
+import UpgradeModal from "@/components/UpgradeModal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -769,6 +772,18 @@ function GenerateContent() {
   const [loadingData, setLoadingData] = useState(true);
   const [packetsUsed, setPacketsUsed] = useState(0);
   const [subscriptionStatus, setSubscriptionStatus] = useState("free");
+  // For UpgradeModal's "your next free packet arrives {date}" copy — see
+  // lib/nextFreeDate.ts. Null until load() resolves.
+  const [resetDate, setResetDate] = useState<string | null>(null);
+
+  // Upgrade modal state — opened either by the 403 limit_reached response
+  // (source "cap_hit") or the "Upgrade →" link in the cost badge below
+  // (source "upgrade_link"). Nothing else about generation, recovery, or
+  // the result view is affected by this.
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeModalSource, setUpgradeModalSource] = useState<"cap_hit" | "upgrade_link">(
+    "upgrade_link"
+  );
 
   // Form fields
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
@@ -831,6 +846,7 @@ function GenerateContent() {
       childrenRef.current = kids;
       setPacketsUsed(usage?.packets_used ?? profileData?.packets_used_this_month ?? 0);
       setSubscriptionStatus(profileData?.subscription_status ?? "free");
+      if (usage?.reset_date) setResetDate(usage.reset_date);
 
       if (preSelectedId) {
         const match = kids.find((c) => c.id === preSelectedId);
@@ -1096,12 +1112,27 @@ function GenerateContent() {
         // was never created (or that failed a path which already rolled
         // its own quota back).
         let message: string = GENERATION_COPY.genuineFailure;
+        let errorCode: string | undefined;
         try {
           const data = await res.json();
           message = data.message ?? data.error ?? message;
+          errorCode = data.error;
         } catch {
           // Body isn't valid JSON — use the default message
         }
+
+        if (errorCode === "limit_reached") {
+          // The server's own cap, not a generic failure — open the upgrade
+          // modal instead of the coral error banner. No error text is set;
+          // the modal is the whole response to this case.
+          clearPendingRequest();
+          setPhase("form");
+          setProgress(0);
+          setUpgradeModalSource("cap_hit");
+          setUpgradeModalOpen(true);
+          return;
+        }
+
         showGenuineFailure(message);
         return;
       }
@@ -1244,7 +1275,7 @@ function GenerateContent() {
 
   // Anyone not on pro is on the free tier — cancelled included, since
   // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
-  const isFree = subscriptionStatus !== "pro";
+  const isFree = !isPaidStatus(subscriptionStatus);
   const atLimit = isFree && packetsUsed >= 1;
   // atLimit still drives the informational copy below — it is a hint, not a
   // gate. The server's atomic check is the real enforcement; disabling the
@@ -1456,24 +1487,37 @@ function GenerateContent() {
                 <span className="text-coral font-semibold">
                   You&apos;re out of free packets this month.{" "}
                 </span>
-                <Link
-                  href="/pricing"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeModalSource("upgrade_link");
+                    setUpgradeModalOpen(true);
+                  }}
                   className="text-coral font-semibold underline underline-offset-2 hover:text-coral-dark"
                 >
                   Upgrade →
-                </Link>
+                </button>
               </>
             ) : isFree ? (
               `Uses 1 of your ${1 - packetsUsed} remaining free packet${1 - packetsUsed === 1 ? "" : "s"}`
             ) : (
               <span className="flex items-center justify-center gap-1.5">
                 <span className="w-2 h-2 bg-sage rounded-full inline-block" />
-                Unlimited — Pro plan
+                Unlimited plan
               </span>
             )}
           </p>
         </div>
       </div>
+
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        source={upgradeModalSource}
+        capped={atLimit}
+        childName={selectedChild?.name}
+        nextFreeDate={resetDate ? nextFreeDateLabel(resetDate) : ""}
+      />
     </div>
   );
 }

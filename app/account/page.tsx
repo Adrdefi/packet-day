@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import TopBar from "@/components/dashboard/TopBar";
 import SignOutButton from "@/components/dashboard/SignOutButton";
+import { isPaidStatus } from "@/lib/isPaid";
 
 export const metadata = { title: "My Account" };
 
@@ -21,7 +22,7 @@ export default async function AccountPage() {
     .eq("id", user.id)
     .single();
 
-  const planLabel = profile?.subscription_status === "pro" ? "Unlimited" : "Free";
+  const planLabel = isPaidStatus(profile?.subscription_status) ? "Unlimited" : "Free";
 
   return (
     <div className="min-h-screen bg-cream flex flex-col">

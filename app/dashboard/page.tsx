@@ -3,19 +3,28 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ChildCard from "@/components/dashboard/ChildCard";
 import PacketList from "@/components/dashboard/PacketList";
-import UsageBanner from "@/components/dashboard/UsageBanner";
+import UpgradeModalController from "@/components/dashboard/UpgradeModalController";
 import UpgradeCelebration from "@/components/UpgradeCelebration";
+import { isPaidStatus } from "@/lib/isPaid";
+import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import type { Child, Packet } from "@/types";
 
 export const metadata = { title: "Dashboard" };
 
+type UpgradePlan = "yearly" | "monthly";
+
+function parseUpgradePlan(value: string | undefined): UpgradePlan | null {
+  return value === "yearly" || value === "monthly" ? value : null;
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ upgraded?: string }>;
+  searchParams: Promise<{ upgraded?: string; upgrade?: string }>;
 }) {
   const params = await searchParams;
   const showCelebration = params.upgraded === "true";
+  const requestedUpgradePlan = parseUpgradePlan(params.upgrade);
   const supabase = await createClient();
 
   const {
@@ -62,10 +71,14 @@ export default async function DashboardPage({
   const packetList = (packets as Packet[]) ?? [];
   // Anyone not on pro is on the free tier — cancelled included, since
   // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
-  const isFree = (profile?.subscription_status ?? "free") !== "pro";
+  const isFree = !isPaidStatus(profile?.subscription_status);
   const packetsUsed = usage?.packets_used ?? profile?.packets_used_this_month ?? 0;
   const resetDate =
     usage?.reset_date ?? profile?.packets_reset_date ?? new Date().toISOString().slice(0, 10);
+  const capped = packetsUsed >= 1;
+  // Fresh server read above (profile.subscription_status) decides this, not
+  // client state — a paid user's ?upgrade= is ignored entirely.
+  const deepLinkPlan = isFree ? requestedUpgradePlan : null;
 
   return (
     <div className="space-y-8">
@@ -119,7 +132,14 @@ export default async function DashboardPage({
 
       {/* ── Free tier usage banner ──────────────────────────────────── */}
       {isFree && (
-        <UsageBanner used={packetsUsed} limit={1} resetDate={resetDate} />
+        <UpgradeModalController
+          used={packetsUsed}
+          limit={1}
+          resetDate={resetDate}
+          nextFreeDate={nextFreeDateLabel(resetDate)}
+          capped={capped}
+          deepLinkPlan={deepLinkPlan}
+        />
       )}
     </div>
   );
