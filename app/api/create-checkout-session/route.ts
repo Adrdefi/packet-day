@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS, createCheckoutSessionUrl } from "@/lib/stripe";
 import { getBaseUrl } from "@/lib/config";
+import { isPaidStatus } from "@/lib/isPaid";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +29,18 @@ export async function POST(req: NextRequest) {
         { error: "A valid price ID is required." },
         { status: 400 }
       );
+    }
+
+    // Fresh read, not client state — refuses a second subscription for an
+    // account that's already paid rather than letting Stripe create one.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .single();
+
+    if (isPaidStatus(profile?.subscription_status)) {
+      return NextResponse.json({ error: "already_subscribed" }, { status: 409 });
     }
 
     const url = await createCheckoutSessionUrl({

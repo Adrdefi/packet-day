@@ -38,6 +38,10 @@ export function useUpgradeCheckout({ monthlyPriceId, yearlyPriceId }: UseUpgrade
           router.push(`/signup?plan=${isAnnual ? "yearly" : "monthly"}`);
           return;
         }
+        if (res.status === 409 && data.error === "already_subscribed") {
+          router.push("/dashboard");
+          return;
+        }
         setError(data.error ?? "Something went sideways. Let's try that again.");
         return;
       }
