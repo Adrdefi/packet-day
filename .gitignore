@@ -62,6 +62,9 @@ test-*.pdf
 # JSON reports and pre-backfill snapshots from scripts/backfill-image-storage.ts
 /backfill-output/
 
+# Send log from scripts/send-packet-back-email.ts --schedule — the double-send guard
+/scripts/packet-back-sent.json
+
 # Raw source PDFs dropped at repo root for one-time conversion scripts
 # (e.g. scripts/convert-sample-pdf.ts) — only the converted output belongs
 # in the repo, never the source file itself.
