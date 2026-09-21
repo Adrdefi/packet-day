@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug } from "@/lib/plans";
+import { safeNext } from "@/lib/safeNext";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,8 +16,21 @@ function LoginForm() {
   // `next` would otherwise send them.
   const rawPlan = searchParams.get("plan");
   const plan = isPlanSlug(rawPlan) ? rawPlan : null;
-  const next = plan ? `/checkout-redirect?plan=${plan}` : searchParams.get("next") ?? "/dashboard";
+  // Validated once and reused for both the post-login redirect below and
+  // the "Create a free account" link — kept separate from `next` (below)
+  // since the signup link should carry the raw deep-link target regardless
+  // of whether `plan` won priority for this page's own redirect.
+  const validatedNext = safeNext(searchParams.get("next"));
+  const next = plan ? `/checkout-redirect?plan=${plan}` : validatedNext ?? "/dashboard";
   const authError = searchParams.get("error");
+
+  const signupHref = (() => {
+    const params = new URLSearchParams();
+    if (plan) params.set("plan", plan);
+    if (validatedNext) params.set("next", validatedNext);
+    const qs = params.toString();
+    return qs ? `/signup?${qs}` : "/signup";
+  })();
 
   const supabase = createClient();
 
@@ -131,7 +145,7 @@ function LoginForm() {
       <p className="text-center text-sm text-muted mt-6">
         New here?{" "}
         <Link
-          href={plan ? `/signup?plan=${plan}` : "/signup"}
+          href={signupHref}
           className="text-sage font-semibold hover:underline"
         >
           Create a free account

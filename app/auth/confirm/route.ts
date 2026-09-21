@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { isSafeNextPath } from "@/lib/safe-redirect";
+import { safeNext } from "@/lib/safeNext";
 import { isPlanSlug } from "@/lib/plans";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const rawType = searchParams.get("type");
   const type = rawType ? ALLOWED_TYPES[rawType] : undefined;
   const rawNext = searchParams.get("next");
-  const next = isSafeNextPath(rawNext) ? rawNext : "/reset-password";
+  const next = safeNext(rawNext) ?? "/reset-password";
 
   if (tokenHash && type) {
     const supabase = await createClient();
@@ -47,6 +47,12 @@ export async function GET(req: NextRequest) {
         } = await supabase.auth.getUser();
 
         const plan = user?.user_metadata?.plan;
+        // Set at signUp() time (app/(auth)/signup/page.tsx) — validated
+        // again here rather than trusted as-is, since it's user metadata
+        // a client controls.
+        const nextPath = safeNext(
+          typeof user?.user_metadata?.next_path === "string" ? user.user_metadata.next_path : null
+        );
 
         try {
           await track("email_confirmed", { plan: isPlanSlug(plan) ? plan : "free" });
@@ -54,6 +60,8 @@ export async function GET(req: NextRequest) {
           console.error("[auth-confirm] Failed to record email_confirmed event:", err);
         }
 
+        // Plan keeps top priority, exactly as before — a chosen paid plan
+        // always goes to checkout, regardless of any next_path.
         if (isPlanSlug(plan)) {
           return NextResponse.redirect(`${origin}/checkout-redirect?plan=${plan}`);
         }
@@ -66,7 +74,14 @@ export async function GET(req: NextRequest) {
             .single();
 
           if (!profile?.onboarding_completed) {
-            return NextResponse.redirect(`${origin}/onboarding`);
+            const onboardingUrl = nextPath
+              ? `${origin}/onboarding?next=${encodeURIComponent(nextPath)}`
+              : `${origin}/onboarding`;
+            return NextResponse.redirect(onboardingUrl);
+          }
+
+          if (nextPath) {
+            return NextResponse.redirect(`${origin}${nextPath}`);
           }
         }
 

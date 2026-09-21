@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
+import { safeNext } from "@/lib/safeNext";
 
 // ─── Password strength ────────────────────────────────────────────────────────
 
@@ -53,6 +54,10 @@ function SignupForm() {
 
   const rawPlan = searchParams.get("plan");
   const plan = isPlanSlug(rawPlan) ? rawPlan : null;
+  // Carried through signUp()'s user metadata (as next_path, below) so it
+  // survives the email-confirmation round trip — app/auth/confirm/route.ts
+  // reads it back out once the user is verified.
+  const nextPath = safeNext(searchParams.get("next"));
   const planDetail =
     plan === "yearly"
       ? `Unlimited Annual — $${PLAN_PRICE.yearly} billed yearly`
@@ -85,7 +90,11 @@ function SignupForm() {
       email,
       password,
       options: {
-        data: { full_name: fullName, ...(plan ? { plan } : {}) },
+        data: {
+          full_name: fullName,
+          ...(plan ? { plan } : {}),
+          ...(nextPath ? { next_path: nextPath } : {}),
+        },
         emailRedirectTo,
       },
     });

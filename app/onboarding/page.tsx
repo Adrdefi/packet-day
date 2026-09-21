@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
 import Wordmark from "@/components/layout/Wordmark";
 import SignOutButton from "@/components/dashboard/SignOutButton";
+import { safeNext } from "@/lib/safeNext";
 
 // ─── Confetti burst ───────────────────────────────────────────────────────────
 
@@ -121,6 +122,12 @@ function OnboardingContent() {
   const supabase = createClient();
 
   const upgraded = searchParams.get("upgraded") === "true";
+  // Carried here from app/auth/confirm/route.ts (?next=...) for a
+  // brand-new user, or present directly if someone deep-links straight to
+  // /onboarding. Only the "Go to my dashboard first" link honors it — the
+  // "Generate {child}'s First Packet" link is an explicit alternate action
+  // the user chose on purpose and always goes to /generate.
+  const nextPath = safeNext(searchParams.get("next"));
 
   // Guards the effect below so the completion write + event fire at most
   // once per user, even if the effect re-runs (e.g. React Strict Mode).
@@ -152,7 +159,7 @@ function OnboardingContent() {
         .eq("id", user.id)
         .single();
 
-      if (profile?.onboarding_completed) return router.replace("/dashboard");
+      if (profile?.onboarding_completed) return router.replace(nextPath ?? "/dashboard");
 
       if (profile?.full_name) {
         // Pre-fill with first name only
@@ -345,7 +352,7 @@ function OnboardingContent() {
                 </Link>
 
                 <Link
-                  href="/dashboard"
+                  href={nextPath ?? "/dashboard"}
                   className="text-sm text-muted hover:text-dark transition-colors underline underline-offset-2"
                 >
                   Go to my dashboard first

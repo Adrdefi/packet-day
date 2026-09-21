@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { safeNext } from "@/lib/safeNext";
 
 const PROTECTED = ["/onboarding", "/dashboard", "/generate"];
 const AUTH_ROUTES = ["/login", "/signup", "/check-email"];
@@ -40,9 +41,19 @@ export async function proxy(req: NextRequest) {
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
   if (isProtected && !user) {
+    // Carry the full path the user was trying to reach — including upgrade
+    // intent and utm/ref attribution params — through to login, not just
+    // the bare pathname. Strips any pre-existing `next` param from the
+    // original URL first so it can't nest inside the one we set below.
+    const originalParams = new URLSearchParams(req.nextUrl.search);
+    originalParams.delete("next");
+    const query = originalParams.toString();
+    const target = safeNext(pathname + (query ? `?${query}` : ""));
+
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = ""; // drop the original query from the /login URL itself — it now lives only inside `next`, not duplicated alongside it
+    if (target) url.searchParams.set("next", target);
     return NextResponse.redirect(url);
   }
 
