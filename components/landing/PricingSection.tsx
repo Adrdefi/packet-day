@@ -27,7 +27,11 @@ interface Props {
 
 export default function PricingSection({ monthlyPriceId, yearlyPriceId }: Props) {
   const [isAnnual, setIsAnnual] = useState(true);
-  const { loading, error, upgrade } = useUpgradeCheckout({ monthlyPriceId, yearlyPriceId });
+  const { loading, error, upgrade } = useUpgradeCheckout({
+    monthlyPriceId,
+    yearlyPriceId,
+    source: "pricing_section",
+  });
 
   const unlimitedPrice = isAnnual ? 9 : 12;
   const priceUnit = "/mo";

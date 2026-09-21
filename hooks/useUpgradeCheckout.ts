@@ -7,19 +7,26 @@ import { track } from "@vercel/analytics";
 interface UseUpgradeCheckoutArgs {
   monthlyPriceId: string;
   yearlyPriceId: string;
+  /** When present, attached to checkout_started as { plan, source } so a
+   * conversion can be traced back to which surface opened checkout.
+   * Omitted entirely, behavior (and the event shape) is exactly as before. */
+  source?: string;
 }
 
 /**
  * Shared by PricingPageClient and the homepage PricingSection so the two
  * pricing surfaces can't drift on checkout behavior the way their copy did.
  */
-export function useUpgradeCheckout({ monthlyPriceId, yearlyPriceId }: UseUpgradeCheckoutArgs) {
+export function useUpgradeCheckout({ monthlyPriceId, yearlyPriceId, source }: UseUpgradeCheckoutArgs) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function upgrade(isAnnual: boolean) {
-    track("checkout_started", { plan: isAnnual ? "yearly" : "monthly" });
+    track(
+      "checkout_started",
+      source ? { plan: isAnnual ? "yearly" : "monthly", source } : { plan: isAnnual ? "yearly" : "monthly" }
+    );
 
     setLoading(true);
     setError(null);

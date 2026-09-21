@@ -54,7 +54,11 @@ interface Props {
 export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initialAnnual }: Props) {
   const [isAnnual, setIsAnnual] = useState(initialAnnual ?? true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { loading, error, upgrade } = useUpgradeCheckout({ monthlyPriceId, yearlyPriceId });
+  const { loading, error, upgrade } = useUpgradeCheckout({
+    monthlyPriceId,
+    yearlyPriceId,
+    source: "pricing_page",
+  });
 
   const proPrice = isAnnual ? 9 : 12;
   const priceUnit = "/mo";

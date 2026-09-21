@@ -15,6 +15,7 @@ import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { isPaidStatus } from "@/lib/isPaid";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import UpgradeModal from "@/components/UpgradeModal";
+import PostPacketNudge from "@/components/PostPacketNudge";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -660,7 +661,7 @@ function ResultView({
             ))}
           </div>
 
-          {/* upgrade nudge slot, intentionally empty for now */}
+          <PostPacketNudge childName={packet.child_name} />
 
           {/* Social share row */}
           <div className="flex flex-col items-center gap-3 mb-10 print:hidden">

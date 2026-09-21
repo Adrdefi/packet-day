@@ -5,7 +5,7 @@ import Link from "next/link";
 import { track } from "@vercel/analytics";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 
-type Source = "cap_hit" | "upgrade_link" | "deep_link";
+type Source = "cap_hit" | "upgrade_link" | "deep_link" | "post_packet";
 type Plan = "yearly" | "monthly";
 
 interface UpgradeModalProps {
@@ -52,6 +52,7 @@ export default function UpgradeModal({
   const { loading, error, upgrade } = useUpgradeCheckout({
     monthlyPriceId: priceIds?.monthlyPriceId ?? "",
     yearlyPriceId: priceIds?.yearlyPriceId ?? "",
+    source,
   });
 
   // Resets to the caller's chosen default each time the modal opens fresh,
