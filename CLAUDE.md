@@ -81,10 +81,12 @@ types/
 
 | Table | Key fields |
 |-------|-----------|
-| `profiles` | `id` (= auth.users.id), `email`, `full_name`, `avatar_url` |
+| `profiles` | `id` (= auth.users.id), `email`, `full_name`, `avatar_url`, `stripe_customer_id`, `subscription_status`, `packets_used_this_month`, `packets_reset_date`, `marketing_opt_out`, `last_cap_hit_at`, `sequence_started_at` |
 | `children` | `id`, `user_id`, `name`, `age`, `grade_level`, `interests` (array), `learning_style`, `notes` |
 | `packets` | `id`, `user_id`, `child_id`, `title`, `theme`, `date`, `subjects` (array), `activities` (jsonb), `pdf_url` |
-| `subscriptions` | `id`, `user_id`, `stripe_subscription_id`, `stripe_customer_id`, `plan_id`, `status`, `packets_used_this_month`, `packets_limit` |
+| `email_sends` | `id`, `user_id`, `email_key`, `status`, `resend_id`, `error`, `created_at` — one row per email send attempt, service role only |
+
+There is no separate `subscriptions` table. Subscription and quota state (`subscription_status`, `packets_used_this_month`, `packets_reset_date`) lives directly on `profiles`.
 
 **RLS:** All tables have Row Level Security enabled. Users can only read/write their own rows.
 
@@ -269,6 +271,11 @@ Examples:
 
 - The packet-ready email sends once, no retry, inside its own try/catch — an email failure must never fail packet generation.
 - Email HTML: table-based layout, fully inline styles. No `@font-face`, no `data:` URI images, no `cid:` images — use hosted image URLs.
+
+### Email sequence
+
+- `email_sends` is the ledger for every send attempt from the welcome/nurture sequence. Its unique constraint on `(user_id, email_key)` is the entire dedupe guarantee — an email is never sent twice to the same user under the same key. Dedupe is enforced by that constraint, never by a file (the retired `scripts/send-packet-back-email.ts` prototype used a local JSON file, which cannot survive on Vercel's ephemeral filesystem — do not copy that pattern into anything that runs on a schedule).
+- Three `profiles` columns support the sequence: `marketing_opt_out` (set by the unsubscribe link; once true, the sequence must never email that user again), `last_cap_hit_at` (written from `app/api/generate-packet/route.ts`'s 403 `limit_reached` block, not from `check_and_increment_packet_usage`), and `sequence_started_at` (stamped in `app/auth/confirm/route.ts` right before the Email 1 send attempt, so sequence day-N counts from email confirmation, not signup).
 
 ---
 

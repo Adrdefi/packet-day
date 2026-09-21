@@ -521,6 +521,20 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[generate-packet] Failed to record limit_reached event:", err);
     }
+    try {
+      const { error: capUpdateError } = await serviceClient
+        .from("profiles")
+        .update({ last_cap_hit_at: new Date().toISOString() })
+        .eq("id", user.id);
+      if (capUpdateError) {
+        console.error("[generate-packet] Failed to record last_cap_hit_at:", capUpdateError.message);
+      }
+    } catch (err) {
+      console.error(
+        "[generate-packet] Failed to record last_cap_hit_at:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
     return NextResponse.json(
       {
         error: "limit_reached",

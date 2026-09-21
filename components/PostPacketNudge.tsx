@@ -4,16 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import UpgradeModal from "@/components/UpgradeModal";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
+import { possessive } from "@/lib/possessive";
 
 interface PostPacketNudgeProps {
   childName?: string | null;
-}
-
-// Names ending in s or S take an apostrophe only ("Anders'"); everything
-// else takes 's ("Zoe's"). No shared helper existed yet — this is the only
-// caller today.
-function possessive(name: string): string {
-  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
 // UpgradeModal (capped mode) needs a "your next free packet arrives {date}"
