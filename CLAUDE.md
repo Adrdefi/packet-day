@@ -54,7 +54,7 @@ app/                    # Pages and API routes (App Router)
   layout.tsx            # Root layout with Nunito + Fraunces fonts
   page.tsx              # Home / coming soon
   (auth)/               # Auth pages: login, signup, reset
-  (dashboard)/          # Authenticated app shell
+  dashboard/             # Authenticated app shell (not a route group — plain app/dashboard/)
   api/                  # API route handlers
 components/
   ui/                   # Base UI: Button, Input, Card, Badge, Toast
@@ -74,6 +74,8 @@ hooks/
 types/
   index.ts              # User, Child, Packet, Subscription interfaces
 ```
+
+There is no global `middleware.ts`. Nothing gates routes at the edge — each protected page (e.g. `app/dashboard/page.tsx`) checks its own session server-side and redirects itself if there's no user.
 
 ---
 
@@ -127,6 +129,8 @@ See `.env.local.example` for all variables and where to find them.
 | `REPLICATE_API_TOKEN` | Optional | **No** — server only |
 | `RESEND_API_KEY` | Yes | **No** — server only |
 | `NEXT_PUBLIC_APP_URL` | Yes | Yes |
+| `UNSUBSCRIBE_SECRET` | Yes | **No** — server only |
+| `MAILING_ADDRESS` | Yes | **No** — server only |
 
 ---
 
@@ -276,6 +280,9 @@ Examples:
 
 - `email_sends` is the ledger for every send attempt from the welcome/nurture sequence. Its unique constraint on `(user_id, email_key)` is the entire dedupe guarantee — an email is never sent twice to the same user under the same key. Dedupe is enforced by that constraint, never by a file (the retired `scripts/send-packet-back-email.ts` prototype used a local JSON file, which cannot survive on Vercel's ephemeral filesystem — do not copy that pattern into anything that runs on a schedule).
 - Three `profiles` columns support the sequence: `marketing_opt_out` (set by the unsubscribe link; once true, the sequence must never email that user again), `last_cap_hit_at` (written from `app/api/generate-packet/route.ts`'s 403 `limit_reached` block, not from `check_and_increment_packet_usage`), and `sequence_started_at` (stamped in `app/auth/confirm/route.ts` right before the Email 1 send attempt, so sequence day-N counts from email confirmation, not signup).
+- **Unsubscribe.** `lib/unsubscribe.ts` issues and verifies signed tokens (HMAC-SHA256 via `UNSUBSCRIBE_SECRET`, constant-time comparison, no expiry — an old email's link must keep working). `/unsubscribe` is a plain unauthenticated page (same posture as `/sample` or the public packet share page — no session, no middleware involved, since this app has none) with a GET that only reads state and a POST, via a server action, that flips `profiles.marketing_opt_out`. `/api/unsubscribe` is the RFC 8058 one-click POST endpoint for Gmail/Yahoo's built-in unsubscribe button — also unauthenticated, token only, no page.
+- **Safety lock.** `lib/emailFooter.ts` exports `assertMailingAddressReady()`, which throws if `MAILING_ADDRESS` is missing or still the `ADDRESS PENDING` placeholder. Every marketing send must call it (its footer/header builders already do) before a send can go out. Transactional email (packet ready, auth) must never call it and must never be blocked by a missing mailing address.
+- **Before any marketing send:** check `profiles.marketing_opt_out` is false, and let the safety lock run. Both are load-bearing — skipping either means either emailing someone who opted out, or shipping a CAN-SPAM violation via a missing physical address.
 
 ---
 
