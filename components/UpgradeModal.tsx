@@ -4,8 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { track } from "@vercel/analytics";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
+import type { EmailKey } from "@/lib/emailKeys";
 
-type Source = "cap_hit" | "upgrade_link" | "deep_link" | "post_packet";
+// The trailing variant is set only when a deep link arrived with a
+// validated `?src=` email key (see UpgradeModalController) — it's what
+// lets checkout_started attribute a conversion back to the email that sent
+// it, e.g. "cap_followup_email".
+type Source = "cap_hit" | "upgrade_link" | "deep_link" | "post_packet" | `${EmailKey}_email`;
 type Plan = "yearly" | "monthly";
 
 interface UpgradeModalProps {

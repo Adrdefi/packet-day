@@ -284,6 +284,23 @@ Examples:
 - **Safety lock.** `lib/emailFooter.ts` exports `assertMailingAddressReady()`, which throws if `MAILING_ADDRESS` is missing or still the `ADDRESS PENDING` placeholder. Every marketing send must call it (its footer/header builders already do) before a send can go out. Transactional email (packet ready, auth) must never call it and must never be blocked by a missing mailing address.
 - **Before any marketing send:** check `profiles.marketing_opt_out` is false, and let the safety lock run. Both are load-bearing — skipping either means either emailing someone who opted out, or shipping a CAN-SPAM violation via a missing physical address.
 
+### Email templates
+
+- **Sender.** `lib/resend.ts` exports two from-addresses: `FROM_EMAIL` ("Packet Day <hello@packetday.com>") for auth email only, and `NATALIE_FROM` ("Natalie at Packet Day <hello@packetday.com>", reply-to `hello@packetday.com`) for the packet-ready email and every marketing template. `sendPacketReadyEmail` signs off "Natalie", not "The Packet Day team" — it stays transactional: no unsubscribe footer, no safety lock.
+- **Templates live in `lib/emails/templates.ts`**, one builder function per key, each returning `{ subject, preview, html, text }`. They're built on `lib/emails/layout.ts`'s `renderMarketingEmail()`, the shared marketing shell (plain, single column, table based, inline styles, Georgia serif heading, system sans body, no web fonts, one CTA button, hidden preheader span, footer from `lib/emailFooter.ts`). Greeting always goes through `lib/firstName.ts`'s `greeting()` helper ("Hi Sarah," or "Hi there,") — never hand-rolled.
+- **Email keys** (the full allowlist lives in `lib/emailKeys.ts`'s `EMAIL_KEYS`): `welcome_1`, `nudge_2`, `story_3`, `plans_4`, `faq_5`, `checkin_day1`, `cap_followup`, `packet_back_monthly` (a recurring monthly re-engagement send, ported from the retired one-time `scripts/send-packet-back-email.ts` prototype — same Natalie-approved copy, now on the shared layout/footer instead of its own ad hoc HTML).
+- **Links.** `lib/emails/links.ts` builds every in-email link: `buildGenerateLink(emailKey)` for "Make a packet" buttons (→ `/generate`) and `buildUpgradeLink(emailKey)` for "Go Unlimited" buttons (→ `/dashboard?upgrade=yearly`). Both always use `https://www.packetday.com` and tag `utm_source=email`, `utm_medium=email`, `utm_campaign=<email key>`. The upgrade link also carries `src=<email key>` — `components/dashboard/UpgradeModalController.tsx` reads it, validates against `EMAIL_KEYS` via `isEmailKey()`, and if valid opens the modal with a `source` of `${emailKey}_email` so the resulting `checkout_started` event traces back to the email. Absent or invalid `src`, behavior is unchanged (`source` stays `"deep_link"`).
+- **A logged-out `/generate` click** redirects to `/login?next=<current path + query, safeNext-validated>` and returns there after login — so a link from any of the templates above survives the login round trip with its utm tags intact.
+- **Test sends.** `npm run test-emails` (`scripts/send-test-emails.ts`) sends every template plus the packet-ready email, one at a time, single-awaited, to `adrdefi+emailtest@gmail.com`, subjects prefixed `[TEST]`. It carries one test-only safety-lock exception: if `MAILING_ADDRESS` is still the placeholder, it overrides the value to `"ADDRESS PENDING (test)"` for its own process only (never touching a real send) — and only after confirming every recipient it will actually send to contains `"adrdefi"`.
+
+**Phase 4 (not built yet) — sequencing rules to implement when the send engine is built:**
+  a. Max one marketing email per user per day. The packet-ready email is transactional and doesn't count.
+  b. Priority when more than one is due: `cap_followup` first.
+  c. Skip `checkin_day1` if `cap_followup` was already sent.
+  d. Skip `plans_4` if `cap_followup` was sent in the last 7 days.
+  e. Anything else that collides waits until the next day.
+  f. Never send upgrade emails (`plans_4`, `cap_followup`) to paying users (`isPaidStatus`).
+
 ---
 
 ## Site, SEO & share images

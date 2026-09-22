@@ -2,6 +2,12 @@ import { Resend } from "resend";
 
 export const FROM_EMAIL = "Packet Day <hello@packetday.com>";
 
+// Natalie's own voice — the packet-ready email and every marketing template
+// (lib/emails/templates.ts) send as her, not as the generic product name.
+// FROM_EMAIL above stays as-is for auth email (confirmation, password reset).
+export const NATALIE_FROM = "Natalie at Packet Day <hello@packetday.com>";
+export const NATALIE_REPLY_TO = "hello@packetday.com";
+
 // ─── Lazy client ──────────────────────────────────────────────────────────────
 
 let _resend: Resend | null = null;
@@ -69,10 +75,12 @@ interface SendPacketReadyEmailParams {
   subjects: string[];
   pdfBuffer: Uint8Array;
   filename: string;
+  /** Test-send only (scripts/send-test-emails.ts) — prepends e.g. "[TEST] " to the subject. Omitted in the real generate-packet call site. */
+  testSubjectPrefix?: string;
 }
 
 export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
-  const { to, childName, theme, mascotName, heroImageUrl, subjects, pdfBuffer, filename } = params;
+  const { to, childName, theme, mascotName, heroImageUrl, subjects, pdfBuffer, filename, testSubjectPrefix } = params;
 
   const subjectsPhrase = buildSubjectsPhrase(subjects);
   const mascotIntro = buildMascotIntro(mascotName);
@@ -106,7 +114,7 @@ export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
         </tr>
         <tr>
           <td align="center" style="padding:20px 40px 32px 40px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            <p style="margin:0;font-size:14px;color:#1A1A2E;">Warmly,<br/>The Packet Day team</p>
+            <p style="margin:0;font-size:14px;color:#1A1A2E;">Warmly,<br/>Natalie</p>
           </td>
         </tr>
       </table>
@@ -115,9 +123,10 @@ export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
 </table>`;
 
   return getResend().emails.send({
-    from: FROM_EMAIL,
+    from: NATALIE_FROM,
+    replyTo: NATALIE_REPLY_TO,
     to,
-    subject: `${childName}'s ${theme} packet is ready to print!`,
+    subject: `${testSubjectPrefix ?? ""}${childName}'s ${theme} packet is ready to print!`,
     html,
     attachments: [
       {
@@ -125,5 +134,34 @@ export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
         content: Buffer.from(pdfBuffer),
       },
     ],
+  });
+}
+
+interface SendMarketingEmailParams {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  headers: Record<string, string>;
+}
+
+/**
+ * Shared send path for every marketing template (lib/emails/templates.ts) —
+ * used today by scripts/send-test-emails.ts, and by the Phase 4 sequence
+ * engine once it exists. Always sends as Natalie; the caller is responsible
+ * for having already built `html`/`text`/`headers` via
+ * lib/emails/layout.ts's renderMarketingEmail, which is what runs the
+ * mailing-address safety lock and attaches the List-Unsubscribe headers.
+ */
+export async function sendMarketingEmail(params: SendMarketingEmailParams) {
+  const { to, subject, html, text, headers } = params;
+  return getResend().emails.send({
+    from: NATALIE_FROM,
+    replyTo: NATALIE_REPLY_TO,
+    to,
+    subject,
+    html,
+    text,
+    headers,
   });
 }

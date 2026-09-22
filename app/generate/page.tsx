@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,7 @@ import { SITE_URL } from "@/lib/site";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { isPaidStatus } from "@/lib/isPaid";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
+import { safeNext } from "@/lib/safeNext";
 import UpgradeModal from "@/components/UpgradeModal";
 import PostPacketNudge from "@/components/PostPacketNudge";
 
@@ -722,6 +723,7 @@ function ResultView({
 
 function GenerateContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
@@ -813,7 +815,12 @@ function GenerateContent() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return router.push("/login");
+      if (!user) {
+        const qs = searchParams.toString();
+        const rawNext = qs ? `${pathname}?${qs}` : pathname;
+        const nextParam = safeNext(rawNext);
+        return router.push(nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login");
+      }
 
       userIdRef.current = user.id;
 
