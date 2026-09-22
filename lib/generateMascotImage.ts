@@ -171,6 +171,19 @@ function extractUrl(output: unknown): string | null {
   return url;
 }
 
+/**
+ * What each generator returns. `attempts` counts every Replicate call started,
+ * including ones abandoned by withTimeout (Replicate keeps running and bills
+ * them). `durationMs` is the successful Replicate call only — null if no
+ * attempt succeeded or generation was skipped. `model` is null when skipped.
+ */
+export interface ImageGenResult {
+  image: string | null;
+  model: string | null;
+  attempts: number;
+  durationMs: number | null;
+}
+
 // ─── Coloring page ────────────────────────────────────────────────────────────
 
 /**
@@ -196,14 +209,14 @@ function extractUrl(output: unknown): string | null {
 export async function generateColoringImage(
   coloringScene: string | null | undefined,
   childName: string
-): Promise<string | null> {
+): Promise<ImageGenResult> {
   if (!coloringScene?.trim()) {
     console.warn("[generateColoringImage] Skipping — coloring_scene is null or empty");
-    return null;
+    return { image: null, model: null, attempts: 0, durationMs: null };
   }
   if (!process.env.REPLICATE_API_TOKEN) {
     console.warn("[generateColoringImage] Skipping — REPLICATE_API_TOKEN not set");
-    return null;
+    return { image: null, model: null, attempts: 0, durationMs: null };
   }
 
   const scene = scrubChildName(coloringScene.trim(), childName);
@@ -218,8 +231,12 @@ export async function generateColoringImage(
     `non-specific features only`;
 
   const startMs = Date.now();
+  let attempts = 0;
+  let durationMs: number | null = null;
 
   const attempt = async () => {
+    attempts++;
+    const attemptStartMs = Date.now();
     const output = await withTimeout(
       getReplicate().run(RECRAFT_V3 as `${string}/${string}:${string}`, {
         input: {
@@ -234,6 +251,7 @@ export async function generateColoringImage(
 
     const url = extractUrl(output);
     if (!url) throw new Error("No URL in Replicate output");
+    durationMs = Date.now() - attemptStartMs;
     return url;
   };
 
@@ -258,13 +276,13 @@ export async function generateColoringImage(
 
     const base64 = grayBuffer.toString("base64");
     console.warn(`[generateColoringImage] Grayscale pass complete, total ${Date.now() - startMs}ms`);
-    return `data:image/png;base64,${base64}`;
+    return { image: `data:image/png;base64,${base64}`, model: RECRAFT_V3, attempts, durationMs };
   } catch (err) {
     console.error("[generateColoringImage] Both attempts failed", {
       message: err instanceof Error ? err.message : String(err),
       elapsedMs: Date.now() - startMs,
     });
-    return null;
+    return { image: null, model: RECRAFT_V3, attempts, durationMs };
   }
 }
 
@@ -282,14 +300,14 @@ export async function generateColoringImage(
 export async function generateMascotImage(
   mascotDescription: string | null | undefined,
   childName: string
-): Promise<string | null> {
+): Promise<ImageGenResult> {
   if (!mascotDescription?.trim()) {
     console.warn("[generateMascotImage] Skipping — mascot_description is null or empty");
-    return null;
+    return { image: null, model: null, attempts: 0, durationMs: null };
   }
   if (!process.env.REPLICATE_API_TOKEN) {
     console.warn("[generateMascotImage] Skipping — REPLICATE_API_TOKEN not set");
-    return null;
+    return { image: null, model: null, attempts: 0, durationMs: null };
   }
 
   const description = scrubChildName(mascotDescription.trim(), childName);
@@ -301,8 +319,12 @@ export async function generateMascotImage(
     `non-specific features only`;
 
   const startMs = Date.now();
+  let attempts = 0;
+  let durationMs: number | null = null;
 
   const attempt = async () => {
+    attempts++;
+    const attemptStartMs = Date.now();
     const output = await withTimeout(
       getReplicate().run(FLUX_SCHNELL as `${string}/${string}`, {
         input: {
@@ -319,6 +341,7 @@ export async function generateMascotImage(
 
     const url = extractUrl(output);
     if (!url) throw new Error("No URL in Replicate output");
+    durationMs = Date.now() - attemptStartMs;
     return url;
   };
 
@@ -329,21 +352,22 @@ export async function generateMascotImage(
     console.warn(`[generateMascotImage] Succeeded in ${elapsed}ms`);
 
     try {
-      return await fetchAsDataUrl(url);
+      const image = await fetchAsDataUrl(url);
+      return { image, model: FLUX_SCHNELL, attempts, durationMs };
     } catch (fetchErr) {
       // Return the direct URL as a fallback — it expires in ~1 hour but
       // that's long enough to render the PDF for the current session.
       console.error("[generateMascotImage] Base64 fetch failed — using direct URL", {
         message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
       });
-      return url;
+      return { image: url, model: FLUX_SCHNELL, attempts, durationMs };
     }
   } catch (err) {
     console.error("[generateMascotImage] Both attempts failed", {
       message: err instanceof Error ? err.message : String(err),
       elapsedMs: Date.now() - startMs,
     });
-    return null;
+    return { image: null, model: FLUX_SCHNELL, attempts, durationMs };
   }
 }
 
@@ -363,11 +387,18 @@ export async function generateBothImages(
   mascotDescription: string | null | undefined,
   coloringScene: string | null | undefined,
   childName: string
-): Promise<{ mascotImageUrl: string | null; coloringImageUrl: string | null }> {
-  const [mascotImageUrl, coloringImageUrl] = await Promise.all([
+): Promise<{
+  mascotImageUrl: string | null;
+  coloringImageUrl: string | null;
+  mascot: ImageGenResult;
+  coloring: ImageGenResult;
+}> {
+  const [mascot, coloring] = await Promise.all([
     generateMascotImage(mascotDescription, childName),
     generateColoringImage(coloringScene ?? mascotDescription, childName),
   ]);
+  const mascotImageUrl = mascot.image;
+  const coloringImageUrl = coloring.image;
 
   if (!mascotImageUrl) {
     console.error("[generateBothImages] mascot image returned null", {
@@ -380,5 +411,5 @@ export async function generateBothImages(
     });
   }
 
-  return { mascotImageUrl, coloringImageUrl };
+  return { mascotImageUrl, coloringImageUrl, mascot, coloring };
 }

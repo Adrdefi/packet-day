@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
-import { generateBothImages } from "@/lib/generateMascotImage";
+import { generateBothImages, type ImageGenResult } from "@/lib/generateMascotImage";
 import { MODEL } from "@/lib/config";
+import { estimatePacketCostUsd, type ClaudeUsage } from "@/lib/aiCost";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
@@ -256,12 +257,20 @@ Create the packet now. Return only the JSON object.`;
 
 // ─── Claude call — streams tokens ─────────────────────────────────────────────
 
+interface ClaudeCallResult {
+  text: string;
+  /** Real usage from the final streamed message; null if it couldn't be read. */
+  usage: ClaudeUsage | null;
+  durationMs: number;
+}
+
 async function callClaude(
   userPrompt: string,
   packetLength: "half" | "full",
   onToken: (text: string) => void
-): Promise<string> {
+): Promise<ClaudeCallResult> {
   const maxTokens = packetLength === "half" ? 5000 : 8500;
+  const startMs = Date.now();
 
   const stream = getAnthropic().messages.stream({
     model: MODEL,
@@ -283,7 +292,24 @@ async function callClaude(
     }
   }
 
-  return fullText;
+  // The stream has already ended, so this resolves immediately. Usage is
+  // cost logging only — a failure here must never fail the packet.
+  let usage: ClaudeUsage | null = null;
+  try {
+    const finalMessage = await stream.finalMessage();
+    usage = {
+      inputTokens: finalMessage.usage.input_tokens,
+      outputTokens: finalMessage.usage.output_tokens,
+      cacheReadTokens: finalMessage.usage.cache_read_input_tokens ?? 0,
+      cacheWriteTokens: finalMessage.usage.cache_creation_input_tokens ?? 0,
+    };
+  } catch (err) {
+    console.error("[generate-packet] Couldn't read Claude usage (non-fatal):", {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  return { text: fullText, usage, durationMs: Date.now() - startMs };
 }
 
 // ─── JSON extraction (balanced-brace, respects string literals) ──────────────
@@ -577,6 +603,7 @@ export async function POST(req: NextRequest) {
         send({ type: "progress", message: `Creating ${child.name}'s packet...` });
 
         let generatedContent: ParsedPacketContent;
+        let claudeCall: ClaudeCallResult;
         let tokenCount = 0;
 
         const onToken = () => {
@@ -587,8 +614,8 @@ export async function POST(req: NextRequest) {
         };
 
         try {
-          const responseText = await callClaude(userPrompt, typedPacketLength, onToken);
-          generatedContent = parsePacketJSON(responseText);
+          claudeCall = await callClaude(userPrompt, typedPacketLength, onToken);
+          generatedContent = parsePacketJSON(claudeCall.text);
         } catch (err) {
           console.error("[generate-packet] Generation failed:", {
             message: err instanceof Error ? err.message : String(err),
@@ -693,10 +720,20 @@ export async function POST(req: NextRequest) {
         // Kept separate from mascotImageUrl so the PDF render below always
         // uses the in-memory base64 and never depends on network access.
         let hostedMascotUrl: string | null = null;
+        // Attempt counts and timings for packet_ai_usage — stay "skipped"
+        // (0 attempts, null model) when there's no mascot_description.
+        const skippedImage: ImageGenResult = { image: null, model: null, attempts: 0, durationMs: null };
+        let mascotGen = skippedImage;
+        let coloringGen = skippedImage;
 
         if (mascotDescription) {
           send({ type: "progress", message: "Generating mascot and coloring page images..." });
-          ({ mascotImageUrl, coloringImageUrl } = await generateBothImages(
+          ({
+            mascotImageUrl,
+            coloringImageUrl,
+            mascot: mascotGen,
+            coloring: coloringGen,
+          } = await generateBothImages(
             mascotDescription,
             coloringScene,
             child.name
@@ -723,6 +760,45 @@ export async function POST(req: NextRequest) {
           }
         } else {
           console.warn("[generate-packet] No mascot_description — skipping image generation");
+        }
+
+        // Record what this packet cost. Awaited on the live request, never
+        // fatal — a failed insert is logged and the packet carries on.
+        if (claudeCall.usage) {
+          try {
+            const { error: usageInsertError } = await serviceClient.from("packet_ai_usage").insert({
+              packet_id: packetId,
+              user_id: user.id,
+              claude_model: MODEL,
+              input_tokens: claudeCall.usage.inputTokens,
+              output_tokens: claudeCall.usage.outputTokens,
+              cache_read_tokens: claudeCall.usage.cacheReadTokens,
+              cache_write_tokens: claudeCall.usage.cacheWriteTokens,
+              claude_duration_ms: claudeCall.durationMs,
+              mascot_model: mascotGen.model,
+              mascot_attempts: mascotGen.attempts,
+              mascot_duration_ms: mascotGen.durationMs,
+              coloring_model: coloringGen.model,
+              coloring_attempts: coloringGen.attempts,
+              coloring_duration_ms: coloringGen.durationMs,
+              est_cost_usd: estimatePacketCostUsd(MODEL, claudeCall.usage, [mascotGen, coloringGen]),
+            });
+            if (usageInsertError) {
+              console.error("[generate-packet] Failed to record AI usage (non-fatal):", {
+                message: usageInsertError.message,
+                packetId,
+              });
+            }
+          } catch (err) {
+            console.error("[generate-packet] Recording AI usage threw (non-fatal):", {
+              message: err instanceof Error ? err.message : String(err),
+              packetId,
+            });
+          }
+        } else {
+          console.error("[generate-packet] No Claude usage available — skipping AI usage row", {
+            packetId,
+          });
         }
 
         // Pre-warm the PDF cache so a download (or, later, an email) never

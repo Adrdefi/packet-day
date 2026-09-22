@@ -40,8 +40,8 @@ async function main() {
   ]);
 
   // ── Mascot ────────────────────────────────────────────────────────────────────
-  if (mascotResult.status === "fulfilled" && mascotResult.value) {
-    const val = mascotResult.value;
+  if (mascotResult.status === "fulfilled" && mascotResult.value.image) {
+    const val = mascotResult.value.image;
     const mascotPath = path.join(OUT_DIR, "mascot.png");
     if (val.startsWith("data:")) {
       fs.writeFileSync(mascotPath, dataUrlToBuffer(val));
@@ -59,9 +59,9 @@ async function main() {
   }
 
   // ── Coloring page ─────────────────────────────────────────────────────────────
-  if (coloringResult.status === "fulfilled" && coloringResult.value) {
+  if (coloringResult.status === "fulfilled" && coloringResult.value.image) {
     const coloringPath = path.join(OUT_DIR, "coloring.png");
-    fs.writeFileSync(coloringPath, dataUrlToBuffer(coloringResult.value));
+    fs.writeFileSync(coloringPath, dataUrlToBuffer(coloringResult.value.image));
     console.log(`[coloring] SAVED  → ${coloringPath}`);
   } else if (coloringResult.status === "fulfilled") {
     console.log("[coloring] SKIPPED — returned null");
