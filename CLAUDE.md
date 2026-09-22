@@ -300,6 +300,8 @@ Examples:
   d. Skip `plans_4` if `cap_followup` was sent in the last 7 days.
   e. Anything else that collides waits until the next day.
   f. Never send upgrade emails (`plans_4`, `cap_followup`) to paying users (`isPaidStatus`).
+  g. The launch cutoff (`profiles.created_at >= launch date`) applies to every marketing email **except** `packet_back_monthly`, which goes to all free users who have made at least one completed packet — including users who signed up before launch.
+  h. Test accounts (any email containing `adrdefi`) are always excluded from every marketing email, with no exception.
 
 ---
 
