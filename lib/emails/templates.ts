@@ -11,6 +11,8 @@ export interface EmailTemplateParams {
 export interface PacketBackTemplateParams extends EmailTemplateParams {
   childName: string;
   theme: string;
+  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Passed through to renderMarketingEmail — only ever meaningful for the one-time address-lock exception in lib/emailFooter.ts. Omit for a normal, strict send. */
+  emailSendKey?: string;
 }
 
 export interface EmailContent {
@@ -327,6 +329,7 @@ export function buildPacketBackMonthlyEmail({
   fullName,
   childName,
   theme,
+  emailSendKey,
 }: PacketBackTemplateParams): EmailContent {
   const greet = greeting(fullName);
   const generateUrl = buildGenerateLink("packet_back_monthly");
@@ -364,6 +367,7 @@ export function buildPacketBackMonthlyEmail({
 
   const { html, text } = renderMarketingEmail({
     userId,
+    emailSendKey,
     preview: "It's a new month. Your free packet is waiting.",
     preCtaHtml: htmlBlock(preCtaLines),
     preCtaText: textBlock(preCtaTextLines),

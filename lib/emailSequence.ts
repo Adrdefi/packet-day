@@ -94,6 +94,15 @@ export function isStillCapped(packetsUsedThisMonth: number, packetsResetDateISO:
   return effectiveUsed >= freeLimit;
 }
 
+/** The UTC quota month immediately after the given instant's — "YYYY-09" -> "YYYY-10", "YYYY-12" -> "YYYY+1-01". Used by ?forceMonthly=1 to simulate the 1st of next month without waiting for it. */
+export function nextUtcQuotaMonth(date: Date): string {
+  const [y, m] = utcQuotaMonth(date).split("-").map(Number);
+  // Date.UTC's month argument is 0-indexed, so passing the 1-indexed
+  // current month `m` directly already lands one month ahead (and
+  // Date.UTC itself rolls a 13th "month" over into January of next year).
+  return utcQuotaMonth(new Date(Date.UTC(y, m, 1)));
+}
+
 export type PeriodicEmailBase = "cap_followup" | "packet_back_monthly";
 
 /** "cap_followup:2026-10" / "packet_back_monthly:2026-10" — the actual email_sends key for a periodic email. A fresh period claims its own slot instead of being blocked forever by the unique constraint after the first send. */
@@ -201,7 +210,10 @@ export function resolveSequenceDecision(
   sequenceEnabled: boolean,
   monthlyEnabled: boolean,
   monthlyStartPeriod: string | null,
-  forceMonthlyToday: boolean
+  /** The UTC quota month packet_back_monthly evaluates against — normally utcQuotaMonth(now); the caller passes nextUtcQuotaMonth(now) instead when simulating ?forceMonthly=1. Never affects cap_followup, which always computes its own period from `now` directly. */
+  monthlyPeriod: string,
+  /** ?forceMonthly=1: bypasses EMAIL_MONTHLY_START and the Pacific-hour-8 gate for packet_back_monthly only — day-of-month is still simulated as day 1. Never affects cap_followup or the day-based sequence. */
+  forceMonthly: boolean
 ): SequenceDecision {
   const activated = state.firstActivatedPacketAtISO !== null;
   const candidates: Candidate[] = [];
@@ -237,18 +249,22 @@ export function resolveSequenceDecision(
 
   // ─── packet_back_monthly ────────────────────────────────────────────────
   if (!state.isPaid && activated && !state.hasPacketThisUTCQuotaMonth && !state.monthlyAttemptedForCurrentPeriod) {
-    const currentPeriod = utcQuotaMonth(now);
-    const startOk = monthlyStartPeriod !== null && currentPeriod >= monthlyStartPeriod;
+    // forceMonthly bypasses both the launch-style EMAIL_MONTHLY_START gate
+    // and the Pacific-hour-8 gate (readyToSend below) — it does NOT bypass
+    // EMAIL_MONTHLY_ENABLED (still folded into readyToSend) or the caller's
+    // own dry-run override, and it never touches cap_followup or the
+    // day-based sequence.
+    const startOk = forceMonthly || (monthlyStartPeriod !== null && monthlyPeriod >= monthlyStartPeriod);
     if (startOk) {
-      const dayOfMonth = forceMonthlyToday ? 1 : pacificDayOfMonth(now);
+      const dayOfMonth = forceMonthly ? 1 : pacificDayOfMonth(now);
       if (dayOfMonth >= 1 && dayOfMonth <= 1 + MONTHLY_CATCH_UP_DAYS) {
         candidates.push({
           emailKey: "packet_back_monthly",
-          sendKey: buildPeriodicSendKey("packet_back_monthly", currentPeriod),
+          sendKey: buildPeriodicSendKey("packet_back_monthly", monthlyPeriod),
           priority: PRIORITY_PACKET_BACK_MONTHLY,
           dueDay: 1,
-          readyToSend: monthlyEnabled && isScheduledHour,
-          detail: `monthly re-engagement, period ${currentPeriod}, Pacific day-of-month ${forceMonthlyToday ? "1 (forced)" : dayOfMonth}`,
+          readyToSend: monthlyEnabled && (forceMonthly || isScheduledHour),
+          detail: `monthly re-engagement, period ${monthlyPeriod}, Pacific day-of-month ${forceMonthly ? "1 (forced)" : dayOfMonth}`,
         });
       }
     }

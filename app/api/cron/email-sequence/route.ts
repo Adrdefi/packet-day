@@ -6,6 +6,7 @@ import type { EmailKey } from "@/lib/emailKeys";
 import {
   deriveAttemptedState,
   isStillCapped,
+  nextUtcQuotaMonth,
   pacificHour,
   resolveSequenceDecision,
   utcQuotaMonth,
@@ -213,6 +214,11 @@ export async function GET(req: NextRequest) {
 
   const queryDryRun = req.nextUrl.searchParams.get("dryRun") === "1";
   const forceMonthly = req.nextUrl.searchParams.get("forceMonthly") === "1";
+  // forceMonthly simulates the 8am Pacific run on the 1st of NEXT month —
+  // packet_back_monthly evaluates against this period instead of the real
+  // current one. cap_followup is entirely unaffected; it always computes
+  // its own period from `now` directly.
+  const monthlyPeriod = forceMonthly ? nextUtcQuotaMonth(now) : currentPeriod;
 
   const sequenceEnabled = process.env.EMAIL_SEQUENCE_ENABLED === "true" && !queryDryRun;
   const monthlyEnabled = process.env.EMAIL_MONTHLY_ENABLED === "true" && !queryDryRun;
@@ -233,7 +239,7 @@ export async function GET(req: NextRequest) {
 
   const [sendRows, activationByUser] = await Promise.all([
     getEmailSendRowsForUsers(userIds),
-    loadPacketActivationInfo(userIds, currentPeriod),
+    loadPacketActivationInfo(userIds, monthlyPeriod),
   ]);
 
   const { attemptedByUser, sentCapFollowupAtByUser, capFollowupPeriodsByUser, monthlyPeriodsByUser } =
@@ -258,7 +264,7 @@ export async function GET(req: NextRequest) {
         ? (capFollowupPeriodsByUser.get(profile.id)?.has(hitPeriod) ?? false)
         : false,
       hasPacketThisUTCQuotaMonth: activation?.hasPacketThisUTCQuotaMonth ?? false,
-      monthlyAttemptedForCurrentPeriod: monthlyPeriodsByUser.get(profile.id)?.has(currentPeriod) ?? false,
+      monthlyAttemptedForCurrentPeriod: monthlyPeriodsByUser.get(profile.id)?.has(monthlyPeriod) ?? false,
     };
 
     const decision = resolveSequenceDecision(
@@ -268,6 +274,7 @@ export async function GET(req: NextRequest) {
       sequenceEnabled,
       monthlyEnabled,
       monthlyStartPeriod,
+      monthlyPeriod,
       forceMonthly
     );
     return { profile, activation, decision };
@@ -351,6 +358,7 @@ export async function GET(req: NextRequest) {
               fullName: profile.full_name,
               childName: activation?.latestChildName ?? "your kid",
               theme: activation?.latestTheme ?? "whatever they're into",
+              emailSendKey: winner.sendKey,
             })
           : TEMPLATE_BUILDERS[winner.emailKey]?.({ userId: profile.id, fullName: profile.full_name });
 
@@ -383,7 +391,11 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      const headers = buildMarketingEmailHeaders(profile.id);
+      // winner.sendKey is the composed periodic key for cap_followup /
+      // packet_back_monthly, the bare key otherwise — only ever meaningful
+      // here for the one-time address-lock exception (lib/emailFooter.ts),
+      // which checks for one exact key and no other.
+      const headers = buildMarketingEmailHeaders(profile.id, winner.sendKey);
       const sendResult = await sendMarketingEmail({
         to: profile.email,
         subject: content.subject,
@@ -449,6 +461,7 @@ export async function GET(req: NextRequest) {
     currentPacificHour,
     isScheduledHour,
     currentPeriod,
+    monthlyPeriod,
     considered: profiles.length,
     summary,
     results,

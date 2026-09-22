@@ -29,6 +29,8 @@ export interface MarketingEmailCta {
 
 export interface MarketingEmailParams {
   userId: string;
+  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Only ever meaningful for the one-time address-lock exception in lib/emailFooter.ts — every other template omits it and gets the normal, strict safety lock. */
+  emailSendKey?: string;
   preview: string;
   /** HTML/text that renders before the CTA button (or the whole body, when there's no CTA). */
   preCtaHtml: string;
@@ -80,7 +82,7 @@ function buildCtaTextLine(cta: MarketingEmailCta | null | undefined): string | n
  * function is therefore already covered by that lock.
  */
 export function renderMarketingEmail(params: MarketingEmailParams): MarketingEmailOutput {
-  const { userId, preview, preCtaHtml, preCtaText, cta, postCtaHtml, postCtaText } = params;
+  const { userId, emailSendKey, preview, preCtaHtml, preCtaText, cta, postCtaHtml, postCtaText } = params;
 
   const hasPostCta = postCtaHtml.trim() !== "";
   // No CTA and nothing after it (checkin_day1) — the pre-content block is
@@ -114,15 +116,20 @@ ${postCtaHtml}
 ${preCtaHtml}
           </td>
         </tr>${buildCtaRow(cta)}${postCtaRow}
-        ${buildMarketingEmailFooterHtml(userId)}
+        ${buildMarketingEmailFooterHtml(userId, emailSendKey)}
       </table>
     </td>
   </tr>
 </table>`;
 
-  const text = [preCtaText, buildCtaTextLine(cta), hasPostCta ? postCtaText : null, buildMarketingEmailFooterText(userId)]
+  const text = [
+    preCtaText,
+    buildCtaTextLine(cta),
+    hasPostCta ? postCtaText : null,
+    buildMarketingEmailFooterText(userId, emailSendKey),
+  ]
     .filter((part): part is string => part !== null)
     .join("\n\n");
 
-  return { html, text, headers: buildMarketingEmailHeaders(userId) };
+  return { html, text, headers: buildMarketingEmailHeaders(userId, emailSendKey) };
 }
