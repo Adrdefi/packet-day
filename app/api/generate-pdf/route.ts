@@ -75,10 +75,13 @@ export async function GET(req: NextRequest) {
   // ── Cache miss (or a failed cache read) — render fresh ────────────────────
 
   // ── Wait for images if they are still being generated ────────────────────
-  // Image generation runs in after() and can take up to ~2 min after packet
-  // creation (45s Claude + 120s Replicate × 2 attempts). Poll the two image
-  // columns for up to 30s so the PDF is never rendered with a placeholder
-  // when the real image is moments away.
+  // /api/generate-packet saves the packet row first, then generates images on
+  // the same live request and writes the image columns afterwards — so a
+  // download started mid-generation can see the row before its images. Each
+  // image gets up to two 60s Replicate attempts with a 3s pause between
+  // (the two images run in parallel), about 2 min worst case after the row is
+  // saved. Poll the two image columns for up to 30s so the PDF is never
+  // rendered with a placeholder when the real image is moments away.
   const IMAGES_MAX_AGE_MS = 4 * 60 * 1000; // 4 min — covers worst-case gen time
   const POLL_INTERVAL_MS = 2_000;
   const POLL_TIMEOUT_MS = 30_000;

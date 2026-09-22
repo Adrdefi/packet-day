@@ -4,7 +4,7 @@
  * does and saves both to test-output/.
  *
  * Usage:
- *   npx dotenv -e .env.local -- npx tsx scripts/test-image-gen.ts
+ *   npx dotenv -e .env.local -- node scripts/run-ts.mjs scripts/test-image-gen.ts
  */
 
 import fs from "fs";
@@ -13,7 +13,9 @@ import { generateMascotImage, generateColoringImage } from "../lib/generateMasco
 
 const TEST_DESCRIPTION = "a friendly pirate parrot with a feathered hat and golden earring";
 const TEST_CHILD_NAME = "Test Child";
-const OUT_DIR = path.join(__dirname, "..", "test-output");
+// cwd, not __dirname: scripts/run-ts.mjs compiles to ESM, where __dirname
+// doesn't exist. Run from the repo root.
+const OUT_DIR = path.join(process.cwd(), "test-output");
 
 function dataUrlToBuffer(dataUrl: string): Buffer {
   const comma = dataUrl.indexOf(",");

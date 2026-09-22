@@ -2,8 +2,8 @@
 // Returns null on any failure so it never blocks packet delivery.
 //
 // ── Models ────────────────────────────────────────────────────────────────────
-// Mascot:        black-forest-labs/flux-schnell  (unpinned deployment)
-//                Fast, vibrant cartoon output.
+// Mascot:        black-forest-labs/flux-schnell pinned to version c846a699...
+//                (pinned 2025-06-25). Fast, vibrant cartoon output.
 // Coloring page: recraft-ai/recraft-v3 pinned to version 9507e61d...
 //                style="digital_illustration" (base style). Chosen via
 //                comparison test (2026-07-24): cleaner coloring-book output
@@ -33,7 +33,7 @@
 // no-copyrighted-character instruction as a second layer. Neither is a
 // guarantee on its own; see the fix writeup for why both are kept.
 
-import Replicate from "replicate";
+import Replicate, { type Prediction } from "replicate";
 import sharp from "sharp";
 
 let _replicate: Replicate | null = null;
@@ -87,23 +87,84 @@ function scrubChildName(text: string, childName: string): string {
   return text.replace(pattern, CHILD_PLACEHOLDER);
 }
 
-/**
- * Race a promise against a hard timeout.
- * Replicate E9828 "Director" errors hang for 107 s before the platform gives
- * up on its own. 60 s lets us fail fast, log it, and move on.
- */
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(
-      () => reject(new Error(`${label}: timed out after ${ms / 1000}s`)),
-      ms
-    )
-  );
-  return Promise.race([promise, timeout]);
-}
-
+// Replicate E9828 "Director" errors hang for 107 s before the platform gives
+// up on its own. 60 s per attempt lets us fail fast, log it, and move on.
 const REPLICATE_TIMEOUT_MS = 60_000;
 const RETRY_DELAY_MS = 3_000;
+const POLL_INTERVAL_MS = 1_000;
+// Hard cap on the cancel request itself, so a hung cancel can't stall the packet.
+const CANCEL_REQUEST_TIMEOUT_MS = 10_000;
+
+const TERMINAL_STATUSES: ReadonlySet<Prediction["status"]> = new Set([
+  "succeeded",
+  "failed",
+  "canceled",
+  "aborted",
+]);
+
+/** Tells Replicate to stop a prediction. Never throws — a failed cancel is only logged. */
+async function cancelPrediction(predictionId: string, label: string): Promise<void> {
+  try {
+    await getReplicate().predictions.cancel(predictionId, {
+      signal: AbortSignal.timeout(CANCEL_REQUEST_TIMEOUT_MS),
+    });
+    console.warn(`[${label}] Cancelled prediction ${predictionId}`);
+  } catch (err) {
+    console.error(`[${label}] Failed to cancel prediction ${predictionId}`, {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+/**
+ * Runs one Replicate prediction to completion and returns its output, giving
+ * up after `timeoutMs`. When we give up — timeout or a failed status check —
+ * the prediction is cancelled on Replicate's side (awaited), so it stops
+ * running instead of finishing, and billing, after we've moved on.
+ *
+ * Every HTTP call carries an AbortSignal bounded by the remaining time, so no
+ * single request can hang past the deadline. Everything stays on the awaited
+ * chain of the caller.
+ */
+async function runPrediction(
+  modelRef: string,
+  input: Record<string, unknown>,
+  timeoutMs: number,
+  label: string
+): Promise<unknown> {
+  const replicate = getReplicate();
+  const version = modelRef.split(":")[1];
+  const deadline = Date.now() + timeoutMs;
+  const remainingSignal = () => AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
+
+  // If this request itself times out we have no prediction id to cancel —
+  // Replicate may still have created it. Rare, and nothing more we can do.
+  let prediction = await replicate.predictions.create({
+    version,
+    input,
+    signal: remainingSignal(),
+  });
+
+  try {
+    while (!TERMINAL_STATUSES.has(prediction.status)) {
+      if (Date.now() >= deadline) {
+        throw new Error(`${label}: timed out after ${timeoutMs / 1000}s`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      prediction = await replicate.predictions.get(prediction.id, { signal: remainingSignal() });
+    }
+  } catch (err) {
+    await cancelPrediction(prediction.id, label);
+    throw err;
+  }
+
+  if (prediction.status !== "succeeded") {
+    throw new Error(
+      `${label}: prediction ${prediction.status}${prediction.error ? ` — ${String(prediction.error)}` : ""}`
+    );
+  }
+  return prediction.output;
+}
 
 /**
  * Try `fn` once; if it throws, wait RETRY_DELAY_MS and try once more.
@@ -172,9 +233,9 @@ function extractUrl(output: unknown): string | null {
 }
 
 /**
- * What each generator returns. `attempts` counts every Replicate call started,
- * including ones abandoned by withTimeout (Replicate keeps running and bills
- * them). `durationMs` is the successful Replicate call only — null if no
+ * What each generator returns. `attempts` counts every Replicate prediction
+ * started, including ones that timed out and were cancelled (cost estimates
+ * treat every attempt as billed). `durationMs` is the successful Replicate call only — null if no
  * attempt succeeded or generation was skipped. `model` is null when skipped.
  */
 export interface ImageGenResult {
@@ -237,14 +298,13 @@ export async function generateColoringImage(
   const attempt = async () => {
     attempts++;
     const attemptStartMs = Date.now();
-    const output = await withTimeout(
-      getReplicate().run(RECRAFT_V3 as `${string}/${string}:${string}`, {
-        input: {
-          prompt,
-          style: "digital_illustration",
-          size: "1024x1024",
-        },
-      }),
+    const output = await runPrediction(
+      RECRAFT_V3,
+      {
+        prompt,
+        style: "digital_illustration",
+        size: "1024x1024",
+      },
       REPLICATE_TIMEOUT_MS,
       "generateColoringImage"
     );
@@ -314,9 +374,8 @@ export async function generateMascotImage(
   const prompt =
     `${description}, whimsical cartoon style, bright vibrant colors, ` +
     `simple clean lines, perfect for children's worksheet, white background, no text, ` +
-    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
-    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
-    `non-specific features only`;
+    `do not depict any copyrighted, trademarked, or real-world-recognizable character, ` +
+    `celebrity, or franchise mascot; invented, non-specific features only`;
 
   const startMs = Date.now();
   let attempts = 0;
@@ -325,16 +384,14 @@ export async function generateMascotImage(
   const attempt = async () => {
     attempts++;
     const attemptStartMs = Date.now();
-    const output = await withTimeout(
-      getReplicate().run(FLUX_SCHNELL as `${string}/${string}`, {
-        input: {
-          prompt,
-          num_outputs: 1,
-          aspect_ratio: "1:1",
-          output_format: "png",
-          output_quality: 80,
-        },
-      }),
+    const output = await runPrediction(
+      FLUX_SCHNELL,
+      {
+        prompt,
+        num_outputs: 1,
+        aspect_ratio: "1:1",
+        output_format: "png",
+      },
       REPLICATE_TIMEOUT_MS,
       "generateMascotImage"
     );
