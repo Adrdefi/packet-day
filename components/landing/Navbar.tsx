@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { label: "Reviews", href: "#reviews" },
   { label: "Pricing", href: "/pricing" },
   { label: "Blog", href: "/blog" },
+  { label: "About", href: "/about" },
 ];
 
 export default function Navbar() {

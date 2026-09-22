@@ -19,6 +19,12 @@ export default function SiteHeader() {
             Blog
           </Link>
           <Link
+            href="/about"
+            className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
+          >
+            About
+          </Link>
+          <Link
             href="/login"
             className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
           >
