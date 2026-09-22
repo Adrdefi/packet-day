@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import type { CreateEmailRequestOptions } from "resend";
 
 export const FROM_EMAIL = "Packet Day <hello@packetday.com>";
 
@@ -143,25 +144,46 @@ interface SendMarketingEmailParams {
   html: string;
   text: string;
   headers: Record<string, string>;
+  /**
+   * Bounds the underlying HTTP call with a real AbortController — not a
+   * Promise.race-and-abandon, which would leave the network call running
+   * unawaited past our own return (the exact "unawaited fire and forget"
+   * CLAUDE.md's server-code rules ban). The Resend SDK spreads its second
+   * `options` argument straight into the underlying `fetch()` call, so a
+   * `signal` here actually cancels the in-flight request; the SDK's own
+   * fetchRequest wraps that in a catch-all that turns the resulting
+   * AbortError into an ordinary `{ error }` return, never a throw — so
+   * callers still just await one settled result either way. Used by
+   * app/auth/confirm/route.ts's welcome_1 send, which must never delay the
+   * redirect past its timeout.
+   */
+  timeoutMs?: number;
 }
 
 /**
  * Shared send path for every marketing template (lib/emails/templates.ts) —
  * used today by scripts/send-test-emails.ts, and by the Phase 4 sequence
- * engine once it exists. Always sends as Natalie; the caller is responsible
- * for having already built `html`/`text`/`headers` via
- * lib/emails/layout.ts's renderMarketingEmail, which is what runs the
- * mailing-address safety lock and attaches the List-Unsubscribe headers.
+ * engine. Always sends as Natalie; the caller is responsible for having
+ * already built `html`/`text`/`headers` via lib/emails/layout.ts's
+ * renderMarketingEmail, which is what runs the mailing-address safety lock
+ * and attaches the List-Unsubscribe headers.
  */
 export async function sendMarketingEmail(params: SendMarketingEmailParams) {
-  const { to, subject, html, text, headers } = params;
-  return getResend().emails.send({
-    from: NATALIE_FROM,
-    replyTo: NATALIE_REPLY_TO,
-    to,
-    subject,
-    html,
-    text,
-    headers,
-  });
+  const { to, subject, html, text, headers, timeoutMs } = params;
+
+  let controller: AbortController | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  if (timeoutMs !== undefined) {
+    controller = new AbortController();
+    timer = setTimeout(() => controller!.abort(), timeoutMs);
+  }
+
+  try {
+    return await getResend().emails.send(
+      { from: NATALIE_FROM, replyTo: NATALIE_REPLY_TO, to, subject, html, text, headers },
+      controller ? ({ signal: controller.signal } as CreateEmailRequestOptions) : undefined
+    );
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }

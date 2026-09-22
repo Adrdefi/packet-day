@@ -131,6 +131,9 @@ See `.env.local.example` for all variables and where to find them.
 | `NEXT_PUBLIC_APP_URL` | Yes | Yes |
 | `UNSUBSCRIBE_SECRET` | Yes | **No** — server only |
 | `MAILING_ADDRESS` | Yes | **No** — server only |
+| `EMAIL_LAUNCH_AT` | Optional | **No** — server only | Unset means nobody is enrolled in the sequence |
+| `EMAIL_SEQUENCE_ENABLED` | Yes | **No** — server only | Anything other than exactly `"true"` forces a dry run |
+| `CRON_SECRET` | Yes | **No** — server only | Bearer secret for `/api/cron/email-sequence` |
 
 ---
 
@@ -293,15 +296,37 @@ Examples:
 - **A logged-out `/generate` click** redirects to `/login?next=<current path + query, safeNext-validated>` and returns there after login — so a link from any of the templates above survives the login round trip with its utm tags intact.
 - **Test sends.** `npm run test-emails` (`scripts/send-test-emails.ts`) sends every template plus the packet-ready email, one at a time, single-awaited, to `adrdefi+emailtest@gmail.com`, subjects prefixed `[TEST]`. It carries one test-only safety-lock exception: if `MAILING_ADDRESS` is still the placeholder, it overrides the value to `"ADDRESS PENDING (test)"` for its own process only (never touching a real send) — and only after confirming every recipient it will actually send to contains `"adrdefi"`.
 
-**Phase 4 (not built yet) — sequencing rules to implement when the send engine is built:**
-  a. Max one marketing email per user per day. The packet-ready email is transactional and doesn't count.
-  b. Priority when more than one is due: `cap_followup` first.
-  c. Skip `checkin_day1` if `cap_followup` was already sent.
-  d. Skip `plans_4` if `cap_followup` was sent in the last 7 days.
+**Sequencing rules the engine below implements:**
+  a. Max one marketing email per user per Pacific calendar day. The packet-ready email is transactional and doesn't count.
+  b. Priority when more than one is due: `cap_followup` first (not built yet — Phase 5 — but the priority slot is reserved: it would rank above the `welcome_1` backstop).
+  c. Skip `checkin_day1` if `cap_followup` was already sent (structural now; a no-op until Phase 5, since nothing ever writes a `cap_followup` row yet).
+  d. Skip `plans_4` if `cap_followup` was sent in the last 7 days (same — structural, no-op until Phase 5).
   e. Anything else that collides waits until the next day.
   f. Never send upgrade emails (`plans_4`, `cap_followup`) to paying users (`isPaidStatus`).
-  g. The launch cutoff (`profiles.created_at >= launch date`) applies to every marketing email **except** `packet_back_monthly`, which goes to all free users who have made at least one completed packet — including users who signed up before launch.
-  h. Test accounts (any email containing `adrdefi`) are always excluded from every marketing email, with no exception.
+  g. The launch cutoff (`profiles.created_at >= launch date`) applies to every marketing email **except** `packet_back_monthly` (not built yet — Phase 5), which will go to all free users who have made at least one completed packet — including users who signed up before launch.
+  h. Test accounts (any email containing `adrdefi`) are always excluded from every marketing email, **except** an address on `EMAIL_TEST_ALLOWLIST` — see below.
+
+### Email sequence engine (Phase 4)
+
+Builds `welcome_1` (send + backstop) and the day-based schedule for `nudge_2`, `story_3`, `faq_5`, `checkin_day1`, `plans_4`. `cap_followup` and `packet_back_monthly` are deliberately not wired to send anything yet (Phase 5) — the engine is structured so adding them is a new template-builder entry plus a new schedule/priority entry, not a rewrite.
+
+- **Switches.**
+  - `EMAIL_LAUNCH_AT` (ISO timestamp): only profiles with `created_at >= EMAIL_LAUNCH_AT` are enrolled. Unset means nobody is enrolled — this is the master off switch for the whole sequence.
+  - `EMAIL_SEQUENCE_ENABLED`: anything other than exactly `"true"` forces the confirm route's welcome_1 send and the cron route into a dry run — nothing sends, nothing gets claimed in `email_sends`.
+  - `EMAIL_TEST_ALLOWLIST`: comma-separated exact email addresses that bypass the adrdefi exclusion and the launch cutoff — not the opt-out check, not `isPaidStatus`, not any collision rule, not the mailing-address safety lock. For Phase 6's backdated test accounts. Empty by default (bypasses nothing).
+  - `CRON_SECRET`: the cron route rejects any request without `Authorization: Bearer $CRON_SECRET`, constant-time compared. Vercel Cron sends this header automatically once the var is set on the project — no extra config needed for the scheduled trigger itself.
+  - The mailing-address safety lock (`assertMailingAddressReady`) still runs on every real marketing send regardless of these switches.
+- **Stamping vs. sending.** `app/auth/confirm/route.ts` stamps `profiles.sequence_started_at` for every *eligible* user (launch cutoff or allowlisted, not adrdefi, not opted out) regardless of `EMAIL_SEQUENCE_ENABLED` — stamping is not sending, and without the stamp the cron can never find that user later to backstop them. Only the welcome_1 send itself is gated on `EMAIL_SEQUENCE_ENABLED === "true"`, bounded to 3 seconds via a real `AbortController` (see `sendMarketingEmail`'s `timeoutMs` in `lib/resend.ts` — a genuine cancellation of the in-flight HTTP call, awaited to completion, never a `Promise.race`-and-abandon). Both stamping and sending are wrapped so a failure never delays the redirect or breaks confirmation.
+- **Send ledger claim pattern** (`lib/emailSends.ts`). Every real send: `claimEmailSend(userId, key)` inserts a `'pending'` row first — the table's unique `(user_id, email_key)` constraint (migration 015) is the actual atomic claim, so a concurrent or later attempt at the same pair always loses the insert and gets back `null`. Only the caller that won the insert proceeds to call Resend, then finalizes the row via `markEmailSendSent` or `markEmailSendFailed`. No retries: any row at all (pending, sent, or failed) permanently closes that `(user, key)` pair. Migration 016 widened the status check constraint from `('sent', 'failed')` to `('pending', 'sent', 'failed')`.
+- **Cron** (`app/api/cron/email-sequence/route.ts`, `vercel.json`'s hourly `0 * * * *` schedule). Each run:
+  - Loads every profile with `sequence_started_at` set and `marketing_opt_out = false` (adrdefi excluded unless allowlisted — see above).
+  - Computes, per user, `dayN` (whole Pacific calendar days since `sequence_started_at`, DST-aware via `Intl` + the IANA tz database — see `lib/emailSequence.ts`'s `pacificCalendarDaysBetween`) and `activated` (a `packets` row with `generated_content` present, computed fresh every run, never cached).
+  - **Not-activated track:** `nudge_2` day 2, `story_3` day 5, `faq_5` day 9. **Activated track:** `checkin_day1` the Pacific day after their first activated packet (only if that packet landed within the sequence's first 14 days), `story_3` day 5, `plans_4` day 9, `faq_5` day 13. A user who activates mid-sequence switches tracks naturally (fresh `activated` read every run) and never gets `nudge_2` once activated.
+  - Every due email — including the `welcome_1` backstop — gets a 2-day catch-up window (due day through due day + 2), then it's skipped for good; the backstop specifically treats `welcome_1` as "due day 0", so flipping `EMAIL_SEQUENCE_ENABLED` on after it's been off for a while never floods a backlog of stale welcomes.
+  - When more than one email is due the same day, priority picks exactly one (`welcome_1` backstop > `checkin_day1` > the day-scheduled email) and everything else waits for a future run (rule e).
+  - Scheduled-track sends (everything except the `welcome_1` backstop) only actually send during the Pacific-hour-8 run; other hours only run the backstop and report what's due.
+  - Sends are awaited one at a time, capped at 50 per run; anything past the cap is reported and retried next run.
+  - `?dryRun=1`, or `EMAIL_SEQUENCE_ENABLED` not `"true"`, computes and reports everything without claiming or sending anything. The JSON response lists every considered user's day/track/decision and the reason, plus a status-count summary.
 
 ---
 

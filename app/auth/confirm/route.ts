@@ -4,6 +4,92 @@ import { isPlanSlug } from "@/lib/plans";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { track } from "@vercel/analytics/server";
+import { claimEmailSend, markEmailSendFailed, markEmailSendSent } from "@/lib/emailSends";
+import { buildMarketingEmailHeaders } from "@/lib/emailFooter";
+import { sendMarketingEmail } from "@/lib/resend";
+import { buildWelcome1Email } from "@/lib/emails/templates";
+import { isEmailTestAllowlisted } from "@/lib/emailTestAllowlist";
+
+// Bounds the welcome_1 send call below — see lib/resend.ts's
+// sendMarketingEmail for how this is a real AbortController cancellation,
+// not a Promise.race-and-abandon, so nothing is ever left running past
+// this request's own response.
+const WELCOME_1_SEND_TIMEOUT_MS = 3000;
+
+/**
+ * Stamps sequence_started_at for a freshly confirmed, eligible signup, and
+ * — only when EMAIL_SEQUENCE_ENABLED is "true" — attempts the Email 1
+ * send. Stamping and sending are gated separately on purpose: stamping is
+ * not sending, and without the stamp the cron route (app/api/cron/
+ * email-sequence) can never find this user later to backstop them once
+ * sending is turned on. Everything here is best-effort: it must never
+ * delay the redirect below beyond the send's own timeout, and a failure
+ * here must never break confirmation.
+ */
+async function attemptWelcome1(params: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  userId: string;
+  email: string;
+  fullName: string | null;
+  createdAt: string;
+  marketingOptOut: boolean;
+  sequenceStartedAt: string | null;
+}): Promise<void> {
+  const { supabase, userId, email, fullName, createdAt, marketingOptOut, sequenceStartedAt } = params;
+
+  // EMAIL_LAUNCH_AT unset means nobody is enrolled, on purpose. Test
+  // accounts (adrdefi) and anyone already opted out are excluded with no
+  // exception, per CLAUDE.md's Phase 4 rules (g/h) — except an address on
+  // EMAIL_TEST_ALLOWLIST, which bypasses the adrdefi exclusion and the
+  // launch cutoff (but never the opt-out check) for Phase 6 backdated test
+  // accounts.
+  const launchAt = process.env.EMAIL_LAUNCH_AT;
+  const allowlisted = isEmailTestAllowlisted(email);
+  const passesLaunchAndAdrdefiGate =
+    allowlisted || (!!launchAt && new Date(createdAt) >= new Date(launchAt) && !email.toLowerCase().includes("adrdefi"));
+  const eligible = passesLaunchAndAdrdefiGate && !marketingOptOut;
+  if (!eligible) return;
+
+  try {
+    if (!sequenceStartedAt) {
+      const { error: stampError } = await supabase
+        .from("profiles")
+        .update({ sequence_started_at: new Date().toISOString() })
+        .eq("id", userId);
+      if (stampError) throw stampError;
+    }
+
+    if (process.env.EMAIL_SEQUENCE_ENABLED !== "true") return; // stamped; sending itself waits for the switch
+
+    const claimed = await claimEmailSend(userId, "welcome_1");
+    if (!claimed) return; // already claimed (race, or a prior attempt already exists) — nothing to do
+
+    try {
+      const content = buildWelcome1Email({ userId, fullName });
+      const headers = buildMarketingEmailHeaders(userId);
+      const result = await sendMarketingEmail({
+        to: email,
+        subject: content.subject,
+        html: content.html,
+        text: content.text,
+        headers,
+        timeoutMs: WELCOME_1_SEND_TIMEOUT_MS,
+      });
+
+      if (result.error) {
+        await markEmailSendFailed(claimed.id, JSON.stringify(result.error));
+      } else {
+        await markEmailSendSent(claimed.id, result.data?.id ?? null);
+      }
+    } catch (sendErr) {
+      // Claim already exists — never leave it stuck in 'pending', mark it
+      // failed so the ledger stays accurate (no retries either way).
+      await markEmailSendFailed(claimed.id, sendErr instanceof Error ? sendErr.message : String(sendErr));
+    }
+  } catch (err) {
+    console.error("[auth-confirm] welcome_1 attempt failed (non-fatal):", err instanceof Error ? err.message : String(err));
+  }
+}
 
 // Allow list of OTP types this route will verify. Add an entry here (and
 // nowhere else) to support another flow. `email` is the non-deprecated type
@@ -60,18 +146,30 @@ export async function GET(req: NextRequest) {
           console.error("[auth-confirm] Failed to record email_confirmed event:", err);
         }
 
-        // Plan keeps top priority, exactly as before — a chosen paid plan
-        // always goes to checkout, regardless of any next_path.
-        if (isPlanSlug(plan)) {
-          return NextResponse.redirect(`${origin}/checkout-redirect?plan=${plan}`);
-        }
-
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("onboarding_completed")
+            .select("onboarding_completed, created_at, marketing_opt_out, sequence_started_at, full_name")
             .eq("id", user.id)
             .single();
+
+          if (profile && user.email) {
+            await attemptWelcome1({
+              supabase,
+              userId: user.id,
+              email: user.email,
+              fullName: profile.full_name,
+              createdAt: profile.created_at,
+              marketingOptOut: profile.marketing_opt_out,
+              sequenceStartedAt: profile.sequence_started_at,
+            });
+          }
+
+          // Plan keeps top priority, exactly as before — a chosen paid plan
+          // always goes to checkout, regardless of any next_path.
+          if (isPlanSlug(plan)) {
+            return NextResponse.redirect(`${origin}/checkout-redirect?plan=${plan}`);
+          }
 
           if (!profile?.onboarding_completed) {
             const onboardingUrl = nextPath
