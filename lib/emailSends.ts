@@ -1,5 +1,4 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import type { EmailKey } from "@/lib/emailKeys";
 
 // Service-role client — email_sends is RLS'd to service_role only (migration
 // 015). Same local-getServiceClient() pattern as lib/unsubscribe.ts and
@@ -26,8 +25,15 @@ export interface ClaimedEmailSend {
  * or failed); the caller must treat that as "someone else has this, don't
  * send." No retries — this is by design, see CLAUDE.md's Email sequence
  * section.
+ *
+ * `emailKey` is plain `string`, not the `EmailKey` literal union — a
+ * one-shot sequence email passes its bare key ("welcome_1"), but
+ * cap_followup and packet_back_monthly pass a period-composed key
+ * ("cap_followup:2026-10", via lib/emailSequence.ts's
+ * buildPeriodicSendKey) so a fresh period can claim its own slot instead
+ * of being blocked by the unique constraint forever after the first send.
  */
-export async function claimEmailSend(userId: string, emailKey: EmailKey): Promise<ClaimedEmailSend | null> {
+export async function claimEmailSend(userId: string, emailKey: string): Promise<ClaimedEmailSend | null> {
   const { data, error } = await getServiceClient()
     .from("email_sends")
     .insert({ user_id: userId, email_key: emailKey, status: "pending" })

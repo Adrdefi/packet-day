@@ -8,7 +8,7 @@ import { claimEmailSend, markEmailSendFailed, markEmailSendSent } from "@/lib/em
 import { buildMarketingEmailHeaders } from "@/lib/emailFooter";
 import { sendMarketingEmail } from "@/lib/resend";
 import { buildWelcome1Email } from "@/lib/emails/templates";
-import { isEmailTestAllowlisted } from "@/lib/emailTestAllowlist";
+import { passesSequenceGate } from "@/lib/emailSequenceGate";
 
 // Bounds the welcome_1 send call below — see lib/resend.ts's
 // sendMarketingEmail for how this is a real AbortController cancellation,
@@ -41,13 +41,10 @@ async function attemptWelcome1(params: {
   // accounts (adrdefi) and anyone already opted out are excluded with no
   // exception, per CLAUDE.md's Phase 4 rules (g/h) — except an address on
   // EMAIL_TEST_ALLOWLIST, which bypasses the adrdefi exclusion and the
-  // launch cutoff (but never the opt-out check) for Phase 6 backdated test
-  // accounts.
-  const launchAt = process.env.EMAIL_LAUNCH_AT;
-  const allowlisted = isEmailTestAllowlisted(email);
-  const passesLaunchAndAdrdefiGate =
-    allowlisted || (!!launchAt && new Date(createdAt) >= new Date(launchAt) && !email.toLowerCase().includes("adrdefi"));
-  const eligible = passesLaunchAndAdrdefiGate && !marketingOptOut;
+  // launch cutoff (but never the opt-out check). Shared with the cron
+  // route's cap_followup eligibility via lib/emailSequenceGate.ts so the
+  // two can never drift.
+  const eligible = passesSequenceGate(email, createdAt) && !marketingOptOut;
   if (!eligible) return;
 
   try {
