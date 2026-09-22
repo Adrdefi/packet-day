@@ -344,12 +344,12 @@ export function buildPacketBackMonthlyEmail({
   const preCtaLines = [
     greet,
     "Quick note from me, Natalie. It's a new month, which means your free Packet Day packet is back!",
-    `Last month ${safeChildName} got a packet all about ${safeTheme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in about a minute.`,
+    `Last time ${safeChildName} got a packet all about ${safeTheme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in a minute or two.`,
   ];
   const preCtaTextLines = [
     greet,
     "Quick note from me, Natalie. It's a new month, which means your free Packet Day packet is back!",
-    `Last month ${childName} got a packet all about ${theme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in about a minute.`,
+    `Last time ${childName} got a packet all about ${theme}. What are they into this week? Dinosaurs, space, a new video game, that one book they won't put down? Tell us, and we'll turn it into a full day of learning in a minute or two.`,
   ];
 
   const postCtaHtml = [
