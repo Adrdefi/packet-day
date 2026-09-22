@@ -94,13 +94,40 @@ export function isStillCapped(packetsUsedThisMonth: number, packetsResetDateISO:
   return effectiveUsed >= freeLimit;
 }
 
-/** The UTC quota month immediately after the given instant's — "YYYY-09" -> "YYYY-10", "YYYY-12" -> "YYYY+1-01". Used by ?forceMonthly=1 to simulate the 1st of next month without waiting for it. */
+/** The UTC quota month immediately after the given instant's — "YYYY-09" -> "YYYY-10", "YYYY-12" -> "YYYY+1-01". */
 export function nextUtcQuotaMonth(date: Date): string {
   const [y, m] = utcQuotaMonth(date).split("-").map(Number);
   // Date.UTC's month argument is 0-indexed, so passing the 1-indexed
   // current month `m` directly already lands one month ahead (and
   // Date.UTC itself rolls a 13th "month" over into January of next year).
   return utcQuotaMonth(new Date(Date.UTC(y, m, 1)));
+}
+
+/**
+ * ?forceMonthly=1's whole mechanism: one coherent simulated instant — 8am
+ * Pacific on the 1st of next month, relative to the real current time —
+ * substituted for `now` everywhere in a request, not just for
+ * packet_back_monthly. That single substitution is what makes every
+ * candidate source agree: cap_followup's own UTC-quota-month comparison
+ * correctly sees a real last-month cap hit as stale and skips it,
+ * isStillCapped correctly sees a real September packets_reset_date as
+ * rolled over, the Pacific-hour-8 gate and packet_back_monthly's
+ * day-of-month window are satisfied because the clock genuinely reads
+ * 8am on the 1st — none of that needs its own bypass flag once the clock
+ * itself is coherent. Resolved by construction, not by guessing a UTC
+ * offset: builds a guess at 15:00 UTC (8am PDT) on the 1st, then checks
+ * with pacificHour() and nudges by whatever the difference actually is,
+ * so it's correct across the DST transition without hardcoding its dates.
+ */
+export function simulateNextMonthFirstAt8amPacific(realNow: Date): Date {
+  const nextPeriod = nextUtcQuotaMonth(realNow);
+  const [y, m] = nextPeriod.split("-").map(Number);
+  let candidate = new Date(Date.UTC(y, m - 1, 1, 15, 0, 0));
+  const hour = pacificHour(candidate);
+  if (hour !== 8) {
+    candidate = new Date(candidate.getTime() + (8 - hour) * 3600000);
+  }
+  return candidate;
 }
 
 export type PeriodicEmailBase = "cap_followup" | "packet_back_monthly";
@@ -202,6 +229,12 @@ export interface SequenceDecision {
  * process.env (the caller passes `now` and both enabled switches as
  * explicit booleans) — so it's directly testable and so a dry run and a
  * real run compute the identical decision from the identical inputs.
+ *
+ * ?forceMonthly=1 needs no special handling here at all: the cron route
+ * substitutes a single simulated `now` (see simulateNextMonthFirstAt8amPacific)
+ * for every candidate source uniformly, so this function only ever sees one
+ * coherent clock — it has no idea whether `now` is real or simulated, and
+ * doesn't need to.
  */
 export function resolveSequenceDecision(
   state: UserSequenceState,
@@ -209,11 +242,7 @@ export function resolveSequenceDecision(
   isScheduledHour: boolean,
   sequenceEnabled: boolean,
   monthlyEnabled: boolean,
-  monthlyStartPeriod: string | null,
-  /** The UTC quota month packet_back_monthly evaluates against — normally utcQuotaMonth(now); the caller passes nextUtcQuotaMonth(now) instead when simulating ?forceMonthly=1. Never affects cap_followup, which always computes its own period from `now` directly. */
-  monthlyPeriod: string,
-  /** ?forceMonthly=1: bypasses EMAIL_MONTHLY_START and the Pacific-hour-8 gate for packet_back_monthly only — day-of-month is still simulated as day 1. Never affects cap_followup or the day-based sequence. */
-  forceMonthly: boolean
+  monthlyStartPeriod: string | null
 ): SequenceDecision {
   const activated = state.firstActivatedPacketAtISO !== null;
   const candidates: Candidate[] = [];
@@ -249,22 +278,18 @@ export function resolveSequenceDecision(
 
   // ─── packet_back_monthly ────────────────────────────────────────────────
   if (!state.isPaid && activated && !state.hasPacketThisUTCQuotaMonth && !state.monthlyAttemptedForCurrentPeriod) {
-    // forceMonthly bypasses both the launch-style EMAIL_MONTHLY_START gate
-    // and the Pacific-hour-8 gate (readyToSend below) — it does NOT bypass
-    // EMAIL_MONTHLY_ENABLED (still folded into readyToSend) or the caller's
-    // own dry-run override, and it never touches cap_followup or the
-    // day-based sequence.
-    const startOk = forceMonthly || (monthlyStartPeriod !== null && monthlyPeriod >= monthlyStartPeriod);
+    const currentPeriod = utcQuotaMonth(now);
+    const startOk = monthlyStartPeriod !== null && currentPeriod >= monthlyStartPeriod;
     if (startOk) {
-      const dayOfMonth = forceMonthly ? 1 : pacificDayOfMonth(now);
+      const dayOfMonth = pacificDayOfMonth(now);
       if (dayOfMonth >= 1 && dayOfMonth <= 1 + MONTHLY_CATCH_UP_DAYS) {
         candidates.push({
           emailKey: "packet_back_monthly",
-          sendKey: buildPeriodicSendKey("packet_back_monthly", monthlyPeriod),
+          sendKey: buildPeriodicSendKey("packet_back_monthly", currentPeriod),
           priority: PRIORITY_PACKET_BACK_MONTHLY,
           dueDay: 1,
-          readyToSend: monthlyEnabled && (forceMonthly || isScheduledHour),
-          detail: `monthly re-engagement, period ${monthlyPeriod}, Pacific day-of-month ${forceMonthly ? "1 (forced)" : dayOfMonth}`,
+          readyToSend: monthlyEnabled && isScheduledHour,
+          detail: `monthly re-engagement, period ${currentPeriod}, Pacific day-of-month ${dayOfMonth}`,
         });
       }
     }

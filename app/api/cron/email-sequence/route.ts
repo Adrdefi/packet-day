@@ -6,9 +6,9 @@ import type { EmailKey } from "@/lib/emailKeys";
 import {
   deriveAttemptedState,
   isStillCapped,
-  nextUtcQuotaMonth,
   pacificHour,
   resolveSequenceDecision,
+  simulateNextMonthFirstAt8amPacific,
   utcQuotaMonth,
   type Candidate,
   type UserSequenceState,
@@ -207,18 +207,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const now = new Date();
+  const realNow = new Date();
+  const queryDryRun = req.nextUrl.searchParams.get("dryRun") === "1";
+  const forceMonthly = req.nextUrl.searchParams.get("forceMonthly") === "1";
+  // forceMonthly substitutes one coherent simulated instant — 8am Pacific
+  // on the 1st of next month — for every candidate source uniformly, not
+  // just packet_back_monthly's own period. That's what makes cap_followup
+  // correctly see a real last-month cap hit as stale (and skip it) and
+  // isStillCapped correctly see a real prior-month packets_reset_date as
+  // rolled over, instead of only shifting the month packet_back_monthly
+  // itself evaluates against while everything else stays on the real clock.
+  const now = forceMonthly ? simulateNextMonthFirstAt8amPacific(realNow) : realNow;
   const currentPacificHour = pacificHour(now);
   const isScheduledHour = currentPacificHour === 8;
   const currentPeriod = utcQuotaMonth(now);
-
-  const queryDryRun = req.nextUrl.searchParams.get("dryRun") === "1";
-  const forceMonthly = req.nextUrl.searchParams.get("forceMonthly") === "1";
-  // forceMonthly simulates the 8am Pacific run on the 1st of NEXT month —
-  // packet_back_monthly evaluates against this period instead of the real
-  // current one. cap_followup is entirely unaffected; it always computes
-  // its own period from `now` directly.
-  const monthlyPeriod = forceMonthly ? nextUtcQuotaMonth(now) : currentPeriod;
 
   const sequenceEnabled = process.env.EMAIL_SEQUENCE_ENABLED === "true" && !queryDryRun;
   const monthlyEnabled = process.env.EMAIL_MONTHLY_ENABLED === "true" && !queryDryRun;
@@ -239,7 +241,7 @@ export async function GET(req: NextRequest) {
 
   const [sendRows, activationByUser] = await Promise.all([
     getEmailSendRowsForUsers(userIds),
-    loadPacketActivationInfo(userIds, monthlyPeriod),
+    loadPacketActivationInfo(userIds, currentPeriod),
   ]);
 
   const { attemptedByUser, sentCapFollowupAtByUser, capFollowupPeriodsByUser, monthlyPeriodsByUser } =
@@ -264,19 +266,10 @@ export async function GET(req: NextRequest) {
         ? (capFollowupPeriodsByUser.get(profile.id)?.has(hitPeriod) ?? false)
         : false,
       hasPacketThisUTCQuotaMonth: activation?.hasPacketThisUTCQuotaMonth ?? false,
-      monthlyAttemptedForCurrentPeriod: monthlyPeriodsByUser.get(profile.id)?.has(monthlyPeriod) ?? false,
+      monthlyAttemptedForCurrentPeriod: monthlyPeriodsByUser.get(profile.id)?.has(currentPeriod) ?? false,
     };
 
-    const decision = resolveSequenceDecision(
-      state,
-      now,
-      isScheduledHour,
-      sequenceEnabled,
-      monthlyEnabled,
-      monthlyStartPeriod,
-      monthlyPeriod,
-      forceMonthly
-    );
+    const decision = resolveSequenceDecision(state, now, isScheduledHour, sequenceEnabled, monthlyEnabled, monthlyStartPeriod);
     return { profile, activation, decision };
   });
 
@@ -457,11 +450,11 @@ export async function GET(req: NextRequest) {
     sequenceEnabled,
     monthlyEnabled,
     forceMonthly,
-    ranAt: now.toISOString(),
+    ranAt: realNow.toISOString(),
+    simulatedNow: forceMonthly ? now.toISOString() : null,
     currentPacificHour,
     isScheduledHour,
     currentPeriod,
-    monthlyPeriod,
     considered: profiles.length,
     summary,
     results,
