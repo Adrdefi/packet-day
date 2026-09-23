@@ -8,7 +8,7 @@ import PricingSection from "@/components/landing/PricingSection";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
-import HeroPacketArt from "@/components/landing/art/HeroPacketArt";
+import HeroPacketShowcase from "@/components/landing/HeroPacketShowcase";
 import HardDayArt from "@/components/landing/art/HardDayArt";
 import StepArt from "@/components/landing/art/StepArt";
 import TomorrowArt from "@/components/landing/art/TomorrowArt";
@@ -174,14 +174,13 @@ export default function Home() {
               </h1>
 
               {/* Subheadline */}
-              <p className="text-lg md:text-xl text-dark/70 max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-                Packet Day uses{" "}
-                <strong className="text-dark font-bold">
-                  AI to create personalized, print-ready learning packets
-                </strong>{" "}
-                themed to whatever your kids are obsessed with, in a minute or two.
-                Sharks? Ancient Egypt? Minecraft? If they can imagine it, we can build
-                a school day around it.
+              <p className="text-lg md:text-xl text-dark/70 max-w-2xl mx-auto lg:mx-0 mb-4 leading-relaxed">
+                A full, printable school day built around whatever your kid is obsessed
+                with, ready in a minute or two.
+              </p>
+              <p className="text-base md:text-lg font-semibold text-dark max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+                Monday it’s monster trucks. Tuesday it’s ancient Egypt. Wednesday it’s
+                “only sloths.” Every one works, and no two packets are ever the same.
               </p>
 
               {/* CTAs */}
@@ -216,7 +215,9 @@ export default function Home() {
               </div>
             </div>
 
-            <HeroPacketArt className="w-full max-w-[360px] lg:max-w-[520px] mx-auto mt-12 lg:mt-0" />
+            <div className="mt-14 lg:mt-0">
+              <HeroPacketShowcase />
+            </div>
           </div>
         </section>
 
