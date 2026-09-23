@@ -147,7 +147,7 @@ export default function Navbar() {
               onClick={closeMobile}
               className="block w-full text-center bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-base"
             >
-              Try It Free — No Card Needed ✨
+              Try It Free, No Card Needed ✨
             </Link>
             <Link
               href="/login"

@@ -118,7 +118,7 @@ function ResetPasswordForm() {
         Choose a new password
       </h1>
       <p className="text-dark/60 text-sm mb-8">
-        Make it a good one — you won&apos;t have to do this again for a while.
+        Make it a good one. You won&apos;t have to do this again for a while.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">

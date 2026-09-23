@@ -34,7 +34,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "I watch my grandkids during the week and I was curious whether the AI could really do it. It can. I've been using it to fill in around what their moms are already teaching, and the kids ask for it.",
     abridgedQuote:
-      "I watch my grandkids during the week. I've been using Packet Day to fill in around what their moms are already teaching — the kids ask for it.",
+      "I watch my grandkids during the week. I've been using Packet Day to fill in around what their moms are already teaching. The kids ask for it.",
     name: "Barbara R.",
     credential: "Grandmother of 6 school-age grandchildren",
     verified: true,

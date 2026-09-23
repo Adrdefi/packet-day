@@ -2461,7 +2461,7 @@ function ParentNotesPage({
   const hasAnswerKeys = activities.some((a) => !!a.answer_key);
   const noteBody = sanitizeText(parentNotes) || parentNote(childName, theme);
   const answerKeySentence = hasAnswerKeys
-    ? ` Answer keys are on the last page — a separate parent sheet you don't need to print for ${childName}.`
+    ? ` Answer keys are on the last page: a separate parent sheet you don't need to print for ${childName}.`
     : '';
   return (
     <Page size="LETTER" style={styles.notesPage}>

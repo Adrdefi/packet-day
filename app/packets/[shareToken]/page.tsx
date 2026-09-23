@@ -92,7 +92,7 @@ export async function generateMetadata({
   }
 
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
-  const title = `${packet.theme} Learning Packet — ${gradeLabel} • Packet Day`;
+  const title = `${packet.theme} Learning Packet, ${gradeLabel} • Packet Day`;
   const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
   const ogImageUrl = `${SITE_URL}/api/og-packet?token=${encodeURIComponent(shareToken)}`;
 
@@ -165,7 +165,7 @@ export default async function SharePage({
               Hmm, this packet link has expired or doesn&apos;t exist.
             </h1>
             <p className="text-muted text-sm leading-relaxed mb-8">
-              The family who shared it may have removed it, or the link might have a typo. Either way — you can make your own!
+              The family who shared it may have removed it, or the link might have a typo. Either way, you can make your own!
             </p>
             <Link
               href="/signup"
@@ -206,7 +206,7 @@ export default async function SharePage({
     : null;
 
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-  const pinterestShare = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${p.theme} learning packet for ${gradeLabel} — made with Packet Day`)}`;
+  const pinterestShare = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${p.theme} learning packet for ${gradeLabel}, made with Packet Day`)}`;
   const smsShare = `sms:?body=${encodeURIComponent(`Check out this ${p.theme} learning packet I made with Packet Day! ${shareUrl}`)}`;
 
   return (
@@ -349,7 +349,7 @@ export default async function SharePage({
             </h2>
             <p className="text-muted max-w-lg mx-auto mb-6 leading-relaxed">
               Packet Day creates personalized, printable learning packets for
-              your kid in a minute or two. Pick any theme — their favorite
+              your kid in a minute or two. Pick any theme: their favorite
               topic, today&apos;s mood, or whatever gets them out of bed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -359,7 +359,7 @@ export default async function SharePage({
                 grade={gradeLabel}
                 className="bg-sage text-cream font-bold px-8 py-3.5 rounded-xl hover:bg-sage-dark transition-colors text-base"
               >
-                Start free — 1 packet on us →
+                Start free, 1 packet on us →
               </BottomCtaLink>
               <Link
                 href="/"

@@ -3,7 +3,7 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
-const TITLE = "Terms of Service — Packet Day";
+const TITLE = "Terms of Service | Packet Day";
 const DESCRIPTION =
   "The terms that govern your use of Packet Day's AI-generated learning packets.";
 

@@ -32,7 +32,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
     subject: "Welcome to Packet Day!",
     html: `<p>Hi ${name},</p>
 <p>You're in! We're so glad you're here.</p>
-<p>Packet Day is your backup plan for the hard days — ready whenever you need it.</p>
+<p>Packet Day is your backup plan for the hard days, ready whenever you need it.</p>
 <p>Warmly,<br/>The Packet Day team</p>`,
   });
 }

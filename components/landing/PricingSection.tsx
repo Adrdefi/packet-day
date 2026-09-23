@@ -14,7 +14,7 @@ const FREE_FEATURES = [
 const UNLIMITED_FEATURES = [
   "Unlimited AI-generated packets",
   "Unlimited child profiles",
-  "Infinite themes — anything they dream up",
+  "Infinite themes: anything they dream up",
   "Answer keys for every packet",
   "Supply lists with household items only",
   "First access to new features",
@@ -95,7 +95,7 @@ export default function PricingSection({ monthlyPriceId, yearlyPriceId }: Props)
           <div className="bg-white rounded-2xl border border-border p-8 flex flex-col">
             <div>
               <h3 className="font-display text-2xl font-bold text-dark mb-1">Free</h3>
-              <p className="text-sm text-muted mb-6">Dip your toes in — no card needed</p>
+              <p className="text-sm text-muted mb-6">Dip your toes in, no card needed</p>
               <div className="mb-2">
                 <span className="font-display text-5xl font-bold text-dark">$0</span>
                 <span className="text-muted text-lg ml-1">/mo</span>

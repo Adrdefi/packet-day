@@ -64,7 +64,7 @@ const GRADE_LABELS: Record<string, string> = {
 
 const GENERATION_COPY = {
   found: "Found it. Your packet finished while your screen was off.",
-  stillWorking: "Still working. Hang tight — bigger packets can take a couple of minutes.",
+  stillWorking: "Still working. Hang tight. Bigger packets can take a couple of minutes.",
   ceilingHit: "We couldn't confirm that one. Check your recent packets, or try again.",
   genuineFailure: "Something went sideways. Let's try that again.",
 } as const;
@@ -680,7 +680,7 @@ function ResultView({
                 f
               </a>
               <a
-                href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${packet.generated_content.packet_title ?? packet.generated_content.title} — made with Packet Day`)}`}
+                href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(`${packet.generated_content.packet_title ?? packet.generated_content.title}, made with Packet Day`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-[#E60023]/10 hover:bg-[#E60023]/20 flex items-center justify-center font-bold text-[#E60023] transition-colors"
@@ -1426,13 +1426,13 @@ function GenerateContent() {
                 {
                   value: "half",
                   label: "Half Day",
-                  desc: "3–4 activities · 1–2 hours",
+                  desc: "3 to 4 activities · 1 to 2 hours",
                   emoji: "🌤",
                 },
                 {
                   value: "full",
                   label: "Full Day",
-                  desc: "5–6 activities · 3–4 hours",
+                  desc: "5 to 6 activities · 3 to 4 hours",
                   emoji: "☀️",
                 },
               ] as const

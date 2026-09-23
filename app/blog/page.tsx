@@ -6,7 +6,7 @@ import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from 
 
 const TITLE = "The Packet Day Blog | Homeschool Ideas and Real Talk";
 const DESCRIPTION =
-  "Homeschool ideas for the good days and the hard ones — sick days, bad days, burnout, and the stuff that actually helps.";
+  "Homeschool ideas for the good days and the hard ones: sick days, bad days, burnout, and the stuff that actually helps.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the root layout's "%s | Packet Day" title template —

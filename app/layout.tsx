@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "Packet Day — Your backup plan for the hard days",
+    default: "Packet Day | Your backup plan for the hard days",
     template: "%s | Packet Day",
   },
   description:

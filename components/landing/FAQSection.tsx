@@ -23,6 +23,10 @@ export const FAQS = [
     a: "Packet Day is your backup plan and supplement, not a year-long curriculum. Think of it as the tool that saves you on the hard days, fills gaps between units, or keeps learning going when life throws a curveball. (Which it does. A lot.)",
   },
   {
+    q: "Do I need to be homeschooling to use this?",
+    a: "Not at all. Plenty of families use Packet Day for sick days, snow days, or a school break, no homeschooling required.",
+  },
+  {
     q: "I have kids in different grades. Does that work?",
     a: "That's exactly what we built this for! Create a separate profile for each child, and the AI generates grade-appropriate packets for all of them, each with their own theme. Oliver gets his shark packet, Vivian gets her volcano packet, and you get your coffee.",
   },

@@ -81,7 +81,7 @@ function PacketRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-dark truncate leading-snug">
           {packet.child_name}{" "}
-          <span className="text-muted font-normal">— {packet.theme}</span>
+          <span className="text-muted font-normal">· {packet.theme}</span>
         </p>
         <p className="text-xs text-muted mt-0.5">
           {formatDate(packet.created_at)}
@@ -93,7 +93,7 @@ function PacketRow({
         <button
           onClick={downloadPDF}
           disabled={downloading}
-          title={isIOS ? "Opens in Safari — tap share to save" : "Download PDF"}
+          title={isIOS ? "Opens in Safari. Tap share to save" : "Download PDF"}
           className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2.5 rounded-lg transition-colors"
         >
           {downloading ? "Building..." : isIOS ? "Open PDF" : "PDF ↓"}

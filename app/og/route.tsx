@@ -100,14 +100,14 @@ export async function GET() {
                 marginBottom: "36px",
               }}
             >
-              AI-powered learning packets for homeschool families —
+              AI-powered learning packets for homeschool families,
               personalized, printable, in a minute or two.
             </div>
 
             {/* Stats row */}
             <div style={{ display: "flex", gap: "40px" }}>
               {[
-                { stat: "K–8th", label: "Grades" },
+                { stat: "K-8th", label: "Grades" },
                 { stat: "1-2 min", label: "To Generate" },
                 { stat: "∞", label: "Themes" },
                 { stat: "Free", label: "To Start" },
@@ -281,7 +281,7 @@ export async function GET() {
             ·
           </span>
           <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "17px" }}>
-            Free to start — no card needed
+            Free to start, no card needed
           </span>
         </div>
       </div>

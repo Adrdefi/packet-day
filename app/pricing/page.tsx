@@ -4,7 +4,7 @@ import { isPlanSlug } from "@/lib/plans";
 import PricingPageClient from "./PricingPageClient";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
-const TITLE = "Pricing — Packet Day";
+const TITLE = "Pricing | Packet Day";
 const DESCRIPTION =
   "Simple, affordable pricing for homeschool families. Start free, upgrade when you're ready.";
 

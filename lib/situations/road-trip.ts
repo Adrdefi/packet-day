@@ -26,7 +26,7 @@ export const metadata: SituationPageMetadata = {
   canonical: `${SITE_URL}/road-trip`,
 };
 
-const CTA_LABEL = "Make My Road Trip Packet — Free";
+const CTA_LABEL = "Make My Free Road Trip Packet";
 const CTA_EMOJI = "✨";
 
 export const hero: HeroContent = {
@@ -34,11 +34,11 @@ export const hero: HeroContent = {
   h1: 'Turn "Are We There Yet?" Into Learning They Actually Want.',
   leadParagraphs: [
     {
-      text: "Eight hours. Two kids. A tablet battery that won't survive it and a bag of snacks that buys you forty minutes. You're not looking for a curriculum — you just want something that keeps them busy, quiet, and not on a screen for once.",
+      text: "Eight hours. Two kids. A tablet battery that won't survive it and a bag of snacks that buys you forty minutes. You're not looking for a curriculum. You just want something that keeps them busy, quiet, and not on a screen for once.",
       emoji: "🌙",
     },
     {
-      text: `So do this instead. Spend a minute or two tonight and wake up to a personalized, print-ready learning packet for each kid — themed to whatever they're currently obsessed with.`,
+      text: `So do this instead. Spend a minute or two tonight and wake up to a personalized, print-ready learning packet for each kid, themed to whatever they're currently obsessed with.`,
     },
   ],
   ctaLabel: CTA_LABEL,
@@ -50,11 +50,11 @@ export const carRideSection: TextSectionContent = {
   heading: "A whole car ride, disguised as their favorite thing",
   headingEmoji: "✨",
   paragraphs: [
-    `Here's how it works: tell us each child's obsession — dinosaurs, Taylor Swift, Minecraft, soccer — and we build a packet around it (${PAGE_RANGE_TEXT}), at their grade level (K–8), with an invented character woven through every subject. Math, reading, science, art, plus movement breaks for the rest stops.`,
+    `Here's how it works: tell us each child's obsession (dinosaurs, Taylor Swift, Minecraft, soccer) and we build a packet around it (${PAGE_RANGE_TEXT}), at their grade level (K-8), with an invented character woven through every subject. Math, reading, science, art, plus movement breaks for the rest stops.`,
     [
       { text: "It's not a stack of random worksheets. It's one continuous adventure starring a character built around " },
       { text: "their thing", italic: true },
-      { text: ". Your dino kid isn't doing \"worksheet #4\" — they're helping their dinosaur character solve a problem, read a clue, draw the next scene. Backseat silence, but the good kind." },
+      { text: ". Your dino kid isn't doing \"worksheet #4\". They're helping their dinosaur character solve a problem, read a clue, draw the next scene. Backseat silence, but the good kind." },
     ],
   ],
 };
@@ -63,7 +63,7 @@ export const activityBookSection: TextSectionContent = {
   heading: "Why not just buy a road trip activity book?",
   headingEmoji: "🌟",
   paragraphs: [
-    "Activity books are the same for every kid, and your kids have already done the good pages and ignored the rest. The generic \"road trip printable\" listicles are worse — half the pages are wrong for your kid's grade and none of them care what they're into.",
+    "Activity books are the same for every kid, and your kids have already done the good pages and ignored the rest. The generic \"road trip printable\" listicles are worse. Half the pages are wrong for your kid's grade and none of them care what they're into.",
     "Our packets are generated from scratch, per kid, per trip. New obsession? New packet. Same obsession, new trip? Still a brand new packet, generated fresh. You print it, toss it in the bag, done. And when you get home, there's no screen-time hangover to deal with.",
   ],
 };
@@ -73,8 +73,8 @@ export const checklist: ChecklistContent = {
   headingEmoji: "📚",
   items: [
     `A print-ready PDF per child (${PAGE_RANGE_TEXT}), in a minute or two`,
-    `Math, reading, science, art, and movement breaks for rest stops — roughly ${HOURS_RANGE_TEXT} of learning`,
-    "Each packet at that child's level (K–8), themed to their obsession, with one invented character through every subject",
+    `Math, reading, science, art, and movement breaks for rest stops, roughly ${HOURS_RANGE_TEXT} of learning`,
+    "Each packet at that child's level (K-8), themed to their obsession, with one invented character through every subject",
     "Answer keys included",
     "Simple supply lists, mostly things you already have at home",
     "Zero screen time. Print it tonight, hand it over tomorrow.",
@@ -85,7 +85,7 @@ export const pricing: PricingCTAContent = {
   heading: "First packet's free. The whole trip costs you nothing to try.",
   headingEmoji: "⭐",
   intro:
-    "One free packet a month — no card required. Unlimited packets and unlimited kids are",
+    "One free packet a month, no card required. Unlimited packets and unlimited kids are",
   closingSentence: "Print one for each kid, each trip, however often you travel.",
   ctaLabel: CTA_LABEL,
   ctaEmoji: CTA_EMOJI,
@@ -96,12 +96,12 @@ export const faq: FAQContent = {
   faqs: [
     {
       question: "How is this different from a road trip activity book?",
-      answer: `Activity books are one-size-fits-all — half the pages bore your kid and half are the wrong level. We generate a fresh packet per child (${PAGE_RANGE_TEXT}), matched to their grade level and built around their obsession, with a character carrying them through every subject. Every packet is generated fresh for your kid.`,
+      answer: `Activity books are one-size-fits-all. Half the pages bore your kid and half are the wrong level. We generate a fresh packet per child (${PAGE_RANGE_TEXT}), matched to their grade level and built around their obsession, with a character carrying them through every subject. Every packet is generated fresh for your kid.`,
     },
     {
       question: "Can I make one for each kid?",
       answer:
-        "Yes — that's the point. Each child gets their own packet at their own level, themed to their own obsession. The Unlimited plan covers every kid.",
+        "Yes, that's the point. Each child gets their own packet at their own level, themed to their own obsession. The Unlimited plan covers every kid.",
     },
     {
       question: "What ages does it work for?",

@@ -6,7 +6,7 @@ import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from 
 
 const TITLE = "See a Sample Packet";
 const DESCRIPTION =
-  "Browse a real, full-length Packet Day packet — every page, no signup required.";
+  "Browse a real, full-length Packet Day packet. Every page, no signup required.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -39,7 +39,7 @@ const pages = Array.from({ length: PAGE_COUNT }, (_, i) => {
   return {
     src: `/sample/page-${String(pageNum).padStart(2, "0")}.png`,
     alt: isLast
-      ? "Sample packet, page 15 of 15 — parent answer sheet"
+      ? "Sample packet, page 15 of 15: parent answer sheet"
       : `Sample packet, page ${pageNum} of ${PAGE_COUNT}`,
   };
 });

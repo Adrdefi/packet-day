@@ -30,8 +30,9 @@ export default function RotatingQuote() {
       <blockquote className="text-cream/90 text-sm leading-relaxed mb-3 italic">
         &ldquo;{q.abridgedQuote ?? q.quote}&rdquo;
       </blockquote>
-      <div className="text-cream/60 text-xs font-semibold">
-        — {q.name}, {q.credential}
+      <div className="text-xs">
+        <div className="font-bold text-cream">{q.name}</div>
+        <div className="text-cream/60">{q.credential}</div>
       </div>
 
       {/* Dot indicators */}

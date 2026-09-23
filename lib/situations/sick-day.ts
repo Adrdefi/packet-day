@@ -27,7 +27,7 @@ export const metadata: SituationPageMetadata = {
   canonical: `${SITE_URL}/sick-day`,
 };
 
-const CTA_LABEL = "Make My Sick Day Packet — Free";
+const CTA_LABEL = "Make My Free Sick Day Packet";
 const CTA_EMOJI = "✨";
 
 export const hero: HeroContent = {
@@ -52,12 +52,12 @@ export const steps: StepsContent = {
   steps: [
     {
       title: "Tell us two things.",
-      body: "Your kid's grade level and what they're obsessed with right now — dinosaurs, cats, Minecraft, space, whatever's running the show this month.",
+      body: "Your kid's grade level and what they're obsessed with right now: dinosaurs, cats, Minecraft, space, whatever's running the show this month.",
       emoji: "📝",
     },
     {
       title: "We build their day from scratch.",
-      body: `${PAGE_RANGE_TEXT} — math, reading, science, art, calm movement breaks — with a character we invent just for them, woven through every subject. Nothing here existed before you asked for it.`,
+      body: `${PAGE_RANGE_TEXT} of math, reading, science, art, and calm movement breaks, with a character we invent just for them, woven through every subject. Nothing here existed before you asked for it.`,
       emoji: "✨",
     },
     {
@@ -69,11 +69,11 @@ export const steps: StepsContent = {
 };
 
 export const lowEnergySection: TextSectionContent = {
-  heading: "Built for low-energy days — for both of you",
+  heading: "Built for low-energy days, for both of you",
   headingEmoji: "🌿",
   paragraphs: [
     "Sick days have a particular shape: a kid who needs calm, quiet activities, and a parent with absolutely nothing left in the tank. That's who this is for.",
-    `One packet. ${PAGE_RANGE_TEXT}. Math, reading, science, art, and gentle movement breaks that won't disturb the blanket fort. Everything at their level (K–8), everything printable. You print it once and you're done. The whole day is handled.`,
+    `One packet. ${PAGE_RANGE_TEXT}. Math, reading, science, art, and gentle movement breaks that won't disturb the blanket fort. Everything at their level (K-8), everything printable. You print it once and you're done. The whole day is handled.`,
   ],
 };
 
@@ -82,15 +82,15 @@ export const notADownloadSection: TextSectionContent = {
   headingEmoji: "🌟",
   paragraphs: [
     "You searched for sick day worksheets. Here's something better than worksheets.",
-    'Every printable pack on Etsy, every "50 free sick day printables" listicle — they’re all pre-made. Same pages for every kid. You scroll, you guess, you print half a bundle hoping some of it fits.',
+    'Every printable pack on Etsy, every "50 free sick day printables" listicle: they’re all pre-made. Same pages for every kid. You scroll, you guess, you print half a bundle hoping some of it fits.',
     [
-      { text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is dinosaur-obsessed, and we invent Bronto: a skateboarding T-rex with a name, a personality, and a starring role in every subject. Your kid solves fractions " },
+      { text: "We don't have packets. We have a machine that makes them: one at a time, for one kid, in a minute or two. Tell us your 3rd grader is dinosaur-obsessed, and we invent Bronto: a skateboarding T-rex with a name, a personality, and a starring role in every subject. Your kid solves fractions " },
       { text: "with", italic: true },
       { text: " Bronto, reads a dino mystery " },
       { text: "with", italic: true },
       { text: " Bronto, does a fossil science experiment " },
       { text: "with", italic: true },
-      { text: " Bronto. It's not a stack of worksheets. It's a story they want to finish — starring a character built around their thing." },
+      { text: " Bronto. It's not a stack of worksheets. It's a story they want to finish, starring a character built around their thing." },
     ],
     "Next sick day? Same obsession or a new one, you get a brand new adventure, generated fresh every single time.",
   ],
@@ -100,9 +100,9 @@ export const checklist: ChecklistContent = {
   heading: "What you get",
   headingEmoji: "📚",
   items: [
-    `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in a minute or two — made fresh for your kid, never pre-made`,
-    `Math, reading, science, art, and calm movement breaks — roughly ${HOURS_RANGE_TEXT} of quiet learning`,
-    "Grade-level matched (K–8), themed to your child's obsession, with one invented character through every subject",
+    `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in a minute or two, made fresh for your kid, never pre-made`,
+    `Math, reading, science, art, and calm movement breaks, roughly ${HOURS_RANGE_TEXT} of quiet learning`,
+    "Grade-level matched (K-8), themed to your child's obsession, with one invented character through every subject",
     "Answer keys, so you can rest instead of checking",
     "Simple supply lists, mostly things you already have at home",
     "Zero screen time, zero prep, zero decisions",
@@ -113,7 +113,7 @@ export const pricing: PricingCTAContent = {
   heading: "Free to start. Guilt-free to try.",
   headingEmoji: "⭐",
   intro:
-    "One packet a month is free — no card required. When the next sick day hits, upgrade to unlimited packets and unlimited kids for",
+    "One packet a month is free, no card required. When the next sick day hits, upgrade to unlimited packets and unlimited kids for",
   ctaLabel: CTA_LABEL,
   ctaEmoji: CTA_EMOJI,
 };
@@ -122,24 +122,24 @@ export const faq: FAQContent = {
   heading: "FAQ",
   faqs: [
     {
-      question: "My kid is sick — will they really want to do a learning packet?",
+      question: "My kid is sick. Will they really want to do a learning packet?",
       answer:
         "We don't do generic worksheets, which is why this works on low-energy days. The packet is built around what they're obsessed with right now, with a character carrying them through every subject. Tired kids who won't touch a worksheet will finish a packet that's secretly about their favorite thing.",
     },
     {
       question: "How is this different from free printables I find online?",
       answer:
-        "Free printables are static, one-grade-fits-all, and cost you an hour of hunting and guessing. Ours is generated fresh for your kid's exact grade level and obsession in a minute or two — one packet, no scrolling, no printing half of a 200-page pack.",
+        "Free printables are static, one-grade-fits-all, and cost you an hour of hunting and guessing. Ours is generated fresh for your kid's exact grade level and obsession in a minute or two. One packet, no scrolling, no printing half of a 200-page pack.",
     },
     {
       question: "Do I download a pre-made packet?",
       answer:
-        "No — and that's the whole point. There are no pre-made packets. Every packet is generated from scratch the moment you ask: your kid's grade level, their current obsession, one invented character woven through every subject. What you print didn't exist a minute earlier.",
+        "No, and that's the whole point. There are no pre-made packets. Every packet is generated from scratch the moment you ask: your kid's grade level, their current obsession, one invented character woven through every subject. What you print didn't exist a minute earlier.",
     },
     {
       question: "Can the packet be quiet/calm?",
       answer:
-        "Yes. Every packet includes gentle, low-key activities — reading, drawing, and movement breaks that fit a restful day. It's designed for the couch, not the playground.",
+        "Yes. Every packet includes gentle, low-key activities: reading, drawing, and movement breaks that fit a restful day. It's designed for the couch, not the playground.",
     },
     {
       question: "What ages does it cover?",

@@ -13,25 +13,26 @@ import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
+  // Absolute so the layout's title template can never append a second brand suffix.
+  title: { absolute: "Printable Homeschool Packets, Any Theme, K-8 | Packet Day" },
   description:
-    "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
+    "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
   alternates: { canonical: SITE_URL },
   openGraph: {
-    title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
+    title: "Printable Homeschool Packets, Any Theme, K-8 | Packet Day",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
+      "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
     url: SITE_URL,
     siteName: "Packet Day",
-    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day — AI-powered learning packets for homeschool families" }],
+    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day: AI-powered learning packets for homeschool families" }],
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
+    title: "Printable Homeschool Packets, Any Theme, K-8 | Packet Day",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
+      "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
     images: ["/og"],
   },
 };
@@ -47,12 +48,17 @@ const PAIN_CARDS = [
   {
     emoji: "🧠",
     title: "The mental load won at 10am.",
-    desc: "The toddler is melting down, the laundry pile has feelings, and lesson planning feels impossible today. You need a backup plan — not a guilt trip.",
+    desc: "The toddler is melting down, the laundry pile has feelings, and lesson planning feels impossible today. You need a backup plan, not a guilt trip.",
   },
   {
     emoji: "🔀",
     title: "You're between curricula. Again.",
     desc: "You switched programs mid-year, you're supplementing a co-op day, or you just need something structured to fill the gaps without starting a whole new system.",
+  },
+  {
+    emoji: "🏫",
+    title: "School's closed. Again.",
+    desc: "Snow day, teacher workday, or your kid's home sick. You didn't plan a school day, but you can still hand them one.",
   },
 ];
 
@@ -68,7 +74,7 @@ const STEPS = [
     icon: "👧🏻👦🏼",
     step: "STEP 1",
     title: "Tell Us About Your Kids",
-    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, Minecraft — the more specific, the better the AI makes it.",
+    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, Minecraft. The more specific, the better the AI makes it.",
   },
   {
     icon: "⚡",
@@ -80,7 +86,7 @@ const STEPS = [
     icon: "🖨️",
     step: "STEP 3",
     title: "Print, Hand Off, Breathe",
-    desc: "Hit print. Hand it to your kids. Sit down with your coffee (or go back to bed). They're learning — and you get to breathe.",
+    desc: "Hit print. Hand it to your kids. Sit down with your coffee (or go back to bed). They're learning, and you get to breathe.",
   },
 ];
 
@@ -88,12 +94,12 @@ const FEATURES = [
   {
     emoji: "🎯",
     title: "Grade-Aligned, Not Generic",
-    desc: "K–8th content matched to your child's actual level. The AI adapts complexity, vocabulary, and concepts to where they really are.",
+    desc: "K-8th content matched to your child's actual level. The AI adapts complexity, vocabulary, and concepts to where they really are.",
   },
   {
     emoji: "🧠",
     title: "Original Content Every Time",
-    desc: "No recycled worksheet library. The AI creates fresh problems, passages, and activities from scratch — so your kid never gets a repeat.",
+    desc: "No recycled worksheet library. The AI creates fresh problems, passages, and activities from scratch, so your kid never gets a repeat.",
   },
   {
     emoji: "🏃",
@@ -113,7 +119,7 @@ const FEATURES = [
   {
     emoji: "🖨️",
     title: "Beautiful Print-Ready PDFs",
-    desc: "Clean layouts, colorful pages, zero screen time. Print on regular paper and hand it over — done.",
+    desc: "Clean layouts, colorful pages, zero screen time. Print on regular paper and hand it over. Done.",
   },
 ];
 
@@ -281,7 +287,7 @@ export default function Home() {
               (And that&apos;s okay.)
             </h2>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {PAIN_CARDS.map((card) => (
                 <div
                   key={card.title}
@@ -310,7 +316,7 @@ export default function Home() {
               If your kid can dream it, we can teach it.
             </h2>
             <p className="text-dark/70 text-lg leading-relaxed mb-4">
-              Packet Day is powered by AI — which means there&apos;s no fixed library of themes.
+              Packet Day is powered by AI, which means there&apos;s no fixed library of themes.
               Every single packet is created from scratch, tailored to your child&apos;s grade level
               and whatever they&apos;re into{" "}
               <em className="italic">right now</em>.
@@ -358,11 +364,11 @@ export default function Home() {
               </div>
               <p className="text-cream/80 leading-relaxed text-sm">
                 You tell us your child&apos;s grade and what they&apos;re into. Our AI builds a
-                complete school day from scratch — original math problems, reading passages, science
-                activities, art projects, and PE breaks — all woven into that theme. It&apos;s not
+                complete school day from scratch: original math problems, reading passages, science
+                activities, art projects, and PE breaks, all woven into that theme. It&apos;s not
                 pulling from a database of pre-made worksheets. Every packet is brand new, every
                 single time. That means your kid never gets the same packet twice, and you&apos;ll
-                never run out of ideas — even if they want &ldquo;only sharks, forever.&rdquo;
+                never run out of ideas, even if they want &ldquo;only sharks, forever.&rdquo;
               </p>
             </div>
           </div>
@@ -511,7 +517,7 @@ export default function Home() {
                 volcanoes.
               </p>
               <p>
-                I thought — what if AI could take my kids&apos; wild interests and turn them into
+                I thought: what if AI could take my kids&apos; wild interests and turn them into
                 an actual school day? Not generic worksheets, but something as specific and
                 imaginative as they are? That&apos;s Packet Day. And now I&apos;m sharing it with
                 every parent who&apos;s ever had a day like that.
@@ -595,14 +601,14 @@ export default function Home() {
             </h2>
             <p className="text-cream/80 text-lg leading-relaxed mb-10">
               Join the parents who stopped guilt-spiraling on &ldquo;off&rdquo; days and started
-              handing their kids something they actually love — created by AI, powered by their
+              handing their kids something they actually love, created by AI, powered by their
               imagination.
             </p>
             <Link
               href="/signup"
               className="inline-block bg-cream text-sage font-bold text-lg px-10 py-4 rounded-full hover:bg-cream-dark transition-colors shadow-sm"
             >
-              Start Free — No Card Needed →
+              Start Free, No Card Needed →
             </Link>
             <p className="text-cream/60 text-sm mt-5">
               Free forever plan available. Upgrade only when your kids start asking for more

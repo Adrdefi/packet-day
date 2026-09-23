@@ -3,7 +3,7 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
-const TITLE = "Privacy Policy — Packet Day";
+const TITLE = "Privacy Policy | Packet Day";
 const DESCRIPTION =
   "How Packet Day collects, uses, and protects your family's information.";
 

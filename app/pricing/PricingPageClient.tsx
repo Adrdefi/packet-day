@@ -5,6 +5,19 @@ import Link from "next/link";
 import Wordmark from "@/components/layout/Wordmark";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 
+const NOT_INCLUDED = "✕";
+
+// Muted ✕ for sighted readers, spelled out for screen readers.
+function ComparisonValue({ value }: { value: string }) {
+  if (value !== NOT_INCLUDED) return <>{value}</>;
+  return (
+    <>
+      <span aria-hidden="true">{NOT_INCLUDED}</span>
+      <span className="sr-only">Not included</span>
+    </>
+  );
+}
+
 const FREE_FEATURES = [
   "1 AI-generated packet per month",
   "1 child profile",
@@ -15,7 +28,7 @@ const FREE_FEATURES = [
 const PRO_FEATURES = [
   "Unlimited AI-generated packets",
   "Unlimited child profiles",
-  "Infinite themes — anything they dream up",
+  "Infinite themes: anything they dream up",
   "Answer keys for every packet",
   "Supply lists with household items only",
   "First access to new features",
@@ -24,7 +37,7 @@ const PRO_FEATURES = [
 const FAQ = [
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Cancel straight from your billing portal — no hoops, no guilt. Your Unlimited access continues until the end of the billing period.",
+    a: "Yes. Cancel straight from your billing portal. No hoops, no guilt. Your Unlimited access continues until the end of the billing period.",
   },
   {
     q: "What happens to my packets if I cancel?",
@@ -36,11 +49,11 @@ const FAQ = [
   },
   {
     q: "What's the difference between annual and monthly?",
-    a: "Annual billing saves you 25% — that's $36 back in your pocket each year. Monthly gives you flexibility if you want to try it first.",
+    a: "Annual billing saves you 25%. That's $36 back in your pocket each year. Monthly gives you flexibility if you want to try it first.",
   },
   {
     q: "Can I use Packet Day for more than one kid?",
-    a: "Free plan supports 1 child profile. Upgrading to Unlimited unlocks unlimited profiles — one for every kid in your house.",
+    a: "Free plan supports 1 child profile. Upgrading to Unlimited unlocks unlimited profiles, one for every kid in your house.",
   },
 ];
 
@@ -128,7 +141,7 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
           <div className="bg-white rounded-2xl border border-border p-8 flex flex-col">
             <div className="flex-1">
               <h2 className="font-display text-2xl font-bold text-dark mb-1">Free</h2>
-              <p className="text-sm text-muted mb-6">Dip your toes in — no card needed</p>
+              <p className="text-sm text-muted mb-6">Dip your toes in, no card needed</p>
               <div className="mb-1">
                 <span className="font-display text-5xl font-bold text-dark">$0</span>
                 <span className="text-muted text-lg ml-1">/mo</span>
@@ -207,10 +220,10 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
             ["Child profiles", "1", "Unlimited"],
             ["All subjects", "✓", "✓"],
             ["Print-ready PDFs", "✓", "✓"],
-            ["Answer keys", "—", "✓"],
-            ["Supply lists", "—", "✓"],
+            ["Answer keys", NOT_INCLUDED, "✓"],
+            ["Supply lists", NOT_INCLUDED, "✓"],
             ["Any theme", "✓", "✓"],
-            ["Early feature access", "—", "✓"],
+            ["Early feature access", NOT_INCLUDED, "✓"],
           ].map(([feature, free, pro], i) => (
             <div
               key={feature}
@@ -223,18 +236,18 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
               <span
                 className={[
                   "text-center",
-                  free === "—" ? "text-muted" : "text-dark/70",
+                  free === NOT_INCLUDED ? "text-muted" : "text-dark/70",
                 ].join(" ")}
               >
-                {free}
+                <ComparisonValue value={free} />
               </span>
               <span
                 className={[
                   "text-center font-semibold",
-                  pro === "—" ? "text-muted" : "text-sage",
+                  pro === NOT_INCLUDED ? "text-muted" : "text-sage",
                 ].join(" ")}
               >
-                {pro}
+                <ComparisonValue value={pro} />
               </span>
             </div>
           ))}

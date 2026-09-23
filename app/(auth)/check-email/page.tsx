@@ -38,7 +38,7 @@ export default async function CheckEmailPage({
             <strong className="text-dark">
               Your {PLAN_LABEL[plan]} Unlimited plan is saved.
             </strong>{" "}
-            Confirm your email and we&apos;ll take you straight to checkout — no need to pick it again.
+            Confirm your email and we&apos;ll take you straight to checkout. No need to pick it again.
           </p>
         </>
       ) : (

@@ -57,7 +57,7 @@ const LEARNING_STYLES = [
     value: "mixed",
     icon: "🌀",
     label: "Mixed",
-    description: "Changes day to day — let the AI decide what fits",
+    description: "Changes day to day. Let the AI decide what fits",
   },
 ];
 
@@ -136,7 +136,7 @@ export default function ChildForm({
     const errors: Record<string, string> = {};
     if (!name.trim()) errors.name = "What's your child's name?";
     if (!gradeLevel) errors.grade = "Pick a grade level to continue.";
-    if (!learningStyle) errors.style = "Choose a learning style — even Mixed works great!";
+    if (!learningStyle) errors.style = "Choose a learning style. Even Mixed works great!";
     if (subjects.length === 0) errors.subjects = "Pick at least one favorite subject.";
 
     if (Object.keys(errors).length > 0) {

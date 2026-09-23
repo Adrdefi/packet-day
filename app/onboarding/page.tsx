@@ -198,7 +198,7 @@ function OnboardingContent() {
 
     if (!firstName.trim()) {
       return setNameError(
-        "Tell us your name — we promise to use it kindly."
+        "Tell us your name. We promise to use it kindly."
       );
     }
 
@@ -251,7 +251,7 @@ function OnboardingContent() {
           {upgraded && (
             <div className="flex items-center gap-2.5 bg-sage/10 border border-sage/20 text-sage font-semibold text-sm rounded-xl px-4 py-3 mb-6">
               <span aria-hidden="true">✓</span>
-              Payment confirmed — you&apos;re on Packet Day Unlimited.
+              Payment confirmed. You&apos;re on Packet Day Unlimited.
             </div>
           )}
 
