@@ -50,7 +50,7 @@ export default function PricingSection({ monthlyPriceId, yearlyPriceId }: Props)
 
         {/* Heading */}
         <h2 className="font-display text-4xl md:text-5xl font-bold text-dark text-center leading-tight mb-6">
-          Costs less than the drive-thru.<br className="hidden md:block" />
+          Costs less than the drive-thru. <br className="hidden md:block" />
           Does way more for your day.
         </h2>
 
