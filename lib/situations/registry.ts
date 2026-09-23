@@ -29,7 +29,6 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     label: "Fun Fridays",
     teaser: "Friday packet day, the tradition that started Packet Day.",
     emoji: "🍕",
-    icon: "funFridays",
   },
 ];
 

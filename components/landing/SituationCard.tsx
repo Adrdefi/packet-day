@@ -18,7 +18,10 @@ export default function SituationCard({ situation, className = "" }: Props) {
           <LandingIcon name={situation.icon} className="w-11 h-11" />
         </div>
       ) : (
-        <div className="text-4xl mb-4" aria-hidden="true">
+        <div
+          className="w-16 h-16 rounded-full bg-honey/15 flex items-center justify-center mb-4 text-3xl leading-none"
+          aria-hidden="true"
+        >
           {situation.emoji}
         </div>
       )}
