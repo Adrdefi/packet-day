@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
+import OnePriceArt from "@/components/landing/art/OnePriceArt";
 
 const FREE_FEATURES = [
   "1 AI-generated packet per month",
@@ -52,6 +53,8 @@ export default function PricingSection({ monthlyPriceId, yearlyPriceId }: Props)
           Costs less than the drive-thru.<br className="hidden md:block" />
           Does way more for your day.
         </h2>
+
+        <OnePriceArt className="w-full max-w-[480px] mx-auto mb-8" />
 
         {/* Toggle */}
         <div className="flex items-center justify-center gap-4 mb-12">

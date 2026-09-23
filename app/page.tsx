@@ -9,7 +9,9 @@ import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
 import HeroPacketArt from "@/components/landing/art/HeroPacketArt";
+import HardDayArt from "@/components/landing/art/HardDayArt";
 import StepArt from "@/components/landing/art/StepArt";
+import TomorrowArt from "@/components/landing/art/TomorrowArt";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -282,6 +284,13 @@ export default function Home() {
               Some days, homeschool just doesn&apos;t happen the way you planned.
               (And that&apos;s okay.)
             </h2>
+
+            <HardDayArt className="w-full max-w-[640px] mx-auto" />
+            <div className="max-w-[640px] mx-auto mt-4 mb-14 flex justify-center md:justify-between gap-2 md:px-8 font-bold text-sm text-dark/60">
+              <span>Tuesday, 9:14 am</span>
+              <span className="md:hidden" aria-hidden="true">→</span>
+              <span>Tuesday, 9:16 am</span>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {PAIN_CARDS.map((card) => (
@@ -586,7 +595,7 @@ export default function Home() {
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
         <section className="py-24 bg-sage px-6 text-center">
           <div className="max-w-2xl mx-auto">
-            <div className="text-5xl mb-6">📦✨</div>
+            <TomorrowArt className="w-full max-w-[280px] md:max-w-[360px] mx-auto mb-6" />
             <h2 className="font-display text-4xl md:text-5xl font-bold text-cream leading-tight mb-6">
               Tomorrow might be a hard day.
               <br />
