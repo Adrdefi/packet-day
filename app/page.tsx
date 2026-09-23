@@ -13,6 +13,7 @@ import InsidePacketShowcase from "@/components/landing/InsidePacketShowcase";
 import HardDayArt from "@/components/landing/art/HardDayArt";
 import StepArt from "@/components/landing/art/StepArt";
 import TomorrowArt from "@/components/landing/art/TomorrowArt";
+import LandingIcon, { type LandingIconName } from "@/components/landing/art/LandingIcon";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -44,34 +45,34 @@ export const metadata: Metadata = {
 
 // ─── Static section data ──────────────────────────────────────────────────────
 
-const PAIN_CARDS = [
+const PAIN_CARDS: { icon: LandingIconName; title: string; desc: string }[] = [
   {
-    emoji: "🤒",
+    icon: "fumes",
     title: "You're running on fumes.",
     desc: "Flu, migraines, first trimester, or just a terrible night's sleep. Your body says stop but the school year doesn't pause. You need something ready to hand them right now.",
   },
   {
-    emoji: "🧠",
+    icon: "mentalLoad",
     title: "The mental load won at 10am.",
     desc: "The toddler is melting down, the laundry pile has feelings, and lesson planning feels impossible today. You need a backup plan, not a guilt trip.",
   },
   {
-    emoji: "🔀",
+    icon: "curricula",
     title: "You're between curricula. Again.",
     desc: "You switched programs mid-year, you're supplementing a co-op day, or you just need something structured to fill the gaps without starting a whole new system.",
   },
   {
-    emoji: "🏫",
+    icon: "schoolClosed",
     title: "School's closed. Again.",
     desc: "Snow day, teacher workday, or your kid's home sick. You didn't plan a school day, but you can still hand them one.",
   },
 ];
 
-const PREVIEW_CARDS = [
-  { emoji: "🦕", subject: "Math", desc: "Measuring dinosaurs, counting fossils, dino timeline math" },
-  { emoji: "📖", subject: "Reading", desc: "Dino facts passage + comprehension questions" },
-  { emoji: "🔬", subject: "Science", desc: "Fossil dig activity, herbivore vs. carnivore sort" },
-  { emoji: "🎨", subject: "Art + PE", desc: 'Draw your own dino + "Dino Stomp" movement break' },
+const PREVIEW_CARDS: { icon: LandingIconName; subject: string; desc: string }[] = [
+  { icon: "math", subject: "Math", desc: "Measuring dinosaurs, counting fossils, dino timeline math" },
+  { icon: "reading", subject: "Reading", desc: "Dino facts passage + comprehension questions" },
+  { icon: "science", subject: "Science", desc: "Fossil dig activity, herbivore vs. carnivore sort" },
+  { icon: "artPe", subject: "Art + PE", desc: 'Draw your own dino + "Dino Stomp" movement break' },
 ];
 
 const STEPS = [
@@ -92,34 +93,34 @@ const STEPS = [
   },
 ];
 
-const FEATURES = [
+const FEATURES: { icon: LandingIconName; title: string; desc: string }[] = [
   {
-    emoji: "🎯",
+    icon: "gradeAligned",
     title: "Grade-Aligned, Not Generic",
     desc: "K-8th content matched to your child's actual level. The AI adapts complexity, vocabulary, and concepts to where they really are.",
   },
   {
-    emoji: "🧠",
+    icon: "original",
     title: "Original Content Every Time",
     desc: "No recycled worksheet library. The AI creates fresh problems, passages, and activities from scratch, so your kid never gets a repeat.",
   },
   {
-    emoji: "🏃",
+    icon: "peBreaks",
     title: "PE Breaks Built In",
     desc: "Movement activities between subjects keep wiggly bodies active and help brains actually absorb what they're learning.",
   },
   {
-    emoji: "✅",
+    icon: "answerKeys",
     title: "Answer Keys Included",
     desc: "Check their work in 30 seconds. Or hand the key to your oldest and let them play teacher. (They love that.)",
   },
   {
-    emoji: "♾️",
+    icon: "limitless",
     title: "Limitless Imagination",
     desc: "There's no theme too weird, too specific, or too niche. If your kid can dream it, the AI can turn it into a school day.",
   },
   {
-    emoji: "🖨️",
+    icon: "printReady",
     title: "Beautiful Print-Ready PDFs",
     desc: "Clean layouts, colorful pages, zero screen time. Print on regular paper and hand it over. Done.",
   },
@@ -276,7 +277,9 @@ export default function Home() {
                   key={card.title}
                   className="bg-cream rounded-2xl p-8 border border-coral/20"
                 >
-                  <div className="text-4xl mb-4">{card.emoji}</div>
+                  <div className="w-16 h-16 rounded-full bg-coral/15 flex items-center justify-center mb-4">
+                    <LandingIcon name={card.icon} className="w-11 h-11" />
+                  </div>
                   <h3 className="font-display text-xl font-bold text-dark mb-3">
                     {card.title}
                   </h3>
@@ -326,7 +329,9 @@ export default function Home() {
                   key={card.subject}
                   className="bg-cream rounded-2xl p-6 border border-border flex items-start gap-4"
                 >
-                  <span className="text-3xl shrink-0">{card.emoji}</span>
+                  <div className="w-14 h-14 shrink-0 rounded-full bg-honey/20 flex items-center justify-center">
+                    <LandingIcon name={card.icon} className="w-10 h-10" />
+                  </div>
                   <div>
                     <h3 className="font-display font-bold text-dark text-lg mb-1">
                       {card.subject}
@@ -340,7 +345,6 @@ export default function Home() {
             {/* AI explanation */}
             <div className="bg-dark rounded-2xl p-8 text-cream">
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">🤖</span>
                 <h3 className="font-display text-xl font-bold text-cream">
                   How the AI works (the non-techy version)
                 </h3>
@@ -410,7 +414,9 @@ export default function Home() {
                   key={feature.title}
                   className="bg-cream rounded-2xl p-7 border border-border"
                 >
-                  <div className="text-3xl mb-4">{feature.emoji}</div>
+                  <div className="w-14 h-14 rounded-full bg-sage/10 flex items-center justify-center mb-4">
+                    <LandingIcon name={feature.icon} className="w-10 h-10" />
+                  </div>
                   <h3 className="font-display text-lg font-bold text-dark mb-2">
                     {feature.title}
                   </h3>
@@ -525,9 +531,9 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2 text-dark/60 text-sm">
-              <span>👧🏻 Vivian, 8</span>
+              <span>Vivian, 8</span>
               <span className="text-muted">•</span>
-              <span>👦🏼 Oliver, 10</span>
+              <span>Oliver, 10</span>
               <span className="text-muted">•</span>
               <span className="italic">Official Packet Day test pilots</span>
             </div>

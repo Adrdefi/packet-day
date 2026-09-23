@@ -13,6 +13,7 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     label: "Sick days",
     teaser: "Home sick? Generate their whole school day in a minute or two.",
     emoji: "🛋️",
+    icon: "sickDays",
   },
   {
     slug: "road-trip",
@@ -20,6 +21,7 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     label: "Road trips",
     teaser: 'Turn "are we there yet?" into learning they actually want.',
     emoji: "🚗",
+    icon: "roadTrips",
   },
   {
     slug: "fun-friday",
@@ -27,6 +29,7 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     label: "Fun Fridays",
     teaser: "Friday packet day, the tradition that started Packet Day.",
     emoji: "🍕",
+    icon: "funFridays",
   },
 ];
 

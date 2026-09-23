@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LandingIcon from "@/components/landing/art/LandingIcon";
 import type { SituationRegistryEntry } from "@/lib/situations/types";
 
 interface Props {
@@ -12,9 +13,15 @@ export default function SituationCard({ situation, className = "" }: Props) {
       href={situation.href}
       className={`group block rounded-2xl bg-white border border-border p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 ${className}`}
     >
-      <div className="text-4xl mb-4" aria-hidden="true">
-        {situation.emoji}
-      </div>
+      {situation.icon ? (
+        <div className="w-16 h-16 rounded-full bg-honey/15 flex items-center justify-center mb-4">
+          <LandingIcon name={situation.icon} className="w-11 h-11" />
+        </div>
+      ) : (
+        <div className="text-4xl mb-4" aria-hidden="true">
+          {situation.emoji}
+        </div>
+      )}
       <h3 className="font-display text-lg font-bold text-dark mb-2">
         {situation.label}
       </h3>

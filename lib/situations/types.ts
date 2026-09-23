@@ -1,5 +1,7 @@
 /** Shared shapes for "situation" landing pages (/sick-day, /road-trip, ...). */
 
+import type { LandingIconName } from "@/components/landing/art/LandingIcon";
+
 export interface SituationRegistryEntry {
   slug: string;
   href: string;
@@ -7,6 +9,9 @@ export interface SituationRegistryEntry {
   teaser: string;
   /** Decorative emoji for the situation card — rendered in an aria-hidden span. */
   emoji: string;
+  /** Drawn icon for the situation card; replaces the emoji there when set. The emoji
+   * stays for places that still use it, like the share image. */
+  icon?: LandingIconName;
 }
 
 /** A run of text within a paragraph — `italic` renders as <em>. */

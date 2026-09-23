@@ -24,7 +24,7 @@ const ROW2 = [
   "🐝 Beekeeping",
   "✨ Taylor Swift",
   "🤖 Underwater Robots",
-  "🌎 Ancient Egypt",
+  "🏺 Ancient Egypt",
   "🎪 Circus Math",
   "🐺 Wolves & Pack Behavior",
   "🧊 Ice Cream Chemistry",
