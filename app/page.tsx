@@ -9,6 +9,7 @@ import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
 import HeroPacketShowcase from "@/components/landing/HeroPacketShowcase";
+import InsidePacketShowcase from "@/components/landing/InsidePacketShowcase";
 import HardDayArt from "@/components/landing/art/HardDayArt";
 import StepArt from "@/components/landing/art/StepArt";
 import TomorrowArt from "@/components/landing/art/TomorrowArt";
@@ -160,8 +161,10 @@ export default function Home() {
       <main>
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <section className="pt-32 pb-20 px-6 bg-cream text-center">
-          <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1.6fr_1fr] lg:items-center lg:gap-12">
-            <div className="lg:text-left">
+          {/* Below lg: text, cover, stats stack in DOM order. At lg: text and stats share the
+              left column, centered between two flexible rows; the cover spans the right. */}
+          <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1.6fr_1fr] lg:grid-rows-[1fr_auto_auto_1fr] lg:gap-x-12">
+            <div className="lg:col-start-1 lg:row-start-2 lg:text-left">
               {/* Headline */}
               <h1 className="font-display text-5xl md:text-6xl lg:text-[2.75rem] xl:text-[3.25rem] font-bold text-dark leading-tight mb-6">
                 Today&apos;s a Hard Day.
@@ -198,32 +201,32 @@ export default function Home() {
                   See a Real Packet
                 </Link>
               </div>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto lg:mx-0">
-                {[
-                  { stat: "K-8th", label: "Grade Levels" },
-                  { stat: "2-5 hrs", label: "Per Packet" },
-                  { stat: "1-2 min", label: "To Generate" },
-                  { stat: "∞", label: "Possible Themes" },
-                ].map(({ stat, label }) => (
-                  <div key={label} className="text-center">
-                    <div className="font-display text-3xl font-bold text-sage">{stat}</div>
-                    <div className="text-sm text-dark/60 mt-1 font-semibold">{label}</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="mt-14 lg:mt-0">
+            <div className="lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:self-center">
               <HeroPacketShowcase />
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto mt-16 lg:mt-0 lg:mx-0 lg:col-start-1 lg:row-start-3">
+              {[
+                { stat: "K-8th", label: "Grade Levels" },
+                { stat: "2-5 hrs", label: "Per Packet" },
+                { stat: "1-2 min", label: "To Generate" },
+                { stat: "∞", label: "Possible Themes" },
+              ].map(({ stat, label }) => (
+                <div key={label} className="text-center">
+                  <div className="font-display text-3xl font-bold text-sage">{stat}</div>
+                  <div className="text-sm text-dark/60 mt-1 font-semibold">{label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* ── LOOK INSIDE ───────────────────────────────────────────────────── */}
-        <section className="py-24 bg-paper px-6">
-          <div className="max-w-5xl mx-auto">
+        <section className="py-24 bg-paper px-6 overflow-hidden">
+          <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
                 A real packet, start to finish
@@ -231,44 +234,18 @@ export default function Home() {
               <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6">
                 This is what lands in your inbox.
               </h2>
-              <div className="flex flex-wrap justify-center gap-2">
-                {["Crossword", "Coloring page", "History + fun facts", "Answer key"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="bg-cream border border-border rounded-full px-4 py-1.5 text-sm font-semibold text-dark/70"
-                  >
-                    {chip}
-                  </span>
-                ))}
-              </div>
             </div>
 
-            <Image
-              src="/landing/packet-pages-desktop.png"
-              alt="Three printed pages from a learning packet fanned out: a reading passage, a personalized cover page with a fox character, and a certificate."
-              width={1600}
-              height={900}
-              sizes="(max-width: 768px) 100vw, 1024px"
-              className="hidden md:block w-full h-auto"
-            />
+            <InsidePacketShowcase />
 
-            <Image
-              src="/landing/packet-pages-mobile.png"
-              alt="The cover page of a learning packet, titled for one child, with a fox character in a top hat and chips reading 5 activities and 135 minutes."
-              width={343}
-              height={349}
-              sizes="100vw"
-              className="md:hidden w-full h-auto"
-            />
-
-            <p className="hidden md:block text-center text-dark/70 mt-6">
-              That&apos;s three of the fourteen pages. Inside: math, reading, science,
-              art, and a movement break.
+            <p className="text-center text-dark/70 mt-10 max-w-2xl mx-auto">
+              That’s 4 of the 14 pages in Oliver’s Constitution Adventure Day. Inside: math,
+              reading, writing, history, a word search, a movement break and a coloring page.
             </p>
-
-            <p className="md:hidden text-center text-dark/70 mt-6">
-              That&apos;s the cover. Inside: math, reading, science, art, and a
-              movement break.
+            <p className="text-center mt-4">
+              <Link href="/sample" className="text-sage font-bold hover:underline">
+                See every page of a real packet →
+              </Link>
             </p>
           </div>
         </section>
