@@ -8,6 +8,8 @@ import PricingSection from "@/components/landing/PricingSection";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
+import HeroPacketArt from "@/components/landing/art/HeroPacketArt";
+import StepArt from "@/components/landing/art/StepArt";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -71,19 +73,16 @@ const PREVIEW_CARDS = [
 
 const STEPS = [
   {
-    icon: "👧🏻👦🏼",
     step: "STEP 1",
     title: "Tell Us About Your Kids",
     desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, Minecraft. The more specific, the better the AI makes it.",
   },
   {
-    icon: "⚡",
     step: "STEP 2",
     title: 'Hit \u201cGenerate\u201d',
     desc: "Our AI creates a complete, original packet in a minute or two: math, reading, science, art, and PE breaks, all themed to their world.",
   },
   {
-    icon: "🖨️",
     step: "STEP 3",
     title: "Print, Hand Off, Breathe",
     desc: "Hit print. Hand it to your kids. Sit down with your coffee (or go back to bed). They're learning, and you get to breathe.",
@@ -159,66 +158,63 @@ export default function Home() {
       <main>
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <section className="pt-32 pb-20 px-6 bg-cream text-center">
-          <div className="max-w-4xl mx-auto">
-            {/* Emoji row */}
-            <div className="flex justify-center gap-3 text-3xl mb-8">
-              {["🦖", "🚀", "🎨", "🧪", "📖", "⚽"].map((e) => (
-                <span key={e}>{e}</span>
-              ))}
+          <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-2 lg:items-center lg:gap-12">
+            <div className="lg:text-left">
+              {/* Headline */}
+              <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight mb-6">
+                Today&apos;s a Hard Day.
+                <br />
+                Your Kids Can{" "}
+                <em className="italic text-sage">
+                  Still
+                </em>{" "}
+                Learn.
+              </h1>
+
+              {/* Subheadline */}
+              <p className="text-lg md:text-xl text-dark/70 max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+                Packet Day uses{" "}
+                <strong className="text-dark font-bold">
+                  AI to create personalized, print-ready learning packets
+                </strong>{" "}
+                themed to whatever your kids are obsessed with, in a minute or two.
+                Sharks? Ancient Egypt? Minecraft? If they can imagine it, we can build
+                a school day around it.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-16">
+                <Link
+                  href="/signup"
+                  className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
+                >
+                  Try It Free, No Card Needed ✨
+                </Link>
+                <Link
+                  href="/sample"
+                  className="text-sage font-bold text-base px-8 py-4 rounded-full border-2 border-sage hover:bg-sage/10 transition-colors"
+                >
+                  See a Real Packet
+                </Link>
+              </div>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto lg:mx-0">
+                {[
+                  { stat: "K-8th", label: "Grade Levels" },
+                  { stat: "2-5 hrs", label: "Per Packet" },
+                  { stat: "1-2 min", label: "To Generate" },
+                  { stat: "∞", label: "Possible Themes" },
+                ].map(({ stat, label }) => (
+                  <div key={label} className="text-center">
+                    <div className="font-display text-3xl font-bold text-sage">{stat}</div>
+                    <div className="text-sm text-dark/60 mt-1 font-semibold">{label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Headline */}
-            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight mb-6">
-              Today&apos;s a Hard Day.
-              <br />
-              Your Kids Can{" "}
-              <em className="italic text-sage not-italic" style={{ fontStyle: "italic" }}>
-                Still
-              </em>{" "}
-              Learn.
-            </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg md:text-xl text-dark/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-              Packet Day uses{" "}
-              <strong className="text-dark font-bold">
-                AI to create personalized, print-ready learning packets
-              </strong>{" "}
-              themed to whatever your kids are obsessed with, in a minute or two.
-              Sharks? Ancient Egypt? Minecraft? If they can imagine it, we can build
-              a school day around it.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Link
-                href="/signup"
-                className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
-              >
-                Try It Free, No Card Needed ✨
-              </Link>
-              <Link
-                href="/sample"
-                className="text-sage font-bold text-base px-8 py-4 rounded-full border-2 border-sage hover:bg-sage/10 transition-colors"
-              >
-                See a Real Packet
-              </Link>
-            </div>
-
-            {/* Stats row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {[
-                { stat: "K-8th", label: "Grade Levels" },
-                { stat: "2-5 hrs", label: "Per Packet" },
-                { stat: "1-2 min", label: "To Generate" },
-                { stat: "∞", label: "Possible Themes" },
-              ].map(({ stat, label }) => (
-                <div key={label} className="text-center">
-                  <div className="font-display text-3xl font-bold text-sage">{stat}</div>
-                  <div className="text-sm text-dark/60 mt-1 font-semibold">{label}</div>
-                </div>
-              ))}
-            </div>
+            <HeroPacketArt className="w-full max-w-[360px] lg:max-w-[520px] mx-auto mt-12 lg:mt-0" />
           </div>
         </section>
 
@@ -392,7 +388,7 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               {STEPS.map((step, i) => (
                 <div key={step.step} className="text-center">
-                  <div className="text-4xl mb-4">{step.icon}</div>
+                  <StepArt step={(i + 1) as 1 | 2 | 3} className="w-full max-w-[180px] mx-auto mb-4" />
                   <div className="text-xs font-bold text-sage tracking-widest mb-2">
                     {step.step}
                   </div>
@@ -400,9 +396,6 @@ export default function Home() {
                     {step.title}
                   </h3>
                   <p className="text-dark/70 text-sm leading-relaxed">{step.desc}</p>
-                  {i < STEPS.length - 1 && (
-                    <div className="hidden md:block absolute" aria-hidden="true" />
-                  )}
                 </div>
               ))}
             </div>
