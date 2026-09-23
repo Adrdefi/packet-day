@@ -21,7 +21,7 @@ import type {
 } from "./types";
 
 export const metadata: SituationPageMetadata = {
-  titleTag: "Sick Day Activities for Kids: A Full School Day in About a Minute | Packet Day",
+  titleTag: "Sick Day Activities for Kids: A Full School Day in a Minute or Two | Packet Day",
   metaDescription:
     "Your kid is home sick but not sick enough to sleep. Generate a personalized 11 to 17 page learning packet around their obsession: math, reading, science, art. Free, no card required.",
   canonical: `${SITE_URL}/sick-day`,
@@ -32,14 +32,14 @@ const CTA_EMOJI = "✨";
 
 export const hero: HeroContent = {
   badge: { text: "Your sick day backup plan", emoji: "💛" },
-  h1: "Home Sick? Generate Their Whole School Day in About a Minute.",
+  h1: "Home Sick? Generate Their Whole School Day in a Minute or Two.",
   leadParagraphs: [
     {
       text: "It's 7am, the school called, and your kid is on the couch with a blanket fort. They're not sick enough to sleep all day, but they're not well enough for school either. You're tired, the day's already derailed, and the guilt is whispering that learning just evaporated for today.",
       emoji: "🏠",
     },
     {
-      text: "It doesn't have to. Give us about a minute and we'll generate a full school day you don't have to plan, teach, or supervise beyond handing it over.",
+      text: "It doesn't have to. Give us a minute or two and we'll generate a full school day you don't have to plan, teach, or supervise beyond handing it over.",
     },
   ],
   ctaLabel: CTA_LABEL,
@@ -48,7 +48,7 @@ export const hero: HeroContent = {
 };
 
 export const steps: StepsContent = {
-  heading: "How it works: three steps, about a minute",
+  heading: "How it works: three steps, a minute or two",
   steps: [
     {
       title: "Tell us two things.",
@@ -84,7 +84,7 @@ export const notADownloadSection: TextSectionContent = {
     "You searched for sick day worksheets. Here's something better than worksheets.",
     'Every printable pack on Etsy, every "50 free sick day printables" listicle — they’re all pre-made. Same pages for every kid. You scroll, you guess, you print half a bundle hoping some of it fits.',
     [
-      { text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in about a minute. Tell us your 3rd grader is dinosaur-obsessed, and we invent Bronto: a skateboarding T-rex with a name, a personality, and a starring role in every subject. Your kid solves fractions " },
+      { text: "We don't have packets. We have a machine that makes them — one at a time, for one kid, in a minute or two. Tell us your 3rd grader is dinosaur-obsessed, and we invent Bronto: a skateboarding T-rex with a name, a personality, and a starring role in every subject. Your kid solves fractions " },
       { text: "with", italic: true },
       { text: " Bronto, reads a dino mystery " },
       { text: "with", italic: true },
@@ -100,7 +100,7 @@ export const checklist: ChecklistContent = {
   heading: "What you get",
   headingEmoji: "📚",
   items: [
-    `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in about a minute — made fresh for your kid, never pre-made`,
+    `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in a minute or two — made fresh for your kid, never pre-made`,
     `Math, reading, science, art, and calm movement breaks — roughly ${HOURS_RANGE_TEXT} of quiet learning`,
     "Grade-level matched (K–8), themed to your child's obsession, with one invented character through every subject",
     "Answer keys, so you can rest instead of checking",
@@ -129,7 +129,7 @@ export const faq: FAQContent = {
     {
       question: "How is this different from free printables I find online?",
       answer:
-        "Free printables are static, one-grade-fits-all, and cost you an hour of hunting and guessing. Ours is generated fresh for your kid's exact grade level and obsession in about a minute — one packet, no scrolling, no printing half of a 200-page pack.",
+        "Free printables are static, one-grade-fits-all, and cost you an hour of hunting and guessing. Ours is generated fresh for your kid's exact grade level and obsession in a minute or two — one packet, no scrolling, no printing half of a 200-page pack.",
     },
     {
       question: "Do I download a pre-made packet?",

@@ -36,7 +36,7 @@ This matters more than you think. Kids take their cues from you — if you're tr
 
 This is the part where I tell you what I actually do now, because "self-running school" used to be the hardest part.
 
-I open Packet Day from my phone — from the couch, under a blanket — type in each kid's grade and what they're obsessed with, and 60 seconds later I have a full day generated: 14 pages per kid, math, reading, science, art, calm movement breaks, with a character invented around their obsession carrying them through every subject. This isn't a download. Nothing here existed before I asked for it.
+I open Packet Day from my phone — from the couch, under a blanket — type in each kid's grade and what they're obsessed with, and a minute or two later I have a full day generated: 14 pages per kid, math, reading, science, art, calm movement breaks, with a character invented around their obsession carrying them through every subject. This isn't a download. Nothing here existed before I asked for it.
 
 I print it (or have my oldest hit print), hand each kid their packet with some crayons, and go back to sleep. Answer keys are included, so nobody needs me to check anything. Each kid is inside their own story — my 10-year-old is solving mysteries with a space captain, my 8-year-old is doing fractions with a baking dragon — and I'm unconscious on the couch. That's not a compromise. That's a *system*.
 
@@ -66,7 +66,7 @@ What *does* break things is the mom who never rests, runs herself into the groun
 
 So take the medicine. Drink the water. Sleep. The packets have it covered. 💛
 
-**[Make my free sick day packet →](/sick-day)** — 60 seconds from your phone, printed, done. One per month free, no card.
+**[Make my free sick day packet →](/sick-day)** — a minute or two from your phone, printed, done. One per month free, no card.
 
 ---
 

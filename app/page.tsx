@@ -5,7 +5,8 @@ import Navbar from "@/components/landing/Navbar";
 import Wordmark from "@/components/layout/Wordmark";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingSection from "@/components/landing/PricingSection";
-import FAQSection from "@/components/landing/FAQSection";
+import FAQSection, { FAQS } from "@/components/landing/FAQSection";
+import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { PLANS } from "@/lib/stripe";
@@ -14,12 +15,12 @@ import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
   description:
-    "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
+    "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
+      "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
     url: SITE_URL,
     siteName: "Packet Day",
     images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day — AI-powered learning packets for homeschool families" }],
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Packet Day — AI-Powered Learning Packets for Homeschool Families",
     description:
-      "Generate a full day of personalized, printable learning activities for your homeschooled child in about a minute. Free to start.",
+      "Generate a full day of personalized, printable learning activities for your homeschooled child in a minute or two. Free to start.",
     images: ["/og"],
   },
 };
@@ -73,7 +74,7 @@ const STEPS = [
     icon: "⚡",
     step: "STEP 2",
     title: 'Hit \u201cGenerate\u201d',
-    desc: "Our AI creates a complete, original packet in about a minute — math, reading, science, art, and PE breaks, all themed to their world.",
+    desc: "Our AI creates a complete, original packet in a minute or two: math, reading, science, art, and PE breaks, all themed to their world.",
   },
   {
     icon: "🖨️",
@@ -116,11 +117,37 @@ const FEATURES = [
   },
 ];
 
+// Same Organization @id as app/about/page.tsx, so both pages describe one
+// company. The full details (founders, address, founding date) live on /about.
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Packet Day",
+      url: SITE_URL,
+      email: "hello@packetday.com",
+      sameAs: ["https://www.pinterest.com/packetday"],
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: FAQS.map((faq) => ({
+        "@type": "Question",
+        name: faq.q,
+        acceptedAnswer: { "@type": "Answer", text: faq.a },
+      })),
+    },
+  ],
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   return (
     <>
+      <JsonLd data={homeJsonLd} />
       <Navbar />
 
       <main>
@@ -151,7 +178,7 @@ export default function Home() {
               <strong className="text-dark font-bold">
                 AI to create personalized, print-ready learning packets
               </strong>{" "}
-              themed to whatever your kids are obsessed with — in about a minute.
+              themed to whatever your kids are obsessed with, in a minute or two.
               Sharks? Ancient Egypt? Minecraft? If they can imagine it, we can build
               a school day around it.
             </p>
@@ -162,7 +189,7 @@ export default function Home() {
                 href="/signup"
                 className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
               >
-                Try It Free — No Card Needed ✨
+                Try It Free, No Card Needed ✨
               </Link>
               <Link
                 href="/sample"
@@ -175,9 +202,9 @@ export default function Home() {
             {/* Stats row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
               {[
-                { stat: "K–8th", label: "Grade Levels" },
-                { stat: "2–6 hrs", label: "Per Packet" },
-                { stat: "60 sec", label: "To Generate" },
+                { stat: "K-8th", label: "Grade Levels" },
+                { stat: "2-5 hrs", label: "Per Packet" },
+                { stat: "1-2 min", label: "To Generate" },
                 { stat: "∞", label: "Possible Themes" },
               ].map(({ stat, label }) => (
                 <div key={label} className="text-center">
@@ -428,7 +455,7 @@ export default function Home() {
               {TESTIMONIALS.filter((t) => t.verified && !t.featured).map((t) => (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl p-7 border border-border flex flex-col"
+                  className="bg-white rounded-2xl p-7 border border-border flex flex-col sm:[&:last-child:nth-child(odd)]:col-span-2"
                 >
                   <p className="text-dark/80 text-sm leading-relaxed mb-6 flex-1">
                     &ldquo;{t.quote}&rdquo;

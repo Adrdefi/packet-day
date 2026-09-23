@@ -36,7 +36,7 @@ The problem was never your discipline. The problem was a system that needed an h
 
 Keep the ritual. Ditch the prep.
 
-Here's my morning now: while the coffee brews, I open Packet Day and generate a fresh packet — my kid's grade level, whatever they're obsessed with this month, 60 seconds. 12–18 pages: a reading passage, some math, a drawing prompt, a little science, calm movement breaks. One invented character woven through all of it. This isn't a download — nothing here existed before I asked for it.
+Here's my morning now: while the coffee brews, I open Packet Day and generate a fresh packet — my kid's grade level, whatever they're obsessed with this month, a minute or two. 12–18 pages: a reading passage, some math, a drawing prompt, a little science, calm movement breaks. One invented character woven through all of it. This isn't a download — nothing here existed before I asked for it.
 
 I print it, put it on the table with crayons, and that's morning work. Same seat, same start, every day. The ritual holds. The tray is optional (we don't have one; a placemat works fine).
 
@@ -63,7 +63,7 @@ If some part of you feels guilty that your morning doesn't look like the photos 
 
 The ritual is the gift. The tray was never required.
 
-**[Make my free morning packet →](/signup)** — 60 seconds while the coffee brews. One per month free, no card.
+**[Make my free morning packet →](/signup)** — a minute or two while the coffee brews. One per month free, no card.
 
 ---
 

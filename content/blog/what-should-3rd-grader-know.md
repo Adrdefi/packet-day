@@ -81,7 +81,7 @@ Gaps close with targeted, low-pressure practice — not with a worried parent ho
 
 Here's the practical move: generate a packet at the 3rd-grade level, themed to whatever they're obsessed with, and let the character do the work.
 
-Open Packet Day, enter grade 3 and the obsession — dinosaurs, space, baking, soccer — and 60 seconds later you have 14 pages: multiplication woven into a dino adventure, a reading passage about their thing with real comprehension questions, paragraph-writing prompts that don't feel like writing practice, introductory fractions with a character who makes them make sense. This isn't a download. Nothing here existed before you asked for it.
+Open Packet Day, enter grade 3 and the obsession — dinosaurs, space, baking, soccer — and a minute or two later you have 14 pages: multiplication woven into a dino adventure, a reading passage about their thing with real comprehension questions, paragraph-writing prompts that don't feel like writing practice, introductory fractions with a character who makes them make sense. This isn't a download. Nothing here existed before you asked for it.
 
 It's not test prep. It's the opposite — it's the wobbly topics, practiced inside a story they actually want to finish. The kid who groans at "times table practice" will happily help their character solve the same problems to save the day. Same math. Completely different experience.
 
@@ -97,7 +97,7 @@ Your job isn't to keep them exactly on the line. It's to keep them learning, cur
 
 You've got this. And so do they. ⭐
 
-**[Generate my free packet →](/signup)** — 60 seconds, 3rd-grade level, their obsession. One per month free, no card.
+**[Generate my free packet →](/signup)** — a minute or two, 3rd-grade level, their obsession. One per month free, no card.
 
 ---
 

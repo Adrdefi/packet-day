@@ -47,7 +47,7 @@ All of these are great. But here's the honest truth: on a real sick day, *you* a
 
 This is the part where I tell you what I actually do now.
 
-I open Packet Day, tell it what my kid is obsessed with this month (currently: cats, always cats), and 60 seconds later I have a printed packet (12–18 pages) — math, reading, science, art, calm movement breaks — with a cat character woven through every page. I hand it over with some crayons and go make tea.
+I open Packet Day, tell it what my kid is obsessed with this month (currently: cats, always cats), and a minute or two later I have a printed packet (12–18 pages) — math, reading, science, art, calm movement breaks — with a cat character woven through every page. I hand it over with some crayons and go make tea.
 
 It's not worksheets. It's a story they follow from page to page, built around *their thing*, at their grade level. A kid who won't touch a generic worksheet in couch mode will finish a packet about cats because it doesn't feel like the schoolwork they missed.
 
@@ -73,7 +73,7 @@ So hear this from one who's been there: a rest day is not a lost day. Kids learn
 
 You're doing fine. Now go make that tea. 💛
 
-**[Make my free sick day packet →](/sick-day)** — 60 seconds, printed, done. One per month free, no card.
+**[Make my free sick day packet →](/sick-day)** — a minute or two, printed, done. One per month free, no card.
 
 ---
 

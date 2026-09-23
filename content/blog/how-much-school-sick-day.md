@@ -56,7 +56,7 @@ What doesn't count: anything that ends in tears. If the math page causes a meltd
 
 Here's the thing about Tier 2 days: they still require *you* to assemble the day. Find the reading thing, print the coloring thing, think of the journal prompt — while you're also doing laundry and answering work emails with a sick kid on your lap.
 
-Or: 60 seconds, and the whole day is handled.
+Or: a minute or two, and the whole day is handled.
 
 I open Packet Day, enter my kid's grade and whatever they're obsessed with this month, and out comes a packet (12–18 pages) — math, reading, science, art, calm movement breaks — with a character invented around their obsession woven through every page. This isn't a download. Nothing here existed before I asked for it. I print it, hand it over with crayons, and that's school. Done. Answer keys included, so I'm not hovering.
 
@@ -72,7 +72,7 @@ You're not. You're the kind of parent who Googled "how much school should my kid
 
 Rest is productive. A calm day is a gift. And tomorrow is another day.
 
-**[Make my free sick day packet →](/sick-day)** — 60 seconds, printed, done. One per month free, no card.
+**[Make my free sick day packet →](/sick-day)** — a minute or two, printed, done. One per month free, no card.
 
 ---
 

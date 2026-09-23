@@ -1,31 +1,30 @@
-"use client";
-
-import { useState } from "react";
-
-const FAQS = [
+// Server component on purpose: native <details>/<summary> keeps every answer
+// in the server-rendered HTML so search engines and AI crawlers can read it.
+// app/page.tsx builds the homepage FAQPage JSON-LD from this same FAQS list.
+export const FAQS = [
   {
     q: "What ages/grades does Packet Day work for?",
-    a: "Kindergarten through 8th grade. The AI generates content specifically for your child's grade level, so the math, reading, and science all match where they are — not a generic worksheet pack. Our own kids (ages 8 and 10) are our daily test pilots!",
+    a: "Kindergarten through 8th grade. The AI generates content specifically for your child's grade level, so the math, reading, and science all match where they are, not a generic worksheet pack. Our own kids (ages 8 and 10) are our daily test pilots!",
   },
   {
     q: "Wait, the packets are made by AI? Are they actually good?",
-    a: "Yes — and that's what makes them special. The AI doesn't pull from a pre-made library. It creates original, grade-aligned content from scratch every time, which means your child gets custom material that's tailored to their exact interests and level. You get full answer keys so you can check the quality yourself. We wouldn't put our own kids' names on something we didn't trust.",
+    a: "Yes, and that's what makes them special. The AI doesn't pull from a pre-made library. It creates original, grade-aligned content from scratch every time, which means your child gets custom material that's tailored to their exact interests and level. You get full answer keys so you can check the quality yourself. We wouldn't put our own kids' names on something we didn't trust.",
   },
   {
     q: "Will this actually keep my kids busy or will they be done in 20 minutes?",
-    a: "Most packets run 2–6 hours of engaged learning, depending on grade level and how deep your kid goes, with PE breaks woven between subjects. Younger grades land toward the shorter end. Either way it's real work, not a 20-minute worksheet they'll blow through before you finish your coffee.",
+    a: "A full school day, roughly 2 to 5 hours with breaks, depending on grade level and how deep your kid goes. Younger grades land toward the shorter end. Either way it's real work, not a 20-minute worksheet they'll blow through before you finish your coffee.",
   },
   {
     q: "My kid is obsessed with something super specific. Will it work?",
-    a: "The more specific, the better! That's the beauty of AI — there's no fixed theme list. \"Sharks\" works. \"Marine biology of the Mariana Trench\" works better. \"Only the Megalodon\" — perfect. \"Volcanoes but also unicorns\" — Vivian tested that one. It works. The AI thrives on specificity, so lean into whatever your kid is nerding out about this week.",
+    a: "The more specific, the better! That's the beauty of AI: there's no fixed theme list. \"Sharks\" works. \"Marine biology of the Mariana Trench\" works better. \"Only the Megalodon\"? Perfect. \"Volcanoes but also unicorns\"? Vivian tested that one. It works. The AI thrives on specificity, so lean into whatever your kid is nerding out about this week.",
   },
   {
     q: "Is this a full curriculum replacement?",
-    a: "Packet Day is your backup plan and supplement — not a year-long curriculum. Think of it as the tool that saves you on the hard days, fills gaps between units, or keeps learning going when life throws a curveball. (Which it does. A lot.)",
+    a: "Packet Day is your backup plan and supplement, not a year-long curriculum. Think of it as the tool that saves you on the hard days, fills gaps between units, or keeps learning going when life throws a curveball. (Which it does. A lot.)",
   },
   {
     q: "I have kids in different grades. Does that work?",
-    a: "That's exactly what we built this for! Create a separate profile for each child, and the AI generates grade-appropriate packets for all of them — each with their own theme. Oliver gets his shark packet, Vivian gets her volcano packet, and you get your coffee.",
+    a: "That's exactly what we built this for! Create a separate profile for each child, and the AI generates grade-appropriate packets for all of them, each with their own theme. Oliver gets his shark packet, Vivian gets her volcano packet, and you get your coffee.",
   },
   {
     q: "Will my kid get the same packet twice?",
@@ -38,8 +37,6 @@ const FAQS = [
 ];
 
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   return (
     <section className="py-24 bg-white px-6">
       <div className="max-w-3xl mx-auto">
@@ -55,53 +52,23 @@ export default function FAQSection() {
         </h2>
 
         <div className="divide-y divide-border">
-          {FAQS.map((faq, i) => {
-            const isOpen = openIndex === i;
-            const answerId = `faq-answer-${i}`;
-            const questionId = `faq-question-${i}`;
-            return (
-              <div key={i}>
-                <button
-                  id={questionId}
-                  onClick={() => setOpenIndex(isOpen ? null : i)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setOpenIndex(isOpen ? null : i);
-                    }
-                  }}
-                  className="w-full flex items-start justify-between gap-4 py-5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-inset rounded-sm"
-                  aria-expanded={isOpen}
-                  aria-controls={answerId}
+          {FAQS.map((faq) => (
+            // Shared name makes these an exclusive accordion: opening one closes the others.
+            <details key={faq.q} name="faq" className="group">
+              <summary className="flex items-start justify-between gap-4 py-5 cursor-pointer list-none [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-inset rounded-sm">
+                <span className="font-semibold text-dark text-base leading-snug group-hover:text-sage transition-colors">
+                  {faq.q}
+                </span>
+                <span
+                  className="text-sage mt-0.5 shrink-0 text-xl font-bold transition-transform duration-200 group-open:rotate-45"
+                  aria-hidden="true"
                 >
-                  <span className="font-semibold text-dark text-base leading-snug group-hover:text-sage transition-colors">
-                    {faq.q}
-                  </span>
-                  <span
-                    className={[
-                      "text-sage mt-0.5 shrink-0 text-xl font-bold transition-transform duration-200",
-                      isOpen ? "rotate-45" : "",
-                    ].join(" ")}
-                    aria-hidden="true"
-                  >
-                    +
-                  </span>
-                </button>
-                <div
-                  id={answerId}
-                  role="region"
-                  aria-labelledby={questionId}
-                  hidden={!isOpen}
-                >
-                  {isOpen && (
-                    <p className="pb-5 text-dark/70 text-sm leading-relaxed">
-                      {faq.a}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                  +
+                </span>
+              </summary>
+              <p className="pb-5 text-dark/70 text-sm leading-relaxed">{faq.a}</p>
+            </details>
+          ))}
         </div>
       </div>
     </section>

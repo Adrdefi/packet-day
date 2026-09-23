@@ -223,8 +223,8 @@ export default async function BlogPostPage({
             </h2>
             <p className="mt-4 text-base leading-[1.6] text-cream/80 max-w-xl mx-auto">
               Packet Day turns an idea like this into a real, printable day —
-              pick a grade, pick an obsession, and it&apos;s ready in about a
-              minute.
+              pick a grade, pick an obsession, and it&apos;s ready in a minute or
+              two.
             </p>
             <Link
               href="/signup"

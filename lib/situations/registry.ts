@@ -11,7 +11,7 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     slug: "sick-day",
     href: "/sick-day",
     label: "Sick days",
-    teaser: "Home sick? Generate their whole school day in about a minute.",
+    teaser: "Home sick? Generate their whole school day in a minute or two.",
     emoji: "🛋️",
   },
   {

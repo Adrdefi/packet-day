@@ -101,14 +101,14 @@ export async function GET() {
               }}
             >
               AI-powered learning packets for homeschool families —
-              personalized, printable, in about a minute.
+              personalized, printable, in a minute or two.
             </div>
 
             {/* Stats row */}
             <div style={{ display: "flex", gap: "40px" }}>
               {[
                 { stat: "K–8th", label: "Grades" },
-                { stat: "60 sec", label: "To Generate" },
+                { stat: "1-2 min", label: "To Generate" },
                 { stat: "∞", label: "Themes" },
                 { stat: "Free", label: "To Start" },
               ].map(({ stat, label }) => (

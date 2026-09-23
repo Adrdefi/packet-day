@@ -12,6 +12,14 @@ export interface Testimonial {
 
 export const TESTIMONIALS: Testimonial[] = [
   {
+    id: "chanty",
+    quote:
+      "What a genius way to foster our kids' interests and let them learn through the things they naturally love.",
+    name: "Chanty",
+    credential: "Homeschool mom of three",
+    verified: true,
+  },
+  {
     id: "jessica-r",
     quote:
       "I was sick and couldn't get off the couch. I made two packets from my phone, one for each of my kids, and they were busy for about five hours with breaks. I got to rest and they were happy. That was the day I got it.",

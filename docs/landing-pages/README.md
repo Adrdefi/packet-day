@@ -24,7 +24,7 @@ These pages **sell the generation mechanism**, they do not educate like the blog
 - Sell the generation, never a pre-made packet. Every packet is generated from scratch on command.
 - Headlines name the mechanism ("generated around your kid in 60 seconds").
 - Verbs: **generate, make, create**. Never "download" except to deny the static-download model.
-- Figures: packets are **12–18 pages**, **2–5 hours** of learning. Never "14 pages" or "2–6 hours".
+- Figures: packets are **11 to 17 pages**, **2–5 hours** of learning. Never "14 pages" or "2–6 hours".
 - Pricing (verified): one free packet/month, no card. Unlimited: **$9/month billed annually ($108/year)** or **$12/month monthly**. Covers unlimited packets and unlimited kids.
 - Voice: warm, real, lightly funny, guilt-free. Speaks to the tired parent, never to a teacher. No curriculum jargon, no corporate speak. (See design-system.md.)
 - Differentiation line for reuse: "Not a worksheet library. Generated from scratch around your child's obsession, with one invented character woven through every subject."
@@ -39,7 +39,7 @@ The copy below makes product claims. Verify each one against the actual generato
 4. **"Never repeated" / "No two packets are ever the same"** — does the generator actually avoid repeating content?
 5. **Unlimited kids on the Unlimited plan** — confirm plan terms in Stripe/product.
 6. **"About 60 seconds" generation** — confirm real-world generation time; if it's meaningfully slower, change the figure.
-7. **"Full school day" / "whole school day"** — verify this framing matches what a packet actually delivers; use only the verified figures (12–18 pages, 2–5 hours).
+7. **"Full school day" / "whole school day"** — verify this framing matches what a packet actually delivers; use only the verified figures (11 to 17 pages, 2–5 hours).
 8. **Free tier** — confirm one free packet/month with no card works through the current /signup flow.
 
 ## SEO requirements

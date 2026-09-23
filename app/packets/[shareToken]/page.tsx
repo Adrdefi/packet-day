@@ -349,7 +349,7 @@ export default async function SharePage({
             </h2>
             <p className="text-muted max-w-lg mx-auto mb-6 leading-relaxed">
               Packet Day creates personalized, printable learning packets for
-              your kid in about a minute. Pick any theme — their favorite
+              your kid in a minute or two. Pick any theme — their favorite
               topic, today&apos;s mood, or whatever gets them out of bed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

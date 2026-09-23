@@ -54,7 +54,7 @@ Build it once. Future Bad-Day You will be so grateful.
 
 If you don't have a packet stash yet, here's the even faster version.
 
-Open Packet Day, enter the grade and the current obsession, and 60 seconds later you've generated the entire Bad Day plan: 14 pages — math, reading, science, art, calm movement breaks — with an invented character woven through every subject, at exactly their level. This isn't a download. Nothing here existed before you asked for it.
+Open Packet Day, enter the grade and the current obsession, and a minute or two later you've generated the entire Bad Day plan: 14 pages — math, reading, science, art, calm movement breaks — with an invented character woven through every subject, at exactly their level. This isn't a download. Nothing here existed before you asked for it.
 
 Hand it over with the art bin and that's the one thread, the one hour, all of it — done. No teaching, no hovering, answer keys included. On a grumpy day, the character does the motivating so you don't have to. On a chaos day, it's the 30 stolen minutes, ready-made. On a mom's Bad Day, it's school that runs itself while you recover.
 
@@ -75,7 +75,7 @@ The thing about Bad Days: they're always singular. *A* bad day. Not a bad week, 
 
 Keep the thread alive — one hour, one subject, zero tears — and trust the math of the whole year. A year with twenty Bad Days in it is still a great year. The thread holds. You hold. 💪
 
-**[Make my free packet →](/sick-day)** — 60 seconds, the whole Bad Day handled. One per month free, no card.
+**[Make my free packet →](/sick-day)** — a minute or two, the whole Bad Day handled. One per month free, no card.
 
 ---
 

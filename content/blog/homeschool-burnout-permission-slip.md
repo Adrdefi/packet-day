@@ -44,7 +44,7 @@ You've heard "take time for yourself!" before, usually from someone with no idea
 
 **Shrink the day.** Pick the one subject that matters most right now (usually math or reading) and do just that, plus one fun thing. A 90-minute day for two weeks beats a 5-hour day that makes you cry. When energy returns, add back slowly.
 
-**Automate one decision.** Burnout is often decision fatigue wearing a costume. Every "what should we do today" costs you. So remove one: generate a packet each morning — grade level, current obsession, 60 seconds, done. 12–18 pages, character woven through every subject, answer keys included. The day plans itself. That's one giant decision you never make again.
+**Automate one decision.** Burnout is often decision fatigue wearing a costume. Every "what should we do today" costs you. So remove one: generate a packet each morning — grade level, current obsession, a minute or two, done. 12–18 pages, character woven through every subject, answer keys included. The day plans itself. That's one giant decision you never make again.
 
 **Get one win on the calendar.** Burnout thrives in endlessness. Put something concrete ahead: a field trip, a co-op day, a friend visit, even just "pajama school Friday." Something to look at besides the curriculum.
 
@@ -54,7 +54,7 @@ You've heard "take time for yourself!" before, usually from someone with no idea
 
 I mentioned this above, but it deserves its own beat, because this is the single highest-leverage move I know for a burned-out mom.
 
-Open Packet Day. Enter the grade, enter the obsession. Sixty seconds later: a full morning, generated fresh — math, reading, science, art, movement breaks — with an invented character your kid actually likes, woven through every page. This isn't a download. Nothing here existed before you asked for it. Print it, hand it over, drink your coffee while it's hot.
+Open Packet Day. Enter the grade, enter the obsession. A minute or two later: a full morning, generated fresh — math, reading, science, art, movement breaks — with an invented character your kid actually likes, woven through every page. This isn't a download. Nothing here existed before you asked for it. Print it, hand it over, drink your coffee while it's hot.
 
 It's not the whole curriculum. It doesn't have to be. It's one decision you'll never make again, every single morning, while you recover. Sometimes the bravest thing a burned-out mom can do is make the day easy on purpose.
 
@@ -70,7 +70,7 @@ Every veteran homeschooler has a burnout story. Ask around. They'll tell you abo
 
 Rest. Shrink the day. Take the permission slip. The love for this comes back — it just needs room to breathe. 💛
 
-**[Make my free packet →](/signup)** — 60 seconds, one less decision, every morning. One per month free, no card.
+**[Make my free packet →](/signup)** — a minute or two, one less decision, every morning. One per month free, no card.
 
 ---
 

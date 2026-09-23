@@ -53,7 +53,7 @@ The families who thrive aren't the ones doing the most hours — they're the one
 
 Here's the practical part: those 1–4 hours still need *material*. And "what are we doing today" is a daily decision that gets exhausting by November.
 
-So automate it. Open Packet Day, enter the grade and whatever they're obsessed with, and 60 seconds later you have a full learning block generated: 14 pages — math, reading, science, art, movement breaks — with an invented character woven through every subject, matched to their level. This isn't a download. Nothing here existed before you asked for it.
+So automate it. Open Packet Day, enter the grade and whatever they're obsessed with, and a minute or two later you have a full learning block generated: 14 pages — math, reading, science, art, movement breaks — with an invented character woven through every subject, matched to their level. This isn't a download. Nothing here existed before you asked for it.
 
 For a K–2 kid, one packet *is* most of the day's hours. For a 6th grader, it's the morning block, handled. Answer keys included, household items only, zero screens. The hours get filled; you never planned a thing.
 
@@ -77,7 +77,7 @@ If yes — your hours are right, whatever they are. If no — the answer is almo
 
 Trust the short day. It's not cutting corners — it's the whole advantage of doing this at home. 💛
 
-**[Make my free packet →](/signup)** — 60 seconds, tomorrow's learning block handled. One per month free, no card.
+**[Make my free packet →](/signup)** — a minute or two, tomorrow's learning block handled. One per month free, no card.
 
 ---
 

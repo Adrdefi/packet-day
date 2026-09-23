@@ -55,9 +55,9 @@ These are the gold — activities they can do alone, quietly, while you work, re
 
 Twenty-five ideas is great on a good day. But let's be honest about the *other* days — the sick days, the work-from-home days, the days where choosing from a list feels like too much.
 
-That's when I open Packet Day. Grade level in, current obsession in, 60 seconds later: a packet (12–18 pages) generated from scratch — math, reading, science, art, calm movement breaks — with an invented character woven through every page. This isn't a download. Nothing here existed before I asked for it. Print it, hand it over with crayons, done. Answer keys included, so there's no hovering.
+That's when I open Packet Day. Grade level in, current obsession in, a minute or two later: a packet (12–18 pages) generated from scratch — math, reading, science, art, calm movement breaks — with an invented character woven through every page. This isn't a download. Nothing here existed before I asked for it. Print it, hand it over with crayons, done. Answer keys included, so there's no hovering.
 
-It's activity #3 on the list, but it's the one I reach for when the list itself feels like too much. Sick day? [Sick day packet →](/sick-day). Road trip? [Road trip packet →](/road-trip). Same 60 seconds, different adventure every time.
+It's activity #3 on the list, but it's the one I reach for when the list itself feels like too much. Sick day? [Sick day packet →](/sick-day). Road trip? [Road trip packet →](/road-trip). Same minute or two, different adventure every time.
 
 One packet a month is free, no card required. Unlimited is $9/month.
 
@@ -69,7 +69,7 @@ If you're reading this because the screens have been heavy lately — hear me. A
 
 This list isn't a rebuke. It's a toolbox for the moments you *want* an alternative. Use what fits, ignore the rest, and release the guilt either way. 💛
 
-**[Make my free packet →](/road-trip)** — 60 seconds, printed, done. One per month free, no card.
+**[Make my free packet →](/road-trip)** — a minute or two, printed, done. One per month free, no card.
 
 ---
 

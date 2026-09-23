@@ -46,7 +46,7 @@ Plan one anchor activity per phase and the drive stops feeling endless.
 
 Here's what I do the night before now, and it changed our road trips.
 
-I open Packet Day and generate one packet per kid — each at their own grade level, each built around their own current obsession, each with its own invented character woven through every page. 12–18 pages: math, reading, science, art, plus movement breaks designed for rest stops. Sixty seconds per kid. This isn't a download — nothing here existed before I asked for it.
+I open Packet Day and generate one packet per kid — each at their own grade level, each built around their own current obsession, each with its own invented character woven through every page. 12–18 pages: math, reading, science, art, plus movement breaks designed for rest stops. A minute or two per kid. This isn't a download — nothing here existed before I asked for it.
 
 My dinosaur kid gets a dino character solving road-trip math. My art kid gets a mystery to draw her way through. They're not doing the same generic activity book — they're each inside their own story. I print them, toss them in the bag with some crayons, and Phase 1 and 2 are handled without me lifting a finger.
 
@@ -56,7 +56,7 @@ One packet a month is free, no card required. Two kids, one trip, zero dollars.
 
 ## The night-before checklist (steal this)
 
-- [ ] Generate one packet per kid (60 seconds each)
+- [ ] Generate one packet per kid (a minute or two each)
 - [ ] Print + a zip bag of crayons/colored pencils per kid
 - [ ] Download one audiobook for the whole car
 - [ ] Sticker book per kid (dollar store, don't overthink it)
@@ -72,7 +72,7 @@ It's coming. It's in the bag right now. And that's fine — this was never about
 
 You're not anti-screen. You're pro-plan. Big difference. 💛
 
-**[Make my free road trip packet →](/road-trip)** — 60 seconds per kid, printed tonight, quiet car tomorrow. One per month free, no card.
+**[Make my free road trip packet →](/road-trip)** — a minute or two per kid, printed tonight, quiet car tomorrow. One per month free, no card.
 
 ---
 

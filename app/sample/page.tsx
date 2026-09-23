@@ -113,7 +113,7 @@ export default function SamplePage() {
           solving the math yourself at the kitchen table.
         </p>
         <p className="mt-4 text-base leading-relaxed text-dark/70">
-          It takes about a minute to make one.
+          It takes a minute or two to make one.
         </p>
 
         <div className="mt-8">

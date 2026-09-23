@@ -38,7 +38,7 @@ export const hero: HeroContent = {
       emoji: "🌙",
     },
     {
-      text: `So do this instead. Spend about a minute tonight and wake up to a personalized, print-ready learning packet for each kid — themed to whatever they're currently obsessed with.`,
+      text: `So do this instead. Spend a minute or two tonight and wake up to a personalized, print-ready learning packet for each kid — themed to whatever they're currently obsessed with.`,
     },
   ],
   ctaLabel: CTA_LABEL,
@@ -72,7 +72,7 @@ export const checklist: ChecklistContent = {
   heading: "What you get",
   headingEmoji: "📚",
   items: [
-    `A print-ready PDF per child (${PAGE_RANGE_TEXT}), in about a minute`,
+    `A print-ready PDF per child (${PAGE_RANGE_TEXT}), in a minute or two`,
     `Math, reading, science, art, and movement breaks for rest stops — roughly ${HOURS_RANGE_TEXT} of learning`,
     "Each packet at that child's level (K–8), themed to their obsession, with one invented character through every subject",
     "Answer keys included",
