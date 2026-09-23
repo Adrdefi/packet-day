@@ -8,7 +8,7 @@ interface Props {
  */
 export default function HardDayArt({ className = "" }: Props) {
   return (
-    <svg viewBox="0 0 720 390" className={className} aria-hidden="true" focusable="false">
+    <svg viewBox="0 36 720 330" className={className} aria-hidden="true" focusable="false">
       <ellipse className="fill-dark" cx="170" cy="340" rx="150" ry="16" opacity="0.07" />
       <ellipse className="fill-dark" cx="575" cy="345" rx="130" ry="14" opacity="0.07" />
       <g transform="rotate(-9 150 200)">
@@ -33,7 +33,7 @@ export default function HardDayArt({ className = "" }: Props) {
       </g>
       <path className="stroke-dark" d="M230 60 c6 -14 20 -14 22 0 c2 14 18 14 22 0 c4 -14 20 -12 20 2" fill="none" strokeWidth="3" strokeLinecap="round" />
       <path className="stroke-honey" d="M290 206 C 330 118, 410 110, 452 176" fill="none" strokeWidth="9" strokeLinecap="round" strokeDasharray="2 18" />
-      <path className="fill-honey stroke-honey" d="M436 156 L462 190 L420 190 Z" strokeWidth="6" strokeLinejoin="round" />
+      <path className="fill-honey stroke-honey" d="M463 192 L459 164 L437 181 Z" strokeWidth="6" strokeLinejoin="round" />
       <path className="fill-honey" d="M370 64 l6 16 16 6 -16 6 -6 16 -6 -16 -16 -6 16 -6 z" />
       <path className="fill-coral" d="M420 92 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" />
       <path className="fill-sage-light" d="M322 118 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" />

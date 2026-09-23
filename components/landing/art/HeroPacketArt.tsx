@@ -21,8 +21,6 @@ export default function HeroPacketArt({ className = "" }: Props) {
       </g>
       <g transform="rotate(10 340 330)">
       <rect className="fill-white stroke-dark" x="205" y="115" width="290" height="380" rx="16" strokeWidth="3" />
-      <rect className="fill-honey" x="221" y="131" width="84" height="24" rx="6" />
-      <text className="font-sans fill-dark" x="233" y="149" fontWeight="800" fontSize="14">MATH</text>
       <circle className="fill-sage-light/50" cx="246" cy="200" r="13" />
       <text className="font-sans fill-dark" x="246" y="205" textAnchor="middle" fontWeight="800" fontSize="13">1</text>
       <text className="font-sans fill-dark" x="270" y="206" fontWeight="700" fontSize="20">7 + 5 = ____</text>

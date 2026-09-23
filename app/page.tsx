@@ -160,10 +160,10 @@ export default function Home() {
       <main>
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <section className="pt-32 pb-20 px-6 bg-cream text-center">
-          <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-2 lg:items-center lg:gap-12">
+          <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1.6fr_1fr] lg:items-center lg:gap-12">
             <div className="lg:text-left">
               {/* Headline */}
-              <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight mb-6">
+              <h1 className="font-display text-5xl md:text-6xl lg:text-[2.75rem] xl:text-[3.25rem] font-bold text-dark leading-tight mb-6">
                 Today&apos;s a Hard Day.
                 <br />
                 Your Kids Can{" "}
@@ -280,13 +280,13 @@ export default function Home() {
                 Real Talk
               </span>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-dark text-center mb-14 leading-tight max-w-3xl mx-auto">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-dark text-center mb-6 leading-tight max-w-3xl mx-auto">
               Some days, homeschool just doesn&apos;t happen the way you planned.
               (And that&apos;s okay.)
             </h2>
 
             <HardDayArt className="w-full max-w-[640px] mx-auto" />
-            <div className="max-w-[640px] mx-auto mt-4 mb-14 flex justify-center md:justify-between gap-2 md:px-8 font-bold text-sm text-dark/60">
+            <div className="max-w-[640px] mx-auto mt-1 mb-14 flex justify-center md:justify-between gap-2 md:px-8 font-bold text-sm text-dark/60">
               <span>Tuesday, 9:14 am</span>
               <span className="md:hidden" aria-hidden="true">→</span>
               <span>Tuesday, 9:16 am</span>
