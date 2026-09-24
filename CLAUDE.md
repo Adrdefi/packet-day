@@ -353,3 +353,4 @@ Three independent candidate sources per user, computed fresh every cron run, fun
 - Situation pages (`/sick-day`, `/road-trip`) are a shared kit. Every new situation page also needs an entry in `lib/situations/og-content.ts`.
 - Share images: situation pages use `app/og/[slug]`; blog posts use `app/og/blog/[slug]`, prerendered with `generateStaticParams`. New blog posts get an image automatically.
 - The spec block in `content/blog/*.md` is metadata only — it must never render on the page.
+- When you edit the content of a blog post (content/blog/*.md), set or update its **Updated:** YYYY-MM-DD line to today. When you edit a situation page's copy or metadata, update its updated date in lib/situations. When adding a new situation page, add its line to lib/situations/sitemap-dates.ts. Punctuation-only or formatting-only changes don't count.

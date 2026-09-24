@@ -7,7 +7,6 @@
 import { createElement } from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import fs from 'fs';
-import path from 'path';
 import type { PacketPDFProps, PDFActivity } from '../components/PacketPDF';
 import PacketPDF from '../components/PacketPDF';
 
