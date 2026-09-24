@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { track } from "@vercel/analytics";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 import type { EmailKey } from "@/lib/emailKeys";
@@ -10,8 +11,20 @@ import type { EmailKey } from "@/lib/emailKeys";
 // validated `?src=` email key (see UpgradeModalController) — it's what
 // lets checkout_started attribute a conversion back to the email that sent
 // it, e.g. "cap_followup_email".
-type Source = "cap_hit" | "upgrade_link" | "deep_link" | "post_packet" | `${EmailKey}_email`;
+type Source =
+  | "cap_hit"
+  | "upgrade_link"
+  | "deep_link"
+  | "post_packet"
+  | "child_card"
+  | "add_child"
+  | "generate_panel"
+  | `${EmailKey}_email`;
 type Plan = "yearly" | "monthly";
+
+// Shown when the account has no hosted mascot yet (the real cover of the
+// Oliver sample packet, the same image the homepage hero uses).
+const FALLBACK_PICTURE = "/landing/oliver/cover.webp";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -19,6 +32,10 @@ interface UpgradeModalProps {
   source: Source;
   capped: boolean;
   childName?: string | null;
+  /** Picks whose latest mascot to show; the account's latest when absent. */
+  childId?: string | null;
+  /** "children": opened from Add Another Child on a free account. */
+  reason?: "packets" | "children";
   defaultPlan?: Plan;
   /** Display string, e.g. "Oct 1" — see lib/nextFreeDate.ts. */
   nextFreeDate: string;
@@ -31,6 +48,7 @@ interface PlanPriceIds {
 
 interface PlansResponse extends PlanPriceIds {
   isPaid: boolean;
+  latestMascotUrl?: string | null;
 }
 
 export default function UpgradeModal({
@@ -39,11 +57,16 @@ export default function UpgradeModal({
   source,
   capped,
   childName,
+  childId,
+  reason = "packets",
   defaultPlan = "yearly",
   nextFreeDate,
 }: UpgradeModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<Plan>(defaultPlan);
   const [priceIds, setPriceIds] = useState<PlanPriceIds | null>(null);
+  // null until /api/plans answers; the fallback picture is used when it
+  // answers with no hosted mascot, or fails.
+  const [mascotUrl, setMascotUrl] = useState<string | null>(null);
   // True from the moment the modal opens until /api/plans answers — the
   // button stays disabled and shows a quiet loading label the whole time,
   // per the hardening pass: no clickable button that can't work yet.
@@ -73,9 +96,10 @@ export default function UpgradeModal({
     setPriceIdsError(false);
     setCheckingPlan(true);
     setPriceIds(null);
+    setMascotUrl(null);
 
     let cancelled = false;
-    fetch("/api/plans")
+    fetch(childId ? `/api/plans?childId=${encodeURIComponent(childId)}` : "/api/plans")
       .then((res) => {
         if (!res.ok) throw new Error(`plans fetch failed: ${res.status}`);
         return res.json() as Promise<PlansResponse>;
@@ -87,6 +111,10 @@ export default function UpgradeModal({
           onClose();
           return;
         }
+
+        // The picture doesn't depend on prices, so set it before the price
+        // check below can bail out to the catch.
+        setMascotUrl(data.latestMascotUrl ?? FALLBACK_PICTURE);
 
         // A missing env var (e.g. STRIPE_PRICE_MONTHLY/YEARLY unset for
         // this environment) resolves server side to an empty string, not
@@ -107,7 +135,10 @@ export default function UpgradeModal({
         }
       })
       .catch(() => {
-        if (!cancelled) setPriceIdsError(true);
+        if (cancelled) return;
+        setPriceIdsError(true);
+        // Keep a real mascot if the response already delivered one.
+        setMascotUrl((current) => current ?? FALLBACK_PICTURE);
       })
       .finally(() => {
         if (!cancelled) setCheckingPlan(false);
@@ -181,19 +212,26 @@ export default function UpgradeModal({
 
   if (!open) return null;
 
-  const headline = capped
-    ? childName
-      ? `Want another packet for ${childName}?`
-      : "Ready for your next packet day?"
-    : "Ready for your next packet day?";
+  const headline =
+    reason === "children"
+      ? "Unlimited covers every kid in your house."
+      : capped
+        ? childName
+          ? `Want another packet for ${childName}?`
+          : "Ready for your next packet day?"
+        : "Ready for your next packet day?";
 
-  const body = capped
-    ? "You've used this month's free packet. Go Unlimited and turn any day into a packet day, for every kid in your house."
-    : "Go Unlimited and turn any day into a packet day, for every kid in your house.";
+  const body =
+    reason === "children"
+      ? "The free plan has room for one child profile. Go Unlimited to add every kid, with a packet for each of them any day you need one."
+      : capped
+        ? "You've used this month's free packet. Go Unlimited and turn any day into a packet day, for every kid in your house."
+        : "Go Unlimited and turn any day into a packet day, for every kid in your house.";
 
-  const footerLink = capped
-    ? `Maybe later. Your next free packet arrives ${nextFreeDate}.`
-    : "Maybe later";
+  const footerLink =
+    capped && reason !== "children"
+      ? `Maybe later. Your next free packet arrives ${nextFreeDate}.`
+      : "Maybe later";
 
   return (
     <div
@@ -221,6 +259,18 @@ export default function UpgradeModal({
         </div>
 
         <div className="text-center -mt-4 space-y-2">
+          {/* Fixed size box so the modal doesn't jump when the picture arrives */}
+          <div className="mx-auto mb-3 w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md bg-sage/10">
+            {mascotUrl && (
+              <Image
+                src={mascotUrl}
+                alt=""
+                width={80}
+                height={80}
+                className="w-20 h-20 object-cover object-top"
+              />
+            )}
+          </div>
           <h2
             id="upgrade-modal-title"
             className="font-display text-xl font-bold text-dark leading-snug"
@@ -293,6 +343,13 @@ export default function UpgradeModal({
           )}
           <p className="text-center text-xs text-muted">
             One price covers all your kids. Cancel anytime.
+          </p>
+          <p className="flex items-center justify-center gap-1.5 text-xs text-muted">
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Secure checkout by Stripe.
           </p>
         </div>
 

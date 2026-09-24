@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/client";
 import ChildForm, { type ChildFormData } from "@/components/ChildForm";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+import UpgradeModal from "@/components/UpgradeModal";
 
 export default function NewChildPage() {
   const router = useRouter();
   const supabase = createClient();
   const { toasts, toast, dismiss } = useToast();
   const [loading, setLoading] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
 
   async function handleSubmit(data: ChildFormData) {
     setLoading(true);
@@ -32,7 +34,14 @@ export default function NewChildPage() {
       avatar_emoji: data.avatar_emoji,
     });
 
-    if (insertError) {
+    if (insertError?.message === "child_limit_reached") {
+      // The database enforces the free plan's one child profile
+      // (migration 018), so this holds even if someone skips the dashboard
+      // button that normally opens the upgrade modal first.
+      toast.error("The free plan has room for one child profile. Unlimited has room for every kid.");
+      setLimitModalOpen(true);
+      setLoading(false);
+    } else if (insertError) {
       toast.error("Something went sideways. Let's try that again.");
       setLoading(false);
     } else {
@@ -68,6 +77,15 @@ export default function NewChildPage() {
           />
         </div>
       </div>
+      {/* The modal re-checks the plan itself and closes for a paid account. */}
+      <UpgradeModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        source="add_child"
+        reason="children"
+        capped={false}
+        nextFreeDate=""
+      />
     </>
   );
 }
