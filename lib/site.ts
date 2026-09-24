@@ -17,9 +17,11 @@
  */
 export const SITE_URL = "https://www.packetday.com";
 
-/** Natalie's JSON-LD Person @id (shared by /about and every blog post) and her anchor on /about. */
-export const NATALIE_ID = `${SITE_URL}/about#natalie-riggs`;
-export const NATALIE_URL = `${SITE_URL}/about#natalie`;
+/** Natalie's element id on /about. Her JSON-LD Person @id and url (shared by
+ * /about and every blog post) both point at it, and so does the blog byline. */
+export const NATALIE_ANCHOR = "natalie-riggs";
+export const NATALIE_PATH = `/about#${NATALIE_ANCHOR}`;
+export const NATALIE_ID = `${SITE_URL}${NATALIE_PATH}`;
 
 /**
  * openGraph/twitter fields that app/layout.tsx sets at the root

@@ -8,8 +8,6 @@
 
 ---
 
-*By Natalie, homeschool mom and co-founder of Packet Day.*
-
 It was 11pm on a Thursday, and I was on the floor surrounded by printed worksheets, trying to decide whether page 7 was too hard for a 3rd grader.
 
 That was my life. Every week, I'd spend hours hunting down math pages, reading passages, and science activities from a dozen different websites, printing them, and stapling them into a packet. Because every Friday in our homeschool is packet day, and my kids, Oliver and Vivian, love it more than anything else in our week.

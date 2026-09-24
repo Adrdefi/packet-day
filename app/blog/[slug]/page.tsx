@@ -8,7 +8,7 @@ import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
-import { SITE_URL, DEFAULT_TWITTER, NATALIE_ID, NATALIE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_TWITTER, NATALIE_ID, NATALIE_PATH } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -173,7 +173,7 @@ export default async function BlogPostPage({
     })),
   };
 
-  // No `image` field: none of these posts have an associated image. Every
+  // `image` is the post's share image, the same URL og:image uses. Every
   // post is written in Natalie's voice, so she is the author. Her @id
   // matches the Person node on /about, and her name matches that page.
   const articleJsonLd = {
@@ -184,12 +184,13 @@ export default async function BlogPostPage({
     datePublished: post.publishDate,
     dateModified: post.updatedDate,
     url: postUrl,
+    image: `${SITE_URL}/og/blog/${post.slug}`,
     author: {
       "@type": "Person",
       "@id": NATALIE_ID,
       name: "Natalie Riggs",
-      jobTitle: "Co-founder",
-      url: NATALIE_URL,
+      jobTitle: "Co-Founder",
+      url: NATALIE_ID,
     },
     publisher: {
       "@type": "Organization",
@@ -228,6 +229,12 @@ export default async function BlogPostPage({
             <span aria-hidden="true">·</span>
             <span>{post.readingTime} min read</span>
           </div>
+          <p className="mt-1 text-sm font-semibold text-sage-dark">
+            By{" "}
+            <Link href={NATALIE_PATH} className="text-sage hover:text-sage-dark transition-colors">
+              Natalie Riggs
+            </Link>
+          </p>
 
           <div className="mt-10">
             <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>

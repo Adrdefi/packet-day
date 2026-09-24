@@ -8,8 +8,6 @@
 
 ---
 
-*By Natalie, homeschool mom and co-founder of Packet Day.*
-
 If you only have one kid, you can skip this post. The rest of us need to talk.
 
 Here was our morning for a long time: my 10-year-old needed me to explain fractions. My 8-year-old needed me to hear her read. They both needed me at the same time, and I needed a third arm and a clone. By 10 AM I was frazzled, they were bickering, and nobody had learned much of anything.
