@@ -3,9 +3,9 @@ import Link from "next/link";
 import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
-import { stripMarkdown } from "@/lib/blog";
 import { getSituationEntry } from "@/lib/situations/registry";
 import { buildSituationMetadata } from "@/lib/situations/metadata";
+import { buildFaqJsonLd } from "@/lib/situations/faq-schema";
 import SituationHero from "@/components/landing/SituationHero";
 import SituationSteps from "@/components/landing/SituationSteps";
 import SituationTextSection from "@/components/landing/SituationTextSection";
@@ -35,21 +35,7 @@ export const metadata: Metadata = buildSituationMetadata(
 );
 
 export default function FunFridayPage() {
-  // Computed here (a Server Component), not inside SituationFAQ (a "use
-  // client" component) — stripMarkdown/lib/blog.ts touches Node's fs/path,
-  // which can't be bundled for the browser. Same split /sick-day uses.
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faq.faqs.map((item) => ({
-      "@type": "Question",
-      name: stripMarkdown(item.question),
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: stripMarkdown(item.answer),
-      },
-    })),
-  };
+  const faqJsonLd = buildFaqJsonLd(faq);
 
   return (
     <div className="min-h-screen flex flex-col bg-cream">
