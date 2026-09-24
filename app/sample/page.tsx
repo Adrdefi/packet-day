@@ -6,7 +6,7 @@ import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from 
 
 const TITLE = "See a Sample Packet";
 const DESCRIPTION =
-  "Browse a real, full-length Packet Day packet. Every page, no signup required.";
+  "Flip through a real, full-length Packet Day packet made for a real 3rd grader. Every page, answer key included, no signup required.";
 
 export const metadata: Metadata = {
   title: TITLE,

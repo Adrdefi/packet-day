@@ -6,7 +6,7 @@
  * trust line (under the pricing CTA) is intentionally omitted:
  * SituationPricingCTA has no trust-line slot.
  */
-import { PAGE_RANGE, PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { PAGE_RANGE_TEXT, PAGE_RANGE_ADJECTIVE_TEXT, HOURS_RANGE_TEXT } from "./figures";
 import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
@@ -20,7 +20,7 @@ import type {
 
 export const metadata: SituationPageMetadata = {
   titleTag: "Homeschooling Multiple Kids at Different Levels | Packet Day",
-  metaDescription: `Homeschooling multiple kids at different levels? Generate a personalized ${PAGE_RANGE.min} to ${PAGE_RANGE.max} page packet per kid, each matched to their grade and built around their obsession. Free to start.`,
+  metaDescription: `Homeschooling multiple kids at different levels? Get an ${PAGE_RANGE_ADJECTIVE_TEXT} packet per kid, matched to their grade and built around their obsession. Free to start.`,
   canonical: `${SITE_URL}/multiple-kids`,
 };
 

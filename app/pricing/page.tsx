@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { PLANS } from "@/lib/stripe";
-import { isPlanSlug } from "@/lib/plans";
+import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 import PricingPageClient from "./PricingPageClient";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
 const TITLE = "Pricing | Packet Day";
 const DESCRIPTION =
-  "Simple, affordable pricing for homeschool families. Start free, upgrade when you're ready.";
+  `Packet Day pricing: one free packet a month, or unlimited packets for every kid in your family for $${Math.round(PLAN_PRICE.yearly / 12)}/month billed yearly or $${PLAN_PRICE.monthly} month to month.`;
 
 export const metadata: Metadata = {
   // Bare page name here, not TITLE — the layout's "%s | Packet Day" template

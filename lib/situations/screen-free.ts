@@ -8,7 +8,7 @@
  * answer's "*theirs*" is plain text, since SituationFAQ renders answers
  * as plain strings.
  */
-import { PAGE_RANGE, PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { PAGE_RANGE_TEXT, PAGE_RANGE_ADJECTIVE_TEXT, HOURS_RANGE_TEXT } from "./figures";
 import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
@@ -22,7 +22,7 @@ import type {
 
 export const metadata: SituationPageMetadata = {
   titleTag: "Screen-Free Activities for Kids They'll Actually Choose | Packet Day",
-  metaDescription: `Tired of the tablet babysitter? Generate a personalized ${PAGE_RANGE.min} to ${PAGE_RANGE.max} page learning packet around your kid's obsession. Math, reading, science, art. Printed, not streamed. Free, no card required.`,
+  metaDescription: `Tired of the tablet babysitter? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet built around your kid's obsession. Math, reading, science, art. Printed, not streamed.`,
   canonical: `${SITE_URL}/screen-free`,
 };
 

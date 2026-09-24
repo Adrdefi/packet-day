@@ -8,7 +8,7 @@
  * "Next sick day?" paragraph replaced, and the duplicate answer-keys
  * mention removed from the low-energy section (it lives in step 3).
  */
-import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { PAGE_RANGE_TEXT, PAGE_RANGE_ADJECTIVE_TEXT, HOURS_RANGE_TEXT } from "./figures";
 import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
@@ -21,9 +21,9 @@ import type {
 } from "./types";
 
 export const metadata: SituationPageMetadata = {
-  titleTag: "Sick Day Activities for Kids: A Full School Day in a Minute or Two | Packet Day",
+  titleTag: "Sick Day Activities for Kids, Ready in a Minute or Two | Packet Day",
   metaDescription:
-    "Your kid is home sick but not sick enough to sleep. Generate a personalized 11 to 17 page learning packet around their obsession: math, reading, science, art. Free, no card required.",
+    `Kid home sick but not sick enough to sleep? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet built around their obsession: math, reading, science, art. Free to try.`,
   canonical: `${SITE_URL}/sick-day`,
 };
 

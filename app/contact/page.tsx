@@ -5,7 +5,7 @@ import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from 
 
 const TITLE = "Contact | Packet Day";
 const DESCRIPTION =
-  "Get in touch with the Packet Day team. We typically reply within a couple of business days.";
+  "Questions, ideas, or a packet that didn't come out right? Get in touch with the Packet Day team. We usually reply within a couple of business days.";
 
 export const metadata: Metadata = {
   // Bare page name here, not TITLE — the layout's "%s | Packet Day" template

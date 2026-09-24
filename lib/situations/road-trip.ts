@@ -8,7 +8,7 @@
  * sentence replaced, the supply-list bullet reworded, and the two FAQ
  * answers ("road trip activity book" and "print in color") reworded.
  */
-import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "./figures";
+import { PAGE_RANGE_TEXT, PAGE_RANGE_ADJECTIVE_TEXT, HOURS_RANGE_TEXT } from "./figures";
 import { SITE_URL } from "@/lib/site";
 import type {
   SituationPageMetadata,
@@ -22,7 +22,7 @@ import type {
 export const metadata: SituationPageMetadata = {
   titleTag: "Road Trip Activities for Kids Without a Tablet | Packet Day",
   metaDescription:
-    "Backseat dread? Generate a personalized 11 to 17 page learning packet per kid, themed to their obsession, with a character woven through every subject. Print it tonight, free, no card.",
+    `Backseat dread? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet per kid, themed to their obsession, with a character in every subject. Print it tonight. Free to try.`,
   canonical: `${SITE_URL}/road-trip`,
 };
 

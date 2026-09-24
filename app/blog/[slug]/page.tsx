@@ -88,6 +88,21 @@ const markdownComponents: Components = {
   hr: (props) => <hr className="border-t border-cream-dark my-10" {...props} />,
 };
 
+// Search engines flag <title> tags over 70 characters, and emoji in a
+// title tag read as noise in results. Drops the emoji for the <title>
+// only (the H1, blog index, og:title and twitter:title keep it), and drops
+// the " | Packet Day" suffix when the title would otherwise run long.
+const MAX_TITLE_TAG_LENGTH = 70;
+
+function buildPostTitleTag(title: string): string {
+  const plain = title
+    .replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const withSuffix = `${plain} | Packet Day`;
+  return [...withSuffix].length <= MAX_TITLE_TAG_LENGTH ? withSuffix : plain;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -105,7 +120,7 @@ export async function generateMetadata({
     // template — same reason as the blog index page: we're composing the
     // full title ourselves, so we don't want the template appending
     // "Packet Day" a second time.
-    title: { absolute: `${post.title} | Packet Day` },
+    title: { absolute: buildPostTitleTag(post.title) },
     description: post.metaDescription,
     alternates: { canonical: url },
     openGraph: {

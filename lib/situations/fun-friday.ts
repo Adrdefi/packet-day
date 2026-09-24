@@ -28,7 +28,7 @@ import type {
 import type { ReasonsContent, ComparisonContent, ClosingCTAContent } from "./section-types";
 
 export const metadata: SituationPageMetadata = {
-  titleTag: "Fun Friday: The Homeschool Tradition That Started Packet Day | Packet Day",
+  titleTag: "Fun Friday: The Homeschool Tradition That Started Packet Day",
   metaDescription:
     "Every Friday is packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.",
   canonical: `${SITE_URL}/fun-friday`,
