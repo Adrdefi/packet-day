@@ -30,7 +30,7 @@ export const metadata: Metadata = {
       "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
     url: SITE_URL,
     siteName: "Packet Day",
-    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day: AI-powered learning packets for homeschool families" }],
+    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day: a printable school day built around what your kid loves" }],
     type: "website",
     locale: "en_US",
   },

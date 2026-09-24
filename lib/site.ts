@@ -40,5 +40,5 @@ export const DEFAULT_OG_IMAGE = {
   url: "/og",
   width: 1200,
   height: 630,
-  alt: "Packet Day: AI-powered learning packets for homeschool families",
+  alt: "Packet Day: a printable school day built around what your kid loves",
 };
