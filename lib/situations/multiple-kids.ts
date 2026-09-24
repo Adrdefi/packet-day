@@ -22,6 +22,7 @@ export const metadata: SituationPageMetadata = {
   titleTag: "Homeschooling Multiple Kids at Different Levels | Packet Day",
   metaDescription: `Homeschooling multiple kids at different levels? Get an ${PAGE_RANGE_ADJECTIVE_TEXT} packet per kid, matched to their grade and built around their obsession. Free to start.`,
   canonical: `${SITE_URL}/multiple-kids`,
+  updated: "2026-09-24",
 };
 
 const CTA_LABEL = "Make My First Packet Free";

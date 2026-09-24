@@ -32,6 +32,7 @@ export const metadata: SituationPageMetadata = {
   metaDescription:
     "Every Friday is packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.",
   canonical: `${SITE_URL}/fun-friday`,
+  updated: "2026-09-24",
 };
 
 const CTA_LABEL = "Make My Free Fun Friday Packet";

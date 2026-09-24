@@ -11,7 +11,13 @@ const SPEC_FIELDS = [
   "Publish date",
 ] as const;
 
-type SpecField = (typeof SPEC_FIELDS)[number];
+// Optional spec fields: a post without them still loads.
+// "Updated" (YYYY-MM-DD) is the date the post's content last changed. It only
+// feeds the sitemap's lastModified; the page always shows the Publish date.
+const OPTIONAL_SPEC_FIELDS = ["Updated"] as const;
+
+type SpecField = (typeof SPEC_FIELDS)[number] | (typeof OPTIONAL_SPEC_FIELDS)[number];
+const ALL_SPEC_FIELDS: readonly SpecField[] = [...SPEC_FIELDS, ...OPTIONAL_SPEC_FIELDS];
 
 export interface BlogFaq {
   question: string;
@@ -25,6 +31,8 @@ export interface BlogPost {
   primaryKeyword: string;
   internalLinks: string;
   publishDate: string;
+  /** The spec block's Updated date, or the Publish date when there isn't one. */
+  updatedDate: string;
   content: string;
   faqs: BlogFaq[];
   readingTime: number;
@@ -81,7 +89,7 @@ function parsePost(fileName: string, raw: string): BlogPost {
     const match = trimmed.match(fieldPattern);
     if (!match) continue;
     const [, rawField, value] = match;
-    const field = SPEC_FIELDS.find((f) => f === rawField.trim());
+    const field = ALL_SPEC_FIELDS.find((f) => f === rawField.trim());
     if (field) {
       specValues[field] = value.trim();
     }
@@ -105,6 +113,14 @@ function parsePost(fileName: string, raw: string): BlogPost {
     fail(fileName, `Publish date "${publishDate}" is not in YYYY-MM-DD format`);
   }
 
+  const updatedDate = specValues["Updated"] ?? publishDate;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(updatedDate)) {
+    fail(fileName, `Updated "${updatedDate}" is not in YYYY-MM-DD format`);
+  }
+  if (updatedDate < publishDate) {
+    fail(fileName, `Updated (${updatedDate}) is before the Publish date (${publishDate})`);
+  }
+
   // Body: everything after the spec-block fence.
   let content = lines.slice(fenceIndex + 1).join("\n").trim();
 
@@ -121,7 +137,7 @@ function parsePost(fileName: string, raw: string): BlogPost {
   content = content.replace(footerPattern, "").trimEnd();
 
   // Sanity check: the spec block must never leak into content.
-  for (const field of SPEC_FIELDS) {
+  for (const field of ALL_SPEC_FIELDS) {
     if (content.includes(`**${field}:**`)) {
       fail(fileName, `spec field "${field}" leaked into the post content`);
     }
@@ -170,6 +186,7 @@ function parsePost(fileName: string, raw: string): BlogPost {
     primaryKeyword: specValues["Primary keyword"]!,
     internalLinks: specValues["Internal links"]!,
     publishDate,
+    updatedDate,
     content,
     faqs,
     readingTime,

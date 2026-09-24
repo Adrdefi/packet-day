@@ -5,6 +5,7 @@
 **Primary keyword:** morning basket alternative homeschool
 **Internal links:** [Packet Day](/) (2x)
 **Publish date:** 2026-08-12
+**Updated:** 2026-09-24
 
 ---
 

@@ -5,6 +5,7 @@
 **Primary keyword:** sick day activities for kids home from school
 **Internal links:** [sick day learning packet](/sick-day) (2x)
 **Publish date:** 2026-09-02
+**Updated:** 2026-09-24
 
 ---
 

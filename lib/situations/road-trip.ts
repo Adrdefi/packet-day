@@ -24,6 +24,7 @@ export const metadata: SituationPageMetadata = {
   metaDescription:
     `Backseat dread? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet per kid, themed to their obsession, with a character in every subject. Print it tonight. Free to try.`,
   canonical: `${SITE_URL}/road-trip`,
+  updated: "2026-09-24",
 };
 
 const CTA_LABEL = "Make My Free Road Trip Packet";

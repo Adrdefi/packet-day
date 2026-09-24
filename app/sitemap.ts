@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
 import { SITUATIONS } from "@/lib/situations/registry";
+import { SITUATION_UPDATED } from "@/lib/situations/sitemap-dates";
 import { SITE_URL } from "@/lib/site";
 
 // Not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
@@ -14,6 +15,11 @@ const BASE_URL = SITE_URL;
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getAllPosts();
   const latestPostDate = posts.length > 0 ? new Date(posts[0].publishDate) : new Date();
+  // /blog lists every post, so it changes whenever any post does.
+  const latestPostUpdate =
+    posts.length > 0
+      ? new Date(posts.map((post) => post.updatedDate).sort().at(-1)!)
+      : new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -34,7 +40,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE_URL}/blog`,
-      lastModified: latestPostDate,
+      lastModified: latestPostUpdate,
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -62,13 +68,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}`,
-    lastModified: new Date(post.publishDate),
+    lastModified: new Date(post.updatedDate),
     changeFrequency: "monthly",
     priority: 0.6,
   }));
 
   const situationPages: MetadataRoute.Sitemap = SITUATIONS.map((situation) => ({
     url: `${BASE_URL}${situation.href}`,
+    ...(SITUATION_UPDATED[situation.slug] && {
+      lastModified: new Date(SITUATION_UPDATED[situation.slug]!),
+    }),
     changeFrequency: "monthly",
     priority: 0.7,
   }));

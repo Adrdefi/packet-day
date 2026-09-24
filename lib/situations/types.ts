@@ -27,6 +27,8 @@ export interface SituationPageMetadata {
   titleTag: string;
   metaDescription: string;
   canonical: string;
+  /** YYYY-MM-DD the page's content last changed. Feeds the sitemap's lastModified only. */
+  updated?: string;
 }
 
 /**

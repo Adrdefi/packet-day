@@ -5,6 +5,7 @@
 **Primary keyword:** how many hours of homeschool a day
 **Internal links:** [Packet Day](/) (2x)
 **Publish date:** 2026-07-22
+**Updated:** 2026-09-24
 
 ---
 

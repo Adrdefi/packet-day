@@ -5,6 +5,7 @@
 **Primary keyword:** screen-free activities for kids
 **Internal links:** [sick day learning packet](/sick-day), [road trip learning packet](/road-trip)
 **Publish date:** 2026-08-26
+**Updated:** 2026-09-24
 
 ---
 

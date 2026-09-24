@@ -25,6 +25,7 @@ export const metadata: SituationPageMetadata = {
   metaDescription:
     `Kid home sick but not sick enough to sleep? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet built around their obsession: math, reading, science, art. Free to try.`,
   canonical: `${SITE_URL}/sick-day`,
+  updated: "2026-09-24",
 };
 
 const CTA_LABEL = "Make My Free Sick Day Packet";

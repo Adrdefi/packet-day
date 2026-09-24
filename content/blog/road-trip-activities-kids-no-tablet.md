@@ -5,6 +5,7 @@
 **Primary keyword:** road trip activities for kids no screen
 **Internal links:** [road trip learning packet](/road-trip) (2x)
 **Publish date:** 2026-08-19
+**Updated:** 2026-09-24
 
 ---
 

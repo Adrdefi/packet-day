@@ -24,6 +24,7 @@ export const metadata: SituationPageMetadata = {
   titleTag: "Screen-Free Activities for Kids They'll Actually Choose | Packet Day",
   metaDescription: `Tired of the tablet babysitter? Get a personalized ${PAGE_RANGE_ADJECTIVE_TEXT} packet built around your kid's obsession. Math, reading, science, art. Printed, not streamed.`,
   canonical: `${SITE_URL}/screen-free`,
+  updated: "2026-09-24",
 };
 
 const CTA_LABEL = "Make My Free Screen-Free Packet";
