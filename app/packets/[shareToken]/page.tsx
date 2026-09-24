@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -92,7 +91,10 @@ export async function generateMetadata({
   }
 
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
-  const title = `${packet.theme} Learning Packet, ${gradeLabel} • Packet Day`;
+  // Themes are saved as typed (often lowercase), so capitalize the first letter
+  // for the title. The description keeps the theme as typed.
+  const titleTheme = packet.theme.charAt(0).toUpperCase() + packet.theme.slice(1);
+  const title = `${titleTheme} Learning Packet, ${gradeLabel} • Packet Day`;
   const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
   // Facebook does not reliably load /api/og-packet (likely a cold start timeout)
   // and falls back to the raw mascot, so share pages use the default card for
