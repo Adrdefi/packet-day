@@ -85,7 +85,7 @@ const CHARACTERS = [
   },
   {
     name: "Grimy",
-    packet: "Sam's Garbage Truck Adventure Day",
+    packet: "Sam's Garbage Truck Themed Packet",
     src: "/landing/characters/grimy.webp",
     alt: "Grimy, a bright green cartoon garbage truck with big friendly eyes, wearing a yellow hard hat",
   },
