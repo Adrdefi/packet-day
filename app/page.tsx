@@ -7,7 +7,6 @@ import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingPlans from "@/components/pricing/PricingPlans";
 import OnePriceArt from "@/components/landing/art/OnePriceArt";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
-import MobileStickyCta from "@/components/landing/MobileStickyCta";
 import JsonLd from "@/components/JsonLd";
 import { softwareApplicationNode } from "@/lib/softwareApplicationJsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
@@ -187,7 +186,6 @@ export default function Home() {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-16">
                 <Link
-                  id="hero-cta"
                   href="/signup"
                   className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
                 >
@@ -250,7 +248,7 @@ export default function Home() {
         </section>
 
         {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
-        <section className="py-24 bg-paper px-6">
+        <section className="pt-12 pb-24 md:pt-24 bg-cream px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
@@ -315,14 +313,14 @@ export default function Home() {
             </div>
 
             <div className="mt-14 text-center">
-              <p className="font-display text-2xl md:text-3xl text-dark mb-6">
+              <p className="font-display font-bold text-xl md:text-2xl text-dark mb-6">
                 When today&apos;s that day, we&apos;ve got you.
               </p>
               <Link
                 href="/signup"
                 className="inline-block bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
               >
-                Hand them a packet in two minutes
+                Hand them a packet
               </Link>
               <p className="text-dark/60 text-sm mt-4">Free to start. No card needed.</p>
             </div>
@@ -348,7 +346,7 @@ export default function Home() {
         </section>
 
         {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="py-24 bg-cream px-6">
+        <section id="how-it-works" className="py-24 bg-white px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -541,7 +539,7 @@ export default function Home() {
         <FAQSection />
 
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-        <section id="final-cta" className="py-24 bg-sage px-6 text-center">
+        <section className="py-24 bg-sage px-6 text-center">
           <div className="max-w-2xl mx-auto">
             <TomorrowArt className="w-full max-w-[280px] md:max-w-[360px] mx-auto mb-6" />
             <h2 className="font-display text-4xl md:text-5xl font-bold text-cream leading-tight mb-6">
@@ -567,10 +565,8 @@ export default function Home() {
           </div>
         </section>
 
-        <MobileStickyCta />
-
         {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-        <footer id="site-footer" className="bg-dark px-6 py-14">
+        <footer className="bg-dark px-6 py-14">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center gap-2 font-display font-bold text-cream mb-2 justify-center md:justify-start">
