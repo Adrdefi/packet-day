@@ -6,7 +6,7 @@ import Image from "next/image";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
 import { BottomCtaLink } from "./BottomCtaLink";
-import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 import { GRADE_LABELS } from "@/lib/gradeLabels";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 
@@ -94,7 +94,12 @@ export async function generateMetadata({
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
   const title = `${packet.theme} Learning Packet, ${gradeLabel} • Packet Day`;
   const description = `A full day of learning built around ${packet.theme}, made for one kid. Free to try.`;
-  const ogImageUrl = `${SITE_URL}/api/og-packet?token=${encodeURIComponent(shareToken)}`;
+  // Facebook does not reliably load /api/og-packet (likely a cold start timeout)
+  // and falls back to the raw mascot, so share pages use the default card for
+  // now. The route is kept in place for when it can be made fast enough.
+  // Resolved against SITE_URL so it is always the www host, and a version bump
+  // in DEFAULT_OG_IMAGE carries over automatically.
+  const ogImageUrl = new URL(DEFAULT_OG_IMAGE.url, SITE_URL).toString();
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" title template —
@@ -111,9 +116,9 @@ export async function generateMetadata({
       images: [
         {
           url: ogImageUrl,
-          width: 1200,
-          height: 630,
-          alt: title,
+          width: DEFAULT_OG_IMAGE.width,
+          height: DEFAULT_OG_IMAGE.height,
+          alt: DEFAULT_OG_IMAGE.alt,
         },
       ],
     },
@@ -405,7 +410,7 @@ export default async function SharePage({
             <Link href="/" className="font-semibold text-sage hover:underline">
               Packet Day
             </Link>
-            <span> · AI-powered learning for homeschool families</span>
+            <span> · Learning packets made for one kid at a time</span>
           </div>
         </div>
       </div>
