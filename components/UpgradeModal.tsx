@@ -112,6 +112,10 @@ export default function UpgradeModal({
           return;
         }
 
+        // The picture doesn't depend on prices, so set it before the price
+        // check below can bail out to the catch.
+        setMascotUrl(data.latestMascotUrl ?? FALLBACK_PICTURE);
+
         // A missing env var (e.g. STRIPE_PRICE_MONTHLY/YEARLY unset for
         // this environment) resolves server side to an empty string, not
         // a missing key — this app never has a legitimate reason to hand
@@ -122,7 +126,6 @@ export default function UpgradeModal({
         }
 
         setPriceIds({ monthlyPriceId: data.monthlyPriceId, yearlyPriceId: data.yearlyPriceId });
-        setMascotUrl(data.latestMascotUrl ?? FALLBACK_PICTURE);
 
         // Fires once per open, not once per render, and never for a paid
         // user (the isPaid branch above returns before reaching here).
@@ -134,7 +137,8 @@ export default function UpgradeModal({
       .catch(() => {
         if (cancelled) return;
         setPriceIdsError(true);
-        setMascotUrl(FALLBACK_PICTURE);
+        // Keep a real mascot if the response already delivered one.
+        setMascotUrl((current) => current ?? FALLBACK_PICTURE);
       })
       .finally(() => {
         if (!cancelled) setCheckingPlan(false);
