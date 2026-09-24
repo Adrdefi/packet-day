@@ -600,7 +600,7 @@ export default function Home() {
             </p>
             <Link
               href="/signup"
-              className="inline-block bg-cream text-sage font-bold text-lg whitespace-nowrap px-8 sm:px-10 py-4 rounded-full hover:bg-cream-dark transition-colors shadow-sm"
+              className="inline-block bg-cream text-sage font-bold text-base min-[375px]:text-lg whitespace-nowrap px-6 min-[375px]:px-8 sm:px-10 py-4 rounded-full hover:bg-cream-dark transition-colors shadow-sm"
             >
               Start Free, No Card Needed →
             </Link>
