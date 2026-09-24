@@ -8,6 +8,7 @@ import PricingPlans from "@/components/pricing/PricingPlans";
 import OnePriceArt from "@/components/landing/art/OnePriceArt";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
+import { softwareApplicationNode } from "@/lib/softwareApplicationJsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
 import HeroPacketShowcase from "@/components/landing/HeroPacketShowcase";
 import InsidePacketShowcase from "@/components/landing/InsidePacketShowcase";
@@ -140,6 +141,7 @@ const homeJsonLd = {
       email: "hello@packetday.com",
       sameAs: ["https://www.pinterest.com/packetday"],
     },
+    softwareApplicationNode,
     {
       "@type": "FAQPage",
       "@id": `${SITE_URL}/#faq`,

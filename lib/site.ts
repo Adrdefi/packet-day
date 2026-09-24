@@ -17,6 +17,10 @@
  */
 export const SITE_URL = "https://www.packetday.com";
 
+/** Natalie's JSON-LD Person @id (shared by /about and every blog post) and her anchor on /about. */
+export const NATALIE_ID = `${SITE_URL}/about#natalie-riggs`;
+export const NATALIE_URL = `${SITE_URL}/about#natalie`;
+
 /**
  * openGraph/twitter fields that app/layout.tsx sets at the root
  * (siteName/locale/type, card/site) — a page-level `openGraph` or `twitter`

@@ -4,7 +4,14 @@ import Link from "next/link";
 import SiteHeader from "@/components/layout/SiteHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
-import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
+import {
+  SITE_URL,
+  DEFAULT_OPEN_GRAPH,
+  DEFAULT_TWITTER,
+  DEFAULT_OG_IMAGE,
+  NATALIE_ID,
+  NATALIE_URL,
+} from "@/lib/site";
 
 const TITLE = "About Packet Day | Built by a Homeschool Family";
 const DESCRIPTION =
@@ -162,7 +169,7 @@ const AT_A_GLANCE: { label: string; value: ReactNode }[] = [
   },
 ];
 
-const natalieId = `${SITE_URL}/about#natalie-riggs`;
+const natalieId = NATALIE_ID;
 const andyId = `${SITE_URL}/about#andy-riggs`;
 
 const jsonLd = {
@@ -198,6 +205,7 @@ const jsonLd = {
       "@id": natalieId,
       name: "Natalie Riggs",
       jobTitle: "Co-Founder",
+      url: NATALIE_URL,
       worksFor: { "@id": ORG_ID },
     },
     {
@@ -385,7 +393,7 @@ export default function AboutPage() {
               Do not render anything here until the photo exists.
             */}
             <div className="space-y-5">
-              <p>
+              <p id="natalie">
                 <strong className="text-dark">Natalie Riggs, Co-Founder.</strong> Homeschool
                 teacher, mom of two, and the reason Packet Day exists. She was our first user, and
                 she still is.

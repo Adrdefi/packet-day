@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { PLANS } from "@/lib/stripe";
 import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 import PricingPageClient from "./PricingPageClient";
+import JsonLd from "@/components/JsonLd";
+import { softwareApplicationNode } from "@/lib/softwareApplicationJsonLd";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
 const TITLE = "Pricing | Packet Day";
@@ -38,10 +40,13 @@ export default async function PricingPage({
   const { plan } = await searchParams;
 
   return (
-    <PricingPageClient
-      monthlyPriceId={PLANS.unlimited.monthly.priceId}
-      yearlyPriceId={PLANS.unlimited.yearly.priceId}
-      initialAnnual={isPlanSlug(plan) ? plan === "yearly" : undefined}
-    />
+    <>
+      <JsonLd data={{ "@context": "https://schema.org", ...softwareApplicationNode }} />
+      <PricingPageClient
+        monthlyPriceId={PLANS.unlimited.monthly.priceId}
+        yearlyPriceId={PLANS.unlimited.yearly.priceId}
+        initialAnnual={isPlanSlug(plan) ? plan === "yearly" : undefined}
+      />
+    </>
   );
 }

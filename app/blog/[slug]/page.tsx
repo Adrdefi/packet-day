@@ -8,7 +8,7 @@ import remarkBreaks from "remark-breaks";
 import SiteHeader from "@/components/layout/SiteHeader";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
-import { SITE_URL, DEFAULT_TWITTER } from "@/lib/site";
+import { SITE_URL, DEFAULT_TWITTER, NATALIE_ID, NATALIE_URL } from "@/lib/site";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -173,24 +173,27 @@ export default async function BlogPostPage({
     })),
   };
 
-  // No `image` field: none of these posts have an associated image, and
-  // no `author` person name exists in the content model (the spec block
-  // has no author field) — so author is the organization itself rather
-  // than an invented byline.
+  // No `image` field: none of these posts have an associated image. Every
+  // post is written in Natalie's voice, so she is the author. Her @id
+  // matches the Person node on /about, and her name matches that page.
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.metaDescription,
     datePublished: post.publishDate,
+    dateModified: post.updatedDate,
     url: postUrl,
     author: {
-      "@type": "Organization",
-      name: "Packet Day",
-      url: SITE_URL,
+      "@type": "Person",
+      "@id": NATALIE_ID,
+      name: "Natalie Riggs",
+      jobTitle: "Co-founder",
+      url: NATALIE_URL,
     },
     publisher: {
       "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
       name: "Packet Day",
       url: SITE_URL,
       logo: {
