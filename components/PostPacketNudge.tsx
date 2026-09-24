@@ -49,13 +49,15 @@ export default function PostPacketNudge({ childName }: PostPacketNudgeProps) {
     <>
       <div className="w-full max-w-md rounded-2xl border border-sage/20 bg-sage/5 p-5 text-center">
         <h3 className="font-display text-lg font-bold text-dark mb-1.5">{heading}</h3>
-        <p className="text-sm text-muted leading-relaxed mb-3">
+        <p className="text-sm text-muted leading-relaxed mb-4">
           Unlimited means you can make another tomorrow, and the next day, for every kid in your house.
         </p>
+        {/* Honey, not sage: this sits right under the green Download button
+            and has to read as the second action, not a second Download. */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="text-sm font-semibold text-sage hover:text-sage-dark underline underline-offset-2 transition-colors"
+          className="w-full bg-honey text-dark font-bold px-6 py-3 rounded-xl hover:bg-honey-dark transition-colors text-sm shadow-sm"
         >
           See Unlimited
         </button>
