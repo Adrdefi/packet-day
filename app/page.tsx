@@ -269,10 +269,10 @@ export default function Home() {
         </section>
 
         {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
-        <section className="py-16 md:py-24 bg-cream px-6">
+        <section className="py-16 md:py-24 bg-cream-deep px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+              <span className="inline-block bg-sage/10 text-sage-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
                 The part nobody else does
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-3">
@@ -312,10 +312,10 @@ export default function Home() {
                 >
                   ?
                 </div>
-                <h3 className="font-display font-bold text-dark/50 text-base md:text-lg leading-tight mt-2 px-3 md:px-4">
+                <h3 className="font-display font-bold text-dark/65 text-base md:text-lg leading-tight mt-2 px-3 md:px-4">
                   Your kid&apos;s character
                 </h3>
-                <p className="text-dark/50 text-xs md:text-sm leading-snug mt-1 px-3 md:px-4">
+                <p className="text-dark/65 text-xs md:text-sm leading-snug mt-1 px-3 md:px-4">
                   Made for whatever they&apos;re into this week
                 </p>
               </div>
@@ -376,7 +376,7 @@ export default function Home() {
         </section>
 
         {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="py-16 md:py-24 bg-cream px-6">
+        <section id="how-it-works" className="py-16 md:py-24 bg-cream-deep px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -386,7 +386,7 @@ export default function Home() {
             <h2 className="font-display text-4xl md:text-5xl font-bold text-dark text-center mb-3 leading-tight">
               Three steps. One coffee. Full school day.
             </h2>
-            <p className="text-center text-dark/60 text-lg mb-14">
+            <p className="text-center text-dark/65 text-lg mb-14">
               No lesson planning. No decision fatigue. No screen time for the kids.
             </p>
 
@@ -394,7 +394,7 @@ export default function Home() {
               {STEPS.map((step, i) => (
                 <div key={step.step} className="text-center">
                   <StepArt step={(i + 1) as 1 | 2 | 3} className="w-full max-w-[180px] mx-auto mb-4" />
-                  <div className="text-xs font-bold text-sage tracking-widest mb-2">
+                  <div className="text-xs font-bold text-sage-dark tracking-widest mb-2">
                     {step.step}
                   </div>
                   <h3 className="font-display text-xl font-bold text-dark mb-3">
@@ -460,7 +460,7 @@ export default function Home() {
         </section>
 
         {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
-        <section id="reviews" className="py-16 md:py-24 bg-cream px-6">
+        <section id="reviews" className="py-16 md:py-24 bg-cream-deep px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -470,7 +470,7 @@ export default function Home() {
             <h2 className="font-display text-4xl md:text-5xl font-bold text-dark text-center mb-3 leading-tight">
               Real families. Real hard days. Real results.
             </h2>
-            <p className="text-center text-dark/60 text-lg mb-14 max-w-2xl mx-auto">
+            <p className="text-center text-dark/65 text-lg mb-14 max-w-2xl mx-auto">
               Here&apos;s what happens when you stop guilt-spiraling and start handing your kids
               something brilliant.
             </p>
@@ -573,12 +573,13 @@ export default function Home() {
         </section>
 
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
-        <section id="pricing" className="py-16 md:py-24 bg-cream px-6">
+        <section id="pricing" className="py-16 md:py-24 bg-cream-deep px-6">
           <PricingPlans
             monthlyPriceId={PLANS.unlimited.monthly.priceId}
             yearlyPriceId={PLANS.unlimited.yearly.priceId}
             source="pricing_section"
             headingLevel="h2"
+            onDeepBackground
             intro={<OnePriceArt className="w-full max-w-[480px] mx-auto mb-8" />}
           />
         </section>

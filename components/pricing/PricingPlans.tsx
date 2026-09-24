@@ -47,6 +47,8 @@ interface Props {
   /** Controlled billing choice, for a page that also uses it elsewhere (the /pricing footer button). */
   isAnnual?: boolean;
   onIsAnnualChange?: (isAnnual: boolean) => void;
+  /** Darker text for what sits on the section background, so it keeps AA contrast on the homepage's cream-deep. */
+  onDeepBackground?: boolean;
 }
 
 export default function PricingPlans({
@@ -57,6 +59,7 @@ export default function PricingPlans({
   intro,
   isAnnual: controlledIsAnnual,
   onIsAnnualChange,
+  onDeepBackground = false,
 }: Props) {
   const [ownIsAnnual, setOwnIsAnnual] = useState(true);
   const isAnnual = controlledIsAnnual ?? ownIsAnnual;
@@ -73,6 +76,8 @@ export default function PricingPlans({
   const billingNote = isAnnual ? "$108 billed annually, save $36" : "Billed monthly";
 
   const Heading = headingLevel;
+  const softText = onDeepBackground ? "text-dark/65" : "text-dark/60";
+  const accentText = onDeepBackground ? "text-sage-dark" : "text-sage";
   const CardHeading = headingLevel === "h1" ? "h2" : "h3";
 
   return (
@@ -101,12 +106,12 @@ export default function PricingPlans({
           aria-pressed={isAnnual}
           className={[
             "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[100px]",
-            isAnnual ? "bg-sage text-cream" : "bg-transparent text-dark/60 hover:text-dark",
+            isAnnual ? "bg-sage text-cream" : `bg-transparent ${softText} hover:text-dark`,
           ].join(" ")}
         >
           Annual{" "}
           <span
-            className={["text-xs ml-1 font-semibold", isAnnual ? "text-honey-light" : "text-sage"].join(" ")}
+            className={["text-xs ml-1 font-semibold", isAnnual ? "text-honey-light" : accentText].join(" ")}
           >
             save 25%
           </span>
@@ -116,7 +121,7 @@ export default function PricingPlans({
           aria-pressed={!isAnnual}
           className={[
             "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[100px]",
-            !isAnnual ? "bg-sage text-cream" : "bg-transparent text-dark/60 hover:text-dark",
+            !isAnnual ? "bg-sage text-cream" : `bg-transparent ${softText} hover:text-dark`,
           ].join(" ")}
         >
           Monthly
@@ -189,12 +194,12 @@ export default function PricingPlans({
       </div>
 
       {/* Callout. $108 / 365 is about $0.296; monthly works out to about $0.40. */}
-      <p className="text-center text-sm text-muted mt-8 max-w-md mx-auto">
+      <p className={`text-center text-sm mt-8 max-w-md mx-auto ${onDeepBackground ? "text-dark/65" : "text-muted"}`}>
         That&apos;s less than $0.30/day on the annual plan for a full day of personalized learning for every
         kid in your house.
       </p>
       <p className="text-center text-base mt-5">
-        <Link href="/sample" className="text-sage font-semibold hover:underline">
+        <Link href="/sample" className={`${accentText} font-semibold hover:underline`}>
           Not sure yet? See a real packet first.
         </Link>
       </p>

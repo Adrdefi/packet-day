@@ -51,7 +51,7 @@ function TickerRow({
         {items.map((theme, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-2 bg-white border border-border rounded-full px-4 py-2 mx-2 text-sm font-semibold text-dark whitespace-nowrap shadow-sm"
+            className="inline-flex items-center gap-2 bg-cream border border-border rounded-full px-4 py-2 mx-2 text-sm font-semibold text-dark whitespace-nowrap shadow-sm"
           >
             {theme}
           </span>
