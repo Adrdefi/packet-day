@@ -1,7 +1,7 @@
 # A Homeschool Schedule for Multiple Kids at Different Levels 💛
 
 **Slug:** `/blog/homeschool-schedule-multiple-kids`
-**Meta description:** Teaching two kids at two levels at once? Here's the simple homeschool schedule for multiple kids that finally worked for us: a two-hour rotation with zero shoulder taps. (169 chars)
+**Meta description:** Teaching two kids at two levels? Here's the homeschool schedule for multiple kids that finally worked for us: a two-hour rotation with zero shoulder taps. (154 chars)
 **Primary keyword:** homeschool schedule for multiple kids
 **Internal links:** [morning basket](/blog/morning-work-basket-homeschool), [screen-free](/screen-free), [one packet per kid](/multiple-kids), [hours by grade](/blog/how-many-hours-homeschool-day)
 **Publish date:** 2026-09-24
@@ -32,7 +32,7 @@ That's a tall order with off-the-shelf stuff. The workbook is either too easy (d
 
 While one kid works through their packet, I sit with the other one for the thing that actually needs me: the new math concept, the tricky reading, the writing assignment. Then we swap.
 
-> **Teaching two, three, or four at different levels?** One packet per kid, each matched to their level and built around what they love. [See how one packet per kid works →](/multiple-kids)
+> **Teaching two, three, or four at different levels?** One packet per kid, each matched to their level and built around what they love. [See how one packet per kid works →](/multiple-kids)
 
 ## Our homeschool schedule for multiple kids, step by step
 
