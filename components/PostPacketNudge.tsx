@@ -22,49 +22,24 @@ function currentMonthFirstDayUTC(): string {
 }
 
 /**
- * Quiet inline nudge for the reserved slot in app/generate/page.tsx's
- * ResultView, between the activity cards and the social share row. Gated
- * on a fresh server read (GET /api/plans, session-bound) rather than the
- * subscriptionStatus already held in GenerateContent's client state, so a
- * stale client value can never show this to a paying user.
+ * Quiet inline upgrade card for app/generate/page.tsx's ResultView, directly
+ * under the download button. ResultView only renders this once a fresh
+ * server read (GET /api/plans, session-bound) confirms the user is free tier
+ * AND has used this month's packet, never from GenerateContent's client
+ * state, so a stale client value can never show this to a paying user.
  */
 export default function PostPacketNudge({ childName }: PostPacketNudgeProps) {
-  // null = still checking; false = paid, or the check failed, or errored —
-  // never render; true = confirmed free tier, safe to render.
-  const [visible, setVisible] = useState<boolean | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const trackedRef = useRef(false);
 
+  // Fires once per mount. The parent only mounts this after the server
+  // check above, so it never fires for a paid user.
   useEffect(() => {
-    let cancelled = false;
-
-    fetch("/api/plans")
-      .then((res) => {
-        if (!res.ok) throw new Error(`plans fetch failed: ${res.status}`);
-        return res.json() as Promise<{ isPaid: boolean }>;
-      })
-      .then((data) => {
-        if (!cancelled) setVisible(!data.isPaid);
-      })
-      .catch(() => {
-        if (!cancelled) setVisible(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fires once, only after the server check confirms free tier — never on
-  // a re-render, never for a paid user (visible never becomes true there).
-  useEffect(() => {
-    if (visible && !trackedRef.current) {
+    if (!trackedRef.current) {
       trackedRef.current = true;
       track("upgrade_nudge_seen", { source: "post_packet" });
     }
-  }, [visible]);
-
-  if (!visible) return null;
+  }, []);
 
   const heading = childName
     ? `That's ${possessive(childName)} packet for this month.`
@@ -72,7 +47,7 @@ export default function PostPacketNudge({ childName }: PostPacketNudgeProps) {
 
   return (
     <>
-      <div className="rounded-2xl border border-sage/20 bg-sage/5 p-5 text-center mb-10">
+      <div className="w-full max-w-md rounded-2xl border border-sage/20 bg-sage/5 p-5 text-center">
         <h3 className="font-display text-lg font-bold text-dark mb-1.5">{heading}</h3>
         <p className="text-sm text-muted leading-relaxed mb-3">
           Unlimited means you can make another tomorrow, and the next day, for every kid in your house.

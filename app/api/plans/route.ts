@@ -14,6 +14,11 @@ import { isPaidStatus } from "@/lib/isPaid";
  * every UpgradeModal trigger (including the generate page's, which only
  * has client-held subscription state to go on) ultimately answer to a
  * fresh database read, never client state alone.
+ *
+ * capped: free tier AND this month's packet already used, from the same
+ * get_my_packet_usage read (and the same used >= 1 rule) as
+ * app/dashboard/page.tsx. The generate page's result view uses it to decide
+ * whether to show the upgrade card in place of "Generate another packet".
  */
 export async function GET() {
   const supabase = await createClient();
@@ -26,15 +31,25 @@ export async function GET() {
     return NextResponse.json({ error: "You need to be logged in." }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: usageRows, error: usageError }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("subscription_status, packets_used_this_month")
+      .eq("id", user.id)
+      .single(),
+    supabase.rpc("get_my_packet_usage"),
+  ]);
+
+  if (usageError) {
+    console.error("[plans] get_my_packet_usage failed, falling back to raw profile column:", usageError.message);
+  }
+  const isPaid = isPaidStatus(profile?.subscription_status);
+  const packetsUsed = usageRows?.[0]?.packets_used ?? profile?.packets_used_this_month ?? 0;
 
   return NextResponse.json({
     monthlyPriceId: PLANS.unlimited.monthly.priceId,
     yearlyPriceId: PLANS.unlimited.yearly.priceId,
-    isPaid: isPaidStatus(profile?.subscription_status),
+    isPaid,
+    capped: !isPaid && packetsUsed >= 1,
   });
 }

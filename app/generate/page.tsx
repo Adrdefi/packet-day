@@ -17,6 +17,7 @@ import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import { safeNext } from "@/lib/safeNext";
 import UpgradeModal from "@/components/UpgradeModal";
 import PostPacketNudge from "@/components/PostPacketNudge";
+import { possessive } from "@/lib/possessive";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -372,42 +373,13 @@ function ActivityCard({
         </span>
       </div>
 
-      {/* Content */}
-      <div
-        className="p-5 flex flex-col gap-3"
-        style={{ backgroundColor: color.bg }}
-      >
-        <p className="text-sm text-dark/75 leading-relaxed">
+      {/* Summary only. The worksheet itself (steps, problems, word lists)
+          lives in the PDF; the raw instructions carry generator formatting
+          like "||" separators that was never meant for this page. */}
+      <div className="px-5 py-4" style={{ backgroundColor: color.bg }}>
+        <p className="text-sm text-dark/75 leading-relaxed line-clamp-2">
           {activity.description}
         </p>
-
-        {activity.materials && activity.materials.length > 0 && (
-          <p className="text-xs text-muted">
-            📎 {activity.materials.join(" · ")}
-          </p>
-        )}
-
-        <div>
-          <p className="text-xs font-bold text-muted uppercase tracking-wider mb-2.5">
-            How to do it
-          </p>
-          <ol className="space-y-2">
-            {activity.instructions.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm text-dark leading-snug">
-                <span
-                  className="w-5 h-5 rounded-full font-bold text-xs flex items-center justify-center shrink-0 mt-0.5"
-                  style={{
-                    backgroundColor: color.bar + "25",
-                    color: color.bar,
-                  }}
-                >
-                  {i + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
       </div>
     </div>
   );
@@ -479,6 +451,31 @@ function ResultView({
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fresh server read of plan + this month's usage (GET /api/plans, same
+  // get_my_packet_usage check as the dashboard), never GenerateContent's
+  // client state. null = still checking or the check failed: no upgrade
+  // card, and "Generate another packet" stays (the generate route enforces
+  // the cap on its own anyway). true = free and out of packets this month.
+  const [capped, setCapped] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/plans")
+      .then((res) => {
+        if (!res.ok) throw new Error(`plans fetch failed: ${res.status}`);
+        return res.json() as Promise<{ capped?: boolean }>;
+      })
+      .then((data) => {
+        if (!cancelled) setCapped(data.capped === true);
+      })
+      .catch(() => {
+        // Leave null: card hidden, link shown.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const shareUrl = `${SITE_URL}/packets/${packet.share_token}`;
@@ -568,11 +565,6 @@ function ResultView({
                     className="w-[180px] h-[180px] rounded-full object-cover border-4 border-white shadow-lg"
                   />
                 )}
-                {packet.generated_content.mascot_name && (
-                  <p className="text-base font-bold text-sage">
-                    {packet.generated_content.mascot_name}
-                  </p>
-                )}
                 {packet.generated_content.mascot_emoji_cluster && (
                   <p className="text-xl tracking-widest">
                     {packet.generated_content.mascot_emoji_cluster}
@@ -607,6 +599,17 @@ function ResultView({
                 )}
               </div>
             )}
+            {/* The character is the hero: named whether or not the image made it */}
+            {packet.generated_content.mascot_name && (
+              <div className="mb-6">
+                <p className="font-display text-3xl md:text-4xl font-bold text-sage leading-tight">
+                  {packet.generated_content.mascot_name}
+                </p>
+                <p className="text-base text-dark/75 mt-1">
+                  {packet.generated_content.mascot_name} is {possessive(packet.child_name)} guide today.
+                </p>
+              </div>
+            )}
             <h1 className="font-display text-3xl md:text-4xl font-bold text-dark mb-1 leading-tight">
               {packet.generated_content.packet_title ?? packet.generated_content.title}
             </h1>
@@ -638,6 +641,8 @@ function ResultView({
               Already sent to your email with the PDF attached.
             </p>
 
+            {capped === true && <PostPacketNudge childName={packet.child_name} />}
+
             <button
               onClick={copyShareLink}
               className="flex items-center gap-2 border border-border bg-white text-dark font-semibold px-6 py-3 rounded-xl hover:border-sage/50 transition-colors text-sm min-w-[180px] justify-center"
@@ -661,8 +666,6 @@ function ResultView({
               <ActivityCard key={i} activity={activity} index={i} />
             ))}
           </div>
-
-          <PostPacketNudge childName={packet.child_name} />
 
           {/* Social share row */}
           <div className="flex flex-col items-center gap-3 mb-10 print:hidden">
@@ -700,12 +703,14 @@ function ResultView({
 
           {/* Secondary actions */}
           <div className="flex flex-wrap items-center justify-center gap-6 pt-6 border-t border-border print:hidden">
-            <button
-              onClick={onGenerateAnother}
-              className="text-sm font-semibold text-sage hover:text-sage-dark transition-colors underline underline-offset-2"
-            >
-              Generate another packet
-            </button>
+            {capped !== true && (
+              <button
+                onClick={onGenerateAnother}
+                className="text-sm font-semibold text-sage hover:text-sage-dark transition-colors underline underline-offset-2"
+              >
+                Generate another packet
+              </button>
+            )}
             <Link
               href="/dashboard"
               className="text-sm text-muted hover:text-dark transition-colors underline underline-offset-2"
