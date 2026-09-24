@@ -2,6 +2,7 @@ import { hero as sickDayHero } from "./sick-day";
 import { hero as roadTripHero } from "./road-trip";
 import { hero as funFridayHero } from "./fun-friday";
 import { hero as multipleKidsHero } from "./multiple-kids";
+import { hero as screenFreeHero } from "./screen-free";
 
 /**
  * Slug -> that page's on-page h1, for the OG image headline
@@ -19,4 +20,5 @@ export const OG_HEADLINES: Record<string, string> = {
   "road-trip": roadTripHero.h1,
   "fun-friday": funFridayHero.h1,
   "multiple-kids": multipleKidsHero.h1,
+  "screen-free": screenFreeHero.h1,
 };

@@ -37,6 +37,13 @@ export const SITUATIONS: SituationRegistryEntry[] = [
     teaser: "Two kids, two levels, one of you. One packet per kid fixes that.",
     emoji: "🏠",
   },
+  {
+    slug: "screen-free",
+    href: "/screen-free",
+    label: "Screen-free days",
+    teaser: "Off the tablet and into a story they actually want to finish.",
+    emoji: "🎨",
+  },
 ];
 
 /** Looks up a registry entry by slug. Throws if the slug isn't registered — a
