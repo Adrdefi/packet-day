@@ -1,291 +1,221 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "fs/promises";
+import path from "path";
+import sharp from "sharp";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+// Nothing on this card changes per request, so render it once at build time.
+export const dynamic = "force-static";
+
+const SAGE = "#4A7C59";
+const HONEY = "#D4A843";
+const CORAL = "#E07A5F";
+const CREAM = "#FDFBF7";
+const CREAM_DARK = "#F5F0E8";
+const DARK = "#1A1A2E";
+
+// Same disk-read pattern as app/og/[slug]/route.tsx. Each path is written out
+// literally so Vercel's file tracing bundles these exact files with the function.
+const assetsPromise = Promise.all([
+  readFile(path.join(process.cwd(), "public", "fonts", "Fraunces-Bold.ttf")),
+  readFile(path.join(process.cwd(), "public", "fonts", "Fraunces-BoldItalic.ttf")),
+  readFile(path.join(process.cwd(), "public", "fonts", "Nunito-Regular.ttf")),
+  readFile(path.join(process.cwd(), "public", "fonts", "Nunito-Bold.ttf")),
+  readFile(path.join(process.cwd(), "public", "landing", "oliver", "cover.webp")),
+  readFile(path.join(process.cwd(), "public", "landing", "oliver", "coloring.webp")),
+  readFile(path.join(process.cwd(), "public", "landing", "oliver", "certificate.webp")),
+  readFile(path.join(process.cwd(), "public", "logo-mark.png")),
+]);
+
+// Satori can't draw webp, so the packet pages are converted to JPEG data URIs
+// (white pages, no transparency needed) at roughly the size they're drawn.
+async function pageDataUri(webp: Buffer): Promise<string> {
+  const jpeg = await sharp(webp).resize({ width: 560 }).jpeg({ quality: 85 }).toBuffer();
+  return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+}
+
+const HEADLINE_WORDS = "Today’s a hard day. Your kids can still learn.".split(" ");
+
+// Portrait packet pages are 1100x1424.
+const PAGE_WIDTH = 280;
+const PAGE_HEIGHT = Math.round((PAGE_WIDTH * 1424) / 1100);
 
 export async function GET() {
+  const [
+    frauncesBold,
+    frauncesBoldItalic,
+    nunitoRegular,
+    nunitoBold,
+    coverWebp,
+    coloringWebp,
+    certificateWebp,
+    logoMark,
+  ] = await assetsPromise;
+
+  const [cover, coloring, certificate] = await Promise.all([
+    pageDataUri(coverWebp),
+    pageDataUri(coloringWebp),
+    pageDataUri(certificateWebp),
+  ]);
+  const logo = `data:image/png;base64,${logoMark.toString("base64")}`;
+
+  const page = (src: string, left: number, top: number, rotate: number) => (
+    <div
+      style={{
+        position: "absolute",
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${PAGE_WIDTH}px`,
+        height: `${PAGE_HEIGHT}px`,
+        display: "flex",
+        background: "white",
+        borderRadius: "10px",
+        overflow: "hidden",
+        transform: `rotate(${rotate}deg)`,
+        boxShadow: "0 18px 40px rgba(26,26,46,0.22), 0 4px 10px rgba(26,26,46,0.10)",
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+      <img src={src} width={PAGE_WIDTH} height={PAGE_HEIGHT} />
+    </div>
+  );
+
   return new ImageResponse(
     (
       <div
         style={{
           width: "1200px",
           height: "630px",
-          background: "#FDFBF7",
+          background: CREAM,
           display: "flex",
           flexDirection: "column",
-          fontFamily: "sans-serif",
         }}
       >
-        {/* ── Main content ─────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            padding: "56px 64px",
-            gap: "56px",
-            alignItems: "center",
-          }}
-        >
-          {/* Left — branding + tagline */}
+        {/* ── Main ─────────────────────────────────────────────────────── */}
+        <div style={{ display: "flex", flex: 1 }}>
+          {/* Left: headline + subline */}
           <div
             style={{
-              flex: 1,
+              width: "640px",
               display: "flex",
               flexDirection: "column",
-              gap: "0px",
+              justifyContent: "center",
+              padding: "0 0 0 72px",
             }}
           >
-            {/* Logo mark */}
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: "18px",
-                marginBottom: "28px",
+                flexWrap: "wrap",
+                fontFamily: "Fraunces",
+                fontWeight: 700,
+                fontSize: "66px",
+                lineHeight: 1.08,
+                color: DARK,
+                letterSpacing: "-0.01em",
               }}
             >
-              <div
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  background: "#4A7C59",
-                  borderRadius: "18px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              {/* One span per word so Satori wraps between words, not mid-run. */}
+              {HEADLINE_WORDS.map((word) => (
                 <span
-                  style={{
-                    color: "#FDFBF7",
-                    fontSize: "42px",
-                    fontWeight: 700,
-                    lineHeight: 1,
-                  }}
+                  key={word}
+                  style={
+                    word === "still"
+                      ? { fontStyle: "italic", color: SAGE, marginRight: "0.24em" }
+                      : { marginRight: "0.24em" }
+                  }
                 >
-                  P
+                  {word}
                 </span>
-              </div>
-              <span
-                style={{
-                  fontSize: "46px",
-                  fontWeight: 700,
-                  color: "#1A1A2E",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Packet Day
-              </span>
-            </div>
-
-            {/* Tagline */}
-            <div
-              style={{
-                fontSize: "30px",
-                color: "#4A7C59",
-                fontWeight: 600,
-                marginBottom: "20px",
-                lineHeight: 1.2,
-              }}
-            >
-              Your backup plan for the hard days.
-            </div>
-
-            {/* Description */}
-            <div
-              style={{
-                fontSize: "19px",
-                color: "#6B7280",
-                lineHeight: 1.6,
-                maxWidth: "460px",
-                marginBottom: "36px",
-              }}
-            >
-              AI-powered learning packets for homeschool families,
-              personalized, printable, in a minute or two.
-            </div>
-
-            {/* Stats row */}
-            <div style={{ display: "flex", gap: "40px" }}>
-              {[
-                { stat: "K-8th", label: "Grades" },
-                { stat: "1-2 min", label: "To Generate" },
-                { stat: "∞", label: "Themes" },
-                { stat: "Free", label: "To Start" },
-              ].map(({ stat, label }) => (
-                <div
-                  key={label}
-                  style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-                >
-                  <span
-                    style={{
-                      fontSize: "26px",
-                      fontWeight: 700,
-                      color: "#4A7C59",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {stat}
-                  </span>
-                  <span style={{ fontSize: "13px", color: "#9CA3AF" }}>{label}</span>
-                </div>
               ))}
+            </div>
+            <div
+              style={{
+                marginTop: "28px",
+                fontFamily: "Nunito",
+                fontWeight: 400,
+                fontSize: "31px",
+                lineHeight: 1.3,
+                color: DARK,
+                maxWidth: "540px",
+              }}
+            >
+              A full printable school day built around what your kid loves.
             </div>
           </div>
 
-          {/* Right — mock packet card */}
-          <div
-            style={{
-              width: "430px",
-              background: "white",
-              borderRadius: "24px",
-              padding: "28px",
-              border: "2px solid #E5E7EB",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.10)",
-            }}
-          >
-            {/* Card header */}
+          {/* Right: fanned real packet pages */}
+          <div style={{ display: "flex", flex: 1, position: "relative" }}>
+            {page(certificate, 14, 122, -10)}
+            {page(coloring, 232, 122, 9)}
+            {page(cover, 120, 62, -2)}
+
+            {/* Sticker */}
             <div
               style={{
+                position: "absolute",
+                right: "16px",
+                top: "20px",
+                width: "156px",
+                height: "156px",
+                borderRadius: "9999px",
+                background: HONEY,
+                border: `5px solid ${CREAM}`,
+                boxShadow: "0 8px 20px rgba(26,26,46,0.22)",
                 display: "flex",
                 flexDirection: "column",
-                gap: "4px",
-                marginBottom: "6px",
-                paddingBottom: "14px",
-                borderBottom: "1px solid #E5E7EB",
+                alignItems: "center",
+                justifyContent: "center",
+                transform: "rotate(10deg)",
+                fontFamily: "Nunito",
+                fontWeight: 700,
+                fontSize: "34px",
+                lineHeight: 1.05,
+                color: DARK,
               }}
             >
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 700,
-                  color: "#1A1A2E",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span>🦕</span>
-                <span>Dinosaur Day</span>
-              </div>
-              <div style={{ fontSize: "14px", color: "#6B7280" }}>
-                For Emma · Grade 3 · Full Day Packet
-              </div>
-            </div>
-
-            {/* Activity blocks */}
-            {[
-              {
-                label: "Math",
-                bg: "#E8F4ED",
-                color: "#2E5238",
-                text: "Measuring dinosaurs & timeline math",
-                dot: "#4A7C59",
-              },
-              {
-                label: "Reading",
-                bg: "#FDF5E0",
-                color: "#7A5C10",
-                text: "Dino facts passage + comprehension",
-                dot: "#D4A843",
-              },
-              {
-                label: "Science",
-                bg: "#FCE8E2",
-                color: "#7A3520",
-                text: "Fossil dig & herbivore vs. carnivore sort",
-                dot: "#E07A5F",
-              },
-              {
-                label: "Art + PE",
-                bg: "#EEF2FF",
-                color: "#3730A3",
-                text: "Draw your dino + Dino Stomp break",
-                dot: "#6366F1",
-              },
-            ].map(({ label, bg, color, text, dot }) => (
-              <div
-                key={label}
-                style={{
-                  background: bg,
-                  borderRadius: "12px",
-                  padding: "10px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "2px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: dot,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    {label}
-                  </span>
-                </div>
-                <span style={{ fontSize: "13px", color: "#374151" }}>{text}</span>
-              </div>
-            ))}
-
-            {/* Footer note */}
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#9CA3AF",
-                textAlign: "center",
-                paddingTop: "8px",
-                borderTop: "1px solid #F3F4F6",
-              }}
-            >
-              Answer key included · Print-ready PDF
+              <span>Free to</span>
+              <span>start</span>
             </div>
           </div>
         </div>
 
-        {/* ── Bottom bar ───────────────────────────────────────────────── */}
+        {/* ── Bottom strip ─────────────────────────────────────────────── */}
         <div
           style={{
-            height: "70px",
-            background: "#4A7C59",
+            height: "92px",
+            background: CREAM_DARK,
+            borderTop: `4px solid ${CORAL}`,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            gap: "16px",
+            padding: "0 72px",
+            gap: "18px",
           }}
         >
-          <span style={{ color: "white", fontSize: "22px", fontWeight: 700 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+          <img src={logo} width={58} height={58} />
+          <span
+            style={{
+              fontFamily: "Nunito",
+              fontWeight: 700,
+              fontSize: "34px",
+              color: SAGE,
+            }}
+          >
             packetday.com
-          </span>
-          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "18px" }}>
-            ·
-          </span>
-          <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "17px" }}>
-            Free to start, no card needed
           </span>
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    {
+      width: 1200,
+      height: 630,
+      fonts: [
+        { name: "Fraunces", data: frauncesBold, weight: 700, style: "normal" },
+        { name: "Fraunces", data: frauncesBoldItalic, weight: 700, style: "italic" },
+        { name: "Nunito", data: nunitoRegular, weight: 400, style: "normal" },
+        { name: "Nunito", data: nunitoBold, weight: 700, style: "normal" },
+      ],
+    }
   );
 }
