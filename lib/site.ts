@@ -37,7 +37,7 @@ export const DEFAULT_TWITTER = {
 
 /** Homepage share image, reused as the default for pages with no image of their own. */
 export const DEFAULT_OG_IMAGE = {
-  url: "/og",
+  url: "/og?v=2",
   width: 1200,
   height: 630,
   alt: "Packet Day: a printable school day built around what your kid loves",

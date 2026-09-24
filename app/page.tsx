@@ -30,7 +30,7 @@ export const metadata: Metadata = {
       "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
     url: SITE_URL,
     siteName: "Packet Day",
-    images: [{ url: "/og", width: 1200, height: 630, alt: "Packet Day: a printable school day built around what your kid loves" }],
+    images: [{ url: "/og?v=2", width: 1200, height: 630, alt: "Packet Day: a printable school day built around what your kid loves" }],
     type: "website",
     locale: "en_US",
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     title: "Printable Homeschool Packets, Any Theme, K-8 | Packet Day",
     description:
       "Personalized, print-ready learning packets themed to whatever your kid loves. For homeschool days, sick days, and snow days. Ready in a minute or two. Free to start.",
-    images: ["/og"],
+    images: ["/og?v=2"],
   },
 };
 
