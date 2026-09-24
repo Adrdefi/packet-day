@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import PublicHeader from "@/components/layout/PublicHeader";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -152,19 +153,7 @@ export default async function SharePage({
   if (!packet) {
     return (
       <div className="min-h-screen bg-cream flex flex-col">
-        <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
-            <Link href="/" className="font-display text-lg font-bold text-sage">
-              Packet Day
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-sage text-cream text-sm font-bold px-4 py-2 rounded-lg hover:bg-sage-dark transition-colors"
-            >
-              Try it free →
-            </Link>
-          </div>
-        </header>
+        <PublicHeader />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="text-center max-w-md">
             <div className="text-6xl mb-6">📭</div>
@@ -223,19 +212,7 @@ export default async function SharePage({
 
       <div className="min-h-screen bg-cream">
         {/* ── Top bar ──────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
-            <Link href="/" className="font-display text-lg font-bold text-sage">
-              Packet Day
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-sage text-cream text-sm font-bold px-4 py-2 rounded-lg hover:bg-sage-dark transition-colors"
-            >
-              Try it free →
-            </Link>
-          </div>
-        </header>
+        <PublicHeader />
 
         <div className="max-w-4xl mx-auto px-4 md:px-8 py-10">
           {/* ── Cover ────────────────────────────────────────────────────── */}

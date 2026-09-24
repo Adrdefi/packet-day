@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "@/components/landing/Navbar";
+import PublicHeader from "@/components/layout/PublicHeader";
 import Wordmark from "@/components/layout/Wordmark";
 import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingPlans from "@/components/pricing/PricingPlans";
@@ -160,11 +160,11 @@ export default function Home() {
   return (
     <>
       <JsonLd data={homeJsonLd} />
-      <Navbar />
+      <PublicHeader />
 
       <main>
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
-        <section className="pt-32 pb-20 px-6 bg-cream text-center">
+        <section className="pt-16 pb-20 px-6 bg-cream text-center">
           {/* Below lg: text, cover, stats stack in DOM order. At lg: text and stats share the
               left column, centered between two flexible rows; the cover spans the right. */}
           <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[1.6fr_1fr] lg:grid-rows-[1fr_auto_auto_1fr] lg:gap-x-12">

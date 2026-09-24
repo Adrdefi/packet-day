@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SiteHeader from "@/components/layout/SiteHeader";
+import PublicHeader from "@/components/layout/PublicHeader";
 import Footer from "@/components/layout/Footer";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-cream">
-      <SiteHeader />
+      <PublicHeader />
 
       <main className="flex-1 px-6 py-16">
         <div className="max-w-3xl mx-auto">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SiteHeader from "@/components/layout/SiteHeader";
+import PublicHeader from "@/components/layout/PublicHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
 import { getSituationEntry } from "@/lib/situations/registry";
@@ -34,7 +34,7 @@ export default function RoadTripPage() {
     <div className="min-h-screen flex flex-col bg-cream">
       <JsonLd data={faqJsonLd} />
 
-      <SiteHeader />
+      <PublicHeader />
 
       <main className="flex-1">
         {/* Alternating backgrounds (cream/white/paper), same as /sick-day. */}

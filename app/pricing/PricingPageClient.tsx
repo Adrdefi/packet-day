@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Wordmark from "@/components/layout/Wordmark";
+import PublicHeader from "@/components/layout/PublicHeader";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
 import PricingPlans, { CHECKOUT_REASSURANCE, unlimitedMonthlyPrice } from "@/components/pricing/PricingPlans";
 
@@ -64,27 +63,7 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="px-6 py-5 flex items-center justify-between max-w-5xl mx-auto">
-        <Link href="/" className="font-display font-bold text-sage">
-          <Wordmark size="xl" />
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-5">
-          {[
-            { href: "/", label: "Home" },
-            { href: "/sample", label: "Sample" },
-            { href: "/login", label: "Log in" },
-          ].map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <PublicHeader />
 
       {/* Headline, toggle, plan cards: shared with the homepage */}
       <section className="py-16 px-6">

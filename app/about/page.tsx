@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import SiteHeader from "@/components/layout/SiteHeader";
+import PublicHeader from "@/components/layout/PublicHeader";
 import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
 import {
@@ -252,7 +252,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-cream">
       <JsonLd data={jsonLd} />
-      <SiteHeader />
+      <PublicHeader />
 
       <main className="flex-1">
         {/* Intro */}

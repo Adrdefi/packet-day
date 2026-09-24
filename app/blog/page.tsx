@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteHeader from "@/components/layout/SiteHeader";
+import PublicHeader from "@/components/layout/PublicHeader";
 import { getAllPosts } from "@/lib/blog";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
@@ -48,7 +48,7 @@ export default function BlogIndexPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-paper">
-      <SiteHeader />
+      <PublicHeader />
 
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">

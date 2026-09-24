@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import SiteHeader from "@/components/layout/SiteHeader";
+import PublicHeader from "@/components/layout/PublicHeader";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
 import { SITE_URL, DEFAULT_TWITTER, NATALIE_ID, NATALIE_PATH } from "@/lib/site";
@@ -209,7 +209,7 @@ export default async function BlogPostPage({
       <JsonLd data={articleJsonLd} />
       <JsonLd data={faqJsonLd} />
 
-      <SiteHeader />
+      <PublicHeader />
 
       <main className="flex-1">
         <div className="max-w-2xl mx-auto px-6 py-16 md:py-24">

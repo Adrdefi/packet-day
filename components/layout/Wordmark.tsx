@@ -32,6 +32,8 @@ interface WordmarkProps {
   variant?: WordmarkVariant;
   /** Hide the "Packet Day" text below the sm: breakpoint, icon only. Text stays screen-reader-visible at every width so the icon's alt can stay empty. */
   hideTextOnMobile?: boolean;
+  /** Hide the text only on the narrowest phones (under 360px, e.g. a 320px iPhone SE), icon only. Screen-reader-visible at every width. */
+  hideTextOnSmallPhones?: boolean;
   className?: string;
 }
 
@@ -39,6 +41,7 @@ export default function Wordmark({
   size = "base",
   variant = "default",
   hideTextOnMobile = false,
+  hideTextOnSmallPhones = false,
   className,
 }: WordmarkProps) {
   const iconPx = Math.round(TEXT_SIZE_PX[size] * CAP_HEIGHT_RATIO);
@@ -54,7 +57,11 @@ export default function Wordmark({
       />
       <span
         className={`${TEXT_CLASS[size]} ${
-          hideTextOnMobile ? "sr-only sm:not-sr-only" : ""
+          hideTextOnMobile
+            ? "sr-only sm:not-sr-only"
+            : hideTextOnSmallPhones
+              ? "sr-only min-[360px]:not-sr-only"
+              : ""
         }`}
       >
         Packet Day
