@@ -6,7 +6,7 @@ import { getLatestMascotUrl, getPlanState } from "@/lib/packetUsage";
 /**
  * Price ID lookup plus a fresh isPaid read, for UpgradeModal. app/page.tsx
  * and app/pricing/page.tsx are server components that already read the
- * price IDs from PLANS and pass them down as props to PricingSection /
+ * price IDs from PLANS and pass them down as props to PricingPlans /
  * PricingPageClient. app/generate/page.tsx has no server-component wrapper
  * to do the same, so UpgradeModal fetches this itself instead. The price
  * IDs aren't a secret — they already reach the browser through those

@@ -4,7 +4,8 @@ import Link from "next/link";
 import Navbar from "@/components/landing/Navbar";
 import Wordmark from "@/components/layout/Wordmark";
 import ThemeTicker from "@/components/landing/ThemeTicker";
-import PricingSection from "@/components/landing/PricingSection";
+import PricingPlans from "@/components/pricing/PricingPlans";
+import OnePriceArt from "@/components/landing/art/OnePriceArt";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
 import JsonLd from "@/components/JsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
@@ -568,10 +569,15 @@ export default function Home() {
         </section>
 
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
-        <PricingSection
-          monthlyPriceId={PLANS.unlimited.monthly.priceId}
-          yearlyPriceId={PLANS.unlimited.yearly.priceId}
-        />
+        <section id="pricing" className="py-24 bg-cream px-6">
+          <PricingPlans
+            monthlyPriceId={PLANS.unlimited.monthly.priceId}
+            yearlyPriceId={PLANS.unlimited.yearly.priceId}
+            source="pricing_section"
+            headingLevel="h2"
+            intro={<OnePriceArt className="w-full max-w-[480px] mx-auto mb-8" />}
+          />
+        </section>
 
         {/* ── FAQ ───────────────────────────────────────────────────────────── */}
         <FAQSection />
