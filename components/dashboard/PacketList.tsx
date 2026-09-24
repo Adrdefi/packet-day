@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import type { Child, Packet } from "@/types";
+import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/Toast";
 
@@ -70,12 +73,26 @@ function PacketRow({
     }
   }
 
-  return (
-    <div className="flex items-center gap-3 py-3.5 border-b border-border last:border-0">
-      {/* Child avatar */}
-      <div className="w-9 h-9 rounded-full bg-sage/10 flex items-center justify-center text-lg shrink-0">
-        {childEmoji}
-      </div>
+  // Hosted mascot only (never a base64 blob or an expired replicate link),
+  // falling back to the child's emoji.
+  const mascotUrl = resolveMascotUrl(packet.mascot_image_url);
+
+  const summary = (
+    <>
+      {/* Mascot thumbnail, or the child's emoji */}
+      {mascotUrl ? (
+        <Image
+          src={mascotUrl}
+          alt=""
+          width={40}
+          height={40}
+          className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+        />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-sage/10 flex items-center justify-center text-lg shrink-0">
+          {childEmoji}
+        </div>
+      )}
 
       {/* Packet info */}
       <div className="flex-1 min-w-0">
@@ -87,6 +104,24 @@ function PacketRow({
           {formatDate(packet.created_at)}
         </p>
       </div>
+    </>
+  );
+
+  return (
+    <div className="flex items-center gap-3 py-3.5 border-b border-border last:border-0">
+      {/* Tapping the row opens the packet's result screen. The PDF and Share
+          buttons sit outside the link so they keep working on their own.
+          A packet whose generation never finished has nothing to show. */}
+      {packet.generated_content ? (
+        <Link
+          href={`/dashboard/packets/${packet.id}`}
+          className="flex flex-1 min-w-0 items-center gap-3 -my-1.5 py-1.5 rounded-lg hover:bg-sage/5 transition-colors"
+        >
+          {summary}
+        </Link>
+      ) : (
+        <div className="flex flex-1 min-w-0 items-center gap-3">{summary}</div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0">
@@ -113,14 +148,14 @@ function PacketRow({
 
 interface PacketListProps {
   packets: Packet[];
-  children: Child[];
+  kids: Child[];
 }
 
-export default function PacketList({ packets, children }: PacketListProps) {
+export default function PacketList({ packets, kids }: PacketListProps) {
   const { toasts, toast, dismiss } = useToast();
 
   if (packets.length === 0) {
-    const firstChild = children[0];
+    const firstChild = kids[0];
     return (
       <div className="bg-white rounded-xl border border-border shadow-sm p-10 text-center">
         <div className="text-5xl mb-4">☀️</div>
@@ -144,7 +179,7 @@ export default function PacketList({ packets, children }: PacketListProps) {
     );
   }
 
-  const childMap = new Map(children.map((c) => [c.id, c]));
+  const childMap = new Map(kids.map((c) => [c.id, c]));
 
   return (
     <div className="bg-white rounded-xl border border-border shadow-sm px-5">

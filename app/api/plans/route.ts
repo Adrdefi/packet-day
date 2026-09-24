@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS } from "@/lib/stripe";
-import { isPaidStatus } from "@/lib/isPaid";
+import { getLatestMascotUrl, getPlanState } from "@/lib/packetUsage";
 
 /**
  * Price ID lookup plus a fresh isPaid read, for UpgradeModal. app/page.tsx
@@ -15,12 +15,16 @@ import { isPaidStatus } from "@/lib/isPaid";
  * has client-held subscription state to go on) ultimately answer to a
  * fresh database read, never client state alone.
  *
- * capped: free tier AND this month's packet already used, from the same
- * get_my_packet_usage read (and the same used >= 1 rule) as
- * app/dashboard/page.tsx. The generate page's result view uses it to decide
- * whether to show the upgrade card in place of "Generate another packet".
+ * capped, packetsUsed and resetDate come from lib/packetUsage.ts's
+ * getPlanState, the same read app/dashboard/page.tsx uses, so the generate
+ * page, the result screen and the dashboard all agree on who is out of
+ * packets this month.
+ *
+ * latestMascotUrl: the newest hosted mascot for ?childId= (or for the whole
+ * account when absent), for the small picture at the top of UpgradeModal.
+ * Scoped to the logged-in user by both the query and RLS.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
 
   const {
@@ -31,25 +35,20 @@ export async function GET() {
     return NextResponse.json({ error: "You need to be logged in." }, { status: 401 });
   }
 
-  const [{ data: profile }, { data: usageRows, error: usageError }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("subscription_status, packets_used_this_month")
-      .eq("id", user.id)
-      .single(),
-    supabase.rpc("get_my_packet_usage"),
-  ]);
+  const childId = new URL(request.url).searchParams.get("childId");
 
-  if (usageError) {
-    console.error("[plans] get_my_packet_usage failed, falling back to raw profile column:", usageError.message);
-  }
-  const isPaid = isPaidStatus(profile?.subscription_status);
-  const packetsUsed = usageRows?.[0]?.packets_used ?? profile?.packets_used_this_month ?? 0;
+  const [plan, latestMascotUrl] = await Promise.all([
+    getPlanState(supabase, user.id, "plans"),
+    getLatestMascotUrl(supabase, user.id, childId),
+  ]);
 
   return NextResponse.json({
     monthlyPriceId: PLANS.unlimited.monthly.priceId,
     yearlyPriceId: PLANS.unlimited.yearly.priceId,
-    isPaid,
-    capped: !isPaid && packetsUsed >= 1,
+    isPaid: plan.isPaid,
+    capped: plan.capped,
+    packetsUsed: plan.packetsUsed,
+    resetDate: plan.resetDate,
+    latestMascotUrl,
   });
 }

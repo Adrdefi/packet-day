@@ -5,7 +5,8 @@ import ChildCard from "@/components/dashboard/ChildCard";
 import PacketList from "@/components/dashboard/PacketList";
 import UpgradeModalController from "@/components/dashboard/UpgradeModalController";
 import UpgradeCelebration from "@/components/UpgradeCelebration";
-import { isPaidStatus } from "@/lib/isPaid";
+import { AddChildUpgradeButton } from "@/components/dashboard/UpgradeButtons";
+import { getPlanState } from "@/lib/packetUsage";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import type { Child, Packet } from "@/types";
 
@@ -35,8 +36,7 @@ export default async function DashboardPage({
   const [
     { data: children },
     { data: packets },
-    { data: profile },
-    { data: usageRows, error: usageError },
+    plan,
   ] = await Promise.all([
     supabase
       .from("children")
@@ -49,33 +49,21 @@ export default async function DashboardPage({
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase
-      .from("profiles")
-      .select("subscription_status, packets_used_this_month, packets_reset_date")
-      .eq("id", user.id)
-      .single(),
-    // Reads the same month boundary check_and_increment_packet_usage uses
-    // (migration 014) — profiles.packets_used_this_month/packets_reset_date
-    // only actually reset on a user's next generation, so reading them raw
-    // shows last month's count until then. Falls back to the raw columns
-    // below if the RPC errors, so the page never breaks over this.
-    supabase.rpc("get_my_packet_usage"),
+    // Same plan + usage read as GET /api/plans (lib/packetUsage.ts), so the
+    // dashboard, the generate page and the result screen agree on who is
+    // out of packets this month.
+    getPlanState(supabase, user.id, "dashboard"),
   ]);
-
-  if (usageError) {
-    console.error("[dashboard] get_my_packet_usage failed, falling back to raw profile columns:", usageError.message);
-  }
-  const usage = usageRows?.[0];
 
   const childList = (children as Child[]) ?? [];
   const packetList = (packets as Packet[]) ?? [];
-  // Anyone not on pro is on the free tier — cancelled included, since
-  // PACKET_LIMITS treats cancelled the same as free (1 packet/month).
-  const isFree = !isPaidStatus(profile?.subscription_status);
-  const packetsUsed = usage?.packets_used ?? profile?.packets_used_this_month ?? 0;
-  const resetDate =
-    usage?.reset_date ?? profile?.packets_reset_date ?? new Date().toISOString().slice(0, 10);
-  const capped = packetsUsed >= 1;
+  // Anyone not on pro is on the free tier, cancelled included.
+  const isFree = !plan.isPaid;
+  const { packetsUsed, resetDate, capped } = plan;
+  // Free plan has room for one child profile; the database enforces it too
+  // (migration 018), this just opens the upgrade modal instead of a form
+  // that would be refused.
+  const atChildLimit = isFree && childList.length >= 1;
   // Fresh server read above (profile.subscription_status) decides this, not
   // client state — a paid user's ?upgrade= is ignored entirely.
   const deepLinkPlan = isFree ? requestedUpgradePlan : null;
@@ -83,6 +71,18 @@ export default async function DashboardPage({
   return (
     <div className="space-y-8">
       {showCelebration && <UpgradeCelebration />}
+      {/* Owns the one upgrade modal (kid cards, Add Another Child, the usage
+          banner it renders after the grid, and ?upgrade= deep links). Paid
+          accounts get the grid only. */}
+      <UpgradeModalController
+        isFree={isFree}
+        used={packetsUsed}
+        limit={1}
+        resetDate={resetDate}
+        nextFreeDate={nextFreeDateLabel(resetDate)}
+        capped={capped}
+        deepLinkPlan={deepLinkPlan}
+      >
       {/* ── Two-column grid ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* ── Left: My Kids ──────────────────────────────────────────── */}
@@ -110,15 +110,19 @@ export default async function DashboardPage({
           )}
 
           {childList.map((child) => (
-            <ChildCard key={child.id} child={child} />
+            <ChildCard key={child.id} child={child} capped={capped} />
           ))}
 
-          <Link
-            href="/dashboard/children/new"
-            className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-border bg-white hover:border-sage/50 hover:bg-sage/5 text-muted hover:text-sage font-semibold text-sm py-4 rounded-xl transition-colors"
-          >
-            + Add Another Child
-          </Link>
+          {atChildLimit ? (
+            <AddChildUpgradeButton />
+          ) : (
+            <Link
+              href="/dashboard/children/new"
+              className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-border bg-white hover:border-sage/50 hover:bg-sage/5 text-muted hover:text-sage font-semibold text-sm py-4 rounded-xl transition-colors"
+            >
+              + Add Another Child
+            </Link>
+          )}
         </section>
 
         {/* ── Right: Recent Packets ───────────────────────────────────── */}
@@ -126,21 +130,10 @@ export default async function DashboardPage({
           <h2 className="font-display text-2xl font-bold text-dark">
             Recent Packets
           </h2>
-          <PacketList packets={packetList} children={childList} />
+          <PacketList packets={packetList} kids={childList} />
         </section>
       </div>
-
-      {/* ── Free tier usage banner ──────────────────────────────────── */}
-      {isFree && (
-        <UpgradeModalController
-          used={packetsUsed}
-          limit={1}
-          resetDate={resetDate}
-          nextFreeDate={nextFreeDateLabel(resetDate)}
-          capped={capped}
-          deepLinkPlan={deepLinkPlan}
-        />
-      )}
+      </UpgradeModalController>
     </div>
   );
 }

@@ -151,7 +151,7 @@ See `.env.local.example` for all variables and where to find them.
 - **DNS:** Netlify (NS1 nameservers). **Registrar:** Porkbun. Never enable Vercel DNS.
 - **Hosting:** Vercel Pro.
 - **One Supabase project** serves both local dev and production. Stripe sandbox actions change real production profiles — be careful testing checkout locally.
-- **Test accounts** use `adrdefi+...` addresses and are kept on purpose. `test2`/`test3` show as "pro" from sandbox testing — exclude them from user counts.
+- **Test accounts** use `adrdefi+...` addresses and are kept on purpose. `test2`/`test3` were "pro" during sandbox testing but are `free` in the database now (checked 2026-09-23). Exclude every `adrdefi+...` account from user counts.
 - `.env.local` has trailing inline `#` comments on some lines. Next.js strips them; any custom script reading that file must strip them too.
 
 ---

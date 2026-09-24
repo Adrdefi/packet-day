@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Child } from "@/types";
+import { GetAnotherPacketButton } from "@/components/dashboard/UpgradeButtons";
 
 const GRADE_LABELS: Record<string, string> = {
   K: "Kindergarten",
@@ -20,7 +21,14 @@ const STYLE_LABELS: Record<string, { icon: string; label: string }> = {
   mixed: { icon: "🌀", label: "Mixed" },
 };
 
-export default function ChildCard({ child }: { child: Child }) {
+export default function ChildCard({
+  child,
+  capped = false,
+}: {
+  child: Child;
+  /** Free account that has used this month's packet (fresh server read). */
+  capped?: boolean;
+}) {
   const style = STYLE_LABELS[child.learning_style] ?? {
     icon: "🌀",
     label: child.learning_style,
@@ -50,13 +58,17 @@ export default function ChildCard({ child }: { child: Child }) {
         </div>
       </div>
 
-      {/* Generate button */}
-      <Link
-        href={`/generate?child=${child.id}`}
-        className="block w-full text-center bg-sage text-cream font-bold py-3 rounded-xl hover:bg-sage-dark transition-colors text-sm"
-      >
-        Generate Today&apos;s Packet →
-      </Link>
+      {/* Generate button, or the upgrade modal once this month's free packet is used */}
+      {capped ? (
+        <GetAnotherPacketButton childName={child.name} childId={child.id} />
+      ) : (
+        <Link
+          href={`/generate?child=${child.id}`}
+          className="block w-full text-center bg-sage text-cream font-bold py-3 rounded-xl hover:bg-sage-dark transition-colors text-sm"
+        >
+          Generate Today&apos;s Packet →
+        </Link>
+      )}
 
       {/* Edit link */}
       <div className="text-center">
