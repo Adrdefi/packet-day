@@ -26,12 +26,15 @@ interface Props {
   content: TextSectionContent;
   /** Optional decorative element — renders as a two-column layout when present. */
   illustration?: ReactNode;
+  /** Optional closing element under the paragraphs, e.g. a link to a related post. */
+  footer?: ReactNode;
   bgClassName?: string;
 }
 
 export default function SituationTextSection({
   content,
   illustration,
+  footer,
   bgClassName = "bg-paper",
 }: Props) {
   return (
@@ -53,6 +56,7 @@ export default function SituationTextSection({
             )}
           </h2>
           {content.paragraphs.map((paragraph, i) => renderParagraph(paragraph, i))}
+          {footer && <div className="mt-6">{footer}</div>}
         </div>
         {illustration && <div className="flex justify-center">{illustration}</div>}
       </div>
