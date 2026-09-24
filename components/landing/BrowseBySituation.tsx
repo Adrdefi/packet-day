@@ -3,7 +3,7 @@ import { SITUATIONS } from "@/lib/situations/registry";
 
 export default function BrowseBySituation() {
   return (
-    <section className="py-24 px-6 bg-paper">
+    <section className="py-16 md:py-24 px-6 bg-paper">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-block bg-coral/15 text-coral-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">

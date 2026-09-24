@@ -95,12 +95,12 @@ const STEPS = [
   {
     step: "STEP 1",
     title: "Tell Us About Your Kids",
-    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, block building games. The more specific, the better the AI makes it.",
+    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, block building games. The more specific, the better we can make it.",
   },
   {
     step: "STEP 2",
     title: 'Hit \u201cGenerate\u201d',
-    desc: "Our AI creates a complete, original packet in a minute or two: math, reading, science, art, and PE breaks, all themed to their world.",
+    desc: "We build a complete, original packet in a minute or two: math, reading, science, art, and PE breaks, all themed to their world.",
   },
   {
     step: "STEP 3",
@@ -243,7 +243,7 @@ export default function Home() {
         </section>
 
         {/* ── LOOK INSIDE ───────────────────────────────────────────────────── */}
-        <section className="py-24 bg-paper px-6 overflow-hidden">
+        <section className="py-16 md:py-24 bg-paper px-6 overflow-hidden">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
@@ -269,7 +269,7 @@ export default function Home() {
         </section>
 
         {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
-        <section className="pt-12 pb-24 md:pt-24 bg-cream px-6">
+        <section className="py-16 md:py-24 bg-cream px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
@@ -324,7 +324,7 @@ export default function Home() {
         </section>
 
         {/* ── PAIN POINTS ───────────────────────────────────────────────────── */}
-        <section className="py-24 bg-white px-6">
+        <section className="py-16 md:py-24 bg-white px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-coral/15 text-coral-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -375,26 +375,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── AI / INFINITE THEMES ──────────────────────────────────────────── */}
-        <section id="themes" className="py-24 bg-cream px-6 overflow-hidden">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-4">
-              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
-                Endless themes
-              </span>
-            </div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-dark mb-6 leading-tight">
-              If your kid can dream it, we can teach it.
-            </h2>
-            <p className="text-dark/70 text-lg leading-relaxed">
-              Monster trucks, sloths, ancient Egypt. Any obsession works.
-            </p>
-          </div>
-          <ThemeTicker />
-        </section>
-
         {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="py-24 bg-white px-6">
+        <section id="how-it-works" className="py-16 md:py-24 bg-cream px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -425,11 +407,29 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── AI / INFINITE THEMES ──────────────────────────────────────────── */}
+        <section id="themes" className="py-16 md:py-24 bg-white px-6 overflow-hidden">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-4">
+              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
+                Endless themes
+              </span>
+            </div>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-dark mb-6 leading-tight">
+              If your kid can dream it, we can teach it.
+            </h2>
+            <p className="text-dark/70 text-lg leading-relaxed">
+              Bigfoot, ballet, the planet Saturn. Any obsession works.
+            </p>
+          </div>
+          <ThemeTicker />
+        </section>
+
         {/* ── BROWSE BY SITUATION ──────────────────────────────────────────── */}
         <BrowseBySituation />
 
         {/* ── FEATURES ──────────────────────────────────────────────────────── */}
-        <section className="py-24 bg-white px-6">
+        <section className="py-16 md:py-24 bg-white px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -460,7 +460,7 @@ export default function Home() {
         </section>
 
         {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
-        <section id="reviews" className="py-24 bg-cream px-6">
+        <section id="reviews" className="py-16 md:py-24 bg-cream px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-4">
               <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
@@ -518,7 +518,7 @@ export default function Home() {
         </section>
 
         {/* ── FOUNDER STORY ─────────────────────────────────────────────────── */}
-        <section className="py-24 bg-white px-6">
+        <section className="py-16 md:py-24 bg-white px-6">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-4xl md:text-5xl font-bold text-dark mb-3 leading-tight">
               Why I Built This
@@ -573,7 +573,7 @@ export default function Home() {
         </section>
 
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
-        <section id="pricing" className="py-24 bg-cream px-6">
+        <section id="pricing" className="py-16 md:py-24 bg-cream px-6">
           <PricingPlans
             monthlyPriceId={PLANS.unlimited.monthly.priceId}
             yearlyPriceId={PLANS.unlimited.yearly.priceId}
@@ -587,7 +587,7 @@ export default function Home() {
         <FAQSection />
 
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-        <section className="py-24 bg-sage px-6 text-center">
+        <section className="py-16 md:py-24 bg-sage px-6 text-center">
           <div className="max-w-2xl mx-auto">
             <TomorrowArt className="w-full max-w-[280px] md:max-w-[360px] mx-auto mb-6" />
             <h2 className="font-display text-4xl md:text-5xl font-bold text-cream leading-tight mb-6">

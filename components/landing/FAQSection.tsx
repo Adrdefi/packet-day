@@ -42,7 +42,7 @@ export const FAQS = [
 
 export default function FAQSection() {
   return (
-    <section className="py-24 bg-white px-6">
+    <section className="py-16 md:py-24 bg-white px-6">
       <div className="max-w-3xl mx-auto">
         {/* Label */}
         <div className="text-center mb-4">
