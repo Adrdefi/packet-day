@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Wordmark from "@/components/layout/Wordmark";
 import { useUpgradeCheckout } from "@/hooks/useUpgradeCheckout";
+import PricingPlans, { CHECKOUT_REASSURANCE, unlimitedMonthlyPrice } from "@/components/pricing/PricingPlans";
 
 const NOT_INCLUDED = "✕";
 
@@ -17,22 +18,6 @@ function ComparisonValue({ value }: { value: string }) {
     </>
   );
 }
-
-const FREE_FEATURES = [
-  "1 AI-generated packet per month",
-  "1 child profile",
-  "All core subjects included",
-  "Print-ready PDFs",
-];
-
-const PRO_FEATURES = [
-  "Unlimited AI-generated packets",
-  "Unlimited child profiles",
-  "Infinite themes: anything they dream up",
-  "Answer keys for every packet",
-  "Supply lists with household items only",
-  "First access to new features",
-];
 
 const FAQ = [
   {
@@ -73,9 +58,9 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
     source: "pricing_page",
   });
 
-  const proPrice = isAnnual ? 9 : 12;
+  // Used by the footer button; the cards themselves live in PricingPlans.
+  const proPrice = unlimitedMonthlyPrice(isAnnual);
   const priceUnit = "/mo";
-  const billingNote = isAnnual ? "$108 billed annually, save $36" : "Billed monthly";
 
   return (
     <div className="min-h-screen bg-cream">
@@ -84,124 +69,38 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
         <Link href="/" className="font-display font-bold text-sage">
           <Wordmark size="xl" />
         </Link>
-        <Link
-          href="/login"
-          className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
-        >
-          Log in
-        </Link>
+        <div className="flex items-center gap-4 sm:gap-5">
+          {[
+            { href: "/", label: "Home" },
+            { href: "/sample", label: "Sample" },
+            { href: "/login", label: "Log in" },
+          ].map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-sm font-semibold text-dark/70 hover:text-dark transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </nav>
 
-      {/* Hero */}
-      <section className="py-16 px-6 text-center">
-        <span className="inline-block bg-honey/20 text-honey-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
-          Simple Pricing
-        </span>
-        <h1 className="font-display text-4xl md:text-5xl font-bold text-dark leading-tight mb-4 max-w-2xl mx-auto">
-          Costs less than the drive-thru.
-          <br className="hidden md:block" />
-          Does way more for your day.
-        </h1>
-        <p className="text-dark/60 text-lg max-w-md mx-auto">
-          Start free. Upgrade when you&apos;re ready. No pressure, no nonsense.
-        </p>
-      </section>
-
-      {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-2 mb-12 px-6">
-        <button
-          onClick={() => setIsAnnual(true)}
-          aria-pressed={isAnnual}
-          className={[
-            "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[110px]",
-            isAnnual ? "bg-sage text-cream" : "bg-white text-dark/60 hover:text-dark border border-border",
-          ].join(" ")}
-        >
-          Annual{" "}
-          <span className={["text-xs font-semibold ml-1", isAnnual ? "text-honey-light" : "text-sage"].join(" ")}>
-            save 25%
-          </span>
-        </button>
-        <button
-          onClick={() => setIsAnnual(false)}
-          aria-pressed={!isAnnual}
-          className={[
-            "text-sm font-bold px-5 py-3 rounded-full transition-colors min-w-[110px]",
-            !isAnnual ? "bg-sage text-cream" : "bg-white text-dark/60 hover:text-dark border border-border",
-          ].join(" ")}
-        >
-          Monthly
-        </button>
-      </div>
-
-      {/* Pricing cards */}
-      <section className="px-6 pb-16 max-w-3xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Free */}
-          <div className="bg-white rounded-2xl border border-border p-8 flex flex-col">
-            <div className="flex-1">
-              <h2 className="font-display text-2xl font-bold text-dark mb-1">Free</h2>
-              <p className="text-sm text-muted mb-6">Dip your toes in, no card needed</p>
-              <div className="mb-1">
-                <span className="font-display text-5xl font-bold text-dark">$0</span>
-                <span className="text-muted text-lg ml-1">/mo</span>
-              </div>
-              <p className="text-xs text-muted mb-8">Always free</p>
-              <ul className="space-y-3 mb-8">
-                {FREE_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-dark/80">
-                    <span className="text-sage mt-0.5 shrink-0">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Link
-              href="/signup"
-              className="block text-center bg-cream border-2 border-sage text-sage font-bold py-3 px-6 rounded-xl hover:bg-sage hover:text-cream transition-colors"
-            >
-              Start Free
-            </Link>
-          </div>
-
-          {/* Pro */}
-          <div className="bg-sage rounded-2xl p-8 flex flex-col relative overflow-hidden">
-            <div className="absolute top-4 right-4 bg-honey text-dark text-xs font-bold px-3 py-1 rounded-full">
-              Most Popular
-            </div>
-            <div className="flex-1">
-              <h2 className="font-display text-2xl font-bold text-cream mb-1">Unlimited</h2>
-              <p className="text-sm text-cream/75 mb-6">Every kid. Every day. Every wild idea.</p>
-              <div className="mb-1">
-                <span className="font-display text-5xl font-bold text-cream">${proPrice}</span>
-                <span className="text-cream/75 text-lg ml-1">{priceUnit}</span>
-              </div>
-              <p className="text-xs text-cream/60 mb-8">{billingNote}</p>
-              <ul className="space-y-3 mb-8">
-                {PRO_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-cream/90">
-                    <span className="text-honey mt-0.5 shrink-0">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {error && (
-              <p className="text-coral-light text-sm mb-3 font-medium">{error}</p>
-            )}
-            <button
-              onClick={() => upgrade(isAnnual)}
-              disabled={loading}
-              className="block w-full text-center bg-cream text-sage font-bold py-3 px-6 rounded-xl hover:bg-cream-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? "Redirecting…" : "Get Unlimited →"}
-            </button>
-          </div>
-        </div>
-
-        <p className="text-center text-sm text-muted mt-8 max-w-md mx-auto">
-          That&apos;s less than $0.30/day for a full day of personalized, AI-crafted learning for every kid in your house.
-        </p>
+      {/* Headline, toggle, plan cards: shared with the homepage */}
+      <section className="py-16 px-6">
+        <PricingPlans
+          monthlyPriceId={monthlyPriceId}
+          yearlyPriceId={yearlyPriceId}
+          source="pricing_page"
+          headingLevel="h1"
+          isAnnual={isAnnual}
+          onIsAnnualChange={setIsAnnual}
+          intro={
+            <p className="text-dark/60 text-lg max-w-md mx-auto text-center mb-10">
+              Start free. Upgrade when you&apos;re ready. No pressure, no nonsense.
+            </p>
+          }
+        />
       </section>
 
       {/* Feature comparison table */}
@@ -220,8 +119,11 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
             ["Child profiles", "1", "Unlimited"],
             ["All subjects", "✓", "✓"],
             ["Print-ready PDFs", "✓", "✓"],
-            ["Answer keys", NOT_INCLUDED, "✓"],
-            ["Supply lists", NOT_INCLUDED, "✓"],
+            // Every packet on every plan has both (the generator and PDF
+            // don't vary by plan), so only the rows above and early
+            // feature access are real differences.
+            ["Answer keys", "✓", "✓"],
+            ["Supply lists", "✓", "✓"],
             ["Any theme", "✓", "✓"],
             ["Early feature access", NOT_INCLUDED, "✓"],
           ].map(([feature, free, pro], i) => (
@@ -299,8 +201,10 @@ export default function PricingPageClient({ monthlyPriceId, yearlyPriceId, initi
           disabled={loading}
           className="bg-honey hover:bg-honey-dark text-dark font-bold py-4 px-8 rounded-xl transition-colors text-base disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? "Redirecting…" : `Get Unlimited for $${proPrice}${priceUnit} →`}
+          {loading ? "Redirecting…" : `Get Unlimited for ${proPrice}${priceUnit} →`}
         </button>
+        {error && <p className="text-coral-light text-sm mt-3 font-medium">{error}</p>}
+        <p className="text-xs text-cream/75 mt-3">{CHECKOUT_REASSURANCE}</p>
       </section>
     </div>
   );
