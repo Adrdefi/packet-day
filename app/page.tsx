@@ -7,6 +7,7 @@ import ThemeTicker from "@/components/landing/ThemeTicker";
 import PricingPlans from "@/components/pricing/PricingPlans";
 import OnePriceArt from "@/components/landing/art/OnePriceArt";
 import FAQSection, { FAQS } from "@/components/landing/FAQSection";
+import MobileStickyCta from "@/components/landing/MobileStickyCta";
 import JsonLd from "@/components/JsonLd";
 import { softwareApplicationNode } from "@/lib/softwareApplicationJsonLd";
 import BrowseBySituation from "@/components/landing/BrowseBySituation";
@@ -70,18 +71,11 @@ const PAIN_CARDS: { icon: LandingIconName; title: string; desc: string }[] = [
   },
 ];
 
-const PREVIEW_CARDS: { icon: LandingIconName; subject: string; desc: string }[] = [
-  { icon: "math", subject: "Math", desc: "Measuring dinosaurs, counting fossils, dino timeline math" },
-  { icon: "reading", subject: "Reading", desc: "Dino facts passage + comprehension questions" },
-  { icon: "science", subject: "Science", desc: "Fossil dig activity, herbivore vs. carnivore sort" },
-  { icon: "artPe", subject: "Art + PE", desc: 'Draw your own dino + "Dino Stomp" movement break' },
-];
-
 const STEPS = [
   {
     step: "STEP 1",
     title: "Tell Us About Your Kids",
-    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, Minecraft. The more specific, the better the AI makes it.",
+    desc: "Grade level + what they're into right now. Dinosaurs, baking, outer space, soccer, block building games. The more specific, the better the AI makes it.",
   },
   {
     step: "STEP 2",
@@ -193,6 +187,7 @@ export default function Home() {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-16">
                 <Link
+                  id="hero-cta"
                   href="/signup"
                   className="bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
                 >
@@ -254,6 +249,34 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
+        <section className="py-24 bg-paper px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+                The part nobody else does
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-3">
+                Every packet gets its own character.
+              </h2>
+              <p className="text-dark/70 max-w-2xl mx-auto leading-relaxed">
+                A character invented for that day, drawn for that kid, who turns up
+                in the math problems, the writing prompt, and the coloring page.
+              </p>
+            </div>
+
+            {/* Edge to edge on phones so the three cards read larger */}
+            <Image
+              src="/landing/characters.png"
+              alt="Two illustrated characters, a fox in a top hat and a worm in a lab coat holding a magnifying glass, beside an empty dashed card labeled 'your kid's character'."
+              width={1600}
+              height={900}
+              sizes="(max-width: 768px) 100vw, 1024px"
+              className="w-[calc(100%+3rem)] max-w-none -mx-6 md:w-full md:max-w-full md:mx-0 h-auto"
+            />
+          </div>
+        </section>
+
         {/* ── PAIN POINTS ───────────────────────────────────────────────────── */}
         <section className="py-24 bg-white px-6">
           <div className="max-w-6xl mx-auto">
@@ -290,6 +313,19 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            <div className="mt-14 text-center">
+              <p className="font-display text-2xl md:text-3xl text-dark mb-6">
+                When today&apos;s that day, we&apos;ve got you.
+              </p>
+              <Link
+                href="/signup"
+                className="inline-block bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
+              >
+                Hand them a packet in two minutes
+              </Link>
+              <p className="text-dark/60 text-sm mt-4">Free to start. No card needed.</p>
+            </div>
           </div>
         </section>
 
@@ -298,70 +334,17 @@ export default function Home() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-4">
               <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
-                Powered by AI
+                Endless themes
               </span>
             </div>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-dark mb-6 leading-tight">
               If your kid can dream it, we can teach it.
             </h2>
-            <p className="text-dark/70 text-lg leading-relaxed mb-4">
-              Packet Day is powered by AI, which means there&apos;s no fixed library of themes.
-              Every single packet is created from scratch, tailored to your child&apos;s grade level
-              and whatever they&apos;re into{" "}
-              <em className="italic">right now</em>.
-            </p>
             <p className="text-dark/70 text-lg leading-relaxed">
-              Last week it was volcanoes. This week it&apos;s Taylor Swift. Tomorrow it might be
-              &ldquo;only robots that live underwater.&rdquo;{" "}
-              <strong className="text-dark">All of those work.</strong>
+              Monster trucks, sloths, ancient Egypt. Any obsession works.
             </p>
           </div>
           <ThemeTicker />
-        </section>
-
-        {/* ── PACKET PREVIEW ────────────────────────────────────────────────── */}
-        <section className="py-24 bg-white px-6">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-dark text-center mb-10">
-              Example: &ldquo;Dinosaur Day&rdquo; for a 3rd Grader
-            </h2>
-
-            <div className="grid sm:grid-cols-2 gap-4 mb-10">
-              {PREVIEW_CARDS.map((card) => (
-                <div
-                  key={card.subject}
-                  className="bg-cream rounded-2xl p-6 border border-border flex items-start gap-4"
-                >
-                  <div className="w-14 h-14 shrink-0 rounded-full bg-honey/20 flex items-center justify-center">
-                    <LandingIcon name={card.icon} className="w-10 h-10" />
-                  </div>
-                  <div>
-                    <h3 className="font-display font-bold text-dark text-lg mb-1">
-                      {card.subject}
-                    </h3>
-                    <p className="text-dark/70 text-sm leading-relaxed">{card.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* AI explanation */}
-            <div className="bg-dark rounded-2xl p-8 text-cream">
-              <div className="flex items-center gap-3 mb-4">
-                <h3 className="font-display text-xl font-bold text-cream">
-                  How the AI works (the non-techy version)
-                </h3>
-              </div>
-              <p className="text-cream/80 leading-relaxed text-sm">
-                You tell us your child&apos;s grade and what they&apos;re into. Our AI builds a
-                complete school day from scratch: original math problems, reading passages, science
-                activities, art projects, and PE breaks, all woven into that theme. It&apos;s not
-                pulling from a database of pre-made worksheets. Every packet is brand new, every
-                single time. That means your kid never gets the same packet twice, and you&apos;ll
-                never run out of ideas, even if they want &ldquo;only sharks, forever.&rdquo;
-              </p>
-            </div>
-          </div>
         </section>
 
         {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
@@ -543,33 +526,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── OWN CHARACTER ─────────────────────────────────────────────────── */}
-        <section className="py-24 bg-paper px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10">
-              <span className="inline-block bg-sage/10 text-sage text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
-                The part nobody else does
-              </span>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-3">
-                Every packet gets its own character.
-              </h2>
-              <p className="text-dark/70 max-w-2xl mx-auto leading-relaxed">
-                A character invented for that day, drawn for that kid, who turns up
-                in the math problems, the writing prompt, and the coloring page.
-              </p>
-            </div>
-
-            <Image
-              src="/landing/characters.png"
-              alt="Two illustrated characters, a fox in a top hat and a worm in a lab coat holding a magnifying glass, beside an empty dashed card labeled 'your kid's character'."
-              width={1600}
-              height={900}
-              sizes="(max-width: 768px) 100vw, 1024px"
-              className="w-full h-auto"
-            />
-          </div>
-        </section>
-
         {/* ── PRICING ───────────────────────────────────────────────────────── */}
         <section id="pricing" className="py-24 bg-cream px-6">
           <PricingPlans
@@ -585,7 +541,7 @@ export default function Home() {
         <FAQSection />
 
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-        <section className="py-24 bg-sage px-6 text-center">
+        <section id="final-cta" className="py-24 bg-sage px-6 text-center">
           <div className="max-w-2xl mx-auto">
             <TomorrowArt className="w-full max-w-[280px] md:max-w-[360px] mx-auto mb-6" />
             <h2 className="font-display text-4xl md:text-5xl font-bold text-cream leading-tight mb-6">
@@ -611,8 +567,10 @@ export default function Home() {
           </div>
         </section>
 
+        <MobileStickyCta />
+
         {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-        <footer className="bg-dark px-6 py-14">
+        <footer id="site-footer" className="bg-dark px-6 py-14">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center gap-2 font-display font-bold text-cream mb-2 justify-center md:justify-start">
