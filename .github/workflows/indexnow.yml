@@ -1,0 +1,80 @@
+# Tells IndexNow (Bing and others) which pages changed after each
+# successful production deploy. Triggered by the deployment status Vercel
+# posts to GitHub, so it only runs once production is actually live.
+# The key is public by design (public/<key>.txt), so no secrets are needed.
+name: IndexNow
+
+on:
+  deployment_status:
+  workflow_dispatch: # manual full resubmit of every sitemap URL
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  changed-pages:
+    if: >-
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The last production deploy before this one that succeeded, so a
+      # fast-forward that brings in several commits is covered in full.
+      - name: Find the previous production deploy
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_ID: ${{ github.event.deployment.id }}
+          HEAD_SHA: ${{ github.event.deployment.sha }}
+        run: |
+          base=""
+          for row in $(gh api "repos/${GITHUB_REPOSITORY}/deployments?environment=Production&per_page=30" --jq '.[] | "\(.id),\(.sha)"'); do
+            id="${row%%,*}"; sha="${row##*,}"
+            if [ "$id" -ge "$CURRENT_ID" ] || [ "$sha" = "$HEAD_SHA" ]; then continue; fi
+            state="$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses" --jq '.[0].state')"
+            if [ "$state" = "success" ]; then base="$sha"; break; fi
+          done
+          if [ -z "$base" ]; then
+            base="$(git rev-parse "${HEAD_SHA}^")"
+            echo "No earlier successful production deploy found; using the parent commit ${base}."
+          else
+            echo "Previous production deploy: ${base}"
+          fi
+          echo "sha=${base}" >> "$GITHUB_OUTPUT"
+
+      - name: Submit changed pages
+        run: npm run indexnow -- --changed-since "${{ steps.base.outputs.sha }}" --head "${{ github.event.deployment.sha }}"
+
+  all-pages:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Submit every sitemap URL
+        run: npm run indexnow -- --all
