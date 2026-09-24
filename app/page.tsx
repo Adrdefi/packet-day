@@ -70,6 +70,27 @@ const PAIN_CARDS: { icon: LandingIconName; title: string; desc: string }[] = [
   },
 ];
 
+const CHARACTERS = [
+  {
+    name: "Dodger the Fox",
+    packet: "Vivian's Oliver Twist day",
+    src: "/landing/characters/dodger.webp",
+    alt: "Dodger the Fox, a cartoon fox in a gray top hat and patched gray coat, holding a red lantern",
+  },
+  {
+    name: "Wiggles the Worm Scientist",
+    packet: "Liam's Worm Adventure Day",
+    src: "/landing/characters/wiggles.webp",
+    alt: "Wiggles the Worm Scientist, a cartoon pink worm in round glasses and a white lab coat, holding a magnifying glass and two flasks of soil",
+  },
+  {
+    name: "Grimy",
+    packet: "Sam's Garbage Truck Adventure Day",
+    src: "/landing/characters/grimy.webp",
+    alt: "Grimy, a bright green cartoon garbage truck with big friendly eyes, wearing a yellow hard hat",
+  },
+];
+
 const STEPS = [
   {
     step: "STEP 1",
@@ -263,15 +284,42 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Edge to edge on phones so the three cards read larger */}
-            <Image
-              src="/landing/characters.png"
-              alt="Two illustrated characters, a fox in a top hat and a worm in a lab coat holding a magnifying glass, beside an empty dashed card labeled 'your kid's character'."
-              width={1600}
-              height={900}
-              sizes="(max-width: 768px) 100vw, 1024px"
-              className="w-[calc(100%+3rem)] max-w-none -mx-6 md:w-full md:max-w-full md:mx-0 h-auto"
-            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {CHARACTERS.map((c) => (
+                <div
+                  key={c.name}
+                  className="bg-white rounded-2xl border border-sage/20 shadow-sm pt-3 pb-4 md:pt-4 md:pb-5 flex flex-col items-center text-center"
+                >
+                  <Image
+                    src={c.src}
+                    alt={c.alt}
+                    width={640}
+                    height={640}
+                    sizes="(max-width: 768px) 35vw, 180px"
+                    className="w-3/4 h-auto"
+                  />
+                  <h3 className="font-display font-bold text-dark text-base md:text-lg leading-tight mt-2 px-3 md:px-4">
+                    {c.name}
+                  </h3>
+                  <p className="text-sage-dark text-xs md:text-sm leading-snug mt-1 px-3 md:px-4">{c.packet}</p>
+                </div>
+              ))}
+
+              <div className="rounded-2xl border-2 border-dashed border-dark/15 pt-3 pb-4 md:pt-4 md:pb-5 flex flex-col items-center text-center">
+                <div
+                  className="w-3/4 aspect-square flex items-center justify-center font-display font-bold text-6xl md:text-7xl text-dark/15"
+                  aria-hidden="true"
+                >
+                  ?
+                </div>
+                <h3 className="font-display font-bold text-dark/50 text-base md:text-lg leading-tight mt-2 px-3 md:px-4">
+                  Your kid&apos;s character
+                </h3>
+                <p className="text-dark/50 text-xs md:text-sm leading-snug mt-1 px-3 md:px-4">
+                  Made for whatever they&apos;re into this week
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
