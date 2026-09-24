@@ -68,7 +68,7 @@ Notice what's not on the list: an hour of prep. The whole point is that this tak
 
 ## About the tablet (let's be real)
 
-It's coming. It's in the bag right now. And that's fine. This was never about zero screens, it was about not *needing* the screen for all eight hours. An hour of tablet in Phase 4, after six screen-free hours, hits different than eight straight hours of glazed eyes and the inevitable meltdown when the battery dies.
+It's coming. It's in the bag right now. And that's fine. This was never about zero screens, it was about not *needing* the screen for all eight hours. An hour of tablet in Phase 4, after six [screen-free](/screen-free) hours, hits different than eight straight hours of glazed eyes and the inevitable meltdown when the battery dies.
 
 You're not anti-screen. You're pro-plan. Big difference. 💛
 

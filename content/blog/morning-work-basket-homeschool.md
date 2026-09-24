@@ -53,7 +53,7 @@ The pages are the easy part. The ritual is what you're really building, so here'
 - **Same place, same time.** Kitchen table, 8:30, every day. Boring is the feature.
 - **Same opener.** We start with the drawing prompt while I pour coffee. Yours can be the reading passage, the poem, whatever. Just make it the same one daily.
 - **You do your thing too.** The basket was always partly for *you*. Read your book. Drink the coffee. Being nearby but not hovering is the whole vibe.
-- **20-30 minutes, then move on.** Morning work is an on-ramp, not the school day. When the pages are done or the timer dings, the day begins.
+- **20-30 minutes, then move on.** Morning work is an on-ramp, not the school day. When the pages are done or the timer dings, the day begins. Got more than one kid? [Here's how our day rotates from there](/blog/homeschool-schedule-multiple-kids).
 
 Give it two weeks. The first week they'll test it ("is this every day now?"). The second week they'll just... sit down. That's the ritual working.
 

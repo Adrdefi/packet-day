@@ -61,7 +61,7 @@ It's activity #3 on the list, but it's the one I reach for when the list itself 
 
 One packet a month is free, no card required. Unlimited is $12/month, or $9/month billed yearly.
 
-**[Get a free packet →](/sick-day)**
+**[Get a free packet →](/screen-free)**
 
 ## A note on the guilt
 
@@ -69,7 +69,7 @@ If you're reading this because the screens have been heavy lately, hear me. A sc
 
 This list isn't a rebuke. It's a toolbox for the moments you *want* an alternative. Use what fits, ignore the rest, and release the guilt either way. 💛
 
-**[Make my free packet →](/road-trip)** A minute or two, printed, done. One per month free, no card.
+**[Make my free packet →](/screen-free)** A minute or two, printed, done. One per month free, no card.
 
 ---
 

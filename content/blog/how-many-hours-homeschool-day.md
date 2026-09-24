@@ -49,6 +49,8 @@ Forget the bell schedule. A homeschool day is shaped like this:
 
 The families who thrive aren't the ones doing the most hours. They're the ones protecting the morning block and releasing the rest.
 
+Teaching more than one kid? Here's [the two-hour rotation we use for siblings at different levels](/blog/homeschool-schedule-multiple-kids).
+
 ## The 60-second version: fill the hours without filling your plate 📝
 
 Here's the practical part: those 1 to 4 hours still need *material*. And "what are we doing today" is a daily decision that gets exhausting by November.

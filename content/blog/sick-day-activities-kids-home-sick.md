@@ -86,7 +86,7 @@ None is required. Rest is the job. But 1 to 2 hours of quiet, low-energy activit
 Audiobooks with coloring, blanket-fort reading, drawing prompts with a specific mission, card games, simple puzzles, journaling, and printable activity packets. The best ones are independent, because you need rest too.
 
 **Is extra screen time okay on sick days?**
-Yes. It's a sick day, not a parenting referendum. A little balance helps (some quiet off-screen time in the morning, screens in the afternoon), but don't beat yourself up about it.
+Yes. It's a sick day, not a parenting referendum. A little balance helps (some [quiet off-screen time](/screen-free) in the morning, screens in the afternoon), but don't beat yourself up about it.
 
 **What if I have to work while my kid is home sick?**
 Lean on independent activities: audiobooks, a printed packet they can do alone (answer keys included so there's no hovering), puzzles, and drawing prompts. Set them up in one spot with everything they need, and check in between your own tasks.
