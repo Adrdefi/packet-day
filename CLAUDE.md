@@ -233,9 +233,36 @@ Examples:
 - **State hypothesis outcomes explicitly.** When debugging, say plainly whether each hypothesis was CONFIRMED or FAILED before moving to the next one. Never move on silently from a failed test.
 - **Test through the real app when possible.** Prefer `npm run dev` plus the actual API route over hand-built scratch harnesses. The dev server resolves modules correctly; hand-rolled Node invocations on Windows often don't.
 - **Andy is a beginner.** Explain results in plain English, not jargon.
-- **Only commit and push when the prompt asks for it.** Riskier changes go on a preview branch and get tested on the Vercel preview URL before merging to main.
 - **When asked to show a file or code, show the raw text** — never a summary.
 - **"Read only" means no edits, no new files, no commits.**
+
+---
+
+## Working rules
+
+1. **Keep going.** When a step doesn't need Andy's input, keep working. Put status notes in the same message as your next action. Stop and ask only when you truly can't continue without him. The exceptions: the hard stops below, and the "stop after two failed tooling attempts" rule in Agent operating rules.
+
+2. **Hard stops.** Always stop and ask before any of these:
+   - merging or pushing to `main`
+   - force pushing (any branch)
+   - running a Supabase migration
+   - deleting or altering production data (remember: one Supabase project serves both local dev and production, so "local" data changes are production changes)
+   - changing anything in Stripe (sandbox actions change real production profiles too)
+   - changing production environment variables
+   - changing anything outside this repo
+
+3. **Commits, branches, and definition of done.** A task is done when the build passes and there is a working preview link Andy can click to test. Include the link in the final report. To get there, work on a non-`main` preview branch and push it so Vercel builds a preview. Pushing a preview branch is part of the job, not a hard stop. If the prompt says not to push (or not to commit), follow the prompt and say in the report that there is no preview link yet and why.
+
+4. **Subagents.** Use subagents and parallel workflows however you judge best, especially for audits, sitewide sweeps, and large reviews.
+
+5. **Final report.** End every task with three headings:
+   - **Blocked on me:** anything waiting on Andy's decision or approval.
+   - **Changed:** what you changed, briefly.
+   - **Found:** issues or risks you noticed. Clearly mark anything you could not verify yourself, and say why.
+
+   Keep it in plain English (see "Andy is a beginner" above).
+
+6. **Copy rule reminder.** Never use em dashes or hyphens as punctuation in any user facing copy. This adds to the Brand voice & tone rules at the top of this file.
 
 ---
 
