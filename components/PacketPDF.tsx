@@ -2731,15 +2731,6 @@ export default function PacketPDF(props: PacketPDFProps) {
           hasParentSheet={hasParentSheet}
         />
       ))}
-      <CertificatePage
-        childName={props.childName}
-        childGrade={props.childGrade}
-        title={props.title}
-        createdAt={props.createdAt}
-        mascotImageUrl={props.mascotImageUrl}
-        mascotName={props.mascotName}
-        activities={props.activities}
-      />
       {props.coloringPage && (
         <ColoringPage
           coloringPage={props.coloringPage}
@@ -2750,6 +2741,16 @@ export default function PacketPDF(props: PacketPDFProps) {
         />
       )}
       <CelebrationPage {...props} />
+      {/* Certificate is the last kid page, right before the parent sheet. */}
+      <CertificatePage
+        childName={props.childName}
+        childGrade={props.childGrade}
+        title={props.title}
+        createdAt={props.createdAt}
+        mascotImageUrl={props.mascotImageUrl}
+        mascotName={props.mascotName}
+        activities={props.activities}
+      />
       <ParentAnswerSheetPage childName={props.childName} activities={props.activities} />
     </Document>
   );
