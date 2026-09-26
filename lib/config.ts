@@ -2,7 +2,16 @@
 
 import { SITE_URL } from "@/lib/site";
 
-export const MODEL = "claude-sonnet-4-6";
+export const MODEL = "claude-opus-5-5";
+
+/**
+ * Models that still accept `temperature` and fit a packet in the old
+ * max_tokens caps. Newer models (Sonnet 5, Opus 5.5, ...) reject sampling
+ * params with a 400, and their thinking tokens count against max_tokens,
+ * so they get no temperature and a larger cap.
+ */
+export const MODELS_WITH_TEMPERATURE = new Set(["claude-sonnet-4-6"]);
+export const THINKING_MODEL_MAX_TOKENS = 16000;
 
 // ─── AI prices (USD) ──────────────────────────────────────────────────────────
 // Used only to estimate packet_ai_usage.est_cost_usd — not billing truth.

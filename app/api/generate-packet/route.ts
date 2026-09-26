@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateBothImages, type ImageGenResult } from "@/lib/generateMascotImage";
-import { MODEL } from "@/lib/config";
+import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "@/lib/config";
 import { estimatePacketCostUsd, type ClaudeUsage } from "@/lib/aiCost";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
@@ -272,10 +272,11 @@ async function callClaude(
   const maxTokens = packetLength === "half" ? 5000 : 8500;
   const startMs = Date.now();
 
+  const legacyModel = MODELS_WITH_TEMPERATURE.has(MODEL);
   const stream = getAnthropic().messages.stream({
     model: MODEL,
-    max_tokens: maxTokens,
-    temperature: 0.7,
+    max_tokens: legacyModel ? maxTokens : THINKING_MODEL_MAX_TOKENS,
+    ...(legacyModel ? { temperature: 0.7 } : {}),
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });

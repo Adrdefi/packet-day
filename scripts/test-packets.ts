@@ -11,7 +11,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { MODEL } from "../lib/config";
+import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "../lib/config";
 
 // ─── Inline the system prompt so this script is self-contained ────────────────
 // (Importing from the route would drag in Next.js server internals)
@@ -337,8 +337,8 @@ Create the packet now. Return only the JSON object.`;
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 7000,
-    temperature: 0.7,
+    max_tokens: MODELS_WITH_TEMPERATURE.has(MODEL) ? 7000 : THINKING_MODEL_MAX_TOKENS,
+    ...(MODELS_WITH_TEMPERATURE.has(MODEL) ? { temperature: 0.7 } : {}),
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
