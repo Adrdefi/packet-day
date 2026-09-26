@@ -2,7 +2,26 @@
 
 import { SITE_URL } from "@/lib/site";
 
-export const MODEL = "claude-sonnet-4-6";
+const PRODUCTION_MODEL = "claude-sonnet-4-6";
+
+/**
+ * BAKEOFF_MODEL swaps the generation model for local model comparisons
+ * (see scripts/bakeoff.ts). It only takes effect under `next dev`, so
+ * production always runs PRODUCTION_MODEL even if the var is set there.
+ */
+export const MODEL =
+  process.env.NODE_ENV === "development" && process.env.BAKEOFF_MODEL
+    ? process.env.BAKEOFF_MODEL
+    : PRODUCTION_MODEL;
+
+/**
+ * Models that still accept `temperature` and fit a packet in the old
+ * max_tokens caps. Newer models (Sonnet 5, Opus 5.5, ...) reject sampling
+ * params with a 400, and their thinking tokens count against max_tokens,
+ * so they get no temperature and a larger cap.
+ */
+export const MODELS_WITH_TEMPERATURE = new Set(["claude-sonnet-4-6"]);
+export const THINKING_MODEL_MAX_TOKENS = 16000;
 
 // ─── AI prices (USD) ──────────────────────────────────────────────────────────
 // Used only to estimate packet_ai_usage.est_cost_usd — not billing truth.

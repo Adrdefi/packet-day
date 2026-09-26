@@ -14,7 +14,8 @@
     "backfill-images": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/backfill-image-storage.ts",
     "verify-image-backfill": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/verify-image-backfill.ts",
     "test-emails": "node scripts/run-ts.mjs scripts/send-test-emails.ts",
-    "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts"
+    "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts",
+    "bakeoff": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/bakeoff.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
