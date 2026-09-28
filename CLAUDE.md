@@ -40,7 +40,7 @@ Packet Day generates personalized, printable daily learning packets for homescho
 | Supabase | Database, Auth, Storage |
 | Stripe | Payments & subscriptions |
 | Anthropic Claude API | Packet generation (model: claude-opus-5-5) |
-| Replicate (flux-schnell) | AI mascot image generation |
+| Replicate (FLUX.2 Pro, GPT Image 2) | Mascot and coloring page images (fallbacks: flux-schnell, recraft-v3) |
 | @react-pdf/renderer | PDF output |
 | Resend | Transactional email |
 | Vercel | Hosting |
@@ -273,7 +273,7 @@ Examples:
 - The child's name must be scrubbed before any text reaches the image model (IP guard, `lib/generateMascotImage.ts`). Printed text on the PDF keeps the real name.
 - Existing packets in the database are the render regression suite. Never delete them as part of cleanup.
 - PDF text has emoji stripped before rendering because the fonts don't cover emoji. Don't try to render emoji in PDFs.
-- PDF images must be PNG or JPEG. The mascot is requested from Replicate as PNG. The coloring page comes back as webp and is converted with sharp.
+- PDF images must be PNG or JPEG. Both images are requested from Replicate as PNG (mascot: FLUX.2 Pro, coloring page: GPT Image 2). The coloring page always goes through sharp's grayscale pass, which outputs PNG whatever the model returned, including webp from the recraft-v3 fallback.
 
 ---
 
@@ -381,3 +381,17 @@ Three independent candidate sources per user, computed fresh every cron run, fun
 - Share images: situation pages use `app/og/[slug]`; blog posts use `app/og/blog/[slug]`, prerendered with `generateStaticParams`. New blog posts get an image automatically.
 - The spec block in `content/blog/*.md` is metadata only — it must never render on the page.
 - When you edit the content of a blog post (content/blog/*.md), set or update its **Updated:** YYYY-MM-DD line to today. When you edit a situation page's copy or metadata, update its updated date in lib/situations. When adding a new situation page, add its line to lib/situations/sitemap-dates.ts. Punctuation-only or formatting-only changes don't count.
+
+---
+
+## Parked (not scheduled)
+
+Reported by Andy on 2026-09-28 and not investigated yet. Don't start one without his go-ahead. The PDF waiting fixes list (approved, highest priority first) lives in `docs/WAITING_FIXES.md`.
+
+- **Coloring detail by grade.** Coloring pages should get simpler for younger grades and more detailed for older ones.
+- **Coloring scene should match the mascot's look.** The mascot on the coloring page should look like the same character as the mascot image.
+- **Vehicle mascot lookalikes.** Vehicle mascots can drift toward famous characters, like a race car with eyes on the windshield or a train with a face on the boiler front.
+- **Dropped leading capital "I" in the PDF.** Same pattern as the dropped "R" and "J" (see the react-pdf gotchas section and item 1 in `docs/WAITING_FIXES.md`), now seen with "I".
+- **Scrambled PDF text layer.** The PDF looks right on the page, but its underlying text (copy and paste, search) comes out scrambled.
+- **Answer key overflows to 2 pages on older grades.**
+- **Older grade packets take about 2 minutes to generate.**
