@@ -112,6 +112,18 @@ export async function GET(req: NextRequest) {
   const rawNext = searchParams.get("next");
   const next = safeNext(rawNext) ?? "/reset-password";
 
+  // Password recovery tokens are NOT verified here. Email link scanners
+  // (e.g. Outlook Safe Links) fetch this URL a moment before the real
+  // click, so verifying on GET let the scanner burn the one-time token and
+  // the customer's own click failed with otp_expired. Instead, hand the
+  // token to /reset-password, which verifies it exactly once, on submit.
+  if (tokenHash && type === "recovery") {
+    const resetUrl = new URL("/reset-password", origin);
+    resetUrl.searchParams.set("token_hash", tokenHash);
+    resetUrl.searchParams.set("type", "recovery");
+    return NextResponse.redirect(resetUrl);
+  }
+
   if (tokenHash && type) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({
