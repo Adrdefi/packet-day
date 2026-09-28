@@ -66,3 +66,6 @@ test-*.pdf
 # (e.g. scripts/convert-sample-pdf.ts) — only the converted output belongs
 # in the repo, never the source file itself.
 /*.pdf
+
+# Model bakeoff output (PDFs and images; some carry a child name, and the repo is public)
+model-bakeoff-*/
