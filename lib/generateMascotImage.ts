@@ -1,20 +1,31 @@
 // Server-side only. Generates mascot and coloring images via Replicate.
 // Returns null on any failure so it never blocks packet delivery.
 //
-// ── Models ────────────────────────────────────────────────────────────────────
-// Mascot:        black-forest-labs/flux-schnell pinned to version c846a699...
-//                (pinned 2025-06-25). Fast, vibrant cartoon output.
-// Coloring page: recraft-ai/recraft-v3 pinned to version 9507e61d...
-//                style="digital_illustration" (base style). Chosen via
-//                comparison test (2026-07-24): cleaner coloring-book output
-//                than hand_drawn_outline, which returned colored artwork.
-//                Sharp grayscale post-processing strips residual color tinting.
-//                Confirmed style enum for this version: any, realistic_image,
+// ── Models (2026-09-28, chosen in the blind image bakeoff) ───────────────────
+// Each image tries a primary model (one retry), then falls back to the model
+// production used before the switch (one retry), so a packet never loses an
+// image just because the newer model had a bad moment.
+//
+// Mascot:        black-forest-labs/flux-2-pro, 1:1, 1 MP, png.
+//                Fallback: black-forest-labs/flux-schnell (the old default).
+// Coloring page: openai/gpt-image-2, quality "low", 1024x1024, opaque, png,
+//                with an extra no-letters-or-signs line in the prompt.
+//                Fallback: recraft-ai/recraft-v3, style="digital_illustration",
+//                with the pre-switch prompt unchanged. Confirmed style enum for
+//                the pinned recraft version: any, realistic_image,
 //                realistic_image/{b_and_w,hard_flash,hdr,natural_light,
 //                studio_portrait,enterprise,motion_blur}, digital_illustration,
 //                digital_illustration/{pixel_art,hand_drawn,grain,
 //                infantile_sketch,2d_art_poster,handmade_3d,hand_drawn_outline,
 //                engraving_color,2d_art_poster_2}. No vector_illustration subtree.
+//                Sharp grayscale post-processing strips residual tinting from
+//                whichever model produced the page.
+//
+// ── Time budget ─────────────────────────────────────────────────────────────
+// Every attempt's timeout is the smaller of its model's own cap and the time
+// left before the caller's deadline, so retries and fallbacks can never push
+// the route past its limit. Worst case with no deadline pressure: mascot
+// 25+3+25+15+3+15 = 86 s, coloring 30+3+30+15+3+15 = 96 s, run in parallel.
 //
 // ── Diagnosed skip conditions (2026-07-24) ──────────────────────────────────
 // 1. SILENT: mascot_description null/empty — was returning null with no log.
@@ -23,18 +34,22 @@
 // 3. CRASH: missing SUPABASE_SERVICE_ROLE_KEY caused createServiceClient()
 //    to throw inside after(). Caller now guards before scheduling after().
 //
-// ── IP guard (2026-08-28) ────────────────────────────────────────────────────
-// coloring_scene names the child so the printed title/instructions read as
-// personal — but a real child's name is also the strongest possible signal
-// for a diffusion model to draw a same-named copyrighted character (e.g. a
-// child named "Bart" produced a recognizable Bart Simpson). Both generators
-// now scrub the child's name to a generic placeholder before it reaches the
-// image model (scrubChildName below) and both prompts carry an explicit
-// no-copyrighted-character instruction as a second layer. Neither is a
-// guarantee on its own; see the fix writeup for why both are kept.
+// ── IP guard (2026-08-28, mascot names added 2026-09-28) ────────────────────
+// coloring_scene is written to describe the child as "a girl", "a boy", or
+// "a kid" rather than by name, but a real child's name is the strongest
+// possible signal for a diffusion model to draw a same-named copyrighted
+// character (e.g. a child named "Bart" produced a recognizable Bart Simpson),
+// so both generators still scrub the child's name to a generic placeholder
+// before it reaches the image model (scrubChildName below). The mascot's name
+// is scrubbed too (scrubMascotName), because image models print names they
+// see (a rocket named Zoom came back with "ZOOM" painted on it). Both prompts
+// also carry an explicit no-copyrighted-character instruction as a second
+// layer. Neither is a guarantee on its own; see the fix writeup for why both
+// are kept.
 
 import Replicate, { type Prediction } from "replicate";
 import sharp from "sharp";
+import type { ImageUsage } from "@/lib/aiCost";
 
 let _replicate: Replicate | null = null;
 
@@ -50,18 +65,31 @@ function getReplicate(): Replicate {
 
 // ─── Model constants ──────────────────────────────────────────────────────────
 
-// Pinned 2025-06-25. Re-pin when a new version is verified working.
+// Pinned to the versions the 2026-09-28 bakeoff tested. Re-pin only after a
+// new version is verified working.
+const FLUX_2_PRO =
+  "black-forest-labs/flux-2-pro:ccb5e33141097816e6fab8c895e702fe4c619e4e07500885b71214e9f6382a5c";
+const GPT_IMAGE_2 =
+  "openai/gpt-image-2:225c978a7f938acc350564c4548ddc2476bfb33364bec6b5422227f55ce56bd3";
+
+// Fallbacks: the pre-switch production models. flux-schnell pinned
+// 2025-06-25; recraft-v3 version created 2025-11-07.
 const FLUX_SCHNELL =
   "black-forest-labs/flux-schnell:c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e";
-
-// Pinned so a recraft update can't silently break coloring page output.
-// Version created 2025-11-07. Re-pin when a new version is verified.
 const RECRAFT_V3 =
   "recraft-ai/recraft-v3:9507e61ddace8b3a238371b17a61be203747c5081ea6070fecd3c40d27318922";
+
+// Per-attempt caps, each well above the slowest time seen in the bakeoff
+// (FLUX.2 Pro 13.7 s, GPT Image 2 low 17.4 s, recraft-v3 8.6 s,
+// flux-schnell a few seconds in production).
+const FLUX_2_PRO_TIMEOUT_MS = 25_000;
+const GPT_IMAGE_2_TIMEOUT_MS = 30_000;
+const FALLBACK_TIMEOUT_MS = 15_000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const CHILD_PLACEHOLDER = "the child";
+const MASCOT_PLACEHOLDER = "the mascot";
 
 function escapeRegExp(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -87,13 +115,36 @@ function scrubChildName(text: string, childName: string): string {
   return text.replace(pattern, CHILD_PLACEHOLDER);
 }
 
+/**
+ * Removes the mascot's name from text bound for an image model, so the model
+ * never sees a word it might paint onto the picture. "Twirl the pony" becomes
+ * "the pony"; any other mention ("Twirl's tail") becomes "the mascot's tail".
+ * Case-sensitive on purpose: mascot names are capitalized, and a name that is
+ * also an ordinary word ("Bubbles") shouldn't wipe out "bubbles" in the scene.
+ */
+function scrubMascotName(text: string, mascotName: string | null | undefined): string {
+  const trimmedName = mascotName?.trim();
+  if (!trimmedName) return text;
+
+  const name = escapeRegExp(trimmedName);
+  return text
+    .replace(new RegExp(`\\b${name} the\\b`, "g"), "the")
+    .replace(new RegExp(`\\b${name}\\b`, "g"), MASCOT_PLACEHOLDER);
+}
+
 // Replicate E9828 "Director" errors hang for 107 s before the platform gives
-// up on its own. 60 s per attempt lets us fail fast, log it, and move on.
-const REPLICATE_TIMEOUT_MS = 60_000;
+// up on its own, so every attempt carries its own cap (see the model
+// constants above) and is cancelled when it runs out.
 const RETRY_DELAY_MS = 3_000;
 const POLL_INTERVAL_MS = 1_000;
 // Hard cap on the cancel request itself, so a hung cancel can't stall the packet.
 const CANCEL_REQUEST_TIMEOUT_MS = 10_000;
+// Don't start an attempt with less than this left before the deadline.
+const MIN_ATTEMPT_MS = 5_000;
+// Used only when a caller passes no deadline: comfortably above the 96 s
+// worst case, so the per-attempt caps are what bound the call.
+const DEFAULT_DEADLINE_MS = 150_000;
+const ATTEMPTS_PER_MODEL = 2;
 
 const TERMINAL_STATUSES: ReadonlySet<Prediction["status"]> = new Set([
   "succeeded",
@@ -148,7 +199,7 @@ async function runPrediction(
   try {
     while (!TERMINAL_STATUSES.has(prediction.status)) {
       if (Date.now() >= deadline) {
-        throw new Error(`${label}: timed out after ${timeoutMs / 1000}s`);
+        throw new Error(`${label}: timed out after ${Math.round(timeoutMs / 1000)}s`);
       }
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       prediction = await replicate.predictions.get(prediction.id, { signal: remainingSignal() });
@@ -166,24 +217,91 @@ async function runPrediction(
   return prediction.output;
 }
 
+/** One model to try, with the input it gets and its per-attempt cap. */
+interface ImageStage {
+  modelRef: string;
+  input: Record<string, unknown>;
+  attemptTimeoutMs: number;
+}
+
+interface StagesResult {
+  url: string | null;
+  /** Model that produced the image, or the last one tried if none did. */
+  model: string | null;
+  attempts: number;
+  durationMs: number | null;
+  usage: ImageUsage[];
+  usedFallback: boolean;
+}
+
 /**
- * Try `fn` once; if it throws, wait RETRY_DELAY_MS and try once more.
- * Both attempts are logged distinctly so Vercel logs make the retry visible.
+ * Tries each stage in order, ATTEMPTS_PER_MODEL times each, stopping at the
+ * first image. Attempts are logged distinctly so Vercel logs show retries
+ * and fallbacks. Never starts an attempt it can't give MIN_ATTEMPT_MS before
+ * `deadlineMs`, and never lets one run past it.
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  label: string
-): Promise<T> {
-  try {
-    return await fn();
-  } catch (firstErr) {
-    console.warn(`[${label}] Attempt 1 failed — retrying in ${RETRY_DELAY_MS / 1000}s`, {
-      reason: firstErr instanceof Error ? firstErr.message : String(firstErr),
-    });
-    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-    // Let any error from attempt 2 propagate to the caller
-    return await fn();
+async function runStages(stages: ImageStage[], deadlineMs: number, label: string): Promise<StagesResult> {
+  const usage: ImageUsage[] = [];
+  let attempts = 0;
+  let lastModel: string | null = null;
+  let lastStageIndex = 0;
+
+  for (const [stageIndex, stage] of stages.entries()) {
+    const modelName = stage.modelRef.split(":")[0];
+    if (stageIndex > 0) console.warn(`[${label}] Falling back to ${modelName}`);
+
+    for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
+      const remainingMs = deadlineMs - Date.now();
+      if (remainingMs < MIN_ATTEMPT_MS) {
+        console.error(`[${label}] Out of time before ${modelName} attempt ${attempt} — giving up`, {
+          remainingMs,
+        });
+        return { url: null, model: lastModel, attempts, durationMs: null, usage, usedFallback: lastStageIndex > 0 };
+      }
+
+      let stageUsage = usage.find((u) => u.model === stage.modelRef);
+      if (!stageUsage) {
+        stageUsage = { model: stage.modelRef, attempts: 0 };
+        usage.push(stageUsage);
+      }
+      stageUsage.attempts++;
+      attempts++;
+      lastModel = stage.modelRef;
+      lastStageIndex = stageIndex;
+
+      const attemptStartMs = Date.now();
+      try {
+        console.warn(`[${label}] ${modelName} attempt ${attempt} starting`);
+        const output = await runPrediction(
+          stage.modelRef,
+          stage.input,
+          Math.min(stage.attemptTimeoutMs, remainingMs),
+          label
+        );
+        const url = extractUrl(output);
+        if (!url) throw new Error("No URL in Replicate output");
+        return {
+          url,
+          model: stage.modelRef,
+          attempts,
+          durationMs: Date.now() - attemptStartMs,
+          usage,
+          usedFallback: stageIndex > 0,
+        };
+      } catch (err) {
+        console.warn(`[${label}] ${modelName} attempt ${attempt} failed`, {
+          reason: err instanceof Error ? err.message : String(err),
+        });
+        if (attempt < ATTEMPTS_PER_MODEL || stageIndex < stages.length - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.max(0, Math.min(RETRY_DELAY_MS, deadlineMs - Date.now())))
+          );
+        }
+      }
+    }
   }
+
+  return { url: null, model: lastModel, attempts, durationMs: null, usage, usedFallback: lastStageIndex > 0 };
 }
 
 /** Fetch a Replicate output URL and return it as a base64 data URL. */
@@ -234,94 +352,118 @@ function extractUrl(output: unknown): string | null {
 
 /**
  * What each generator returns. `attempts` counts every Replicate prediction
- * started, including ones that timed out and were cancelled (cost estimates
- * treat every attempt as billed). `durationMs` is the successful Replicate call only — null if no
- * attempt succeeded or generation was skipped. `model` is null when skipped.
+ * started across every model tried, including ones that timed out and were
+ * cancelled (cost estimates treat every attempt as billed). `usage` breaks
+ * those attempts down per model so cost is priced correctly when a fallback
+ * ran. `model` is the model that produced the image, or the last one tried
+ * if none did; null when skipped. `durationMs` is the successful Replicate
+ * call only — null if no attempt succeeded or generation was skipped.
  */
 export interface ImageGenResult {
   image: string | null;
   model: string | null;
   attempts: number;
   durationMs: number | null;
+  usage: ImageUsage[];
+  usedFallback: boolean;
 }
+
+const SKIPPED: ImageGenResult = { image: null, model: null, attempts: 0, durationMs: null, usage: [], usedFallback: false };
 
 // ─── Coloring page ────────────────────────────────────────────────────────────
 
+const NO_TEXT_LINE =
+  "no letters, numbers, words, or signs anywhere in the image, including on vehicles, clothing, banners, and objects, ";
+
+function buildColoringPrompt(scene: string, includeNoTextLine: boolean): string {
+  return (
+    `black and white coloring book page for children featuring ${scene}, ` +
+    `clean black outlines only, no color, no shading, no fill, ` +
+    `pure white background, thick clean outlines with large open white regions for coloring, ` +
+    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
+    `simple shapes, kid-friendly line art ready to color, ` +
+    (includeNoTextLine ? NO_TEXT_LINE : "") +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`
+  );
+}
+
 /**
- * Generates a B&W coloring-page image via recraft-v3.
+ * Generates a B&W coloring-page image: GPT Image 2 first, recraft-v3 (with
+ * the pre-switch prompt) as the fallback.
  *
  * Accepts `coloringScene` — the concrete visual scene description from the
  * packet JSON (coloring_page.coloring_scene). This is the single source of
  * truth: the same text drives the image, the page title, and the instructions,
  * so all three always describe the same scene.
  *
- * Style: "digital_illustration" (base style). Comparison testing (2026-07-24)
- * showed this produces the cleanest coloring-book output with a strong
- * black-outline prompt — better than hand_drawn_outline, which returned
- * colored artwork despite the name.
- *
  * Sharp grayscale post-processing is applied as a safety net to strip any
  * residual color tinting before the image reaches the PDF.
  *
- * `childName` is scrubbed out of the scene text before it reaches Recraft —
- * see the IP guard note above the model constants. The prompt also carries
- * an explicit no-copyrighted-character instruction as a second layer.
+ * `childName` and `mascotName` are scrubbed out of the scene text before it
+ * reaches either model — see the IP guard note at the top of this file.
  */
 export async function generateColoringImage(
   coloringScene: string | null | undefined,
-  childName: string
+  childName: string,
+  mascotName: string | null | undefined,
+  deadlineMs: number
 ): Promise<ImageGenResult> {
   if (!coloringScene?.trim()) {
     console.warn("[generateColoringImage] Skipping — coloring_scene is null or empty");
-    return { image: null, model: null, attempts: 0, durationMs: null };
+    return SKIPPED;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
     console.warn("[generateColoringImage] Skipping — REPLICATE_API_TOKEN not set");
-    return { image: null, model: null, attempts: 0, durationMs: null };
+    return SKIPPED;
   }
 
-  const scene = scrubChildName(coloringScene.trim(), childName);
-  const prompt =
-    `black and white coloring book page for children featuring ${scene}, ` +
-    `clean black outlines only, no color, no shading, no fill, ` +
-    `pure white background, thick clean outlines with large open white regions for coloring, ` +
-    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
-    `simple shapes, kid-friendly line art ready to color, ` +
-    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
-    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
-    `non-specific features only`;
-
+  const scene = scrubMascotName(scrubChildName(coloringScene.trim(), childName), mascotName);
   const startMs = Date.now();
-  let attempts = 0;
-  let durationMs: number | null = null;
 
-  const attempt = async () => {
-    attempts++;
-    const attemptStartMs = Date.now();
-    const output = await runPrediction(
-      RECRAFT_V3,
+  const result = await runStages(
+    [
       {
-        prompt,
-        style: "digital_illustration",
-        size: "1024x1024",
+        modelRef: GPT_IMAGE_2,
+        input: {
+          prompt: buildColoringPrompt(scene, true),
+          quality: "low",
+          aspect_ratio: "1024x1024",
+          background: "opaque",
+          output_format: "png",
+          number_of_images: 1,
+        },
+        attemptTimeoutMs: GPT_IMAGE_2_TIMEOUT_MS,
       },
-      REPLICATE_TIMEOUT_MS,
-      "generateColoringImage"
-    );
-
-    const url = extractUrl(output);
-    if (!url) throw new Error("No URL in Replicate output");
-    durationMs = Date.now() - attemptStartMs;
-    return url;
+      {
+        modelRef: RECRAFT_V3,
+        input: { prompt: buildColoringPrompt(scene, false), style: "digital_illustration", size: "1024x1024" },
+        attemptTimeoutMs: FALLBACK_TIMEOUT_MS,
+      },
+    ],
+    deadlineMs,
+    "generateColoringImage"
+  );
+  const genResult: ImageGenResult = {
+    image: null,
+    model: result.model,
+    attempts: result.attempts,
+    durationMs: result.durationMs,
+    usage: result.usage,
+    usedFallback: result.usedFallback,
   };
 
-  try {
-    console.warn("[generateColoringImage] Attempt 1 starting");
-    const url = await withRetry(attempt, "generateColoringImage");
-    const elapsed = Date.now() - startMs;
-    console.warn(`[generateColoringImage] Succeeded in ${elapsed}ms`);
+  if (!result.url) {
+    console.error("[generateColoringImage] Every model and attempt failed", {
+      attempts: result.attempts,
+      elapsedMs: Date.now() - startMs,
+    });
+    return genResult;
+  }
 
-    const imgResponse = await fetch(url);
+  try {
+    const imgResponse = await fetch(result.url);
     if (!imgResponse.ok) {
       throw new Error(`Fetch failed: ${imgResponse.status} ${imgResponse.statusText}`);
     }
@@ -334,43 +476,44 @@ export async function generateColoringImage(
       .png()
       .toBuffer();
 
-    const base64 = grayBuffer.toString("base64");
-    console.warn(`[generateColoringImage] Grayscale pass complete, total ${Date.now() - startMs}ms`);
-    return { image: `data:image/png;base64,${base64}`, model: RECRAFT_V3, attempts, durationMs };
+    console.warn(`[generateColoringImage] Done with ${result.model?.split(":")[0]} in ${Date.now() - startMs}ms`);
+    return { ...genResult, image: `data:image/png;base64,${grayBuffer.toString("base64")}` };
   } catch (err) {
-    console.error("[generateColoringImage] Both attempts failed", {
+    console.error("[generateColoringImage] Download or grayscale failed", {
       message: err instanceof Error ? err.message : String(err),
       elapsedMs: Date.now() - startMs,
     });
-    return { image: null, model: RECRAFT_V3, attempts, durationMs };
+    return genResult;
   }
 }
 
 // ─── Mascot image ─────────────────────────────────────────────────────────────
 
 /**
- * Generates a colourful cartoon mascot image via flux-schnell.
- * Returns a base64 data URL, or null if both attempts fail.
+ * Generates a colourful cartoon mascot image: FLUX.2 Pro first, flux-schnell
+ * as the fallback. Returns a base64 data URL, or null if every attempt fails.
  *
- * `childName` is scrubbed out of the description before it reaches
- * flux-schnell, as defense in depth — mascot_description isn't instructed to
- * contain the child's name, but nothing structurally prevents it either. See
- * the IP guard note above the model constants.
+ * `childName` and `mascotName` are scrubbed out of the description before it
+ * reaches either model, as defense in depth — mascot_description isn't
+ * instructed to contain either name, but nothing structurally prevents it.
+ * See the IP guard note at the top of this file.
  */
 export async function generateMascotImage(
   mascotDescription: string | null | undefined,
-  childName: string
+  childName: string,
+  mascotName: string | null | undefined,
+  deadlineMs: number
 ): Promise<ImageGenResult> {
   if (!mascotDescription?.trim()) {
     console.warn("[generateMascotImage] Skipping — mascot_description is null or empty");
-    return { image: null, model: null, attempts: 0, durationMs: null };
+    return SKIPPED;
   }
   if (!process.env.REPLICATE_API_TOKEN) {
     console.warn("[generateMascotImage] Skipping — REPLICATE_API_TOKEN not set");
-    return { image: null, model: null, attempts: 0, durationMs: null };
+    return SKIPPED;
   }
 
-  const description = scrubChildName(mascotDescription.trim(), childName);
+  const description = scrubMascotName(scrubChildName(mascotDescription.trim(), childName), mascotName);
   const prompt =
     `${description}, whimsical cartoon style, bright vibrant colors, ` +
     `simple clean lines, perfect for children's worksheet, white background, no text, ` +
@@ -378,53 +521,49 @@ export async function generateMascotImage(
     `celebrity, or franchise mascot; invented, non-specific features only`;
 
   const startMs = Date.now();
-  let attempts = 0;
-  let durationMs: number | null = null;
-
-  const attempt = async () => {
-    attempts++;
-    const attemptStartMs = Date.now();
-    const output = await runPrediction(
-      FLUX_SCHNELL,
+  const result = await runStages(
+    [
       {
-        prompt,
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "png",
+        modelRef: FLUX_2_PRO,
+        input: { prompt, aspect_ratio: "1:1", resolution: "1 MP", output_format: "png" },
+        attemptTimeoutMs: FLUX_2_PRO_TIMEOUT_MS,
       },
-      REPLICATE_TIMEOUT_MS,
-      "generateMascotImage"
-    );
-
-    const url = extractUrl(output);
-    if (!url) throw new Error("No URL in Replicate output");
-    durationMs = Date.now() - attemptStartMs;
-    return url;
+      {
+        modelRef: FLUX_SCHNELL,
+        input: { prompt, num_outputs: 1, aspect_ratio: "1:1", output_format: "png" },
+        attemptTimeoutMs: FALLBACK_TIMEOUT_MS,
+      },
+    ],
+    deadlineMs,
+    "generateMascotImage"
+  );
+  const genResult: ImageGenResult = {
+    image: null,
+    model: result.model,
+    attempts: result.attempts,
+    durationMs: result.durationMs,
+    usage: result.usage,
+    usedFallback: result.usedFallback,
   };
 
-  try {
-    console.warn("[generateMascotImage] Attempt 1 starting");
-    const url = await withRetry(attempt, "generateMascotImage");
-    const elapsed = Date.now() - startMs;
-    console.warn(`[generateMascotImage] Succeeded in ${elapsed}ms`);
-
-    try {
-      const image = await fetchAsDataUrl(url);
-      return { image, model: FLUX_SCHNELL, attempts, durationMs };
-    } catch (fetchErr) {
-      // Return the direct URL as a fallback — it expires in ~1 hour but
-      // that's long enough to render the PDF for the current session.
-      console.error("[generateMascotImage] Base64 fetch failed — using direct URL", {
-        message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
-      });
-      return { image: url, model: FLUX_SCHNELL, attempts, durationMs };
-    }
-  } catch (err) {
-    console.error("[generateMascotImage] Both attempts failed", {
-      message: err instanceof Error ? err.message : String(err),
+  if (!result.url) {
+    console.error("[generateMascotImage] Every model and attempt failed", {
+      attempts: result.attempts,
       elapsedMs: Date.now() - startMs,
     });
-    return { image: null, model: FLUX_SCHNELL, attempts, durationMs };
+    return genResult;
+  }
+
+  console.warn(`[generateMascotImage] Done with ${result.model?.split(":")[0]} in ${Date.now() - startMs}ms`);
+  try {
+    return { ...genResult, image: await fetchAsDataUrl(result.url) };
+  } catch (fetchErr) {
+    // Return the direct URL as a fallback — it expires in ~1 hour but
+    // that's long enough to render the PDF for the current session.
+    console.error("[generateMascotImage] Base64 fetch failed — using direct URL", {
+      message: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+    });
+    return { ...genResult, image: result.url };
   }
 }
 
@@ -439,20 +578,25 @@ export async function generateMascotImage(
  * @param coloringScene     - drives the coloring page image (scene, objects, setting)
  *                            If omitted, falls back to mascotDescription so old callers still work.
  * @param childName         - scrubbed out of both prompts before they reach the image model.
+ * @param options.mascotName - also scrubbed out of both prompts.
+ * @param options.deadlineMs - epoch ms by which every attempt must finish; defaults to
+ *                            DEFAULT_DEADLINE_MS from now.
  */
 export async function generateBothImages(
   mascotDescription: string | null | undefined,
   coloringScene: string | null | undefined,
-  childName: string
+  childName: string,
+  options: { mascotName?: string | null; deadlineMs?: number } = {}
 ): Promise<{
   mascotImageUrl: string | null;
   coloringImageUrl: string | null;
   mascot: ImageGenResult;
   coloring: ImageGenResult;
 }> {
+  const deadlineMs = options.deadlineMs ?? Date.now() + DEFAULT_DEADLINE_MS;
   const [mascot, coloring] = await Promise.all([
-    generateMascotImage(mascotDescription, childName),
-    generateColoringImage(coloringScene ?? mascotDescription, childName),
+    generateMascotImage(mascotDescription, childName, options.mascotName, deadlineMs),
+    generateColoringImage(coloringScene ?? mascotDescription, childName, options.mascotName, deadlineMs),
   ]);
   const mascotImageUrl = mascot.image;
   const coloringImageUrl = coloring.image;

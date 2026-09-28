@@ -133,12 +133,14 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet", subject is NOT Math):
 
 <coloring_page_rules>
 SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image, and also drives the printed title and instructions.
-- coloring_scene must list: the child and mascot (by name), the setting, and exactly 3-5 specific named objects.
-- coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements.
+- coloring_scene must list: the child, the mascot (by name), the setting, and exactly 3-5 specific named objects.
+- In coloring_scene, describe the child ONLY as "a girl", "a boy", or "a kid". Choose from the child's name and anything the parent wrote about them. When you are not sure, use "a kid". NEVER write the child's name anywhere in coloring_scene.
+- coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements. The title and instructions DO use the child's name: the girl, boy, or kid in coloring_scene is the child.
 - coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
-- Before coloring_scene reaches the image generator, the child's name is automatically replaced with a generic placeholder — the image itself never depicts the child by name. Still write coloring_scene as a concrete, visual scene (not vague) so it holds up once the name is swapped out.
+- Before coloring_scene reaches the image generator, the mascot's name is automatically removed (and the child's name too, as a safety net), so the image model sees only what things look like. Write coloring_scene as a concrete, visual scene (not vague) so it holds up once the names are gone.
   BAD: "Aria and Bubbles having a fun ocean adventure"
-  GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
+  BAD: "Aria and Bubbles the seahorse float in an underwater cave"
+  GOOD: "A girl and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
 </coloring_page_rules>
 
 <output_schema>
@@ -167,7 +169,7 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   ],
   "coloring_page": {
     "title": "[Name] and [Mascot] [Action] — no emoji",
-    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text drives the coloring page image (the child's name is swapped for a generic placeholder before the image model sees it) and must match the title exactly — keep it specific and visual.",
+    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. The child is 'a girl', 'a boy', or 'a kid' (never their name). Example: 'A girl and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text drives the coloring page image (the mascot's name is removed before the image model sees it) and must match the title exactly — keep it specific and visual.",
     "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
@@ -469,7 +471,14 @@ async function uploadMascotImage(
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
+// Images must finish this long after the request starts, leaving the rest
+// of maxDuration (300 s) for the mascot upload, the PDF pre-render, and the
+// packet-ready email. lib/generateMascotImage.ts caps every attempt, retry,
+// and fallback to this deadline.
+const IMAGE_DEADLINE_AFTER_START_MS = 240_000;
+
 export async function POST(req: NextRequest) {
+  const requestStartMs = Date.now();
   const supabase = await createClient();
 
   const {
@@ -723,7 +732,14 @@ export async function POST(req: NextRequest) {
         let hostedMascotUrl: string | null = null;
         // Attempt counts and timings for packet_ai_usage — stay "skipped"
         // (0 attempts, null model) when there's no mascot_description.
-        const skippedImage: ImageGenResult = { image: null, model: null, attempts: 0, durationMs: null };
+        const skippedImage: ImageGenResult = {
+          image: null,
+          model: null,
+          attempts: 0,
+          durationMs: null,
+          usage: [],
+          usedFallback: false,
+        };
         let mascotGen = skippedImage;
         let coloringGen = skippedImage;
 
@@ -737,7 +753,11 @@ export async function POST(req: NextRequest) {
           } = await generateBothImages(
             mascotDescription,
             coloringScene,
-            child.name
+            child.name,
+            {
+              mascotName: generatedContent.mascot_name ?? null,
+              deadlineMs: requestStartMs + IMAGE_DEADLINE_AFTER_START_MS,
+            }
           ));
 
           if (mascotImageUrl) {
@@ -782,7 +802,8 @@ export async function POST(req: NextRequest) {
               coloring_model: coloringGen.model,
               coloring_attempts: coloringGen.attempts,
               coloring_duration_ms: coloringGen.durationMs,
-              est_cost_usd: estimatePacketCostUsd(MODEL, claudeCall.usage, [mascotGen, coloringGen]),
+              // Per-model usage, so a fallback's attempts are priced at the fallback's rate.
+              est_cost_usd: estimatePacketCostUsd(MODEL, claudeCall.usage, [...mascotGen.usage, ...coloringGen.usage]),
             });
             if (usageInsertError) {
               console.error("[generate-packet] Failed to record AI usage (non-fatal):", {

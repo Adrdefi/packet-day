@@ -32,9 +32,16 @@ export const CLAUDE_PRICES_PER_MTOK: Record<string, ClaudePrice> = {
   "claude-haiku-4-5": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
 };
 
-// Per image, keyed by Replicate "owner/name" (no version hash). From
-// replicate.com/pricing (checked 2026-09-22).
+// Per image, keyed by Replicate "owner/name" (no version hash). From each
+// model's replicate.com page (checked 2026-09-28), at the settings
+// lib/generateMascotImage.ts sends. flux-schnell and recraft-v3 are the
+// fallbacks and stay listed so a fallback's attempts are still priced.
 export const IMAGE_PRICES_PER_IMAGE: Record<string, number> = {
+  // $0.015 per run + $0.015 per output megapixel, at 1 MP (~1.05 MP).
+  "black-forest-labs/flux-2-pro": 0.031,
+  // Quality "low" at 1024x1024. Medium is $0.047 and high $0.128; update
+  // this if the quality setting changes.
+  "openai/gpt-image-2": 0.012,
   "black-forest-labs/flux-schnell": 0.003,
   "recraft-ai/recraft-v3": 0.04,
 };

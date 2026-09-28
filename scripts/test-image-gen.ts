@@ -36,9 +36,12 @@ async function main() {
   console.log(`Output dir  : ${OUT_DIR}`);
   console.log("----------------------------------------------\n");
 
+  // Same deadline shape production uses: every attempt, retry, and fallback
+  // must finish inside it.
+  const deadlineMs = Date.now() + 150_000;
   const [mascotResult, coloringResult] = await Promise.allSettled([
-    generateMascotImage(TEST_DESCRIPTION, TEST_CHILD_NAME),
-    generateColoringImage(TEST_DESCRIPTION, TEST_CHILD_NAME),
+    generateMascotImage(TEST_DESCRIPTION, TEST_CHILD_NAME, null, deadlineMs),
+    generateColoringImage(TEST_DESCRIPTION, TEST_CHILD_NAME, null, deadlineMs),
   ]);
 
   // ── Mascot ────────────────────────────────────────────────────────────────────
