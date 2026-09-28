@@ -1,23 +1,27 @@
 /**
  * Image model bakeoff: runs the packet's two images (mascot and coloring
  * page) through several Replicate models, blinds the results, and builds
- * contact sheets plus a printable coloring-page PDF.
+ * contact sheets (HTML and PDF) plus, for some rounds, a printable
+ * coloring-page PDF.
  *
- *   npm run image-bakeoff
+ *   npm run image-bakeoff -- --round 2      (default: the latest round)
  *
  * Standalone on purpose: calls Replicate directly with REPLICATE_API_TOKEN.
  * No dev server, no login, no Supabase, no admin key, no production code
  * touched. The prompt wording and the name scrubber below are COPIED from
  * lib/generateMascotImage.ts (2026-09-28) so production stays untouched; if
  * production's prompts change, re-copy them here before the next round.
+ * Round-specific prompt changes (round 2's no-text line and "a girl") are
+ * test variants only; production still uses the copied wording as-is.
  *
- * Output goes to model-bakeoff-images-round1/ (gitignored: model-bakeoff-*).
+ * Each round writes to its own model-bakeoff-images-round<N>/ folder
+ * (gitignored: model-bakeoff-*) and refuses to run if it already exists.
  * Images are saved under blind letters from the start; the letter-to-model
  * key and the model-named results CSV live in KEY_do_not_open/.
  *
  * Spend is tracked per attempt (every attempt counted as billed, even a
  * failed one) and the run stops before any attempt that would push the
- * total past BUDGET_USD.
+ * total past the round's budget.
  */
 
 import fs from "node:fs";
@@ -26,12 +30,8 @@ import { randomInt } from "node:crypto";
 import Replicate, { type Prediction } from "replicate";
 import sharp from "sharp";
 import React from "react";
-import { Document, Page, Text, Image, renderToFile } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, renderToFile } from "@react-pdf/renderer";
 
-const OUT = path.resolve("model-bakeoff-images-round1");
-const KEY_DIR = path.join(OUT, "KEY_do_not_open");
-const BUDGET_USD = 12;
-const RUNS = 3;
 const CONCURRENCY = 4;
 const ATTEMPT_TIMEOUT_MS = 180_000;
 const RETRY_DELAY_MS = 3_000;
@@ -49,12 +49,14 @@ function escapeRegExp(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function scrubChildName(text: string, childName: string): string {
+// Copied as-is, plus an optional placeholder so a round can test a gendered
+// replacement ("a girl") without changing what the default does.
+function scrubChildName(text: string, childName: string, placeholder = CHILD_PLACEHOLDER): string {
   const trimmedName = childName.trim();
   if (!trimmedName) return text;
 
   const pattern = new RegExp(`\\b${escapeRegExp(trimmedName)}\\b`, "gi");
-  return text.replace(pattern, CHILD_PLACEHOLDER);
+  return text.replace(pattern, placeholder);
 }
 
 function mascotPrompt(mascotDescription: string, childName: string): string {
@@ -67,14 +69,23 @@ function mascotPrompt(mascotDescription: string, childName: string): string {
   );
 }
 
-function coloringPrompt(coloringScene: string, childName: string): string {
-  const scene = scrubChildName(coloringScene.trim(), childName);
+interface ColoringVariant {
+  placeholder?: string; // replaces the child's name; production uses "the child"
+  noText?: boolean; // round 2 test line against stray letters and numbers
+}
+
+const NO_TEXT_LINE =
+  "no letters, numbers, words, or signs anywhere in the image, including on vehicles, clothing, banners, and objects, ";
+
+function coloringPrompt(coloringScene: string, childName: string, variant: ColoringVariant = {}): string {
+  const scene = scrubChildName(coloringScene.trim(), childName, variant.placeholder);
   return (
     `black and white coloring book page for children featuring ${scene}, ` +
     `clean black outlines only, no color, no shading, no fill, ` +
     `pure white background, thick clean outlines with large open white regions for coloring, ` +
     `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
     `simple shapes, kid-friendly line art ready to color, ` +
+    (variant.noText ? NO_TEXT_LINE : "") +
     `an original, generic child character; do not depict any copyrighted, trademarked, ` +
     `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
     `non-specific features only`
@@ -154,95 +165,160 @@ interface ModelSpec {
 
 const QWEN_NEGATIVE = "gray shading, gray fill, color, text, letters, words, pencils, crayons";
 
-const MODELS: Record<ListName, ModelSpec[]> = {
-  mascot: [
-    {
-      key: "flux-schnell (baseline)",
-      ref: "black-forest-labs/flux-schnell:c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e",
-      price: 0.003,
-      input: (prompt) => ({ prompt, num_outputs: 1, aspect_ratio: "1:1", output_format: "png" }),
-    },
-    {
-      key: "flux-2-klein-4b",
-      ref: "black-forest-labs/flux-2-klein-4b:8e9c42d77b10a2a41af823ac4500f7545be6ebc4e745830fc3f3de10de200542",
-      price: 0.0011, // $1 per thousand output megapixels, ~1.05 MP
-      input: (prompt) => ({ prompt, aspect_ratio: "1:1", output_megapixels: "1", output_format: "png" }),
-    },
-    {
-      key: "flux-2-pro",
-      ref: "black-forest-labs/flux-2-pro:ccb5e33141097816e6fab8c895e702fe4c619e4e07500885b71214e9f6382a5c",
-      price: 0.031, // $0.015 per run + $0.015 per output megapixel
-      input: (prompt) => ({ prompt, aspect_ratio: "1:1", resolution: "1 MP", output_format: "png" }),
-    },
-    {
-      key: "ideogram-v3-turbo (Children's Book preset, magic prompt off)",
-      ref: "ideogram-ai/ideogram-v3-turbo:d9b3748f95c0fe3e71f010f8cc5d80e8f5252acd0e74b1c294ee889eea52a47b",
-      price: 0.03,
-      input: (prompt) => ({ prompt, aspect_ratio: "1:1", style_preset: "Children's Book", magic_prompt_option: "Off" }),
-    },
-    {
-      key: "gpt-image-2 (quality medium)",
-      ref: "openai/gpt-image-2:225c978a7f938acc350564c4548ddc2476bfb33364bec6b5422227f55ce56bd3",
-      price: 0.047,
-      input: (prompt) => ({
-        prompt, quality: "medium", aspect_ratio: "1024x1024", background: "opaque", output_format: "png", number_of_images: 1,
-      }),
-    },
-    {
-      key: "nano-banana-2 (1K)",
-      ref: "google/nano-banana-2:d1be8b5fc0931a253d417e12a484ac01ee9ccbc6daffd4792151377d5e5ff55f",
-      price: 0.067,
-      input: (prompt) => ({ prompt, aspect_ratio: "1:1", resolution: "1K", output_format: "png" }),
-    },
-  ],
-  coloring: [
-    {
-      key: "recraft-v3 digital_illustration (baseline)",
-      ref: "recraft-ai/recraft-v3:9507e61ddace8b3a238371b17a61be203747c5081ea6070fecd3c40d27318922",
-      price: 0.04,
-      input: (prompt) => ({ prompt, style: "digital_illustration", size: "1024x1024" }),
-    },
-    {
-      key: "recraft-v3 hand_drawn_outline",
-      ref: "recraft-ai/recraft-v3:9507e61ddace8b3a238371b17a61be203747c5081ea6070fecd3c40d27318922",
-      price: 0.04,
-      input: (prompt) => ({ prompt, style: "digital_illustration/hand_drawn_outline", size: "1024x1024" }),
-    },
-    {
-      key: "recraft-v4",
-      ref: "recraft-ai/recraft-v4:a8bc7377c37baeea1e01568f88b6abfb38939135071a38ca4267c8f82c3cbbf0",
-      price: 0.04,
-      input: (prompt) => ({ prompt, size: "1024x1024" }),
-    },
-    {
-      key: "recraft-v4-svg (converted to PNG)",
-      ref: "recraft-ai/recraft-v4-svg:93cbef8f201b974654d36b1247314072205583f6ff489a1582126f34f2f93635",
-      price: 0.08,
-      input: (prompt) => ({ prompt, size: "1024x1024" }),
-      svg: true,
-    },
-    {
-      key: "ideogram-v3-turbo (Coloring Book I preset, magic prompt off)",
-      ref: "ideogram-ai/ideogram-v3-turbo:d9b3748f95c0fe3e71f010f8cc5d80e8f5252acd0e74b1c294ee889eea52a47b",
-      price: 0.03,
-      input: (prompt) => ({ prompt, aspect_ratio: "1:1", style_preset: "Coloring Book I", magic_prompt_option: "Off" }),
-    },
-    {
-      key: "gpt-image-2 (quality medium)",
-      ref: "openai/gpt-image-2:225c978a7f938acc350564c4548ddc2476bfb33364bec6b5422227f55ce56bd3",
-      price: 0.047,
-      input: (prompt) => ({
-        prompt, quality: "medium", aspect_ratio: "1024x1024", background: "opaque", output_format: "png", number_of_images: 1,
-      }),
-    },
-    {
-      key: "qwen-image (negative prompt)",
-      ref: "qwen/qwen-image:0bba9e70f78437359725e0989ead45ca8b09e6c12a070dfe9a09e6856b43a44d",
-      price: 0.025,
-      input: (prompt) => ({ prompt, negative_prompt: QWEN_NEGATIVE, aspect_ratio: "1:1", output_format: "png" }),
-    },
-  ],
+const FLUX_SCHNELL_REF = "black-forest-labs/flux-schnell:c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e";
+const FLUX_2_KLEIN_4B_REF = "black-forest-labs/flux-2-klein-4b:8e9c42d77b10a2a41af823ac4500f7545be6ebc4e745830fc3f3de10de200542";
+const FLUX_2_PRO_REF = "black-forest-labs/flux-2-pro:ccb5e33141097816e6fab8c895e702fe4c619e4e07500885b71214e9f6382a5c";
+const FLUX_2_DEV_REF = "black-forest-labs/flux-2-dev:7bba46bdde863cfd7aaee87649a5aa49f39f368495dbea500998d1fcbb262050";
+const IDEOGRAM_V3_TURBO_REF = "ideogram-ai/ideogram-v3-turbo:d9b3748f95c0fe3e71f010f8cc5d80e8f5252acd0e74b1c294ee889eea52a47b";
+const GPT_IMAGE_2_REF = "openai/gpt-image-2:225c978a7f938acc350564c4548ddc2476bfb33364bec6b5422227f55ce56bd3";
+const NANO_BANANA_2_REF = "google/nano-banana-2:d1be8b5fc0931a253d417e12a484ac01ee9ccbc6daffd4792151377d5e5ff55f";
+const RECRAFT_V3_REF = "recraft-ai/recraft-v3:9507e61ddace8b3a238371b17a61be203747c5081ea6070fecd3c40d27318922";
+const RECRAFT_V4_REF = "recraft-ai/recraft-v4:a8bc7377c37baeea1e01568f88b6abfb38939135071a38ca4267c8f82c3cbbf0";
+const RECRAFT_V4_SVG_REF = "recraft-ai/recraft-v4-svg:93cbef8f201b974654d36b1247314072205583f6ff489a1582126f34f2f93635";
+const QWEN_IMAGE_REF = "qwen/qwen-image:0bba9e70f78437359725e0989ead45ca8b09e6c12a070dfe9a09e6856b43a44d";
+
+const flux2Pro: ModelSpec = {
+  key: "flux-2-pro",
+  ref: FLUX_2_PRO_REF,
+  price: 0.031, // $0.015 per run + $0.015 per output megapixel
+  input: (prompt) => ({ prompt, aspect_ratio: "1:1", resolution: "1 MP", output_format: "png" }),
 };
+
+const flux2Klein4b: ModelSpec = {
+  key: "flux-2-klein-4b",
+  ref: FLUX_2_KLEIN_4B_REF,
+  price: 0.0011, // $1 per thousand output megapixels, ~1.05 MP
+  input: (prompt) => ({ prompt, aspect_ratio: "1:1", output_megapixels: "1", output_format: "png" }),
+};
+
+const gptImage2 = (quality: "low" | "medium", price: number): ModelSpec => ({
+  key: `gpt-image-2 (quality ${quality})`,
+  ref: GPT_IMAGE_2_REF,
+  price,
+  input: (prompt) => ({
+    prompt, quality, aspect_ratio: "1024x1024", background: "opaque", output_format: "png", number_of_images: 1,
+  }),
+});
+
+const ideogramColoringBook: ModelSpec = {
+  key: "ideogram-v3-turbo (Coloring Book I preset, magic prompt off)",
+  ref: IDEOGRAM_V3_TURBO_REF,
+  price: 0.03,
+  input: (prompt) => ({ prompt, aspect_ratio: "1:1", style_preset: "Coloring Book I", magic_prompt_option: "Off" }),
+};
+
+interface RoundConfig {
+  out: string;
+  runs: number;
+  budgetUsd: number;
+  coloringVariant: ColoringVariant;
+  printTest: boolean;
+  models: Record<ListName, ModelSpec[]>;
+}
+
+const ROUNDS: Record<number, RoundConfig> = {
+  // Round 1 (2026-09-28): the wide field. Kept exactly as it ran.
+  1: {
+    out: "model-bakeoff-images-round1",
+    runs: 3,
+    budgetUsd: 12,
+    coloringVariant: {},
+    printTest: true,
+    models: {
+      mascot: [
+        {
+          key: "flux-schnell (baseline)",
+          ref: FLUX_SCHNELL_REF,
+          price: 0.003,
+          input: (prompt) => ({ prompt, num_outputs: 1, aspect_ratio: "1:1", output_format: "png" }),
+        },
+        flux2Klein4b,
+        flux2Pro,
+        {
+          key: "ideogram-v3-turbo (Children's Book preset, magic prompt off)",
+          ref: IDEOGRAM_V3_TURBO_REF,
+          price: 0.03,
+          input: (prompt) => ({ prompt, aspect_ratio: "1:1", style_preset: "Children's Book", magic_prompt_option: "Off" }),
+        },
+        gptImage2("medium", 0.047),
+        {
+          key: "nano-banana-2 (1K)",
+          ref: NANO_BANANA_2_REF,
+          price: 0.067,
+          input: (prompt) => ({ prompt, aspect_ratio: "1:1", resolution: "1K", output_format: "png" }),
+        },
+      ],
+      coloring: [
+        {
+          key: "recraft-v3 digital_illustration (baseline)",
+          ref: RECRAFT_V3_REF,
+          price: 0.04,
+          input: (prompt) => ({ prompt, style: "digital_illustration", size: "1024x1024" }),
+        },
+        {
+          key: "recraft-v3 hand_drawn_outline",
+          ref: RECRAFT_V3_REF,
+          price: 0.04,
+          input: (prompt) => ({ prompt, style: "digital_illustration/hand_drawn_outline", size: "1024x1024" }),
+        },
+        {
+          key: "recraft-v4",
+          ref: RECRAFT_V4_REF,
+          price: 0.04,
+          input: (prompt) => ({ prompt, size: "1024x1024" }),
+        },
+        {
+          key: "recraft-v4-svg (converted to PNG)",
+          ref: RECRAFT_V4_SVG_REF,
+          price: 0.08,
+          input: (prompt) => ({ prompt, size: "1024x1024" }),
+          svg: true,
+        },
+        ideogramColoringBook,
+        gptImage2("medium", 0.047),
+        {
+          key: "qwen-image (negative prompt)",
+          ref: QWEN_IMAGE_REF,
+          price: 0.025,
+          input: (prompt) => ({ prompt, negative_prompt: QWEN_NEGATIVE, aspect_ratio: "1:1", output_format: "png" }),
+        },
+      ],
+    },
+  },
+  // Round 2 (2026-09-28): cheaper and faster options around the round 1
+  // picks, with a no-text line and "a girl" for the child on coloring pages.
+  2: {
+    out: "model-bakeoff-images-round2",
+    runs: 2,
+    budgetUsd: 5,
+    coloringVariant: { placeholder: "a girl", noText: true },
+    printTest: false,
+    models: {
+      mascot: [
+        flux2Pro,
+        flux2Klein4b,
+        {
+          key: "flux-2-dev (go_fast)",
+          ref: FLUX_2_DEV_REF,
+          price: 0.013, // $0.012 per output megapixel in go_fast mode, ~1.05 MP
+          input: (prompt) => ({ prompt, aspect_ratio: "1:1", go_fast: true, output_format: "png" }),
+        },
+      ],
+      coloring: [gptImage2("low", 0.012), gptImage2("medium", 0.047), ideogramColoringBook],
+    },
+  },
+};
+
+function argValue(name: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`);
+  return i === -1 ? undefined : process.argv[i + 1];
+}
+
+const ROUND_NUMBER = Number(argValue("round") ?? Math.max(...Object.keys(ROUNDS).map(Number)));
+const ROUND = ROUNDS[ROUND_NUMBER];
+if (!ROUND) throw new Error(`Unknown round ${ROUND_NUMBER}. Known rounds: ${Object.keys(ROUNDS).join(", ")}`);
+const OUT = path.resolve(ROUND.out);
+const KEY_DIR = path.join(OUT, "KEY_do_not_open");
 
 // ─── Replicate ───────────────────────────────────────────────────────────────
 
@@ -345,7 +421,7 @@ let spent = 0;
 let budgetStopped = false;
 
 function shuffledLetters(list: ListName): Map<ModelSpec, string> {
-  const specs = [...MODELS[list]];
+  const specs = [...ROUND.models[list]];
   for (let i = specs.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
     [specs[i], specs[j]] = [specs[j], specs[i]];
@@ -357,8 +433,15 @@ function rel(...parts: string[]): string {
   return path.join(...parts).split(path.sep).join("/");
 }
 
+function imageFile(list: ListName, letter: string, scene: number, run: number): string {
+  return path.join(OUT, list, letter, `scene${scene}_run${run}.png`);
+}
+
 async function runJob(list: ListName, spec: ModelSpec, letter: string, scene: Scene, run: number): Promise<Result> {
-  const prompt = list === "mascot" ? mascotPrompt(scene.mascot, CHILD_NAME) : coloringPrompt(scene.coloring, CHILD_NAME);
+  const prompt =
+    list === "mascot"
+      ? mascotPrompt(scene.mascot, CHILD_NAME)
+      : coloringPrompt(scene.coloring, CHILD_NAME, ROUND.coloringVariant);
   const result: Result = {
     list, letter, model: spec.key, ref: spec.ref, scene: scene.id, run,
     seconds: null, cost: 0, attempts: 0, failed: true, grayPct: null, error: "",
@@ -366,9 +449,9 @@ async function runJob(list: ListName, spec: ModelSpec, letter: string, scene: Sc
   const name = `scene${scene.id}_run${run}.png`;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
-    if (budgetStopped || spent + spec.price > BUDGET_USD) {
+    if (budgetStopped || spent + spec.price > ROUND.budgetUsd) {
       budgetStopped = true;
-      result.error = `skipped: would pass $${BUDGET_USD} budget`;
+      result.error = `skipped: would pass $${ROUND.budgetUsd} budget`;
       return result;
     }
     spent += spec.price;
@@ -433,11 +516,20 @@ function writeCsvs(results: Result[]) {
   fs.writeFileSync(path.join(OUT, "results_blind.csv"), `${blind.join("\n")}\n`);
 }
 
-function contactSheet(list: ListName, letters: string[], results: Result[]): string {
-  const title = list === "mascot" ? "Mascot" : "Coloring page";
+function findResult(results: Result[], list: ListName, letter: string, scene: number, run: number): Result | undefined {
+  return results.find((x) => x.list === list && x.letter === letter && x.scene === scene && x.run === run);
+}
+
+const LIST_TITLE: Record<ListName, string> = { mascot: "Mascot", coloring: "Coloring page" };
+const INTRO =
+  "Rows are scenes, columns are letters. Letters are assigned separately for this list, so a letter here is not the same model as that letter on the other sheet.";
+const GRAY_NOTE = `Gray % counts pixels that are neither near black (<=${NEAR_BLACK}) nor near white (>=${NEAR_WHITE}) after the production grayscale pass; anti-aliased line edges count a little. Hard black and white copies are in coloring-threshold/.`;
+
+function contactSheetHtml(list: ListName, letters: string[], results: Result[]): string {
+  const title = LIST_TITLE[list];
   const cell = (letter: string, scene: number) =>
-    Array.from({ length: RUNS }, (_, k) => {
-      const r = results.find((x) => x.list === list && x.letter === letter && x.scene === scene && x.run === k + 1);
+    Array.from({ length: ROUND.runs }, (_, k) => {
+      const r = findResult(results, list, letter, scene, k + 1);
       const file = rel(list, letter, `scene${scene}_run${k + 1}.png`);
       if (!r || r.failed) return `<figure class="miss"><div>run ${k + 1}<br>no image</div></figure>`;
       const note = r.grayPct === null ? "" : ` · ${r.grayPct.toFixed(1)}% gray`;
@@ -446,10 +538,7 @@ function contactSheet(list: ListName, letters: string[], results: Result[]): str
   const rows = SCENES.map(
     (s) => `<tr><th scope="row">${s.id}. ${s.label}</th>${letters.map((l) => `<td>${cell(l, s.id)}</td>`).join("")}</tr>`
   ).join("\n");
-  const thresholdLink =
-    list === "coloring"
-      ? `<p>Hard black and white copies, for comparison only: <code>coloring-threshold/&lt;letter&gt;/</code>. Gray % counts pixels that are neither near black (≤${NEAR_BLACK}) nor near white (≥${NEAR_WHITE}) after the production grayscale pass; anti-aliased line edges count a little.</p>`
-      : "";
+  const grayNote = list === "coloring" ? `<p>${GRAY_NOTE}</p>` : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} bakeoff</title>
@@ -467,14 +556,95 @@ function contactSheet(list: ListName, letters: string[], results: Result[]): str
   figcaption { font-size: 11px; color: #555; }
   .miss div { width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; background: #f3e1dc; font-size: 12px; }
 </style></head><body>
-<h1>${title} bakeoff, round 1 (blind)</h1>
-<p>Rows are scenes, columns are letters, three runs each. Click an image to open it full size. Letters are assigned separately for this list, so a letter here is not the same model as that letter on the other sheet.</p>
-${thresholdLink}
+<h1>${title} bakeoff, round ${ROUND_NUMBER} (blind)</h1>
+<p>${INTRO} ${ROUND.runs} runs each. Click an image to open it full size.</p>
+${grayNote}
 <table><thead><tr><th></th>${letters.map((l) => `<th scope="col">${l}</th>`).join("")}</tr></thead>
 <tbody>
 ${rows}
 </tbody></table></body></html>
 `;
+}
+
+// Same layout as the HTML sheet, one wide page, with small JPEG thumbnails
+// embedded so the file stays well under 20 MB.
+async function contactSheetPdf(list: ListName, letters: string[], results: Result[]): Promise<string> {
+  const TH = 78;
+  const GAP = 6;
+  const PAD = 8;
+  const LABEL_W = 110;
+  const CAPTION_H = 16;
+  const cellW = ROUND.runs * TH + (ROUND.runs - 1) * GAP + 2 * PAD;
+  const rowH = TH + CAPTION_H + 12;
+  const headerH = list === "coloring" ? 96 : 76;
+  const width = 36 + LABEL_W + letters.length * cellW;
+  const height = headerH + 28 + SCENES.length * rowH + 24;
+  const border = { borderWidth: 0.5, borderColor: "#cccccc", borderStyle: "solid" as const };
+
+  const thumbs = new Map<string, Buffer>();
+  for (const r of results) {
+    if (r.list !== list || r.failed) continue;
+    const file = imageFile(list, r.letter, r.scene, r.run);
+    const jpg = await sharp(file)
+      .flatten({ background: "#ffffff" })
+      .resize(256, 256, { fit: "contain", background: "#ffffff" })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    thumbs.set(`${r.letter}-${r.scene}-${r.run}`, jpg);
+  }
+
+  const h = React.createElement;
+  const cell = (letter: string, scene: number) =>
+    h(
+      View,
+      { key: letter, style: { ...border, width: cellW, height: rowH, flexDirection: "row", paddingHorizontal: PAD, paddingTop: 5 } },
+      ...Array.from({ length: ROUND.runs }, (_, k) => {
+        const r = findResult(results, list, letter, scene, k + 1);
+        const thumb = thumbs.get(`${letter}-${scene}-${k + 1}`);
+        const caption = !r || r.failed ? `run ${k + 1}: no image` : `run ${k + 1}${r.grayPct === null ? "" : ` · ${r.grayPct.toFixed(1)}% gray`}`;
+        return h(
+          View,
+          { key: k, style: { width: TH, marginRight: k < ROUND.runs - 1 ? GAP : 0 } },
+          thumb
+            ? h(Image, { src: { data: thumb, format: "jpg" }, style: { width: TH, height: TH, backgroundColor: "#ffffff" } })
+            : h(View, { style: { width: TH, height: TH, backgroundColor: "#f3e1dc" } }),
+          h(Text, { style: { fontSize: 6, color: "#555555", textAlign: "center", marginTop: 3 } }, caption)
+        );
+      })
+    );
+
+  const doc = h(
+    Document,
+    { title: `${LIST_TITLE[list]} bakeoff, round ${ROUND_NUMBER} (blind)` },
+    h(
+      Page,
+      { size: [width, height], style: { backgroundColor: "#fdfbf7", padding: 18, color: "#1a1a2e" } },
+      h(Text, { style: { fontSize: 16, marginBottom: 6 } }, `${LIST_TITLE[list]} bakeoff, round ${ROUND_NUMBER} (blind)`),
+      h(Text, { style: { fontSize: 8.5, color: "#444455", marginBottom: 4 } }, `${INTRO} ${ROUND.runs} runs each.`),
+      list === "coloring" ? h(Text, { style: { fontSize: 8, color: "#444455", marginBottom: 4 } }, GRAY_NOTE) : null,
+      h(
+        View,
+        { style: { flexDirection: "row", marginTop: 10 } },
+        h(View, { style: { width: LABEL_W } }),
+        ...letters.map((l) =>
+          h(View, { key: l, style: { ...border, width: cellW, height: 28, justifyContent: "center" } },
+            h(Text, { style: { fontSize: 16, fontFamily: "Helvetica-Bold", textAlign: "center" } }, l))
+        )
+      ),
+      ...SCENES.map((s) =>
+        h(
+          View,
+          { key: s.id, style: { flexDirection: "row" } },
+          h(View, { style: { ...border, width: LABEL_W, height: rowH, padding: 5 } },
+            h(Text, { style: { fontSize: 9, fontFamily: "Helvetica-Bold" } }, `${s.id}. ${s.label}`)),
+          ...letters.map((l) => cell(l, s.id))
+        )
+      )
+    )
+  );
+  const out = path.join(OUT, `contact-sheet-${list}.pdf`);
+  await renderToFile(doc, out);
+  return out;
 }
 
 async function printTest(letters: string[], results: Result[]): Promise<string[]> {
@@ -486,7 +656,7 @@ async function printTest(letters: string[], results: Result[]): Promise<string[]
       missing.push(letter);
       continue;
     }
-    const data = fs.readFileSync(path.join(OUT, "coloring", letter, `scene${PRINT_SCENE}_run${r.run}.png`));
+    const data = fs.readFileSync(imageFile("coloring", letter, PRINT_SCENE, r.run));
     pages.push(
       React.createElement(
         Page,
@@ -505,11 +675,30 @@ async function printTest(letters: string[], results: Result[]): Promise<string[]
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
+// --dry-run: print the plan, estimated cost, and sample prompts. No API
+// calls, no files written.
+function dryRun() {
+  const planned = Object.values(ROUND.models).flat().reduce((sum, m) => sum + m.price, 0) * SCENES.length * ROUND.runs;
+  const count = Object.values(ROUND.models).flat().length * SCENES.length * ROUND.runs;
+  process.stdout.write(
+    `Round ${ROUND_NUMBER} dry run: ${count} images, estimated $${planned.toFixed(2)}, budget $${ROUND.budgetUsd}, output ${OUT}\n` +
+      `Mascot models: ${ROUND.models.mascot.length}, coloring models: ${ROUND.models.coloring.length}\n\n` +
+      `Sample mascot prompt (scene 1):\n${mascotPrompt(SCENES[0].mascot, CHILD_NAME)}\n\n` +
+      `Sample coloring prompt (scene 4):\n${coloringPrompt(SCENES[3].coloring, CHILD_NAME, ROUND.coloringVariant)}\n`
+  );
+}
+
 async function main() {
+  if (process.argv.includes("--dry-run")) return dryRun();
   if (fs.existsSync(OUT)) throw new Error(`${OUT} already exists. Move or delete it before a new run so rounds never mix.`);
   fs.mkdirSync(KEY_DIR, { recursive: true });
 
-  const keyLines = [`Image bakeoff round 1 key (${new Date().toISOString().slice(0, 10)})`, `Test child name: ${CHILD_NAME} (fake), scrubbed to "${CHILD_PLACEHOLDER}"`];
+  const placeholder = ROUND.coloringVariant.placeholder ?? CHILD_PLACEHOLDER;
+  const keyLines = [
+    `Image bakeoff round ${ROUND_NUMBER} key (${new Date().toISOString().slice(0, 10)})`,
+    `Test child name: ${CHILD_NAME} (fake). Mascot prompt scrubs it to "${CHILD_PLACEHOLDER}"; coloring prompt scrubs it to "${placeholder}".`,
+    `Coloring no-text line: ${ROUND.coloringVariant.noText ? "on" : "off"}`,
+  ];
   const tasks: (() => Promise<Result>)[] = [];
   const lettersByList: Record<ListName, string[]> = { mascot: [], coloring: [] };
 
@@ -524,22 +713,22 @@ async function main() {
     }
     // Interleave by scene and run so a slow model doesn't bunch up at the end.
     for (const scene of SCENES) {
-      for (let run = 1; run <= RUNS; run++) {
+      for (let run = 1; run <= ROUND.runs; run++) {
         for (const [spec, letter] of letters) tasks.push(() => runJob(list, spec, letter, scene, run));
       }
     }
   }
   fs.writeFileSync(path.join(KEY_DIR, "KEY.txt"), `${keyLines.join("\n")}\n`);
 
-  const planned = Object.values(MODELS).flat().reduce((sum, m) => sum + m.price, 0) * SCENES.length * RUNS;
-  process.stdout.write(`${tasks.length} images planned, estimated $${planned.toFixed(2)} before retries, budget $${BUDGET_USD}\n`);
+  const planned = Object.values(ROUND.models).flat().reduce((sum, m) => sum + m.price, 0) * SCENES.length * ROUND.runs;
+  process.stdout.write(`Round ${ROUND_NUMBER}: ${tasks.length} images planned, estimated $${planned.toFixed(2)} before retries, budget $${ROUND.budgetUsd}\n`);
 
   let done = 0;
   const results = await pool(
     tasks.map((t) => async () => {
       const r = await t();
       done++;
-      const status = r.failed ? `FAILED (${r.error})` : `ok ${r.seconds?.toFixed(1)}s`;
+      const status = r.failed ? `FAILED (${r.error})` : `ok ${r.seconds?.toFixed(1)}s${r.attempts > 1 ? " (after retry)" : ""}`;
       process.stdout.write(`[${done}/${tasks.length}] ${r.list} ${r.letter} scene ${r.scene} run ${r.run}: ${status} | spent $${spent.toFixed(3)}\n`);
       return r;
     }),
@@ -547,15 +736,20 @@ async function main() {
   );
 
   writeCsvs(results);
+  const pdfs: string[] = [];
   for (const list of ["mascot", "coloring"] as ListName[]) {
-    fs.writeFileSync(path.join(OUT, `contact-sheet-${list}.html`), contactSheet(list, lettersByList[list], results));
+    fs.writeFileSync(path.join(OUT, `contact-sheet-${list}.html`), contactSheetHtml(list, lettersByList[list], results));
+    const pdf = await contactSheetPdf(list, lettersByList[list], results);
+    pdfs.push(`${pdf} (${(fs.statSync(pdf).size / 1e6).toFixed(2)} MB)`);
   }
-  const missingPrint = await printTest(lettersByList.coloring, results);
+  const missingPrint = ROUND.printTest ? await printTest(lettersByList.coloring, results) : [];
 
   const failed = results.filter((r) => r.failed).length;
+  const retried = results.filter((r) => r.attempts > 1).length;
   process.stdout.write(
-    `\nDone. ${results.length - failed} of ${results.length} images saved, ${failed} failed or skipped.` +
-      `\nSpend counted: $${spent.toFixed(3)} of $${BUDGET_USD}${budgetStopped ? " (STOPPED at budget)" : ""}.` +
+    `\nDone. ${results.length - failed} of ${results.length} images saved, ${failed} failed or skipped, ${retried} needed a retry.` +
+      `\nSpend counted: $${spent.toFixed(3)} of $${ROUND.budgetUsd}${budgetStopped ? " (STOPPED at budget)" : ""}.` +
+      `\nContact sheet PDFs:\n  ${pdfs.join("\n  ")}` +
       (missingPrint.length ? `\nPrint test is missing letters with no scene ${PRINT_SCENE} image: ${missingPrint.join(", ")}` : "") +
       `\nOutput: ${OUT}\n`
   );
