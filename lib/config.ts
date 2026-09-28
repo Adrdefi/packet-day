@@ -2,7 +2,7 @@
 
 import { SITE_URL } from "@/lib/site";
 
-const PRODUCTION_MODEL = "claude-sonnet-4-6";
+const PRODUCTION_MODEL = "claude-opus-5-5";
 
 /**
  * BAKEOFF_MODEL swaps the generation model for local model comparisons
@@ -38,6 +38,7 @@ export interface ClaudePrice {
 export const CLAUDE_PRICES_PER_MTOK: Record<string, ClaudePrice> = {
   "claude-sonnet-4-6": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 }, // checked 2026-09-28
   "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
   "claude-haiku-4-5": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
 };

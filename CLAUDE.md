@@ -39,7 +39,7 @@ Packet Day generates personalized, printable daily learning packets for homescho
 | Tailwind CSS v4 | Styling (CSS-based config, no tailwind.config.ts) |
 | Supabase | Database, Auth, Storage |
 | Stripe | Payments & subscriptions |
-| Anthropic Claude API | Packet generation (model: claude-sonnet-4-6) |
+| Anthropic Claude API | Packet generation (model: claude-opus-5-5) |
 | Replicate (flux-schnell) | AI mascot image generation |
 | @react-pdf/renderer | PDF output |
 | Resend | Transactional email |

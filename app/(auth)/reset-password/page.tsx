@@ -1,29 +1,47 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [ready, setReady] = useState(false);
+  // Set by app/auth/confirm/route.ts, which forwards recovery links here
+  // unverified so an email link scanner can't burn the one-time token.
+  const tokenHash =
+    searchParams.get("type") === "recovery" ? searchParams.get("token_hash") : null;
+  // Guards against verifying the token more than once (double click, or a
+  // retry after verify succeeded but updateUser failed).
+  const verifiedRef = useRef(false);
+  const submittingRef = useRef(false);
+
+  const [ready, setReady] = useState(tokenHash !== null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // The Supabase browser client auto-detects the `code` param on the URL and
-  // exchanges it for a session as soon as it initializes (detectSessionInUrl
-  // defaults to true) — that happens before this effect ever runs, so we
-  // don't exchange the code ourselves. getSession() awaits that same
-  // initialization internally, so it's safe to use as "is there a session
-  // yet" without racing the automatic exchange or re-consuming the
-  // already-used one-time code on a second attempt.
+  // With an unused recovery token in the URL, show the form right away.
+  // The token is verified once, when the form is submitted (a real person's
+  // click, never a page load). It is verified even if a session already
+  // exists, because that session may belong to a different account.
+  //
+  // With no token, fall back to an existing session (e.g. a reload after
+  // the token was used). The Supabase browser client auto-detects the
+  // `code` param on the URL and exchanges it for a session as soon as it
+  // initializes (detectSessionInUrl defaults to true) — that happens before
+  // this effect ever runs, so we don't exchange the code ourselves.
+  // getSession() awaits that same initialization internally, so it's safe
+  // to use as "is there a session yet" without racing the automatic
+  // exchange or re-consuming the already-used one-time code.
   useEffect(() => {
+    if (tokenHash) return;
+
     let cancelled = false;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,7 +58,7 @@ function ResetPasswordForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tokenHash]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,10 +70,32 @@ function ResetPasswordForm() {
       setError("Password needs to be at least 8 characters.");
       return;
     }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
     setError("");
 
+    if (tokenHash && !verifiedRef.current) {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({
+        type: "recovery",
+        token_hash: tokenHash,
+      });
+
+      if (verifyErr) {
+        submittingRef.current = false;
+        setLoading(false);
+        setReady(false);
+        setError(
+          "This link didn't work. It may have expired or already been used."
+        );
+        return;
+      }
+
+      verifiedRef.current = true;
+    }
+
     const { error: updateErr } = await supabase.auth.updateUser({ password });
+    submittingRef.current = false;
 
     if (updateErr) {
       setError("Something went wrong updating your password. Try again?");
