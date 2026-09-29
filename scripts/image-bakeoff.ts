@@ -1,23 +1,29 @@
 /**
- * Image model bakeoff: runs the packet's two images (mascot and coloring
- * page) through several Replicate models, blinds the results, and builds
- * contact sheets (HTML and PDF) plus, for some rounds, a printable
- * coloring-page PDF.
+ * Image model bakeoff: runs the packet's images through Replicate under
+ * blind letters and builds contact sheets (HTML and PDF) plus, for some
+ * rounds, a printable coloring-page PDF.
  *
- *   npm run image-bakeoff -- --round 2      (default: the latest round)
+ *   npm run image-bakeoff -- --round 3      (default: the latest round)
+ *   npm run image-bakeoff -- --round 3 --dry-run
  *
  * Standalone on purpose: calls Replicate directly with REPLICATE_API_TOKEN.
  * No dev server, no login, no Supabase, no admin key, no production code
- * touched. The prompt wording and the name scrubber below are COPIED from
- * lib/generateMascotImage.ts (2026-09-28) so production stays untouched; if
- * production's prompts change, re-copy them here before the next round.
- * Round-specific prompt changes (round 2's no-text line and "a girl") are
- * test variants only; production still uses the copied wording as-is.
+ * touched.
  *
- * Each round writes to its own model-bakeoff-images-round<N>/ folder
- * (gitignored: model-bakeoff-*) and refuses to run if it already exists.
- * Images are saved under blind letters from the start; the letter-to-model
- * key and the model-named results CSV live in KEY_do_not_open/.
+ * Every contestant ("entry") is one model plus its own prompt builder, so a
+ * round can compare models, prompt variants, or both. Entries are blinded
+ * by group: letters are shuffled within each group, and an entry with a
+ * fixed label (a reference) is shown under that label instead of a letter.
+ *
+ * Rounds 1 and 2 used the prompt wording copied on 2026-09-28
+ * (legacyColoringPrompt). Round 3 onward uses buildColoringPrompt, copied
+ * byte for byte from lib/generateMascotImage.ts on main; a round with
+ * `assertK2` checks that copy against main's real source before spending
+ * anything and refuses to run if they differ.
+ *
+ * Each round writes to its own model-bakeoff-* folder (gitignored) and
+ * refuses to run if it already exists. The letter key, the prompts, and the
+ * named results CSV live in KEY_do_not_open/.
  *
  * Spend is tracked per attempt (every attempt counted as billed, even a
  * failed one) and the run stops before any attempt that would push the
@@ -26,10 +32,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { randomInt } from "node:crypto";
 import Replicate, { type Prediction } from "replicate";
 import sharp from "sharp";
 import React from "react";
+import ts from "typescript";
 import { Document, Page, Text, View, Image, renderToFile } from "@react-pdf/renderer";
 
 const CONCURRENCY = 4;
@@ -39,9 +47,31 @@ const POLL_INTERVAL_MS = 1_500;
 // Gray pixel = neither near black nor near white, on the 0-255 grayscale.
 const NEAR_BLACK = 50;
 const NEAR_WHITE = 205;
-const PRINT_SCENE = 1; // the print test uses this scene for every letter
+const PRINT_SCENE = 1; // the "scene1" print test uses this scene for every letter
 
-// ─── Copied from lib/generateMascotImage.ts ──────────────────────────────────
+// ─── Copied from lib/generateMascotImage.ts on main (2026-09-29) ─────────────
+// PRODUCTION COPY START. Must match main byte for byte; rounds with assertK2
+// compare it against `git show main:lib/generateMascotImage.ts` before running.
+
+const NO_TEXT_LINE =
+  "no letters, numbers, words, or signs anywhere in the image, including on vehicles, clothing, banners, and objects, ";
+
+function buildColoringPrompt(scene: string, includeNoTextLine: boolean): string {
+  return (
+    `black and white coloring book page for children featuring ${scene}, ` +
+    `clean black outlines only, no color, no shading, no fill, ` +
+    `pure white background, thick clean outlines with large open white regions for coloring, ` +
+    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
+    `simple shapes, kid-friendly line art ready to color, ` +
+    (includeNoTextLine ? NO_TEXT_LINE : "") +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`
+  );
+}
+// PRODUCTION COPY END
+
+// ─── Rounds 1 and 2 wording (copied 2026-09-28, kept so they rerun as they ran) ─
 
 const CHILD_PLACEHOLDER = "the child";
 
@@ -74,10 +104,7 @@ interface ColoringVariant {
   noText?: boolean; // round 2 test line against stray letters and numbers
 }
 
-const NO_TEXT_LINE =
-  "no letters, numbers, words, or signs anywhere in the image, including on vehicles, clothing, banners, and objects, ";
-
-function coloringPrompt(coloringScene: string, childName: string, variant: ColoringVariant = {}): string {
+function legacyColoringPrompt(coloringScene: string, childName: string, variant: ColoringVariant = {}): string {
   const scene = scrubChildName(coloringScene.trim(), childName, variant.placeholder);
   return (
     `black and white coloring book page for children featuring ${scene}, ` +
@@ -92,23 +119,56 @@ function coloringPrompt(coloringScene: string, childName: string, variant: Color
   );
 }
 
-// ─── Test scenes (fake child name only) ──────────────────────────────────────
+// ─── Grade band variants (round 3) ───────────────────────────────────────────
 
-const CHILD_NAME = "Maya";
+// Production's prompt with its three simplicity lines ("for children",
+// "thick clean outlines with large open white regions for coloring", and
+// "simple shapes, kid-friendly line art ready to color") swapped for
+// `detail`. Every other production line is kept, in production's order.
+function bandedColoringPrompt(scene: string, detail: string): string {
+  return (
+    `black and white coloring book page featuring ${scene}, ` +
+    `clean black outlines only, no color, no shading, no fill, ` +
+    `pure white background, ` +
+    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
+    `${detail}, ` +
+    NO_TEXT_LINE +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`
+  );
+}
+
+const DETAIL_35A =
+  "medium weight outlines with a mix of large and medium regions to color, a fuller scene with background details, " +
+  "textures drawn as line patterns such as leaves, bark, fur, and fabric, natural proportions, " +
+  "line art ready for colored pencils or markers";
+const DETAIL_35B = `${DETAIL_35A}, simple decorative patterns inside some of the larger shapes`;
+const DETAIL_68A =
+  "intricate illustrated line art for older kids and teens, fine but clearly printable black outlines, " +
+  "many small and medium regions to color, detailed background, realistic proportions, not cartoonish, " +
+  "textures rendered with line work only";
+const DETAIL_68B =
+  "detailed line art for older kids and teens where the characters and background shapes are filled with " +
+  "decorative zentangle style patterns, fine but clearly printable black outlines";
+
+// ─── Scenes ──────────────────────────────────────────────────────────────────
+
+const CHILD_NAME = "Maya"; // fake name, rounds 1 and 2 only
 
 interface Scene {
   id: number;
   label: string;
-  mascot: string;
+  mascot?: string; // only rounds that make mascot images need it
   coloring: string;
 }
 
-// Written the way the packet generator's Claude prompt writes them:
-// mascot_description follows "A cute cartoon [character] [action],
-// [accessories], bright colors, simple clean lines, white background,
-// kid-friendly illustration"; coloring_scene names the child and mascot,
-// the setting, and 3-5 specific objects.
-const SCENES: Scene[] = [
+// Rounds 1 and 2. Written the way the packet generator's Claude prompt
+// wrote them then: mascot_description follows "A cute cartoon [character]
+// [action], [accessories], bright colors, simple clean lines, white
+// background, kid-friendly illustration"; coloring_scene names the child
+// and mascot, the setting, and 3-5 specific objects.
+const MODEL_ROUND_SCENES: Scene[] = [
   {
     id: 1,
     label: "Pony ballet",
@@ -151,9 +211,27 @@ const SCENES: Scene[] = [
   },
 ];
 
+// Round 3. Already in the shape production hands the image model: no child
+// or mascot names (so production's name scrubbers change nothing), no signs.
+const BAND_SCENES: Scene[] = [
+  {
+    id: 1,
+    label: "Pepper garden",
+    coloring:
+      "a boy and the mascot, a smiling green pepper wearing a straw sun hat, stand together in a sunny vegetable garden with a woven basket full of peppers, a tall pepper plant with flowers, a red watering can, and a wooden wheelbarrow",
+  },
+  {
+    id: 2,
+    label: "Space station",
+    coloring:
+      "a girl and the mascot, a friendly round robot with antenna ears, float on the deck of a space station next to a large telescope, a round window showing a ringed planet, an open toolbox, and a drifting wrench",
+  },
+];
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 type ListName = "mascot" | "coloring";
+const LISTS: ListName[] = ["mascot", "coloring"];
 
 interface ModelSpec {
   key: string; // human name, only ever written to KEY_do_not_open/
@@ -191,6 +269,7 @@ const flux2Klein4b: ModelSpec = {
   input: (prompt) => ({ prompt, aspect_ratio: "1:1", output_megapixels: "1", output_format: "png" }),
 };
 
+// Same input production sends (lib/generateMascotImage.ts), quality aside.
 const gptImage2 = (quality: "low" | "medium", price: number): ModelSpec => ({
   key: `gpt-image-2 (quality ${quality})`,
   ref: GPT_IMAGE_2_REF,
@@ -207,25 +286,67 @@ const ideogramColoringBook: ModelSpec = {
   input: (prompt) => ({ prompt, aspect_ratio: "1:1", style_preset: "Coloring Book I", magic_prompt_option: "Off" }),
 };
 
+// ─── Entries and rounds ──────────────────────────────────────────────────────
+
+interface Entry {
+  key: string; // human name, only ever written to KEY_do_not_open/
+  model: ModelSpec;
+  prompt: (scene: Scene) => string;
+  group?: string; // letters are shuffled within a group; default "all"
+  label?: string; // a fixed, unblinded name (a reference) instead of a letter
+}
+
+interface Group {
+  id: string;
+  title: string;
+}
+
 interface RoundConfig {
+  name: string;
   out: string;
   runs: number;
   budgetUsd: number;
-  coloringVariant: ColoringVariant;
-  printTest: boolean;
-  models: Record<ListName, ModelSpec[]>;
+  scenes: Scene[];
+  keyNotes: string[];
+  // "scene1": one page per letter, scene 1 only (round 1's layout).
+  // "everyScene": one full page per letter per scene, letter in a corner.
+  printTest: false | "scene1" | "everyScene";
+  // When set, coloring contact sheets are one per group per scene, in this
+  // order, with reference columns on every sheet. Otherwise one sheet per list.
+  groups?: Group[];
+  assertK2?: { entryLabel: string };
+  entries: Record<ListName, Entry[]>;
 }
+
+function modelEntries(list: ListName, models: ModelSpec[], variant: ColoringVariant = {}): Entry[] {
+  return models.map((model) => ({
+    key: model.key,
+    model,
+    prompt:
+      list === "mascot"
+        ? (s: Scene) => mascotPrompt(s.mascot ?? "", CHILD_NAME)
+        : (s: Scene) => legacyColoringPrompt(s.coloring, CHILD_NAME, variant),
+  }));
+}
+
+const GPT_LOW = gptImage2("low", 0.012);
+const GPT_MEDIUM = gptImage2("medium", 0.047);
 
 const ROUNDS: Record<number, RoundConfig> = {
   // Round 1 (2026-09-28): the wide field. Kept exactly as it ran.
   1: {
+    name: "round 1",
     out: "model-bakeoff-images-round1",
     runs: 3,
     budgetUsd: 12,
-    coloringVariant: {},
-    printTest: true,
-    models: {
-      mascot: [
+    scenes: MODEL_ROUND_SCENES,
+    keyNotes: [
+      `Test child name: ${CHILD_NAME} (fake). Mascot prompt scrubs it to "${CHILD_PLACEHOLDER}"; coloring prompt scrubs it to "${CHILD_PLACEHOLDER}".`,
+      "Coloring no-text line: off",
+    ],
+    printTest: "scene1",
+    entries: {
+      mascot: modelEntries("mascot", [
         {
           key: "flux-schnell (baseline)",
           ref: FLUX_SCHNELL_REF,
@@ -247,8 +368,8 @@ const ROUNDS: Record<number, RoundConfig> = {
           price: 0.067,
           input: (prompt) => ({ prompt, aspect_ratio: "1:1", resolution: "1K", output_format: "png" }),
         },
-      ],
-      coloring: [
+      ]),
+      coloring: modelEntries("coloring", [
         {
           key: "recraft-v3 digital_illustration (baseline)",
           ref: RECRAFT_V3_REF,
@@ -282,19 +403,24 @@ const ROUNDS: Record<number, RoundConfig> = {
           price: 0.025,
           input: (prompt) => ({ prompt, negative_prompt: QWEN_NEGATIVE, aspect_ratio: "1:1", output_format: "png" }),
         },
-      ],
+      ]),
     },
   },
   // Round 2 (2026-09-28): cheaper and faster options around the round 1
   // picks, with a no-text line and "a girl" for the child on coloring pages.
   2: {
+    name: "round 2",
     out: "model-bakeoff-images-round2",
     runs: 2,
     budgetUsd: 5,
-    coloringVariant: { placeholder: "a girl", noText: true },
+    scenes: MODEL_ROUND_SCENES,
+    keyNotes: [
+      `Test child name: ${CHILD_NAME} (fake). Mascot prompt scrubs it to "${CHILD_PLACEHOLDER}"; coloring prompt scrubs it to "a girl".`,
+      "Coloring no-text line: on",
+    ],
     printTest: false,
-    models: {
-      mascot: [
+    entries: {
+      mascot: modelEntries("mascot", [
         flux2Pro,
         flux2Klein4b,
         {
@@ -303,8 +429,44 @@ const ROUNDS: Record<number, RoundConfig> = {
           price: 0.013, // $0.012 per output megapixel in go_fast mode, ~1.05 MP
           input: (prompt) => ({ prompt, aspect_ratio: "1:1", go_fast: true, output_format: "png" }),
         },
+      ]),
+      coloring: modelEntries("coloring", [gptImage2("low", 0.012), gptImage2("medium", 0.047), ideogramColoringBook], {
+        placeholder: "a girl",
+        noText: true,
+      }),
+    },
+  },
+  // Round 3 (2026-09-29): coloring page grade bands, round 1. Coloring only,
+  // production's model (GPT Image 2), prompt variants per band. K2_REF is
+  // production's prompt exactly and is shown labeled; 3-5 and 6-8 are blind
+  // within their band. Budget approved by Andy: $1.50.
+  3: {
+    name: "coloring grade bands, round 1",
+    out: "model-bakeoff-images-coloring-bands-round1",
+    runs: 3,
+    budgetUsd: 1.5,
+    scenes: BAND_SCENES,
+    keyNotes: [
+      "Coloring only. GPT Image 2 (production input), production grayscale pass.",
+      "Scenes have no names, so production's name scrubbers would change nothing.",
+    ],
+    printTest: "everyScene",
+    groups: [
+      { id: "K-2", title: "Grades K-2 (reference)" },
+      { id: "3-5", title: "Grades 3-5" },
+      { id: "6-8", title: "Grades 6-8" },
+    ],
+    assertK2: { entryLabel: "K2_REF" },
+    entries: {
+      mascot: [],
+      coloring: [
+        { key: "K2_REF (production prompt, quality low)", label: "K2_REF", group: "K-2", model: GPT_LOW, prompt: (s) => buildColoringPrompt(s.coloring, true) },
+        { key: "35A (quality low)", group: "3-5", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_35A) },
+        { key: "35B (quality low)", group: "3-5", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_35B) },
+        { key: "68A (quality low)", group: "6-8", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68A) },
+        { key: "68B (quality low)", group: "6-8", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68B) },
+        { key: "68A_MED (68A prompt, quality medium)", group: "6-8", model: GPT_MEDIUM, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68A) },
       ],
-      coloring: [gptImage2("low", 0.012), gptImage2("medium", 0.047), ideogramColoringBook],
     },
   },
 };
@@ -320,29 +482,77 @@ if (!ROUND) throw new Error(`Unknown round ${ROUND_NUMBER}. Known rounds: ${Obje
 const OUT = path.resolve(ROUND.out);
 const KEY_DIR = path.join(OUT, "KEY_do_not_open");
 
+// ─── K-2 production check ────────────────────────────────────────────────────
+
+/**
+ * Builds the reference entry's prompt for every scene and compares it with
+ * what main's real buildColoringPrompt builds (with the no-text line, as the
+ * GPT Image 2 call does). main's source is read with git, its
+ * NO_TEXT_LINE and buildColoringPrompt are transpiled and run as they are, so
+ * a wording change on main makes this fail instead of passing silently.
+ * Throws on any difference.
+ */
+function assertK2MatchesProduction(entry: Entry, scenes: Scene[]): string {
+  const source = execFileSync("git", ["show", "main:lib/generateMascotImage.ts"], { encoding: "utf8" });
+  const match = source.match(/const NO_TEXT_LINE =[\s\S]*?\nfunction buildColoringPrompt\([\s\S]*?\n\}\n/);
+  if (!match) throw new Error("K-2 check: could not find NO_TEXT_LINE and buildColoringPrompt in main's lib/generateMascotImage.ts");
+  const js = ts.transpileModule(match[0], { compilerOptions: { target: ts.ScriptTarget.ES2020 } }).outputText;
+  const productionBuild = new Function(`${js}\nreturn buildColoringPrompt;`)() as (scene: string, noText: boolean) => string;
+
+  for (const scene of scenes) {
+    const production = productionBuild(scene.coloring, true);
+    const ours = entry.prompt(scene);
+    if (ours !== production) {
+      let at = 0;
+      while (at < ours.length && ours[at] === production[at]) at++;
+      throw new Error(
+        `K-2 check FAILED on scene ${scene.id}: ${entry.label} differs from main's production prompt at character ${at}.\n` +
+          `  ours:       ...${ours.slice(Math.max(0, at - 40), at + 60)}\n` +
+          `  production: ...${production.slice(Math.max(0, at - 40), at + 60)}`
+      );
+    }
+  }
+  return `K-2 check passed: ${entry.label} is identical to main's production prompt for all ${scenes.length} scenes.`;
+}
+
+function runK2Check(): string | null {
+  if (!ROUND.assertK2) return null;
+  const entry = ROUND.entries.coloring.find((e) => e.label === ROUND.assertK2?.entryLabel);
+  if (!entry) throw new Error(`K-2 check: no coloring entry labeled ${ROUND.assertK2.entryLabel}`);
+  return assertK2MatchesProduction(entry, ROUND.scenes);
+}
+
 // ─── Replicate ───────────────────────────────────────────────────────────────
 
-const token = (process.env.REPLICATE_API_TOKEN ?? "").replace(/\s+#.*$/, "").trim();
-if (!token) throw new Error("Set REPLICATE_API_TOKEN (in .env.local) before running the bakeoff.");
-const replicate = new Replicate({ auth: token });
+let replicate: Replicate | null = null;
+
+function getReplicate(): Replicate {
+  if (!replicate) {
+    const token = (process.env.REPLICATE_API_TOKEN ?? "").replace(/\s+#.*$/, "").trim();
+    if (!token) throw new Error("Set REPLICATE_API_TOKEN (in .env.local) before running the bakeoff.");
+    replicate = new Replicate({ auth: token });
+  }
+  return replicate;
+}
 
 const TERMINAL: ReadonlySet<Prediction["status"]> = new Set(["succeeded", "failed", "canceled", "aborted"]);
 
 async function runPrediction(ref: string, input: Record<string, unknown>): Promise<string> {
+  const client = getReplicate();
   const version = ref.split(":")[1];
   const deadline = Date.now() + ATTEMPT_TIMEOUT_MS;
-  let prediction = await replicate.predictions.create({ version, input });
+  let prediction = await client.predictions.create({ version, input });
   while (!TERMINAL.has(prediction.status)) {
     if (Date.now() >= deadline) {
       try {
-        await replicate.predictions.cancel(prediction.id);
+        await client.predictions.cancel(prediction.id);
       } catch {
         // a failed cancel only means Replicate may finish it anyway; spend is already counted
       }
       throw new Error(`timed out after ${ATTEMPT_TIMEOUT_MS / 1000}s`);
     }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-    prediction = await replicate.predictions.get(prediction.id);
+    prediction = await client.predictions.get(prediction.id);
   }
   if (prediction.status !== "succeeded") {
     throw new Error(`prediction ${prediction.status}${prediction.error ? `: ${String(prediction.error)}` : ""}`);
@@ -404,7 +614,9 @@ async function grayPercent(gray: Buffer): Promise<number> {
 
 interface Result {
   list: ListName;
-  letter: string;
+  letter: string; // a blind letter, or a reference's label
+  group: string;
+  entry: string;
   model: string;
   ref: string;
   scene: number;
@@ -420,13 +632,35 @@ interface Result {
 let spent = 0;
 let budgetStopped = false;
 
-function shuffledLetters(list: ListName): Map<ModelSpec, string> {
-  const specs = [...ROUND.models[list]];
-  for (let i = specs.length - 1; i > 0; i--) {
-    const j = randomInt(i + 1);
-    [specs[i], specs[j]] = [specs[j], specs[i]];
+function groupOf(entry: Entry): string {
+  return entry.group ?? "all";
+}
+
+/**
+ * Labels every entry in a list: references keep their label; the rest get
+ * letters shuffled within their group. Letters run on across groups (in the
+ * round's group order), so no letter means two things in one round.
+ */
+function assignLetters(list: ListName): Map<Entry, string> {
+  const entries = ROUND.entries[list];
+  const order = ROUND.groups?.map((g) => g.id) ?? [];
+  const groups = [...new Set(entries.map(groupOf))].sort((a, b) => {
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    return (ia === -1 ? Infinity : ia) - (ib === -1 ? Infinity : ib);
+  });
+  const ids = new Map<Entry, string>();
+  let next = 0;
+  for (const e of entries) if (e.label) ids.set(e, e.label);
+  for (const group of groups) {
+    const blind = entries.filter((e) => !e.label && groupOf(e) === group);
+    for (let i = blind.length - 1; i > 0; i--) {
+      const j = randomInt(i + 1);
+      [blind[i], blind[j]] = [blind[j], blind[i]];
+    }
+    for (const e of blind) ids.set(e, String.fromCharCode(65 + next++));
   }
-  return new Map(specs.map((s, i) => [s, String.fromCharCode(65 + i)]));
+  return ids;
 }
 
 function rel(...parts: string[]): string {
@@ -437,13 +671,11 @@ function imageFile(list: ListName, letter: string, scene: number, run: number): 
   return path.join(OUT, list, letter, `scene${scene}_run${run}.png`);
 }
 
-async function runJob(list: ListName, spec: ModelSpec, letter: string, scene: Scene, run: number): Promise<Result> {
-  const prompt =
-    list === "mascot"
-      ? mascotPrompt(scene.mascot, CHILD_NAME)
-      : coloringPrompt(scene.coloring, CHILD_NAME, ROUND.coloringVariant);
+async function runJob(list: ListName, entry: Entry, letter: string, scene: Scene, run: number): Promise<Result> {
+  const spec = entry.model;
+  const prompt = entry.prompt(scene);
   const result: Result = {
-    list, letter, model: spec.key, ref: spec.ref, scene: scene.id, run,
+    list, letter, group: groupOf(entry), entry: entry.key, model: spec.key, ref: spec.ref, scene: scene.id, run,
     seconds: null, cost: 0, attempts: 0, failed: true, grayPct: null, error: "",
   };
   const name = `scene${scene.id}_run${run}.png`;
@@ -504,13 +736,13 @@ function csvRow(values: (string | number | null)[]): string {
 }
 
 function writeCsvs(results: Result[]) {
-  const full = [csvRow(["list", "model", "version", "scene", "run", "seconds", "cost_usd", "attempts", "failed", "gray_pct", "error"])];
-  const blind = [csvRow(["list", "letter", "scene", "run", "seconds", "failed", "gray_pct"])];
+  const full = [csvRow(["list", "letter", "group", "entry", "model", "version", "scene", "run", "seconds", "cost_usd", "attempts", "failed", "gray_pct", "error"])];
+  const blind = [csvRow(["list", "group", "letter", "scene", "run", "seconds", "failed", "gray_pct"])];
   for (const r of results) {
     const secs = r.seconds === null ? null : r.seconds.toFixed(1);
     const gray = r.grayPct === null ? null : r.grayPct.toFixed(2);
-    full.push(csvRow([r.list, r.model, r.ref.split(":")[1], r.scene, r.run, secs, r.cost.toFixed(4), r.attempts, r.failed ? "yes" : "no", gray, r.error]));
-    blind.push(csvRow([r.list, r.letter, r.scene, r.run, secs, r.failed ? "yes" : "no", gray]));
+    full.push(csvRow([r.list, r.letter, r.group, r.entry, r.model, r.ref.split(":")[1], r.scene, r.run, secs, r.cost.toFixed(4), r.attempts, r.failed ? "yes" : "no", gray, r.error]));
+    blind.push(csvRow([r.list, r.group, r.letter, r.scene, r.run, secs, r.failed ? "yes" : "no", gray]));
   }
   fs.writeFileSync(path.join(KEY_DIR, "results.csv"), `${full.join("\n")}\n`);
   fs.writeFileSync(path.join(OUT, "results_blind.csv"), `${blind.join("\n")}\n`);
@@ -521,27 +753,37 @@ function findResult(results: Result[], list: ListName, letter: string, scene: nu
 }
 
 const LIST_TITLE: Record<ListName, string> = { mascot: "Mascot", coloring: "Coloring page" };
-const INTRO =
+const MODEL_INTRO =
   "Rows are scenes, columns are letters. Letters are assigned separately for this list, so a letter here is not the same model as that letter on the other sheet.";
 const GRAY_NOTE = `Gray % counts pixels that are neither near black (<=${NEAR_BLACK}) nor near white (>=${NEAR_WHITE}) after the production grayscale pass; anti-aliased line edges count a little. Hard black and white copies are in coloring-threshold/.`;
 
-function contactSheetHtml(list: ListName, letters: string[], results: Result[]): string {
-  const title = LIST_TITLE[list];
+/** One contact sheet: which list, which columns, which scene rows, and its words. */
+interface Sheet {
+  list: ListName;
+  columns: string[];
+  scenes: Scene[];
+  title: string;
+  intro: string;
+  file: string; // base name, no extension
+}
+
+function contactSheetHtml(sheet: Sheet, results: Result[]): string {
+  const { list, columns, scenes, title } = sheet;
   const cell = (letter: string, scene: number) =>
     Array.from({ length: ROUND.runs }, (_, k) => {
       const r = findResult(results, list, letter, scene, k + 1);
       const file = rel(list, letter, `scene${scene}_run${k + 1}.png`);
       if (!r || r.failed) return `<figure class="miss"><div>run ${k + 1}<br>no image</div></figure>`;
       const note = r.grayPct === null ? "" : ` · ${r.grayPct.toFixed(1)}% gray`;
-      return `<figure><a href="${file}" target="_blank"><img src="${file}" alt="${title} ${letter}, scene ${scene}, run ${k + 1}" loading="lazy"></a><figcaption>run ${k + 1}${note}</figcaption></figure>`;
+      return `<figure><a href="${file}" target="_blank"><img src="${file}" alt="${LIST_TITLE[list]} ${letter}, scene ${scene}, run ${k + 1}" loading="lazy"></a><figcaption>run ${k + 1}${note}</figcaption></figure>`;
     }).join("");
-  const rows = SCENES.map(
-    (s) => `<tr><th scope="row">${s.id}. ${s.label}</th>${letters.map((l) => `<td>${cell(l, s.id)}</td>`).join("")}</tr>`
+  const rows = scenes.map(
+    (s) => `<tr><th scope="row">${s.id}. ${s.label}</th>${columns.map((l) => `<td>${cell(l, s.id)}</td>`).join("")}</tr>`
   ).join("\n");
   const grayNote = list === "coloring" ? `<p>${GRAY_NOTE}</p>` : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} bakeoff</title>
+<title>${title}</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #fdfbf7; color: #1a1a2e; margin: 16px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
@@ -556,10 +798,10 @@ function contactSheetHtml(list: ListName, letters: string[], results: Result[]):
   figcaption { font-size: 11px; color: #555; }
   .miss div { width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; background: #f3e1dc; font-size: 12px; }
 </style></head><body>
-<h1>${title} bakeoff, round ${ROUND_NUMBER} (blind)</h1>
-<p>${INTRO} ${ROUND.runs} runs each. Click an image to open it full size.</p>
+<h1>${title}</h1>
+<p>${sheet.intro} ${ROUND.runs} runs each. Click an image to open it full size.</p>
 ${grayNote}
-<table><thead><tr><th></th>${letters.map((l) => `<th scope="col">${l}</th>`).join("")}</tr></thead>
+<table><thead><tr><th></th>${columns.map((l) => `<th scope="col">${l}</th>`).join("")}</tr></thead>
 <tbody>
 ${rows}
 </tbody></table></body></html>
@@ -568,7 +810,8 @@ ${rows}
 
 // Same layout as the HTML sheet, one wide page, with small JPEG thumbnails
 // embedded so the file stays well under 20 MB.
-async function contactSheetPdf(list: ListName, letters: string[], results: Result[]): Promise<string> {
+async function contactSheetPdf(sheet: Sheet, results: Result[]): Promise<string> {
+  const { list, columns, scenes, title } = sheet;
   const TH = 78;
   const GAP = 6;
   const PAD = 8;
@@ -577,13 +820,13 @@ async function contactSheetPdf(list: ListName, letters: string[], results: Resul
   const cellW = ROUND.runs * TH + (ROUND.runs - 1) * GAP + 2 * PAD;
   const rowH = TH + CAPTION_H + 12;
   const headerH = list === "coloring" ? 96 : 76;
-  const width = 36 + LABEL_W + letters.length * cellW;
-  const height = headerH + 28 + SCENES.length * rowH + 24;
+  const width = 36 + LABEL_W + columns.length * cellW;
+  const height = headerH + 28 + scenes.length * rowH + 24;
   const border = { borderWidth: 0.5, borderColor: "#cccccc", borderStyle: "solid" as const };
 
   const thumbs = new Map<string, Buffer>();
   for (const r of results) {
-    if (r.list !== list || r.failed) continue;
+    if (r.list !== list || r.failed || !columns.includes(r.letter)) continue;
     const file = imageFile(list, r.letter, r.scene, r.run);
     const jpg = await sharp(file)
       .flatten({ background: "#ffffff" })
@@ -615,39 +858,86 @@ async function contactSheetPdf(list: ListName, letters: string[], results: Resul
 
   const doc = h(
     Document,
-    { title: `${LIST_TITLE[list]} bakeoff, round ${ROUND_NUMBER} (blind)` },
+    { title },
     h(
       Page,
       { size: [width, height], style: { backgroundColor: "#fdfbf7", padding: 18, color: "#1a1a2e" } },
-      h(Text, { style: { fontSize: 16, marginBottom: 6 } }, `${LIST_TITLE[list]} bakeoff, round ${ROUND_NUMBER} (blind)`),
-      h(Text, { style: { fontSize: 8.5, color: "#444455", marginBottom: 4 } }, `${INTRO} ${ROUND.runs} runs each.`),
+      h(Text, { style: { fontSize: 16, marginBottom: 6 } }, title),
+      h(Text, { style: { fontSize: 8.5, color: "#444455", marginBottom: 4 } }, `${sheet.intro} ${ROUND.runs} runs each.`),
       list === "coloring" ? h(Text, { style: { fontSize: 8, color: "#444455", marginBottom: 4 } }, GRAY_NOTE) : null,
       h(
         View,
         { style: { flexDirection: "row", marginTop: 10 } },
         h(View, { style: { width: LABEL_W } }),
-        ...letters.map((l) =>
+        ...columns.map((l) =>
           h(View, { key: l, style: { ...border, width: cellW, height: 28, justifyContent: "center" } },
             h(Text, { style: { fontSize: 16, fontFamily: "Helvetica-Bold", textAlign: "center" } }, l))
         )
       ),
-      ...SCENES.map((s) =>
+      ...scenes.map((s) =>
         h(
           View,
           { key: s.id, style: { flexDirection: "row" } },
           h(View, { style: { ...border, width: LABEL_W, height: rowH, padding: 5 } },
             h(Text, { style: { fontSize: 9, fontFamily: "Helvetica-Bold" } }, `${s.id}. ${s.label}`)),
-          ...letters.map((l) => cell(l, s.id))
+          ...columns.map((l) => cell(l, s.id))
         )
       )
     )
   );
-  const out = path.join(OUT, `contact-sheet-${list}.pdf`);
+  const out = path.join(OUT, `${sheet.file}.pdf`);
   await renderToFile(doc, out);
   return out;
 }
 
-async function printTest(letters: string[], results: Result[]): Promise<string[]> {
+/**
+ * The sheets for this round. Lists with no entries get no sheet. Without
+ * groups: one sheet per list, every scene, every letter (rounds 1 and 2).
+ * With groups: one coloring sheet per group per scene; reference columns
+ * lead every sheet so each band is judged next to the reference.
+ */
+function planSheets(idsByList: Record<ListName, Map<Entry, string>>): Sheet[] {
+  const sheets: Sheet[] = [];
+  for (const list of LISTS) {
+    const ids = idsByList[list];
+    if (ids.size === 0) continue;
+    const sorted = (entries: Entry[]) => entries.map((e) => ids.get(e) as string).sort((a, b) => a.localeCompare(b));
+    const all = [...ids.keys()];
+    if (!ROUND.groups || list !== "coloring") {
+      sheets.push({
+        list,
+        columns: sorted(all),
+        scenes: ROUND.scenes,
+        title: `${LIST_TITLE[list]} bakeoff, ${ROUND.name} (blind)`,
+        intro: MODEL_INTRO,
+        file: `contact-sheet-${list}`,
+      });
+      continue;
+    }
+    const refs = sorted(all.filter((e) => e.label));
+    for (const group of ROUND.groups) {
+      const blind = sorted(all.filter((e) => !e.label && groupOf(e) === group.id));
+      const columns = [...refs, ...blind];
+      if (blind.length === 0 && !all.some((e) => e.label && groupOf(e) === group.id)) continue;
+      for (const scene of ROUND.scenes) {
+        sheets.push({
+          list,
+          columns,
+          scenes: [scene],
+          title: `${group.title}, scene ${scene.id} (${scene.label}): ${ROUND.name}`,
+          intro:
+            blind.length > 0
+              ? `${refs.join(", ")} is today's production prompt, shown labeled for comparison. Letters ${blind.join(", ")} are blind and shuffled within this band; the key is sealed.`
+              : `${refs.join(", ")} is today's production prompt, shown labeled as the reference.`,
+          file: `contact-sheet-${group.id}-scene${scene.id}`,
+        });
+      }
+    }
+  }
+  return sheets;
+}
+
+async function printTestScene1(letters: string[], results: Result[]): Promise<string[]> {
   const pages: React.ReactElement[] = [];
   const missing: string[] = [];
   for (const letter of letters) {
@@ -673,55 +963,108 @@ async function printTest(letters: string[], results: Result[]): Promise<string[]
   return missing;
 }
 
+// One letter-size page per letter per scene: the image as large as the
+// margins allow, and only the letter and scene in small type in the bottom
+// right corner. Uses each letter's first successful run for that scene.
+async function printTestEveryScene(letters: string[], results: Result[]): Promise<string[]> {
+  const pages: React.ReactElement[] = [];
+  const missing: string[] = [];
+  for (const letter of letters) {
+    for (const scene of ROUND.scenes) {
+      const r = results
+        .filter((x) => x.list === "coloring" && x.letter === letter && x.scene === scene.id && !x.failed)
+        .sort((a, b) => a.run - b.run)[0];
+      if (!r) {
+        missing.push(`${letter} scene ${scene.id}`);
+        continue;
+      }
+      const data = fs.readFileSync(imageFile("coloring", letter, scene.id, r.run));
+      pages.push(
+        React.createElement(
+          Page,
+          { key: `${letter}-${scene.id}`, size: "LETTER", style: { padding: 36, justifyContent: "center", alignItems: "center" } },
+          React.createElement(Image, { src: { data, format: "png" }, style: { width: 540, height: 540 } }),
+          React.createElement(
+            Text,
+            { style: { position: "absolute", right: 24, bottom: 18, fontSize: 7, color: "#777777" } },
+            `${letter} · scene ${scene.id} · run ${r.run}`
+          )
+        )
+      );
+    }
+  }
+  if (pages.length) {
+    await renderToFile(React.createElement(Document, { title: "Coloring page print test" }, ...pages), path.join(OUT, "print-test-coloring.pdf"));
+  }
+  return missing;
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-// --dry-run: print the plan, estimated cost, and sample prompts. No API
-// calls, no files written.
-function dryRun() {
-  const planned = Object.values(ROUND.models).flat().reduce((sum, m) => sum + m.price, 0) * SCENES.length * ROUND.runs;
-  const count = Object.values(ROUND.models).flat().length * SCENES.length * ROUND.runs;
-  process.stdout.write(
-    `Round ${ROUND_NUMBER} dry run: ${count} images, estimated $${planned.toFixed(2)}, budget $${ROUND.budgetUsd}, output ${OUT}\n` +
-      `Mascot models: ${ROUND.models.mascot.length}, coloring models: ${ROUND.models.coloring.length}\n\n` +
-      `Sample mascot prompt (scene 1):\n${mascotPrompt(SCENES[0].mascot, CHILD_NAME)}\n\n` +
-      `Sample coloring prompt (scene 4):\n${coloringPrompt(SCENES[3].coloring, CHILD_NAME, ROUND.coloringVariant)}\n`
-  );
+function plannedCost(): { count: number; usd: number } {
+  const entries = LISTS.flatMap((l) => ROUND.entries[l]);
+  const per = ROUND.scenes.length * ROUND.runs;
+  return { count: entries.length * per, usd: entries.reduce((sum, e) => sum + e.model.price, 0) * per };
+}
+
+// --dry-run: print the plan, estimated cost, the K-2 check, and every
+// prompt. No API calls, no files written, no letters assigned.
+function dryRun(k2: string | null) {
+  const { count, usd } = plannedCost();
+  const lines = [
+    `${ROUND.name} dry run: ${count} images, estimated $${usd.toFixed(3)} before retries (worst case with every image retried once: $${(usd * 2).toFixed(3)}), budget $${ROUND.budgetUsd}, output ${OUT}`,
+    `Output folder exists already: ${fs.existsSync(OUT) ? "YES (the real run will refuse)" : "no"}`,
+    ...LISTS.map((l) => `${LIST_TITLE[l]} entries: ${ROUND.entries[l].length}`),
+    ...(k2 ? [k2] : []),
+  ];
+  for (const list of LISTS) {
+    for (const entry of ROUND.entries[list]) {
+      lines.push("", `${list} / ${entry.key} / $${entry.model.price} per image:`);
+      for (const scene of ROUND.scenes.slice(0, ROUND.groups ? ROUND.scenes.length : 1)) {
+        lines.push(`  scene ${scene.id}: ${entry.prompt(scene)}`);
+      }
+    }
+  }
+  process.stdout.write(`${lines.join("\n")}\n`);
 }
 
 async function main() {
-  if (process.argv.includes("--dry-run")) return dryRun();
+  // Before anything is spent or written: a failed K-2 check stops the run.
+  const k2 = runK2Check();
+  if (process.argv.includes("--dry-run")) return dryRun(k2);
+  if (k2) process.stdout.write(`${k2}\n`);
   if (fs.existsSync(OUT)) throw new Error(`${OUT} already exists. Move or delete it before a new run so rounds never mix.`);
   fs.mkdirSync(KEY_DIR, { recursive: true });
 
-  const placeholder = ROUND.coloringVariant.placeholder ?? CHILD_PLACEHOLDER;
-  const keyLines = [
-    `Image bakeoff round ${ROUND_NUMBER} key (${new Date().toISOString().slice(0, 10)})`,
-    `Test child name: ${CHILD_NAME} (fake). Mascot prompt scrubs it to "${CHILD_PLACEHOLDER}"; coloring prompt scrubs it to "${placeholder}".`,
-    `Coloring no-text line: ${ROUND.coloringVariant.noText ? "on" : "off"}`,
-  ];
+  const keyLines = [`Image bakeoff ${ROUND.name} key (${new Date().toISOString().slice(0, 10)})`, ...ROUND.keyNotes];
+  if (k2) keyLines.push(k2);
+  const promptLines: string[] = [];
   const tasks: (() => Promise<Result>)[] = [];
-  const lettersByList: Record<ListName, string[]> = { mascot: [], coloring: [] };
+  const idsByList = {} as Record<ListName, Map<Entry, string>>;
 
-  for (const list of ["mascot", "coloring"] as ListName[]) {
-    const letters = shuffledLetters(list);
+  for (const list of LISTS) {
+    const ids = assignLetters(list);
+    idsByList[list] = ids;
+    if (ids.size === 0) continue;
     keyLines.push("", `${list.toUpperCase()}`);
-    for (const [spec, letter] of [...letters].sort((a, b) => a[1].localeCompare(b[1]))) {
-      keyLines.push(`${letter} = ${spec.key}  [${spec.ref}]`);
-      lettersByList[list].push(letter);
-      fs.mkdirSync(path.join(OUT, list, letter), { recursive: true });
-      if (list === "coloring") fs.mkdirSync(path.join(OUT, "coloring-threshold", letter), { recursive: true });
+    for (const [entry, id] of [...ids].sort((a, b) => a[1].localeCompare(b[1]))) {
+      keyLines.push(`${id} = ${entry.key}  [group ${groupOf(entry)}; ${entry.model.key}; ${entry.model.ref}]`);
+      for (const scene of ROUND.scenes) promptLines.push(`${list} ${id} scene ${scene.id}:\n${entry.prompt(scene)}\n`);
+      fs.mkdirSync(path.join(OUT, list, id), { recursive: true });
+      if (list === "coloring") fs.mkdirSync(path.join(OUT, "coloring-threshold", id), { recursive: true });
     }
-    // Interleave by scene and run so a slow model doesn't bunch up at the end.
-    for (const scene of SCENES) {
+    // Interleave by scene and run so a slow entry doesn't bunch up at the end.
+    for (const scene of ROUND.scenes) {
       for (let run = 1; run <= ROUND.runs; run++) {
-        for (const [spec, letter] of letters) tasks.push(() => runJob(list, spec, letter, scene, run));
+        for (const [entry, id] of ids) tasks.push(() => runJob(list, entry, id, scene, run));
       }
     }
   }
   fs.writeFileSync(path.join(KEY_DIR, "KEY.txt"), `${keyLines.join("\n")}\n`);
+  fs.writeFileSync(path.join(KEY_DIR, "prompts.txt"), promptLines.join("\n"));
 
-  const planned = Object.values(ROUND.models).flat().reduce((sum, m) => sum + m.price, 0) * SCENES.length * ROUND.runs;
-  process.stdout.write(`Round ${ROUND_NUMBER}: ${tasks.length} images planned, estimated $${planned.toFixed(2)} before retries, budget $${ROUND.budgetUsd}\n`);
+  const { usd } = plannedCost();
+  process.stdout.write(`${ROUND.name}: ${tasks.length} images planned, estimated $${usd.toFixed(3)} before retries, budget $${ROUND.budgetUsd}\n`);
 
   let done = 0;
   const results = await pool(
@@ -737,12 +1080,21 @@ async function main() {
 
   writeCsvs(results);
   const pdfs: string[] = [];
-  for (const list of ["mascot", "coloring"] as ListName[]) {
-    fs.writeFileSync(path.join(OUT, `contact-sheet-${list}.html`), contactSheetHtml(list, lettersByList[list], results));
-    const pdf = await contactSheetPdf(list, lettersByList[list], results);
+  for (const sheet of planSheets(idsByList)) {
+    fs.writeFileSync(path.join(OUT, `${sheet.file}.html`), contactSheetHtml(sheet, results));
+    const pdf = await contactSheetPdf(sheet, results);
     pdfs.push(`${pdf} (${(fs.statSync(pdf).size / 1e6).toFixed(2)} MB)`);
   }
-  const missingPrint = ROUND.printTest ? await printTest(lettersByList.coloring, results) : [];
+  // References first, then letters.
+  const coloringIds = [...idsByList.coloring]
+    .sort(([ea, a], [eb, b]) => Number(!ea.label) - Number(!eb.label) || a.localeCompare(b))
+    .map(([, id]) => id);
+  const missingPrint =
+    ROUND.printTest === "scene1"
+      ? await printTestScene1(coloringIds, results)
+      : ROUND.printTest === "everyScene"
+        ? await printTestEveryScene(coloringIds, results)
+        : [];
 
   const failed = results.filter((r) => r.failed).length;
   const retried = results.filter((r) => r.attempts > 1).length;
@@ -750,7 +1102,7 @@ async function main() {
     `\nDone. ${results.length - failed} of ${results.length} images saved, ${failed} failed or skipped, ${retried} needed a retry.` +
       `\nSpend counted: $${spent.toFixed(3)} of $${ROUND.budgetUsd}${budgetStopped ? " (STOPPED at budget)" : ""}.` +
       `\nContact sheet PDFs:\n  ${pdfs.join("\n  ")}` +
-      (missingPrint.length ? `\nPrint test is missing letters with no scene ${PRINT_SCENE} image: ${missingPrint.join(", ")}` : "") +
+      (missingPrint.length ? `\nPrint test is missing: ${missingPrint.join(", ")}` : "") +
       `\nOutput: ${OUT}\n`
   );
 }
