@@ -149,6 +149,12 @@ const DETAIL_68A =
   "intricate illustrated line art for older kids and teens, fine but clearly printable black outlines, " +
   "many small and medium regions to color, detailed background, realistic proportions, not cartoonish, " +
   "textures rendered with line work only";
+// Round 4: 68A (round 1's pick, letter D) with cleanup lines added to the
+// same detail slot, so every other production line keeps its place.
+const DETAIL_68A_T1 =
+  `${DETAIL_68A}, crisp, smooth, continuous black outlines, clean line art with no sketchy, broken, or doubled strokes, ` +
+  "no stippling or hatching texture, no labels, markings, symbols, or numbers on walls, panels, railings, or equipment";
+const DETAIL_68A_T2 = `${DETAIL_68A_T1}, balance detailed areas with a few larger open areas to color, avoid tiny cluttered details`;
 const DETAIL_68B =
   "detailed line art for older kids and teens where the characters and background shapes are filled with " +
   "decorative zentangle style patterns, fine but clearly printable black outlines";
@@ -302,6 +308,20 @@ interface Group {
   title: string;
 }
 
+interface ImportedRef {
+  label: string; // column name on this round's sheets
+  fromOut: string; // earlier round's output folder
+  fromLetter: string; // that round's letter or label
+  group: string;
+  note: string; // what it was, for the key
+}
+
+interface PromptCheck {
+  entryKey: string; // Entry.key in this round
+  promptsFile: string; // earlier round's KEY_do_not_open/prompts.txt
+  fromId: string; // the letter or label the prompt ran under there
+}
+
 interface RoundConfig {
   name: string;
   out: string;
@@ -316,6 +336,12 @@ interface RoundConfig {
   // order, with reference columns on every sheet. Otherwise one sheet per list.
   groups?: Group[];
   assertK2?: { entryLabel: string };
+  // Earlier rounds' images shown as labeled reference columns. Copied in,
+  // never regenerated, never spent on, and left out of the print test.
+  importedRefs?: ImportedRef[];
+  // Entries whose prompt must equal what an earlier round really sent,
+  // read from that round's KEY_do_not_open/prompts.txt. Checked before spending.
+  promptChecks?: PromptCheck[];
   entries: Record<ListName, Entry[]>;
 }
 
@@ -470,6 +496,54 @@ const ROUNDS: Record<number, RoundConfig> = {
       ],
     },
   },
+  // Round 4 (2026-09-29): coloring page grade bands, round 2, grades 6-8
+  // only. Round 1's 6-8 pick was letter D (68A, quality low); this round
+  // tries cleanup lines on top of it. Round 1's K2_REF and D images are
+  // copied in as labeled references. Budget approved by Andy: $0.50.
+  4: {
+    name: "coloring grade bands, round 2 (6-8)",
+    out: "model-bakeoff-images-coloring-bands-round2",
+    runs: 3,
+    budgetUsd: 0.5,
+    scenes: BAND_SCENES,
+    keyNotes: [
+      "Coloring only, grades 6-8. GPT Image 2 quality low (production input), production grayscale pass.",
+      "D_T1 and D_T2 add their lines to 68A's detail slot, just before the no-text line.",
+    ],
+    printTest: "everyScene",
+    groups: [{ id: "6-8", title: "Grades 6-8" }],
+    importedRefs: [
+      {
+        label: "K2_REF",
+        fromOut: "model-bakeoff-images-coloring-bands-round1",
+        fromLetter: "K2_REF",
+        group: "K-2",
+        note: "round 1 K2_REF (production prompt, quality low)",
+      },
+      {
+        label: "ROUND1_D",
+        fromOut: "model-bakeoff-images-coloring-bands-round1",
+        fromLetter: "D",
+        group: "6-8",
+        note: "round 1 letter D (68A, quality low)",
+      },
+    ],
+    promptChecks: [
+      {
+        entryKey: "D_CTRL (68A exactly as round 1 D, quality low)",
+        promptsFile: "model-bakeoff-images-coloring-bands-round1/KEY_do_not_open/prompts.txt",
+        fromId: "D",
+      },
+    ],
+    entries: {
+      mascot: [],
+      coloring: [
+        { key: "D_CTRL (68A exactly as round 1 D, quality low)", group: "6-8", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68A) },
+        { key: "D_T1 (68A plus clean line lines, quality low)", group: "6-8", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68A_T1) },
+        { key: "D_T2 (D_T1 plus open areas lines, quality low)", group: "6-8", model: GPT_LOW, prompt: (s) => bandedColoringPrompt(s.coloring, DETAIL_68A_T2) },
+      ],
+    },
+  },
 };
 
 function argValue(name: string): string | undefined {
@@ -521,6 +595,75 @@ function runK2Check(): string | null {
   const entry = ROUND.entries.coloring.find((e) => e.label === ROUND.assertK2?.entryLabel);
   if (!entry) throw new Error(`K-2 check: no coloring entry labeled ${ROUND.assertK2.entryLabel}`);
   return assertK2MatchesProduction(entry, ROUND.scenes);
+}
+
+/**
+ * Checks each promptChecks entry against the prompt an earlier round really
+ * sent (its prompts.txt blocks read "<list> <id> scene <n>:\n<prompt>\n").
+ * Throws on any difference, so a "control" can't quietly drift.
+ */
+function runPromptChecks(): string[] {
+  return (ROUND.promptChecks ?? []).map((check) => {
+    const entry = LISTS.flatMap((l) => ROUND.entries[l]).find((e) => e.key === check.entryKey);
+    if (!entry) throw new Error(`Prompt check: no entry named ${check.entryKey}`);
+    const file = path.resolve(check.promptsFile);
+    if (!fs.existsSync(file)) throw new Error(`Prompt check: ${file} not found`);
+    const blocks = new Map<string, string>();
+    for (const block of fs.readFileSync(file, "utf8").split(/\r?\n\r?\n/)) {
+      const m = block.match(/^(\w+) (\S+) scene (\d+):\r?\n([\s\S]*)$/);
+      if (m) blocks.set(`${m[1]} ${m[2]} ${m[3]}`, m[4].trim());
+    }
+    for (const scene of ROUND.scenes) {
+      const earlier = blocks.get(`coloring ${check.fromId} ${scene.id}`);
+      if (earlier === undefined) throw new Error(`Prompt check: ${file} has no coloring ${check.fromId} scene ${scene.id}`);
+      if (entry.prompt(scene) !== earlier) {
+        throw new Error(`Prompt check FAILED: ${check.entryKey} scene ${scene.id} differs from ${check.fromId} in ${file}`);
+      }
+    }
+    return `Prompt check passed: ${check.entryKey} is identical to ${check.fromId} in ${check.promptsFile} for all ${ROUND.scenes.length} scenes.`;
+  });
+}
+
+function importedFile(ref: ImportedRef, folder: string, scene: number, run: number): string {
+  return path.resolve(ref.fromOut, folder, ref.fromLetter, `scene${scene}_run${run}.png`);
+}
+
+/** Every imported image this round needs; throws naming the first missing one. */
+function checkImports(): string | null {
+  const refs = ROUND.importedRefs ?? [];
+  if (refs.length === 0) return null;
+  for (const ref of refs) {
+    for (const scene of ROUND.scenes) {
+      for (let run = 1; run <= ROUND.runs; run++) {
+        for (const folder of ["coloring", "coloring-threshold"]) {
+          const file = importedFile(ref, folder, scene.id, run);
+          if (!fs.existsSync(file)) throw new Error(`Imported reference image missing: ${file}`);
+        }
+      }
+    }
+  }
+  return `Imported references found: ${refs.map((r) => `${r.label} (${r.note})`).join(", ")}.`;
+}
+
+/** Copies imported references into this round's folders; one Result per image, no spend. */
+async function copyImports(): Promise<Result[]> {
+  const results: Result[] = [];
+  for (const ref of ROUND.importedRefs ?? []) {
+    for (const folder of ["coloring", "coloring-threshold"]) fs.mkdirSync(path.join(OUT, folder, ref.label), { recursive: true });
+    for (const scene of ROUND.scenes) {
+      for (let run = 1; run <= ROUND.runs; run++) {
+        for (const folder of ["coloring", "coloring-threshold"]) {
+          fs.copyFileSync(importedFile(ref, folder, scene.id, run), path.join(OUT, folder, ref.label, `scene${scene.id}_run${run}.png`));
+        }
+        results.push({
+          list: "coloring", letter: ref.label, group: ref.group, entry: `imported: ${ref.note}`, model: "", ref: "",
+          scene: scene.id, run, seconds: null, cost: 0, attempts: 0, failed: false,
+          grayPct: await grayPercent(fs.readFileSync(imageFile("coloring", ref.label, scene.id, run))), error: "",
+        });
+      }
+    }
+  }
+  return results;
 }
 
 // ─── Replicate ───────────────────────────────────────────────────────────────
@@ -898,11 +1041,19 @@ interface Column {
   id: string;
   group: string;
   reference: boolean;
+  imported: boolean; // copied from an earlier round; kept off the print test
+}
+
+/** How a labeled reference column is described on the sheets. */
+function referenceNote(id: string): string {
+  return ROUND.importedRefs?.find((r) => r.label === id)?.note ?? "today's production prompt";
 }
 
 function columnsFromIds(idsByList: Record<ListName, Map<Entry, string>>): Column[] {
   return LISTS.flatMap((list) =>
-    [...idsByList[list]].map(([entry, id]) => ({ list, id, group: groupOf(entry), reference: !!entry.label }))
+    [...idsByList[list]].map(([entry, id]) => ({ list, id, group: groupOf(entry), reference: !!entry.label, imported: false }))
+  ).concat(
+    (ROUND.importedRefs ?? []).map((r) => ({ list: "coloring" as ListName, id: r.label, group: r.group, reference: true, imported: true }))
   );
 }
 
@@ -930,6 +1081,7 @@ function planSheets(allColumns: Column[]): Sheet[] {
       continue;
     }
     const refs = sorted(all.filter((c) => c.reference));
+    const refDescription = refs.map((id) => `${id} is ${referenceNote(id)}`).join("; ");
     for (const group of ROUND.groups) {
       const blind = sorted(all.filter((c) => !c.reference && c.group === group.id));
       const columns = [...refs, ...blind];
@@ -942,8 +1094,8 @@ function planSheets(allColumns: Column[]): Sheet[] {
           title: `${group.title}, scene ${scene.id} (${scene.label}): ${ROUND.name}`,
           intro:
             blind.length > 0
-              ? `${refs.join(", ")} is today's production prompt, shown labeled for comparison. Letters ${blind.join(", ")} are blind and shuffled within this band; the key is sealed.`
-              : `${refs.join(", ")} is today's production prompt, shown labeled as the reference.`,
+              ? `Labeled for comparison: ${refDescription}. Letters ${blind.join(", ")} are blind and shuffled within this band; the key is sealed.`
+              : `Labeled as the reference: ${refDescription}.`,
           file: `contact-sheet-${group.id}-scene${scene.id}`,
         });
       }
@@ -1024,13 +1176,13 @@ function plannedCost(): { count: number; usd: number } {
 
 // --dry-run: print the plan, estimated cost, the K-2 check, and every
 // prompt. No API calls, no files written, no letters assigned.
-function dryRun(k2: string | null) {
+function dryRun(checks: string[]) {
   const { count, usd } = plannedCost();
   const lines = [
     `${ROUND.name} dry run: ${count} images, estimated $${usd.toFixed(3)} before retries (worst case with every image retried once: $${(usd * 2).toFixed(3)}), budget $${ROUND.budgetUsd}, output ${OUT}`,
     `Output folder exists already: ${fs.existsSync(OUT) ? "YES (the real run will refuse)" : "no"}`,
     ...LISTS.map((l) => `${LIST_TITLE[l]} entries: ${ROUND.entries[l].length}`),
-    ...(k2 ? [k2] : []),
+    ...checks,
   ];
   for (const list of LISTS) {
     for (const entry of ROUND.entries[list]) {
@@ -1044,16 +1196,17 @@ function dryRun(k2: string | null) {
 }
 
 async function main() {
-  // Before anything is spent or written: a failed K-2 check stops the run.
-  const k2 = runK2Check();
-  if (process.argv.includes("--dry-run")) return dryRun(k2);
+  // Before anything is spent or written: a failed check stops the run.
+  const checks = [runK2Check(), ...runPromptChecks(), checkImports()].filter((c): c is string => !!c);
+  if (process.argv.includes("--dry-run")) return dryRun(checks);
   if (process.argv.includes("--rebuild-sheets")) return rebuildSheets();
-  if (k2) process.stdout.write(`${k2}\n`);
+  for (const c of checks) process.stdout.write(`${c}\n`);
   if (fs.existsSync(OUT)) throw new Error(`${OUT} already exists. Move or delete it before a new run so rounds never mix.`);
   fs.mkdirSync(KEY_DIR, { recursive: true });
 
   const keyLines = [`Image bakeoff ${ROUND.name} key (${new Date().toISOString().slice(0, 10)})`, ...ROUND.keyNotes];
-  if (k2) keyLines.push(k2);
+  keyLines.push(...checks);
+  for (const ref of ROUND.importedRefs ?? []) keyLines.push(`${ref.label} = ${ref.note}, copied from ${ref.fromOut}/coloring/${ref.fromLetter}/ (labeled, not blind)`);
   const promptLines: string[] = [];
   const tasks: (() => Promise<Result>)[] = [];
   const idsByList = {} as Record<ListName, Map<Entry, string>>;
@@ -1094,8 +1247,9 @@ async function main() {
     CONCURRENCY
   );
 
-  writeCsvs(results);
-  const { pdfs, missingPrint } = await buildOutputs(columnsFromIds(idsByList), results);
+  const imported = await copyImports();
+  writeCsvs([...results, ...imported]);
+  const { pdfs, missingPrint } = await buildOutputs(columnsFromIds(idsByList), [...results, ...imported]);
 
   const failed = results.filter((r) => r.failed).length;
   const retried = results.filter((r) => r.attempts > 1).length;
@@ -1118,7 +1272,7 @@ async function buildOutputs(columns: Column[], results: Result[]): Promise<{ pdf
   }
   // References first, then letters.
   const coloringIds = columns
-    .filter((c) => c.list === "coloring")
+    .filter((c) => c.list === "coloring" && !c.imported)
     .sort((a, b) => Number(a.reference ? 0 : 1) - Number(b.reference ? 0 : 1) || a.id.localeCompare(b.id))
     .map((c) => c.id);
   const missingPrint =
@@ -1156,7 +1310,8 @@ async function rebuildSheets() {
     const k = `${r.list}/${r.letter}`;
     if (seen.has(k)) continue;
     seen.add(k);
-    columns.push({ list: r.list, id: r.letter, group: r.group, reference: ROUND.entries[r.list].some((e) => e.label === r.letter) });
+    const imported = (ROUND.importedRefs ?? []).some((ref) => ref.label === r.letter);
+    columns.push({ list: r.list, id: r.letter, group: r.group, reference: imported || ROUND.entries[r.list].some((e) => e.label === r.letter), imported });
   }
   const { pdfs, missingPrint } = await buildOutputs(columns, results);
   process.stdout.write(
