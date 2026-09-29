@@ -29,7 +29,7 @@ export interface MarketingEmailCta {
 
 export interface MarketingEmailParams {
   userId: string;
-  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Only ever meaningful for the one-time address-lock exception in lib/emailFooter.ts — every other template omits it and gets the normal, strict safety lock. */
+  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Only ever meaningful for packet_back_monthly, which may send without a mailing address (lib/emailFooter.ts) — every other template omits it and gets the normal, strict safety lock. */
   emailSendKey?: string;
   preview: string;
   /** HTML/text that renders before the CTA button (or the whole body, when there's no CTA). */

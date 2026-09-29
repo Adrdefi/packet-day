@@ -11,7 +11,7 @@ export interface EmailTemplateParams {
 export interface PacketBackTemplateParams extends EmailTemplateParams {
   childName: string;
   theme: string;
-  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Passed through to renderMarketingEmail — only ever meaningful for the one-time address-lock exception in lib/emailFooter.ts. Omit for a normal, strict send. */
+  /** The actual email_sends key this send will claim (e.g. "packet_back_monthly:2026-10"). Passed through to renderMarketingEmail — a packet_back_monthly key lets this email send without a mailing address (see lib/emailFooter.ts). Omit for a normal, strict send. */
   emailSendKey?: string;
 }
 

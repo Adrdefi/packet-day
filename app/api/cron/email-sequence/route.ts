@@ -14,9 +14,10 @@ import {
   type UserSequenceState,
 } from "@/lib/emailSequence";
 import { claimEmailSend, getEmailSendRowsForUsers, markEmailSendFailed, markEmailSendSent } from "@/lib/emailSends";
-import { buildMarketingEmailHeaders } from "@/lib/emailFooter";
+import { buildMarketingEmailHeaders, isMailingAddressConfigured } from "@/lib/emailFooter";
 import { sendMarketingEmail } from "@/lib/resend";
 import { isEmailTestAllowlisted } from "@/lib/emailTestAllowlist";
+import { isInternalExcludedEmail } from "@/lib/emailInternalAccounts";
 import { passesSequenceGate } from "@/lib/emailSequenceGate";
 import {
   buildCapFollowupEmail,
@@ -108,8 +109,12 @@ async function loadEmailEligibleProfiles(): Promise<ProfileRow[]> {
   // filter, so an EMAIL_TEST_ALLOWLIST address (typically an adrdefi
   // address, backdated for Phase 6 testing) isn't excluded by the same
   // filter it's specifically meant to bypass. See lib/emailTestAllowlist.ts.
+  // Internal addresses (lib/emailInternalAccounts.ts) are excluded
+  // unconditionally — the allowlist never brings them back.
   return ((data ?? []) as ProfileRow[]).filter(
-    (p) => isEmailTestAllowlisted(p.email) || !p.email.toLowerCase().includes("adrdefi")
+    (p) =>
+      !isInternalExcludedEmail(p.email) &&
+      (isEmailTestAllowlisted(p.email) || !p.email.toLowerCase().includes("adrdefi"))
   );
 }
 
@@ -275,6 +280,7 @@ export async function GET(req: NextRequest) {
 
   const results: ResultEntry[] = [];
   let sendsThisRun = 0;
+  let warnedMonthlyWithoutAddress = false;
 
   for (const { profile, activation, decision } of decisions) {
     const { winner, candidates, dayN, activated } = decision;
@@ -385,9 +391,9 @@ export async function GET(req: NextRequest) {
       }
 
       // winner.sendKey is the composed periodic key for cap_followup /
-      // packet_back_monthly, the bare key otherwise — only ever meaningful
-      // here for the one-time address-lock exception (lib/emailFooter.ts),
-      // which checks for one exact key and no other.
+      // packet_back_monthly, the bare key otherwise — lib/emailFooter.ts
+      // uses it to let packet_back_monthly (and only it) send without a
+      // mailing address.
       const headers = buildMarketingEmailHeaders(profile.id, winner.sendKey);
       const sendResult = await sendMarketingEmail({
         to: profile.email,
@@ -411,6 +417,10 @@ export async function GET(req: NextRequest) {
         });
       } else {
         await markEmailSendSent(claimed.id, sendResult.data?.id ?? null);
+        if (winner.emailKey === "packet_back_monthly" && !warnedMonthlyWithoutAddress && !isMailingAddressConfigured()) {
+          console.warn("MONTHLY EMAIL SENT WITHOUT MAILING ADDRESS: set MAILING_ADDRESS in Vercel");
+          warnedMonthlyWithoutAddress = true;
+        }
         results.push({
           userId: profile.id,
           email: profile.email,

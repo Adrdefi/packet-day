@@ -1,4 +1,5 @@
 import { createUnsubscribeToken } from "@/lib/unsubscribe";
+import type { EmailKey } from "@/lib/emailKeys";
 
 // Marketing links always use the www host, per CLAUDE.md's domain rule —
 // never the apex, even though it 308-redirects.
@@ -8,16 +9,24 @@ function getMailingAddress(): string {
   return process.env.MAILING_ADDRESS ?? "";
 }
 
+/** True once MAILING_ADDRESS holds a real value (not missing, not the "ADDRESS PENDING" placeholder). Read fresh on every call, so setting the env var takes effect with no code change. */
+export function isMailingAddressConfigured(): boolean {
+  const address = getMailingAddress();
+  return !!address && address !== "ADDRESS PENDING";
+}
+
+const MONTHLY_EMAIL_KEY: EmailKey = "packet_back_monthly";
+
 /**
- * One-time, hardcoded exception to the safety lock below — see CLAUDE.md's
- * "Address lock exception" note. DELETE this constant and every branch that
- * references it after October 2, 2026; it must never be turned into a
- * pattern, an env var, or anything reusable. Only this exact composed
- * email_sends key (lib/emailSequence.ts's buildPeriodicSendKey) bypasses
- * the lock — packet_back_monthly:2026-11 and every other send, including
- * every other packet_back_monthly period, still throws normally.
+ * True for packet_back_monthly's send keys — the bare key or any period
+ * ("packet_back_monthly:2026-11"). This is the ONLY email allowed to send
+ * without a mailing address (the address line is just omitted); every
+ * other marketing email, including cap_followup at any period, still hits
+ * the strict lock below.
  */
-export const ADDRESS_LOCK_EXCEPTION_KEY = "packet_back_monthly:2026-10";
+function isMonthlySendKey(emailSendKey: string | undefined): boolean {
+  return emailSendKey === MONTHLY_EMAIL_KEY || !!emailSendKey?.startsWith(`${MONTHLY_EMAIL_KEY}:`);
+}
 
 /**
  * Safety lock: every marketing send must call this before sending. Throws
@@ -26,14 +35,13 @@ export const ADDRESS_LOCK_EXCEPTION_KEY = "packet_back_monthly:2026-10";
  * (packet ready, auth) must never call this — it isn't subject to CAN-SPAM's
  * physical-address requirement and must never be blocked by it.
  *
- * `emailSendKey`, when passed, is compared against the one-time exception
- * above — everything else about the lock is unchanged.
+ * `emailSendKey`, when it's a packet_back_monthly key, skips the throw (see
+ * isMonthlySendKey) — everything else about the lock is unchanged.
  */
 export function assertMailingAddressReady(emailSendKey?: string): void {
-  if (emailSendKey === ADDRESS_LOCK_EXCEPTION_KEY) return;
+  if (isMonthlySendKey(emailSendKey)) return;
 
-  const address = getMailingAddress();
-  if (!address || address === "ADDRESS PENDING") {
+  if (!isMailingAddressConfigured()) {
     throw new Error(
       "MAILING_ADDRESS is missing or still set to the ADDRESS PENDING placeholder. Set a real mailing address before sending any marketing email."
     );
@@ -42,14 +50,13 @@ export function assertMailingAddressReady(emailSendKey?: string): void {
 
 /**
  * The address to print in the footer, or null to omit the line — a real
- * address is always shown once one exists, exception key or not; null only
- * happens when it's genuinely missing/placeholder, which is only reachable
- * at all under the one-time exception (assertMailingAddressReady already
- * threw for every other caller before this is ever called).
+ * address is always shown once one exists; null only happens when it's
+ * genuinely missing/placeholder, which is only reachable for
+ * packet_back_monthly (assertMailingAddressReady already threw for every
+ * other caller before this is ever called).
  */
 function resolveDisplayAddress(): string | null {
-  const address = getMailingAddress();
-  return address && address !== "ADDRESS PENDING" ? address : null;
+  return isMailingAddressConfigured() ? getMailingAddress() : null;
 }
 
 function buildUnsubscribeUrl(userId: string): string {

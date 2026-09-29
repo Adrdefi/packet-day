@@ -11,6 +11,16 @@
  * USAGE
  * -----
  *   npm run test-emails
+ *   npm run test-emails -- --monthly-only
+ *
+ * --monthly-only sends ONLY packet_back_monthly, to MONTHLY_TEST_RECIPIENT
+ * (adrdefi@gmail.com), using that account's real user id (so the
+ * unsubscribe link is a real token) and its most recent completed packet's
+ * child name and theme. It refuses any recipient without "adrdefi" in it,
+ * skips the MAILING_ADDRESS override below (so it shows exactly what a real
+ * monthly send looks like with or without an address), and never reads or
+ * writes email_sends — the only database reads are the profiles and packets
+ * lookups in resolveMonthlyTestData().
  *
  * SAFETY LOCK
  * -----------
@@ -43,6 +53,7 @@ import {
   buildCapFollowupEmail,
   buildPacketBackMonthlyEmail,
 } from "../lib/emails/templates";
+import { buildPeriodicSendKey } from "../lib/emailSequence";
 
 // ─── Env ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +89,15 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !process.env.RESEND_API_KEY || !proces
 }
 
 const TEST_RECIPIENT = "adrdefi+emailtest@gmail.com";
+const MONTHLY_TEST_RECIPIENT = "adrdefi@gmail.com";
+const MONTHLY_ONLY = process.argv.slice(2).includes("--monthly-only");
+
+function assertTestRecipient(to: string): void {
+  if (!to.toLowerCase().includes("adrdefi")) {
+    console.error(`STOP: test recipient "${to}" does not contain "adrdefi". Refusing to send.`);
+    process.exit(1);
+  }
+}
 
 function applyTestMailingAddressOverride(): void {
   const current = process.env.MAILING_ADDRESS ?? "";
@@ -96,7 +116,7 @@ function applyTestMailingAddressOverride(): void {
   );
 }
 
-applyTestMailingAddressOverride();
+if (!MONTHLY_ONLY) applyTestMailingAddressOverride();
 
 // ─── Test user id (for the unsubscribe token in the footer) ───────────────
 
@@ -146,7 +166,80 @@ async function sendTemplate(label: string, content: { subject: string; html: str
   console.log(`Sent ${label} -> ${TEST_RECIPIENT} (Resend id ${result.data?.id})`);
 }
 
+// ─── --monthly-only ─────────────────────────────────────────────────────────
+
+interface MonthlyTestData {
+  userId: string;
+  fullName: string | null;
+  childName: string;
+  theme: string;
+}
+
+/** Read-only: one profiles select and one packets select. Never touches email_sends. */
+async function resolveMonthlyTestData(): Promise<MonthlyTestData> {
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("email", MONTHLY_TEST_RECIPIENT)
+    .maybeSingle();
+  if (profileError || !profile) {
+    console.error(`STOP: couldn't find the profile for ${MONTHLY_TEST_RECIPIENT}: ${profileError?.message ?? "no row"}`);
+    process.exit(1);
+  }
+
+  const { data: packet, error: packetError } = await supabase
+    .from("packets")
+    .select("child_name, theme")
+    .eq("user_id", profile.id)
+    .not("generated_content", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (packetError || !packet) {
+    console.error(`STOP: no completed packet found for ${MONTHLY_TEST_RECIPIENT}: ${packetError?.message ?? "no row"}`);
+    process.exit(1);
+  }
+
+  return {
+    userId: profile.id as string,
+    fullName: (profile.full_name as string | null) ?? null,
+    childName: packet.child_name as string,
+    theme: packet.theme as string,
+  };
+}
+
+async function sendMonthlyOnly(): Promise<void> {
+  assertTestRecipient(MONTHLY_TEST_RECIPIENT);
+  const { userId, fullName, childName, theme } = await resolveMonthlyTestData();
+
+  // A packet_back_monthly key so the footer behaves exactly like a real
+  // monthly send. "test" is not a real period, and nothing here writes it
+  // (or anything else) to email_sends.
+  const emailSendKey = buildPeriodicSendKey("packet_back_monthly", "test");
+  const content = buildPacketBackMonthlyEmail({ userId, fullName, childName, theme, emailSendKey });
+
+  const result = await sendMarketingEmail({
+    to: MONTHLY_TEST_RECIPIENT,
+    subject: `[TEST] ${content.subject}`,
+    html: content.html,
+    text: content.text,
+    headers: buildMarketingEmailHeaders(userId, emailSendKey),
+  });
+
+  if (result.error) {
+    console.error("FAILED (packet_back_monthly):", result.error);
+    process.exit(1);
+  }
+  console.log(`Sent packet_back_monthly (${childName}, ${theme}) -> ${MONTHLY_TEST_RECIPIENT} (Resend id ${result.data?.id})`);
+}
+
 async function main(): Promise<void> {
+  if (MONTHLY_ONLY) {
+    await sendMonthlyOnly();
+    return;
+  }
+
+  assertTestRecipient(TEST_RECIPIENT);
   const userId = await resolveTestUserId();
 
   await sendTemplate("welcome_1 (with first name)", buildWelcome1Email({ userId, fullName: "Andy" }), userId);
