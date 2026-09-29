@@ -45,12 +45,9 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createElement } from "react";
-import { renderToBuffer } from "@react-pdf/renderer";
 import fs from "fs";
 import path from "path";
-import PacketPDF from "../components/PacketPDF";
-import type { PacketPDFProps } from "../components/PacketPDF";
+import { renderPacketPdf } from "../lib/packetPdfRender";
 import { buildProps, countImageXObjects, type PacketRow } from "./sweep-packets";
 
 // cwd is the project root when run via `npm run verify-image-backfill`.
@@ -126,7 +123,7 @@ async function checkPacket(supabase: SupabaseClient, entry: SnapshotEntry): Prom
     }
 
     const props = await buildProps(packet as unknown as PacketRow);
-    const buf = await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
+    const buf = await renderPacketPdf(props, entry.packetId);
     const actualImageCount = countImageXObjects(Buffer.from(buf));
 
     return {
@@ -166,7 +163,7 @@ async function checkReplicateDeliveryRows(supabase: SupabaseClient) {
   const results: { packetId: string; imageCount: number }[] = [];
   for (const packet of rows ?? []) {
     const props = await buildProps(packet as unknown as PacketRow);
-    const buf = await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
+    const buf = await renderPacketPdf(props, packet.id);
     results.push({ packetId: packet.id, imageCount: countImageXObjects(Buffer.from(buf)) });
   }
   return results;

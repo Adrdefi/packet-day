@@ -4,11 +4,9 @@
 // why: tsx cannot load this file's @react-pdf/renderer import chain on this
 // repo's Node version.)
 
-import { createElement } from 'react';
-import { renderToBuffer } from '@react-pdf/renderer';
 import fs from 'fs';
 import type { PacketPDFProps, PDFActivity } from '../components/PacketPDF';
-import PacketPDF from '../components/PacketPDF';
+import { renderPacketPdf } from '../lib/packetPdfRender';
 
 function oceanActivities(grade: string, full = true): PDFActivity[] {
   const isMid = ['Grade 3', 'Grade 4', 'Grade 5'].includes(grade);
@@ -188,7 +186,7 @@ async function renderTest(grade: string, name: string, filename: string) {
   console.log(`Rendering ${grade} (${name})...`);
   try {
     const props = makeProps(grade, name);
-    const buf = await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
+    const buf = await renderPacketPdf(props, `test-pdf ${grade}`);
     fs.writeFileSync(filename, buf);
     console.log(`  ✓ ${filename} — ${(buf.byteLength / 1024).toFixed(0)} KB`);
   } catch (err: unknown) {

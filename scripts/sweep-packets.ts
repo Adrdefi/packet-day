@@ -134,13 +134,12 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createElement } from "react";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { inflateSync } from "zlib";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import PacketPDF, { resolveContentType } from "../components/PacketPDF";
+import { resolveContentType } from "../components/PacketPDF";
+import { renderPacketPdf } from "../lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "../components/PacketPDF";
 import type { PacketContent } from "../types";
 import { resolveMascotImageForRender } from "../lib/resolveMascotImageForRender";
@@ -286,6 +285,21 @@ export function countImageXObjects(buf: Buffer): number {
   let count = 0;
   for (const obj of objects.values()) {
     if (/\/Subtype\s*\/Image\b/.test(obj.dictText)) count++;
+  }
+  return count;
+}
+
+// Stale glyph fingerprint (see CLAUDE.md, "Stale glyph cache"). pdfkit writes
+// a glyph that fontkit cached as standing for no character as an empty <>
+// entry in its font's ToUnicode CMap. A healthy render has none.
+export function countEmptyToUnicodeEntries(buf: Buffer): number {
+  let count = 0;
+  for (const obj of parsePdfObjects(buf).values()) {
+    const data = getStreamData(obj);
+    if (!data) continue;
+    const text = data.toString("latin1");
+    if (!text.includes("beginbfrange") && !text.includes("beginbfchar")) continue;
+    count += (text.match(/<>/g) ?? []).length;
   }
   return count;
 }
@@ -770,11 +784,14 @@ interface PacketReport {
   renderTimeMs: number;
   pageCount: number;
   blankPageCount: number;
+  blankPageNumbers: number[];
+  imageCount: number;
+  emptyToUnicodeEntries: number;
   findings: Finding[];
 }
 
 async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
-  const base: Omit<PacketReport, "renderSuccess" | "renderError" | "renderTimeMs" | "pageCount" | "blankPageCount" | "findings"> = {
+  const base: Omit<PacketReport, "renderSuccess" | "renderError" | "renderTimeMs" | "pageCount" | "blankPageCount" | "blankPageNumbers" | "imageCount" | "emptyToUnicodeEntries" | "findings"> = {
     packetId: packet.id,
     childGrade: packet.grade_level,
     theme: packet.theme,
@@ -784,7 +801,7 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
   let buf: Uint8Array;
   try {
     const props = await buildProps(packet);
-    buf = await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
+    buf = await renderPacketPdf(props, packet.id);
   } catch (err) {
     return {
       ...base,
@@ -793,6 +810,9 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
       renderTimeMs: Date.now() - start,
       pageCount: 0,
       blankPageCount: 0,
+      blankPageNumbers: [],
+      imageCount: 0,
+      emptyToUnicodeEntries: 0,
       findings: [],
     };
   }
@@ -800,11 +820,17 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
 
   let pageCount = 0;
   let blankPageCount = 0;
+  let blankPageNumbers: number[] = [];
+  let imageCount = 0;
+  let emptyToUnicodeEntries = 0;
   let findings: Finding[] = [];
   try {
+    imageCount = countImageXObjects(Buffer.from(buf));
+    emptyToUnicodeEntries = countEmptyToUnicodeEntries(Buffer.from(buf));
     const { pageCount: pc, pages } = introspectPdf(Buffer.from(buf));
     pageCount = pc;
-    blankPageCount = pages.filter(isBlankPage).length;
+    blankPageNumbers = pages.filter(isBlankPage).map((p) => p.pageNum);
+    blankPageCount = blankPageNumbers.length;
     const content = packet.generated_content;
     const fields = checkableFields(content.activities as PDFActivity[]);
     findings = detectDroppedCharacters(fields, pages);
@@ -814,7 +840,7 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
     console.error(`[sweep] introspection failed for ${packet.id}: ${err instanceof Error ? err.message : err}`);
   }
 
-  return { ...base, renderSuccess: true, renderError: null, renderTimeMs, pageCount, blankPageCount, findings };
+  return { ...base, renderSuccess: true, renderError: null, renderTimeMs, pageCount, blankPageCount, blankPageNumbers, imageCount, emptyToUnicodeEntries, findings };
 }
 
 async function main() {
@@ -851,6 +877,9 @@ async function main() {
         renderTimeMs: 0,
         pageCount: 0,
         blankPageCount: 0,
+        blankPageNumbers: [],
+        imageCount: 0,
+        emptyToUnicodeEntries: 0,
         findings: [],
       });
       process.stdout.write("F");
@@ -877,6 +906,13 @@ async function main() {
     ? Math.round(succeeded.reduce((s, r) => s + r.renderTimeMs, 0) / succeeded.length)
     : 0;
   const pageCounts = succeeded.map((r) => r.pageCount).filter((n) => n > 0);
+  const totalImages = succeeded.reduce((s, r) => s + r.imageCount, 0);
+  const imageHistogram = succeeded.reduce<Record<number, number>>((acc, r) => {
+    acc[r.imageCount] = (acc[r.imageCount] ?? 0) + 1;
+    return acc;
+  }, {});
+  const totalEmptyToUnicode = succeeded.reduce((s, r) => s + r.emptyToUnicodeEntries, 0);
+  const withEmptyToUnicode = succeeded.filter((r) => r.emptyToUnicodeEntries > 0);
 
   console.log("=== Summary ===");
   console.log(`Rendered:            ${succeeded.length}/${reports.length}`);
@@ -889,6 +925,10 @@ async function main() {
     console.log(`Page count range:    ${Math.min(...pageCounts)}-${Math.max(...pageCounts)}`);
   }
   console.log(`Packets w/ blank pages: ${withBlankPages.length}`);
+  for (const r of withBlankPages) console.log(`  - ${r.packetId}: page(s) ${r.blankPageNumbers.join(", ")} of ${r.pageCount}`);
+  console.log(`Embedded images:     ${totalImages} total; packets by image count ${JSON.stringify(imageHistogram)}`);
+  console.log(`Stale glyph fingerprints (empty ToUnicode entries): ${totalEmptyToUnicode} in ${withEmptyToUnicode.length} packet(s)`);
+  for (const r of withEmptyToUnicode) console.log(`  - ${r.packetId}: ${r.emptyToUnicodeEntries}`);
   console.log(`Dropped-character findings: ${totalFindings} (${confirmedFindings} CONFIRMED, ${totalFindings - confirmedFindings} SUSPECTED)`);
   if (totalFindings) {
     console.log("\nFlagged (packetId, band, field, word, confidence):");
@@ -916,6 +956,9 @@ async function main() {
           avgRenderMs,
           pageCountRange: pageCounts.length ? [Math.min(...pageCounts), Math.max(...pageCounts)] : null,
           packetsWithBlankPages: withBlankPages.length,
+          totalImages,
+          imageHistogram,
+          totalEmptyToUnicode,
           totalFindings,
           confirmedFindings,
         },

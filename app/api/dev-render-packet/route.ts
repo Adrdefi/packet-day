@@ -6,14 +6,12 @@
 // Usage: GET /api/dev-render-packet?packetId=<uuid>
 
 import { NextRequest, NextResponse } from "next/server";
-import { createElement } from "react";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import type { PacketContent } from "@/types";
 import { resolveMascotImageForRender } from "@/lib/resolveMascotImageForRender";
 import { resolveColoringImageForRender } from "@/lib/resolveColoringImageForRender";
+import { renderPacketPdf } from "@/lib/packetPdfRender";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -92,9 +90,7 @@ export async function GET(req: NextRequest) {
 
   let pdfBuffer: Uint8Array;
   try {
-    pdfBuffer = await renderToBuffer(
-      createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>
-    );
+    pdfBuffer = await renderPacketPdf(props, packetId);
   } catch (err) {
     console.error("[dev-render-packet] Render failed:", err);
     return NextResponse.json(

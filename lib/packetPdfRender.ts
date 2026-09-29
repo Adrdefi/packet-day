@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import PacketPDF from "@/components/PacketPDF";
 import type { PacketPDFProps } from "@/components/PacketPDF";
+import { checkGlyphCacheAfterRender, prepareFontsForRender } from "@/lib/pdfGlyphCache";
 
 interface RenderAndCachePacketPdfParams {
   supabase: SupabaseClient;
@@ -29,6 +30,22 @@ export function buildFilename(childName: string, theme: string, date: string): s
 }
 
 /**
+ * The one render path for a packet PDF. Every caller (generate-pdf, the
+ * generate-packet pre-render, dev-render-packet, and the scripts) goes
+ * through here so the stale glyph guard in lib/pdfGlyphCache.ts always runs:
+ * fonts are warmed before the render and the glyph cache is checked after
+ * it. Neither step can fail the render. `packetId` only labels log lines.
+ */
+export async function renderPacketPdf(props: PacketPDFProps, packetId: string): Promise<Uint8Array> {
+  await prepareFontsForRender(packetId);
+  try {
+    return await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);
+  } finally {
+    checkGlyphCacheAfterRender(packetId);
+  }
+}
+
+/**
  * Renders a packet's PDF and best-effort uploads it to Storage at
  * `${userId}/${packetId}.pdf`, updating packets.pdf_url on success.
  *
@@ -51,9 +68,7 @@ export async function renderAndCachePacketPdf(
 ): Promise<Uint8Array> {
   const { supabase, packetId, userId, props } = params;
 
-  const pdfBuffer = await renderToBuffer(
-    createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>
-  );
+  const pdfBuffer = await renderPacketPdf(props, packetId);
 
   const storagePath = `${userId}/${packetId}.pdf`;
   try {

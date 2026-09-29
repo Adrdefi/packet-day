@@ -2,7 +2,7 @@
 
 Approved fixes for the packet PDF that are not built yet. Highest priority first. Don't start one until Andy says to.
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 ---
 
@@ -14,6 +14,8 @@ Last updated: 2026-09-28
 - Confirmed with PyMuPDF `page.get_text("rawdict")`: the "u" glyph origin sits at the text box's true left edge (x0 = 72.0, the same as every other step on the page), with no space reserved for a "J". Also confirmed in a 200 DPI crop of the page.
 
 **Why it matters.** This is the same failure as the dropped capital "R" in CLAUDE.md (react-pdf gotchas section). That bug stopped reproducing and was never fixed. This one shows it is not specific to "R", and it happened on a real, fresh generation. A parent would see a broken word on the page their child reads.
+
+**Status (2026-09-29).** Cause found and guarded: see "Stale glyph cache" in CLAUDE.md and `lib/pdfGlyphCache.ts` (branch `fix/pdf-glyph-warmup`). The first bad lookup in real use is still unknown; watch logs for `PDF GLYPH CACHE STALE`. The steps below are the original investigation plan, kept for history.
 
 **What to do.** Find the cause before the pagination work in item 2, because that work changes the same render path.
 
