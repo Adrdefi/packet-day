@@ -5,6 +5,7 @@
  *
  *   npm run image-bakeoff -- --round 3      (default: the latest round)
  *   npm run image-bakeoff -- --round 3 --dry-run
+ *   npm run image-bakeoff -- --round 3 --rebuild-sheets   (sheets only, no API calls)
  *
  * Standalone on purpose: calls Replicate directly with REPLICATE_API_TOKEN.
  * No dev server, no login, no Supabase, no admin key, no production code
@@ -820,7 +821,8 @@ async function contactSheetPdf(sheet: Sheet, results: Result[]): Promise<string>
   const cellW = ROUND.runs * TH + (ROUND.runs - 1) * GAP + 2 * PAD;
   const rowH = TH + CAPTION_H + 12;
   const headerH = list === "coloring" ? 96 : 76;
-  const width = 36 + LABEL_W + columns.length * cellW;
+  // A floor so a one-column sheet still fits its heading on one line and one page.
+  const width = Math.max(780, 36 + LABEL_W + columns.length * cellW);
   const height = headerH + 28 + scenes.length * rowH + 24;
   const border = { borderWidth: 0.5, borderColor: "#cccccc", borderStyle: "solid" as const };
 
@@ -890,19 +892,32 @@ async function contactSheetPdf(sheet: Sheet, results: Result[]): Promise<string>
   return out;
 }
 
+/** What the sheets need to know about one letter, and nothing that unblinds it. */
+interface Column {
+  list: ListName;
+  id: string;
+  group: string;
+  reference: boolean;
+}
+
+function columnsFromIds(idsByList: Record<ListName, Map<Entry, string>>): Column[] {
+  return LISTS.flatMap((list) =>
+    [...idsByList[list]].map(([entry, id]) => ({ list, id, group: groupOf(entry), reference: !!entry.label }))
+  );
+}
+
 /**
  * The sheets for this round. Lists with no entries get no sheet. Without
  * groups: one sheet per list, every scene, every letter (rounds 1 and 2).
  * With groups: one coloring sheet per group per scene; reference columns
  * lead every sheet so each band is judged next to the reference.
  */
-function planSheets(idsByList: Record<ListName, Map<Entry, string>>): Sheet[] {
+function planSheets(allColumns: Column[]): Sheet[] {
   const sheets: Sheet[] = [];
   for (const list of LISTS) {
-    const ids = idsByList[list];
-    if (ids.size === 0) continue;
-    const sorted = (entries: Entry[]) => entries.map((e) => ids.get(e) as string).sort((a, b) => a.localeCompare(b));
-    const all = [...ids.keys()];
+    const all = allColumns.filter((c) => c.list === list);
+    if (all.length === 0) continue;
+    const sorted = (cols: Column[]) => cols.map((c) => c.id).sort((a, b) => a.localeCompare(b));
     if (!ROUND.groups || list !== "coloring") {
       sheets.push({
         list,
@@ -914,11 +929,11 @@ function planSheets(idsByList: Record<ListName, Map<Entry, string>>): Sheet[] {
       });
       continue;
     }
-    const refs = sorted(all.filter((e) => e.label));
+    const refs = sorted(all.filter((c) => c.reference));
     for (const group of ROUND.groups) {
-      const blind = sorted(all.filter((e) => !e.label && groupOf(e) === group.id));
+      const blind = sorted(all.filter((c) => !c.reference && c.group === group.id));
       const columns = [...refs, ...blind];
-      if (blind.length === 0 && !all.some((e) => e.label && groupOf(e) === group.id)) continue;
+      if (blind.length === 0 && !all.some((c) => c.reference && c.group === group.id)) continue;
       for (const scene of ROUND.scenes) {
         sheets.push({
           list,
@@ -1032,6 +1047,7 @@ async function main() {
   // Before anything is spent or written: a failed K-2 check stops the run.
   const k2 = runK2Check();
   if (process.argv.includes("--dry-run")) return dryRun(k2);
+  if (process.argv.includes("--rebuild-sheets")) return rebuildSheets();
   if (k2) process.stdout.write(`${k2}\n`);
   if (fs.existsSync(OUT)) throw new Error(`${OUT} already exists. Move or delete it before a new run so rounds never mix.`);
   fs.mkdirSync(KEY_DIR, { recursive: true });
@@ -1079,22 +1095,7 @@ async function main() {
   );
 
   writeCsvs(results);
-  const pdfs: string[] = [];
-  for (const sheet of planSheets(idsByList)) {
-    fs.writeFileSync(path.join(OUT, `${sheet.file}.html`), contactSheetHtml(sheet, results));
-    const pdf = await contactSheetPdf(sheet, results);
-    pdfs.push(`${pdf} (${(fs.statSync(pdf).size / 1e6).toFixed(2)} MB)`);
-  }
-  // References first, then letters.
-  const coloringIds = [...idsByList.coloring]
-    .sort(([ea, a], [eb, b]) => Number(!ea.label) - Number(!eb.label) || a.localeCompare(b))
-    .map(([, id]) => id);
-  const missingPrint =
-    ROUND.printTest === "scene1"
-      ? await printTestScene1(coloringIds, results)
-      : ROUND.printTest === "everyScene"
-        ? await printTestEveryScene(coloringIds, results)
-        : [];
+  const { pdfs, missingPrint } = await buildOutputs(columnsFromIds(idsByList), results);
 
   const failed = results.filter((r) => r.failed).length;
   const retried = results.filter((r) => r.attempts > 1).length;
@@ -1104,6 +1105,64 @@ async function main() {
       `\nContact sheet PDFs:\n  ${pdfs.join("\n  ")}` +
       (missingPrint.length ? `\nPrint test is missing: ${missingPrint.join(", ")}` : "") +
       `\nOutput: ${OUT}\n`
+  );
+}
+
+/** Contact sheets (HTML and PDF) and the print test, from saved images. */
+async function buildOutputs(columns: Column[], results: Result[]): Promise<{ pdfs: string[]; missingPrint: string[] }> {
+  const pdfs: string[] = [];
+  for (const sheet of planSheets(columns)) {
+    fs.writeFileSync(path.join(OUT, `${sheet.file}.html`), contactSheetHtml(sheet, results));
+    const pdf = await contactSheetPdf(sheet, results);
+    pdfs.push(`${pdf} (${(fs.statSync(pdf).size / 1e6).toFixed(2)} MB)`);
+  }
+  // References first, then letters.
+  const coloringIds = columns
+    .filter((c) => c.list === "coloring")
+    .sort((a, b) => Number(a.reference ? 0 : 1) - Number(b.reference ? 0 : 1) || a.id.localeCompare(b.id))
+    .map((c) => c.id);
+  const missingPrint =
+    ROUND.printTest === "scene1"
+      ? await printTestScene1(coloringIds, results)
+      : ROUND.printTest === "everyScene"
+        ? await printTestEveryScene(coloringIds, results)
+        : [];
+  return { pdfs, missingPrint };
+}
+
+/**
+ * --rebuild-sheets: remakes the contact sheets and print test for a round
+ * that already ran, from its results_blind.csv and saved images. No API
+ * calls, and it never reads KEY_do_not_open/, so it can't unblind anything.
+ */
+async function rebuildSheets() {
+  const csv = path.join(OUT, "results_blind.csv");
+  if (!fs.existsSync(csv)) throw new Error(`${csv} not found. Run the round first.`);
+  const [header, ...rows] = fs.readFileSync(csv, "utf8").trim().split(/\r?\n/);
+  if (header !== "list,group,letter,scene,run,seconds,failed,gray_pct") {
+    throw new Error(`${csv} is in an older format; --rebuild-sheets only works on rounds run after the group column was added.`);
+  }
+  const results: Result[] = rows.map((row) => {
+    const [list, group, letter, scene, run, seconds, failed, gray] = row.split(",");
+    return {
+      list: list as ListName, group, letter, entry: "", model: "", ref: "", scene: Number(scene), run: Number(run),
+      seconds: seconds ? Number(seconds) : null, cost: 0, attempts: 0, failed: failed === "yes",
+      grayPct: gray ? Number(gray) : null, error: "",
+    };
+  });
+  const seen = new Set<string>();
+  const columns: Column[] = [];
+  for (const r of results) {
+    const k = `${r.list}/${r.letter}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    columns.push({ list: r.list, id: r.letter, group: r.group, reference: ROUND.entries[r.list].some((e) => e.label === r.letter) });
+  }
+  const { pdfs, missingPrint } = await buildOutputs(columns, results);
+  process.stdout.write(
+    `Rebuilt from ${csv}.\nContact sheet PDFs:\n  ${pdfs.join("\n  ")}` +
+      (missingPrint.length ? `\nPrint test is missing: ${missingPrint.join(", ")}` : "") +
+      `\n`
   );
 }
 
