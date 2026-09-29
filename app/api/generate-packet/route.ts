@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
-import { generateBothImages, type ImageGenResult } from "@/lib/generateMascotImage";
+import { coloringBandForGrade, generateBothImages, type ImageGenResult } from "@/lib/generateMascotImage";
 import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "@/lib/config";
 import { estimatePacketCostUsd, type ClaudeUsage } from "@/lib/aiCost";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -133,7 +133,8 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet", subject is NOT Math):
 
 <coloring_page_rules>
 SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image, and also drives the printed title and instructions.
-- coloring_scene must list: the child, the mascot (by name), the setting, and exactly 3-5 specific named objects.
+- coloring_scene must list: the child, the mascot (by name), the setting, and the number of specific named objects given for this grade in grade_reminders.
+- coloring_scene never includes signs, banners, labels, posters, screens with writing, or any written words or numbers. coloring_page.title and coloring_page.instructions never ask the child to write on, read, or find anything written in the picture.
 - In coloring_scene, describe the child ONLY as "a girl", "a boy", or "a kid". Choose from the child's name and anything the parent wrote about them. When you are not sure, use "a kid". NEVER write the child's name anywhere in coloring_scene.
 - coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements. The title and instructions DO use the child's name: the girl, boy, or kid in coloring_scene is the child.
 - coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
@@ -169,7 +170,7 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   ],
   "coloring_page": {
     "title": "[Name] and [Mascot] [Action] — no emoji",
-    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. The child is 'a girl', 'a boy', or 'a kid' (never their name). Example: 'A girl and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text drives the coloring page image (the mascot's name is removed before the image model sees it) and must match the title exactly — keep it specific and visual.",
+    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and the number of specific objects given for this grade in grade_reminders. The child is 'a girl', 'a boy', or 'a kid' (never their name). Example: 'A girl and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text drives the coloring page image (the mascot's name is removed before the image model sees it) and must match the title exactly — keep it specific and visual.",
     "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
@@ -234,6 +235,12 @@ function buildUserPrompt(
   const readingWordCount =
     gradeNum <= 2 ? "80-150 words" : gradeNum <= 5 ? "200-350 words" : "400-600 words";
 
+  // Same grade bands the coloring image itself uses, so a busier picture
+  // gets a busier scene to draw.
+  const coloringBand = coloringBandForGrade(child.grade_level);
+  const coloringObjectCount =
+    coloringBand === "6-8" ? "5-7" : coloringBand === "3-5" ? "4-6" : "3-5";
+
   return `<child_profile>
 Name: ${child.name}
 Grade: ${gradeDisplay}
@@ -250,6 +257,7 @@ Subjects to cover: ${subjectList}
 <grade_reminders>
 Grade: ${gradeDisplay}
 Reading passage for this grade: ${readingWordCount}
+Coloring scene for this grade: exactly ${coloringObjectCount} specific named objects in coloring_scene
 All math must stay within the ${gradeDisplay} difficulty band — do not go easier or harder.
 Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
 </grade_reminders>
@@ -757,6 +765,7 @@ export async function POST(req: NextRequest) {
             {
               mascotName: generatedContent.mascot_name ?? null,
               deadlineMs: requestStartMs + IMAGE_DEADLINE_AFTER_START_MS,
+              gradeLevel: child.grade_level,
             }
           ));
 

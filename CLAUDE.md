@@ -275,6 +275,14 @@ Examples:
 - PDF text has emoji stripped before rendering because the fonts don't cover emoji. Don't try to render emoji in PDFs.
 - PDF images must be PNG or JPEG. The mascot is requested from Replicate as PNG. The coloring page comes back as webp and is converted with sharp.
 
+### Coloring page grade bands
+
+- The GPT Image 2 coloring prompt has three grade bands, picked in a blind bakeoff on 2026-09-29 (the `image-bakeoff` branch, `scripts/image-bakeoff.ts`). **K-2** is the original `buildColoringPrompt`, locked byte for byte. **3-5** is round 1 variant 35B (medium outlines, fuller scene, simple decorative patterns). **6-8** is round 2 variant D_T2 (intricate line art, clean continuous outlines, no labels on equipment, a few larger open areas). All three use quality "low". The Recraft fallback keeps the original prompt for every grade.
+- The band comes from `coloringBandForGrade` in `lib/generateMascotImage.ts`. It uses `bandForGrade` from `lib/pdf-tokens.ts` for any readable grade, and K-2 for a missing or unreadable one. Don't change `bandForGrade` for coloring; the PDF depends on it.
+- The packet writer asks for 3-5 named objects in `coloring_scene` for K-2, 4-6 for grades 3-5, and 5-7 for grades 6-8, and never for signs, labels, or anything written.
+- **Lock check.** `npm run check-coloring-prompt` compares all three bands and the Recraft fallback against pasted exact strings, and checks every grade's band. Run it after touching anything in the coloring prompt. If a prompt changes on purpose, update the expected string in `scripts/check-coloring-prompt.ts` in the same commit.
+- **Bakeoff sync.** The bakeoff script holds its own copy of the production prompt. Whenever the production coloring prompt changes, re-copy it into `scripts/image-bakeoff.ts` on the `image-bakeoff` branch before the next bakeoff round.
+
 ---
 
 ## react-pdf gotchas (`components/PacketPDF.tsx`)

@@ -20,6 +20,9 @@
 //                engraving_color,2d_art_poster_2}. No vector_illustration subtree.
 //                Sharp grayscale post-processing strips residual tinting from
 //                whichever model produced the page.
+//                Grade bands (2026-09-29): the GPT Image 2 prompt depends on
+//                the child's grade (K-2, 3-5, 6-8; see coloringBandForGrade).
+//                The Recraft fallback prompt is the same for every grade.
 //
 // ── Time budget ─────────────────────────────────────────────────────────────
 // Every attempt's timeout is the smaller of its model's own cap and the time
@@ -50,6 +53,7 @@
 import Replicate, { type Prediction } from "replicate";
 import sharp from "sharp";
 import type { ImageUsage } from "@/lib/aiCost";
+import { bandForGrade, type BandKey } from "@/lib/pdf-tokens";
 
 let _replicate: Replicate | null = null;
 
@@ -389,6 +393,71 @@ function buildColoringPrompt(scene: string, includeNoTextLine: boolean): string 
   );
 }
 
+// ─── Coloring page grade bands (2026-09-29, chosen in the blind bakeoff) ─────
+// K-2 is buildColoringPrompt above, unchanged. 3-5 and 6-8 swap its three
+// simplicity lines ("for children", "thick clean outlines with large open
+// white regions for coloring", and "simple shapes, kid-friendly line art
+// ready to color") for a detail line, keeping every other line in order.
+// The strings are copied character for character from the image-bakeoff
+// branch (scripts/image-bakeoff.ts): 3-5 is round 1 variant 35B, 6-8 is
+// round 2 variant D_T2. npm run check-coloring-prompt locks all three.
+// Only GPT Image 2 is banded; the Recraft fallback keeps today's prompt.
+
+const DETAIL_3_5 =
+  "medium weight outlines with a mix of large and medium regions to color, a fuller scene with background details, " +
+  "textures drawn as line patterns such as leaves, bark, fur, and fabric, natural proportions, " +
+  "line art ready for colored pencils or markers, simple decorative patterns inside some of the larger shapes";
+
+const DETAIL_6_8 =
+  "intricate illustrated line art for older kids and teens, fine but clearly printable black outlines, " +
+  "many small and medium regions to color, detailed background, realistic proportions, not cartoonish, " +
+  "textures rendered with line work only, crisp, smooth, continuous black outlines, clean line art with no " +
+  "sketchy, broken, or doubled strokes, no stippling or hatching texture, no labels, markings, symbols, or " +
+  "numbers on walls, panels, railings, or equipment, balance detailed areas with a few larger open areas to " +
+  "color, avoid tiny cluttered details";
+
+function buildDetailedColoringPrompt(scene: string, detail: string): string {
+  return (
+    `black and white coloring book page featuring ${scene}, ` +
+    `clean black outlines only, no color, no shading, no fill, ` +
+    `pure white background, ` +
+    `no pencils, crayons, or art supplies in the image, no crosshatching or gray fill, ` +
+    `${detail}, ` +
+    NO_TEXT_LINE +
+    `an original, generic child character; do not depict any copyrighted, trademarked, ` +
+    `or real-world-recognizable character, celebrity, or franchise mascot; invented, ` +
+    `non-specific features only`
+  );
+}
+
+/**
+ * The coloring band for a child's grade ("K", "1".."8"). A missing grade,
+ * or one with no K and no number in it, is K-2: today's prompt, so nothing
+ * changes quietly. Anything readable goes through bandForGrade, the same
+ * rule the PDF uses (5 is 3-5, 6 is 6-8). bandForGrade itself turns an
+ * unreadable grade into 3-5, which is why it is only called on readable ones.
+ */
+export function coloringBandForGrade(gradeLevel: string | null | undefined): BandKey {
+  const grade = gradeLevel?.trim() ?? "";
+  if (!/^k(indergarten)?$/i.test(grade) && !/\d/.test(grade)) return "K-2";
+  return bandForGrade(grade);
+}
+
+/**
+ * Both prompts for one coloring page: the band's GPT Image 2 prompt, and the
+ * Recraft fallback's prompt, which is today's prompt for every band.
+ * `scene` must already have the child's and mascot's names scrubbed out.
+ */
+export function buildColoringPrompts(scene: string, band: BandKey): { gptImage2: string; recraft: string } {
+  const gptImage2 =
+    band === "3-5"
+      ? buildDetailedColoringPrompt(scene, DETAIL_3_5)
+      : band === "6-8"
+        ? buildDetailedColoringPrompt(scene, DETAIL_6_8)
+        : buildColoringPrompt(scene, true);
+  return { gptImage2, recraft: buildColoringPrompt(scene, false) };
+}
+
 /**
  * Generates a B&W coloring-page image: GPT Image 2 first, recraft-v3 (with
  * the pre-switch prompt) as the fallback.
@@ -403,12 +472,16 @@ function buildColoringPrompt(scene: string, includeNoTextLine: boolean): string 
  *
  * `childName` and `mascotName` are scrubbed out of the scene text before it
  * reaches either model — see the IP guard note at the top of this file.
+ *
+ * `gradeLevel` picks the GPT Image 2 prompt's grade band (see
+ * coloringBandForGrade). Leaving it out gives K-2, today's prompt.
  */
 export async function generateColoringImage(
   coloringScene: string | null | undefined,
   childName: string,
   mascotName: string | null | undefined,
-  deadlineMs: number
+  deadlineMs: number,
+  gradeLevel?: string | null
 ): Promise<ImageGenResult> {
   if (!coloringScene?.trim()) {
     console.warn("[generateColoringImage] Skipping — coloring_scene is null or empty");
@@ -420,6 +493,8 @@ export async function generateColoringImage(
   }
 
   const scene = scrubMascotName(scrubChildName(coloringScene.trim(), childName), mascotName);
+  const band = coloringBandForGrade(gradeLevel);
+  const prompts = buildColoringPrompts(scene, band);
   const startMs = Date.now();
 
   const result = await runStages(
@@ -427,7 +502,7 @@ export async function generateColoringImage(
       {
         modelRef: GPT_IMAGE_2,
         input: {
-          prompt: buildColoringPrompt(scene, true),
+          prompt: prompts.gptImage2,
           quality: "low",
           aspect_ratio: "1024x1024",
           background: "opaque",
@@ -438,7 +513,7 @@ export async function generateColoringImage(
       },
       {
         modelRef: RECRAFT_V3,
-        input: { prompt: buildColoringPrompt(scene, false), style: "digital_illustration", size: "1024x1024" },
+        input: { prompt: prompts.recraft, style: "digital_illustration", size: "1024x1024" },
         attemptTimeoutMs: FALLBACK_TIMEOUT_MS,
       },
     ],
@@ -476,7 +551,9 @@ export async function generateColoringImage(
       .png()
       .toBuffer();
 
-    console.warn(`[generateColoringImage] Done with ${result.model?.split(":")[0]} in ${Date.now() - startMs}ms`);
+    console.warn(
+      `[generateColoringImage] Done with ${result.model?.split(":")[0]} in ${Date.now() - startMs}ms (grade band ${band})`
+    );
     return { ...genResult, image: `data:image/png;base64,${grayBuffer.toString("base64")}` };
   } catch (err) {
     console.error("[generateColoringImage] Download or grayscale failed", {
@@ -581,12 +658,14 @@ export async function generateMascotImage(
  * @param options.mascotName - also scrubbed out of both prompts.
  * @param options.deadlineMs - epoch ms by which every attempt must finish; defaults to
  *                            DEFAULT_DEADLINE_MS from now.
+ * @param options.gradeLevel - the child's grade, for the coloring page's grade band.
+ *                            Left out, the coloring page uses the K-2 prompt.
  */
 export async function generateBothImages(
   mascotDescription: string | null | undefined,
   coloringScene: string | null | undefined,
   childName: string,
-  options: { mascotName?: string | null; deadlineMs?: number } = {}
+  options: { mascotName?: string | null; deadlineMs?: number; gradeLevel?: string | null } = {}
 ): Promise<{
   mascotImageUrl: string | null;
   coloringImageUrl: string | null;
@@ -596,7 +675,7 @@ export async function generateBothImages(
   const deadlineMs = options.deadlineMs ?? Date.now() + DEFAULT_DEADLINE_MS;
   const [mascot, coloring] = await Promise.all([
     generateMascotImage(mascotDescription, childName, options.mascotName, deadlineMs),
-    generateColoringImage(coloringScene ?? mascotDescription, childName, options.mascotName, deadlineMs),
+    generateColoringImage(coloringScene ?? mascotDescription, childName, options.mascotName, deadlineMs, options.gradeLevel),
   ]);
   const mascotImageUrl = mascot.image;
   const coloringImageUrl = coloring.image;
