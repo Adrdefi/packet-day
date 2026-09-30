@@ -3,12 +3,10 @@
 // the column directly (app/api/generate-pdf's cache-miss path,
 // app/api/dev-render-packet, scripts/sweep-packets.ts).
 //
-// Mirrors lib/resolveMascotImageForRender.ts exactly. Today every non-null
-// coloring_image_url is a base64 data URL, so only the data: branch below is
-// reachable in production — the https:// branch exists ahead of a future
-// Storage migration (coloring images moving to a bucket the way mascots did)
-// so that migration doesn't also have to touch every caller that reads this
-// column raw. See resolveMascotImageForRender.ts's header for the full
+// Mirrors lib/resolveMascotImageForRender.ts exactly. New packets store a
+// public packet-coloring-pages URL (uploaded by app/api/generate-packet);
+// older rows, and any packet whose upload failed, still hold base64. Both
+// shapes are handled below. See resolveMascotImageForRender.ts's header for the full
 // rationale (react-pdf's own image loader fetches an https src itself at
 // render time and swallows a failed fetch with a bare console.warn, no
 // trace anywhere — fetching here instead makes a failure visible in our own

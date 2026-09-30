@@ -11,6 +11,7 @@ import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import { sendPacketReadyEmail } from "@/lib/resend";
 import { track } from "@vercel/analytics/server";
+import sharp from "sharp";
 import {
   buildClassicTitle,
   buildTitleBrief,
@@ -503,6 +504,71 @@ async function uploadMascotImage(
   }
 }
 
+// ─── Coloring image upload ──────────────────────────────────────────────────
+
+/**
+ * Uploads the coloring page to the public "packet-coloring-pages" bucket and
+ * returns its public URL, so packets.coloring_image_url holds a short URL
+ * instead of a ~1MB base64 data URL. Same encoding as
+ * scripts/backfill-image-storage.ts: one sharp decode into a palette PNG,
+ * no WebP output and no lossy step (this is printed line art).
+ *
+ * Never throws — every failure path logs and returns null, and the caller
+ * then writes the base64 exactly as before, so a packet never loses its
+ * coloring page. The PDF pre-render keeps using the in-memory base64 either
+ * way, so it never depends on this upload.
+ */
+async function uploadColoringImage(
+  supabase: SupabaseClient,
+  coloringImageUrl: string | null,
+  userId: string,
+  packetId: string
+): Promise<string | null> {
+  if (!coloringImageUrl) return null;
+
+  const match = coloringImageUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    console.error(
+      "[generate-packet] coloringImageUrl is not a base64 data URL — skipping coloring upload",
+      { packetId }
+    );
+    return null;
+  }
+
+  const storagePath = `${userId}/${packetId}.png`;
+
+  try {
+    const original = Buffer.from(match[2], "base64");
+    const compressed = await sharp(original).png({ palette: true }).toBuffer();
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("packet-coloring-pages")
+      .upload(storagePath, compressed, { contentType: "image/png", upsert: true });
+
+    if (uploadError || !uploadData) {
+      console.error("[generate-packet] Coloring image upload failed:", {
+        message: uploadError?.message,
+        packetId,
+        userId,
+        storagePath,
+      });
+      return null;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("packet-coloring-pages").getPublicUrl(uploadData.path);
+    return publicUrl;
+  } catch (err) {
+    console.error("[generate-packet] Coloring image upload threw:", {
+      message: err instanceof Error ? err.message : String(err),
+      packetId,
+      userId,
+      storagePath,
+    });
+    return null;
+  }
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 // Images must finish this long after the request starts, leaving the rest
@@ -836,6 +902,9 @@ export async function POST(req: NextRequest) {
         // Kept separate from mascotImageUrl so the PDF render below always
         // uses the in-memory base64 and never depends on network access.
         let hostedMascotUrl: string | null = null;
+        // Same idea for the coloring page: hosted packet-coloring-pages URL,
+        // or null to fall back to writing the base64 as before.
+        let hostedColoringUrl: string | null = null;
         // Attempt counts and timings for packet_ai_usage — stay "skipped"
         // (0 attempts, null model) when there's no mascot_description.
         const skippedImage: ImageGenResult = {
@@ -870,20 +939,36 @@ export async function POST(req: NextRequest) {
           if (mascotImageUrl) {
             hostedMascotUrl = await uploadMascotImage(supabase, mascotImageUrl, user.id, packetId);
           }
+          if (coloringImageUrl) {
+            hostedColoringUrl = await uploadColoringImage(supabase, coloringImageUrl, user.id, packetId);
+          }
 
           const updates: Record<string, string> = {};
           // Prefer the hosted URL for the column; fall back to the base64
           // exactly as before if the upload didn't produce one — a failed
           // upload must leave the packet no worse off than today.
           if (mascotImageUrl) updates.mascot_image_url = hostedMascotUrl ?? mascotImageUrl;
-          if (coloringImageUrl) updates.coloring_image_url = coloringImageUrl;
+          if (coloringImageUrl) updates.coloring_image_url = hostedColoringUrl ?? coloringImageUrl;
           if (Object.keys(updates).length > 0) {
-            const { error: updateError } = await supabase
-              .from("packets")
-              .update(updates)
-              .eq("id", packetId);
-            if (updateError) {
-              console.error("[generate-packet] Failed to save image URLs:", updateError.message);
+            // Its own try/catch: the packet is already saved, so a thrown
+            // error here must not fall through to the outer catch and turn
+            // a good packet into an error screen with no PDF and no email.
+            try {
+              const { error: updateError } = await supabase
+                .from("packets")
+                .update(updates)
+                .eq("id", packetId);
+              if (updateError) {
+                console.error("[generate-packet] Failed to save image URLs:", {
+                  message: updateError.message,
+                  packetId,
+                });
+              }
+            } catch (err) {
+              console.error("[generate-packet] Saving image URLs threw:", {
+                message: err instanceof Error ? err.message : String(err),
+                packetId,
+              });
             }
           }
         } else {
@@ -1020,7 +1105,7 @@ export async function POST(req: NextRequest) {
             // Match exactly what was written to the column above: hosted
             // URL when the upload succeeded, base64 fallback otherwise.
             mascot_image_url: hostedMascotUrl ?? mascotImageUrl,
-            coloring_image_url: coloringImageUrl,
+            coloring_image_url: hostedColoringUrl ?? coloringImageUrl,
           },
         });
         controller.close();
