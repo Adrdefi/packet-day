@@ -2,7 +2,7 @@
 
 Approved fixes for the packet PDF that are not built yet. Highest priority first. Don't start one until Andy says to.
 
-Last updated: 2026-09-29
+Last updated: 2026-09-30
 
 ---
 
@@ -47,3 +47,61 @@ Last updated: 2026-09-29
 **What happens.** The Thanksgiving test packet (grade 4, 2026-09-29) was mostly accurate, but it slipped in two familiar myths. A math word problem calls the 90 Wampanoag men at the 1621 harvest "guests", though Winslow's letter, the only eyewitness account, never says they were invited. The coloring page puts a pumpkin on the Mayflower's deck, and pumpkins are native to the Americas. The unit study page names both as talking points and leaves them out of its gallery.
 
 **What to do.** Tweak the generator prompt for history themes: avoid invitation framing for the 1621 harvest, and avoid anachronisms (objects, foods or animals that could not be in that time and place), including in the coloring scene. Check a few history theme packets after the change (Thanksgiving, Ancient Rome, the Constitution).
+
+---
+
+# Found 2026-09-30
+
+From the outer space sample packets made for /sample (Kai grade 4, Mia grade 1, Jonah grade 7). The PDFs are in `packet-inbox/` (gitignored).
+
+---
+
+## 5. Page count in the footer is off when the answer key runs 2 pages
+
+**What happens.** Jonah's grade 7 outer space packet has 14 kid pages (the certificate is page 14) and a 2 page answer key. Every kid page footer says "N of 15" when it should say "N of 14". Kai's and Mia's packets, whose answer keys are 1 page, correctly say "of 14".
+
+**What to do.** Find where the footer total is counted in `components/PacketPDF.tsx` and make it count kid pages only, however long the answer key runs. Remember the `RENDER_PROP_Y_OFFSET` note in CLAUDE.md when touching the footer.
+
+---
+
+## 6. End of page encouragement says "you are about to..." after the activity is done
+
+**What happens.** The encouragement box prints at the end of an activity but is written as if the activity hasn't started. Kai's packet page 6 (after the reading questions): "Kai, you are about to ride along with Orbit past all eight planets..." Page 11 (after the science questions): "Kai, you are about to be a real space scientist..."
+
+**What to do.** Tweak the generator prompt so the encouragement fits where it prints (cheer on work just done, or what comes next), or move it to the top of the activity. Check a few packets after the change.
+
+---
+
+## 7. Parent note overstates grade level
+
+**What happens.** Jonah's grade 7 parent note says the math (two step equations, linear functions with slope and y-intercept, measures of center, and cylinder volume) "are all core Grade 7 skills". Slope, y-intercept and cylinder volume are grade 8 under Common Core.
+
+**What to do.** Tweak the prompt so the parent note describes the skills without claiming which grade they belong to, or only claims it when it is right. The site never claims standards alignment ("matched to grade level" only), so the packet shouldn't either.
+
+---
+
+## 8. Parent notes mention the kid profile's interests (note only)
+
+**What happens.** Kai's and Jonah's parent notes mention the kid's "interest in nature" (Kai: "Kai's interest in nature and the outdoors..."). That comes from the account's kid profile, not the theme. It is harmless for real families.
+
+**What to do.** Nothing in the generator. For future sample packets, check the profile's interests first, or read the parent note before publishing, since it shows up in public pages.
+
+---
+
+## 9. fixture-example still points at the old /sample images
+
+**What happens.** `content/unit-studies/fixture-example.json` uses `/sample/page-NN.png` for its gallery, with captions written for the old Noah packet. Those images are now Kai's outer space pages, so the captions no longer match. It is a draft, so it only shows on previews, never in production.
+
+**What to do.** Point its gallery at images that match its captions, or rewrite the captions for Kai's pages.
+
+---
+
+## 10. /sample phase 2: the "Obsession Machine" hero animation
+
+**What to do.** Design and review with Natalie before building anything.
+
+---
+
+## Fixed 2026-09-30
+
+- Preview builds failed while downloading Nunito from Google Fonts (module not found in a nunito `.module.css`). Fonts are now self-hosted with `next/font/local` (files and OFL licenses in `app/fonts/`), so builds never download fonts.
