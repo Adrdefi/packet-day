@@ -412,6 +412,11 @@ export interface BandConfig {
    * word-length cap — see wordsToFind below for the matching gap.
    */
   wordSearchGrid: number;
+  /**
+   * K-2 uses the 3-5 cell (28.5pt, 12.5pt letters). Its own 40pt cell made
+   * the 10x10 grid 400pt tall, which pushed the grid off the puzzle page and
+   * left that page mostly blank.
+   */
   wordSearchCell: number;
   /**
    * NOT wired into the puzzle_break generation prompt
@@ -446,9 +451,9 @@ export interface BandConfig {
 export const band: Record<BandKey, BandConfig> = {
   'K-2': {
     bodySize: 14, passageSize: 14, passageLineHeight: 1.7, quickCalcSize: 16,
-    wordSearchCellFontSize: 16, calloutBodySize: 12, answerLinePitch: 34,
+    wordSearchCellFontSize: 12.5, calloutBodySize: 12, answerLinePitch: 34,
     defaultLinesPerPrompt: 2, writingPageLines: 9, wordSearchGrid: 8,
-    wordSearchCell: 40, wordsToFind: 6, coverMascot: 202, stripMascot: 72,
+    wordSearchCell: 28.5, wordsToFind: 6, coverMascot: 202, stripMascot: 72,
     reflectionMascot: 112, certificateMascot: 120, quickCalcColumns: 1,
     openAreaMinHeight: 135, passageWordCeiling: 300, reflectionLines: 5,
     questionBulletSize: 32,

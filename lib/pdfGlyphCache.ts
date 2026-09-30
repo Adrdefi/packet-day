@@ -37,6 +37,10 @@ const WARM_CODE_POINTS: readonly number[] = [
   0x2013, 0x2014, // en and em dashes
   0x2026, // ellipsis
   0x2022, 0x00b7, // bullet and middle dot
+  // No-break space: PacketPDF's keepBlankExpressionsTogether joins fill-in
+  // expressions ("___ x ___ = ___") with it. Unwarmed, it went stale on the
+  // first render in a fresh process (caught 2026-09-29, glyph 856 in Nunito).
+  0x00a0,
   ...Array.from({ length: 0x370 - 0x300 }, (_, i) => 0x300 + i), // combining accent marks
 ];
 
