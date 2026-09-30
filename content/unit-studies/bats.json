@@ -1,0 +1,236 @@
+{
+  "slug": "bats",
+  "status": "draft",
+  "theme": {
+    "name": "Bats",
+    "keyword": "bats unit study",
+    "inputUsed": "Bats: echolocation, bat habitats and nocturnal animals",
+    "season": "fall"
+  },
+  "meta": {
+    "title": "Printable Bats Unit Study for Kids (K-8) | Packet Day",
+    "description": "A printable bats unit study with a bug counting math page, a short echolocation story, a word search and a clap test you can try at home. Free to start."
+  },
+  "h1": "Bats Unit Study Packet for Kids",
+  "answerCapsule": "A bats unit study packet is a printable school day about bats, echolocation and night animals for kids in kindergarten through 8th grade. This grade 2 sample has 15 pages: math, reading, writing, a word search, a movement break and science, plus a coloring page, a certificate and an answer key. About 105 minutes. Free to start.",
+  "sample": {
+    "childFirstName": "Maya",
+    "grade": 2,
+    "pageCount": 15,
+    "characterName": "Echo the bat",
+    "characterDescription": "A little brown bat in a purple scarf and a tiny headlamp who guides Maya through the day and signs her certificate.",
+    "generatedOn": "2026-09-29"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Maya's Bat Adventure Day: Echo the bat in a purple scarf and headlamp, chips for 6 activities, 105 minutes and grade 2, and Echo's mission note to Maya.",
+      "caption": "Echo introduces herself and hands Maya the mission.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Echo's Midnight Bug Count: six quick calculations such as 24 + 13 and 5 x 3, and word problems about moths, a cave of 64 bats and baby bats eating bugs.",
+      "caption": "Real regrouping practice, disguised as a midnight snack count.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, Echo Flies at Night: a short story about a little brown bat who sleeps in a cave and finds bugs with echolocation, followed by comprehension questions.",
+      "caption": "Short enough for a second grader to finish before the wiggles win.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Echo's Hidden Night Words: a 10 by 10 word search hiding bat, echo, cave, night, wings, moth, owl, moon and squeak.",
+      "caption": "The quiet ten minutes. You know the ones.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, Flap and Swoop Like a Bat: five moves, from flapping arm wings 10 times to curling up like a sleepy bat for 10 seconds.",
+      "caption": "Five minutes of flapping. Worth every second.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, Where Do Bats Live: drawing a bat home such as a cave or hollow tree, a clap test near a wall and in an open space, and a question about hunting by sound.",
+      "caption": "The clap test needs one wall and one open room. That's it.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page: Maya and Echo sit on a rocky ledge outside a cave under a big round moon, with a pine tree, a sleepy owl and two moths.",
+      "caption": "Maya and Echo on the ledge. The owl is optional but encouraged.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Maya's Bat Adventure Day with Echo at the top, a signature line for a grown up and one for the child.",
+      "caption": "The page that ends up on the fridge.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Echo's Midnight Bug Count",
+      "detail": "Six quick problems, four word problems about moths and a cave full of bats, and a draw and solve with 4 branches of 5 bats."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Echo Flies at Night",
+      "detail": "A short story about a little brown bat's night out, then six questions about it."
+    },
+    {
+      "subject": "Writing",
+      "activity": "My Night Flight with Echo",
+      "detail": "Your kid imagines bat wings for one night and writes 4 to 6 sentences about the flight."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Echo's Hidden Night Words",
+      "detail": "Nine night words hiding in the grid, squeak and moth included."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Flap and Swoop Like a Bat",
+      "detail": "Flapping, swooping, tiptoeing out of the cave, jumping for bugs, then a rest wrapped in pretend wings."
+    },
+    {
+      "subject": "Science",
+      "activity": "Where Do Bats Live",
+      "detail": "Bat homes like caves, hollow trees and old barns, a clap test to hear sound bounce, and night animals compared with day animals."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Echo",
+    "body": "Echo is the little brown bat who runs Maya's day. She wears a purple scarf and a tiny headlamp (a funny choice for an animal that finds its way by sound), and she shows up on nearly every page.\n\nShe introduces herself on the cover, catches moths in the math problems, waves at a sleepy owl in the reading story and flies beside Maya in the writing prompt. At the end she sits next to Maya on the coloring page, and the certificate reads: Echo is proud of you, Maya.\n\nKids will do a lot of subtraction for a character they like. The reflection page even sends them back to find every page Echo appears on."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Math, mostly. Maya adds and subtracts two digit numbers with regrouping (82 minus 49 is on there), then meets multiplication as equal groups: 5 baby bats eating 2 bugs each, and 4 branches with 5 bats on each one.\n\nThe reading questions ask her to recall details, explain two new words and guess why Echo isn't scared of the dark. The writing page asks for 4 to 6 sentences about her own night flight.\n\nScience is where the vocabulary pays off. Nocturnal and echolocation come back from the story, the clap test lets her hear an echo for herself, and the last questions ask her to compare night and day animals and predict what happens to a bat that loses its home."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "This sample is grade 2, so here we can be specific. The story uses short sentences and two big words, the math stays within 100 with multiplication as groups you can draw, and writing tops out at 4 to 6 sentences. Kindergarten and first grade packets are written for their own grade."
+    },
+    {
+      "band": "3-5",
+      "body": "For grades 3 to 5, expect a longer reading passage, more new vocabulary, math at their grade level and more writing. We are not showing a grades 3 to 5 bats packet here, so this is how packets grow, not a preview."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect an informational passage instead of a simple story, math such as equations and ratios, and writing that asks your kid to take a position and back it up. The theme and the character stay. The difficulty changes."
+    }
+  ],
+  "natalieNote": {
+    "body": "Oliver once asked for only Megalodons three days in a row. He got three completely different packets, and I stopped worrying that a kid could wear out a theme.\n\nSo if your kid finishes this one and wants more bats tomorrow, make another. Same obsession, new story, new problems. Bats also stretch nicely through October, when Halloween tries to eat the whole month.",
+    "basedOn": "site"
+  },
+  "faqs": [
+    {
+      "q": "What do bats eat?",
+      "a": "Most bats eat insects, like moths, beetles and mosquitoes, which is why Echo spends the math page counting bugs. Some bats eat fruit or drink flower nectar instead, and a few catch fish or frogs. Ask your kid which kind of bat they would rather be."
+    },
+    {
+      "q": "Is echolocation too hard for a second grader?",
+      "a": "No, not the way this packet teaches it. The story explains it plainly: Echo squeaks, the sound bounces off trees and bugs, and it comes back to her ears. Then the science page has your kid clap near a wall and again in an open room to hear the difference. A seven year old gets it."
+    },
+    {
+      "q": "How do I turn this into a Halloween unit?",
+      "a": "Print it for the last week of October and let bats be your friendly Halloween animal. Bat Week runs October 24 to 31 every year, so the timing lines up. Add a bat picture book, look for bats at dusk like the parent note suggests, and pair it with a pumpkin packet for a second themed day."
+    },
+    {
+      "q": "Are bats really blind?",
+      "a": "No, bats can see, and some see quite well, so blind as a bat is a myth. Many bats still hunt mostly by echolocation because it works in total darkness. That's exactly what the science page asks: why would a bat use sound instead of only its eyes at night?"
+    },
+    {
+      "q": "How long does the bats packet take?",
+      "a": "This sample adds up to 105 minutes of activities, from a 5 minute movement break to 25 minutes each for math and science. Add snack breaks and the usual detours and it fills a morning or a slow afternoon. Every packet is a full school day of 2 to 5 hours with breaks, depending on grade and pace."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes each packet from scratch, built around your kid's grade and whatever they are into right now. We are a homeschool family and our own kids test packets constantly. They are good, and they are not perfect, so skim it before you hand it over. The answer key makes checking the work quick."
+    }
+  ],
+  "related": [
+    "pumpkins",
+    "insects",
+    "polar-animals"
+  ],
+  "useCaseLinks": [
+    "/screen-free",
+    "/fun-friday"
+  ],
+  "factsToVerify": [
+    {
+      "claim": "Most bats eat insects such as moths, beetles and mosquitoes; some eat fruit or nectar; a few catch fish or frogs.",
+      "source": "https://www.batcon.org/bats-eat-what/",
+      "verified": true
+    },
+    {
+      "claim": "Bats are not blind; all bats can see, and many hunt mainly by echolocation.",
+      "source": "https://www.usgs.gov/faqs/are-bats-blind",
+      "verified": true
+    },
+    {
+      "claim": "Bat Week runs October 24 to 31 every year.",
+      "source": "https://www.batcon.org/event/bat-week/",
+      "verified": true
+    },
+    {
+      "claim": "Echolocation: bats make calls whose echoes bounce back off objects and prey; most calls are too high for human ears (packet fact on the reading page).",
+      "source": "https://www.batcon.org/the-art-of-bat-communication/",
+      "verified": true
+    },
+    {
+      "claim": "Bats can live in caves, hollow trees, under bridges and in old barns (packet science page); little brown bats hibernate in caves.",
+      "source": "https://www.nwf.org/Educational-Resources/Wildlife-Guide/Mammals/Bats/Little-Brown-Bat",
+      "verified": true
+    },
+    {
+      "claim": "Bats are the only mammals that can truly fly (packet fact on the writing page).",
+      "source": "https://www.nps.gov/subjects/bats/how-bats-fly.htm",
+      "verified": true
+    },
+    {
+      "claim": "A bat's wing is a hand, with long finger bones covered by thin skin (packet fact on the movement page).",
+      "source": "https://animaldiversity.org/collections/mammal_anatomy/bat_wings/",
+      "verified": true
+    },
+    {
+      "claim": "Some bat caves hold millions of bats that fly out together at dusk (packet fact on the science page).",
+      "source": "https://www.batcon.org/experience-bats/bat-happenings/visit-bracken-cave-preserve/",
+      "verified": true
+    },
+    {
+      "claim": "A little brown bat can catch hundreds of insects in an hour (packet fact on the math page). Commonly cited as 600 to 1,000 per hour, mostly from one 1960 lab study; hundreds is the conservative version.",
+      "source": "https://www.esf.edu/aec/adks/mammals/littlebrownbat.php",
+      "verified": true
+    },
+    {
+      "claim": "Word search puzzles became popular in newspapers in the 1960s (packet fact on the puzzle page). The first known one ran in the Selenby Digest in 1968 and spread quickly; true, but only just.",
+      "source": "https://en.wikipedia.org/wiki/Word_search",
+      "verified": true
+    }
+  ],
+  "dateModified": "2026-09-29"
+}
