@@ -1,0 +1,188 @@
+{
+  "slug": "fixture-example",
+  "status": "draft",
+  "theme": {
+    "name": "Example Theme",
+    "keyword": "example theme unit study",
+    "inputUsed": "example theme placeholder",
+    "season": "evergreen"
+  },
+  "meta": {
+    "title": "Printable Example Unit Study for Kids (K-8) | Packet Day",
+    "description": "PLACEHOLDER fixture page. It only proves the unit study template renders and must never go live. Free to start."
+  },
+  "h1": "Example Theme Unit Study Packet for Kids",
+  "answerCapsule": "PLACEHOLDER answer capsule. This fixture only proves the template renders. A real page says what the packet is, who it is for, what is inside with real counts, how long it takes, and that it is free to start, in 40 to 60 words that stand on their own.",
+  "sample": {
+    "childFirstName": "Placeholder",
+    "grade": 3,
+    "pageCount": 15,
+    "characterName": "Placeholder Pal",
+    "characterDescription": "PLACEHOLDER character description.",
+    "generatedOn": "2026-09-29"
+  },
+  "gallery": [
+    {
+      "file": "/sample/page-01.png",
+      "alt": "PLACEHOLDER alt text: sample page 1 standing in for the cover page",
+      "caption": "PLACEHOLDER caption for the cover page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "/sample/page-02.png",
+      "alt": "PLACEHOLDER alt text: sample page 2 standing in for the reading page",
+      "caption": "PLACEHOLDER caption for the reading page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "/sample/page-04.png",
+      "alt": "PLACEHOLDER alt text: sample page 4 standing in for the math page",
+      "caption": "PLACEHOLDER caption for the math page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "/sample/page-06.png",
+      "alt": "PLACEHOLDER alt text: sample page 6 standing in for the science page",
+      "caption": "PLACEHOLDER caption for the science page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "/sample/page-08.png",
+      "alt": "PLACEHOLDER alt text: sample page 8 standing in for the puzzle page",
+      "caption": "PLACEHOLDER caption for the puzzle page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "/sample/page-10.png",
+      "alt": "PLACEHOLDER alt text: sample page 10 standing in for the movement page",
+      "caption": "PLACEHOLDER caption for the movement page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "/sample/page-12.png",
+      "alt": "PLACEHOLDER alt text: sample page 12 standing in for the coloring page",
+      "caption": "PLACEHOLDER caption for the coloring page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "/sample/page-14.png",
+      "alt": "PLACEHOLDER alt text: sample page 14 standing in for the certificate page",
+      "caption": "PLACEHOLDER caption for the certificate page.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Reading",
+      "activity": "PLACEHOLDER reading activity name",
+      "detail": "PLACEHOLDER one line on what the child does in reading."
+    },
+    {
+      "subject": "Math",
+      "activity": "PLACEHOLDER math activity name",
+      "detail": "PLACEHOLDER one line on what the child does in math."
+    },
+    {
+      "subject": "Science",
+      "activity": "PLACEHOLDER science activity name",
+      "detail": "PLACEHOLDER one line on what the child does in science."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "PLACEHOLDER puzzle break activity name",
+      "detail": "PLACEHOLDER one line on what the child does in puzzle break."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "PLACEHOLDER movement break activity name",
+      "detail": "PLACEHOLDER one line on what the child does in movement break."
+    },
+    {
+      "subject": "Coloring",
+      "activity": "PLACEHOLDER coloring activity name",
+      "detail": "PLACEHOLDER one line on what the child does in coloring."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Placeholder Pal",
+    "body": "PLACEHOLDER first paragraph about the invented guide.\n\nPLACEHOLDER second paragraph about where the guide shows up across the pages."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "PLACEHOLDER first paragraph of plain skills language.\n\nPLACEHOLDER second paragraph tied to the real activities."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "PLACEHOLDER general note for K-2."
+    },
+    {
+      "band": "3-5",
+      "body": "PLACEHOLDER specific note for the grade 3 sample."
+    },
+    {
+      "band": "6-8",
+      "body": "PLACEHOLDER general note for 6-8."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: placeholder question for the fixture, never answered]\n\nPLACEHOLDER second paragraph.",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "PLACEHOLDER theme question 1?",
+      "a": "PLACEHOLDER answer 1. A real answer is 40 to 70 words and fully visible in the page HTML."
+    },
+    {
+      "q": "PLACEHOLDER theme question 2?",
+      "a": "PLACEHOLDER answer 2. A real answer is 40 to 70 words and fully visible in the page HTML."
+    },
+    {
+      "q": "PLACEHOLDER theme question 3?",
+      "a": "PLACEHOLDER answer 3. A real answer is 40 to 70 words and fully visible in the page HTML."
+    },
+    {
+      "q": "PLACEHOLDER theme question 4?",
+      "a": "PLACEHOLDER answer 4. A real answer is 40 to 70 words and fully visible in the page HTML."
+    },
+    {
+      "q": "PLACEHOLDER theme question 5?",
+      "a": "PLACEHOLDER answer 5. A real answer is 40 to 70 words and fully visible in the page HTML."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "PLACEHOLDER honest answer about how packets are made."
+    }
+  ],
+  "related": [],
+  "useCaseLinks": [
+    "/sick-day",
+    "/screen-free"
+  ],
+  "testimonialId": "chanty",
+  "factsToVerify": [
+    {
+      "claim": "PLACEHOLDER claim that would need a source",
+      "verified": false
+    }
+  ],
+  "datePublished": "2026-09-29",
+  "dateModified": "2026-09-29"
+}
