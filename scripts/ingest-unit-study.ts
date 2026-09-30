@@ -21,8 +21,8 @@
  *     "issues": [ { "page": 8, "what": "...", "severity": "minor" | "bad", "splitWith": 9 } ] }
  *
  * "splitWith" marks an activity split across two pages (the other page's number). Rules:
- *   - a page with any issue is never picked, and neither is the page right before or after a
- *     split activity
+ *   - a page with any issue is never picked; a "bad" issue also blocks both halves of its split
+ *     and the page right before and after it (a minor split blocks only its own page)
  *   - a slot with no clean page is left out; fewer than 6 clean pages, or any "bad" issue, marks
  *     the packet NEEDS REGENERATION and nothing is copied to public/
  *   - with no review file at all, nothing is copied to public/ either
@@ -319,12 +319,18 @@ async function readLayoutReview(slug: string): Promise<{ reviewedOn: string; iss
   return review;
 }
 
-/** Pages the gallery may never use: every page with an issue, plus the neighbors of any split activity. */
+/**
+ * Pages the gallery may never use: every page with an issue of its own. A
+ * "bad" issue also blocks every page it touches: both halves of a split, and
+ * the page right before and after it. A minor split blocks only the page the
+ * issue is recorded on (usually the spillover page), so the clean first page
+ * of an activity that continues can still be picked.
+ */
 function blockedPages(issues: LayoutIssue[], pageCount: number): Set<number> {
   const blocked = new Set<number>();
   for (const issue of issues) {
     blocked.add(issue.page);
-    if (issue.splitWith !== undefined) {
+    if (issue.severity === "bad" && issue.splitWith !== undefined) {
       const first = Math.min(issue.page, issue.splitWith);
       const last = Math.max(issue.page, issue.splitWith);
       for (let n = first; n <= last; n++) blocked.add(n);
