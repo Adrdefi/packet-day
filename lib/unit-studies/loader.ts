@@ -3,6 +3,7 @@ import path from "path";
 import { unitStudyPageSchema, type GalleryItem, type UnitStudyPage } from "./schema";
 import { SITUATIONS } from "@/lib/situations/registry";
 import { TESTIMONIALS } from "@/lib/testimonials";
+import { THEME_SLUGS } from "./themes";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "unit-studies");
 const PUBLIC_DIR = path.join(process.cwd(), "public");
@@ -94,13 +95,18 @@ function parseFile(fileName: string): UnitStudyPage {
   return page;
 }
 
+/**
+ * Related slugs are checked against the theme registry (lib/unit-studies/
+ * themes.ts), not against the content files that exist today, so a page can
+ * name related themes whose pages aren't written yet. The page itself only
+ * links to the ones visible on the current deployment.
+ */
 function checkRelated(pages: UnitStudyPage[]) {
-  const slugs = new Set(pages.map((page) => page.slug));
   for (const page of pages) {
     const fileName = `${page.slug}.json`;
     page.related.forEach((slug, i) => {
       if (slug === page.slug) fail(fileName, `field "related.${i}": a page cannot list itself`);
-      if (!slugs.has(slug)) fail(fileName, `field "related.${i}": no content/unit-studies/${slug}.json exists`);
+      if (!THEME_SLUGS.has(slug)) fail(fileName, `field "related.${i}": "${slug}" is not a theme in lib/unit-studies/themes.ts`);
       if (page.related.indexOf(slug) !== i) fail(fileName, `field "related.${i}": "${slug}" is listed twice`);
     });
   }

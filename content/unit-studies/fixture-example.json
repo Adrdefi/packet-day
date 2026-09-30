@@ -171,7 +171,7 @@
       "a": "PLACEHOLDER honest answer about how packets are made."
     }
   ],
-  "related": [],
+  "related": ["bats", "pumpkins", "insects"],
   "useCaseLinks": [
     "/sick-day",
     "/screen-free"

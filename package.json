@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run check-unit-studies",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -16,7 +17,8 @@
     "verify-image-backfill": "dotenv -e .env.local -- node scripts/run-ts.mjs scripts/verify-image-backfill.ts",
     "test-emails": "node scripts/run-ts.mjs scripts/send-test-emails.ts",
     "check-coloring-prompt": "node scripts/run-ts.mjs scripts/check-coloring-prompt.ts",
-    "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts"
+    "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts",
+    "check-unit-studies": "node scripts/run-ts.mjs scripts/check-unit-studies.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",

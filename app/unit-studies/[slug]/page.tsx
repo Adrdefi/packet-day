@@ -253,16 +253,26 @@ export default async function UnitStudyPage({ params }: Params) {
         {/* j: related packets, use case pages, hub and sample */}
         <section className="px-6 py-20 bg-paper">
           <div className="max-w-5xl mx-auto">
-            {related.length > 0 && (
-              <>
-                <SectionHeading>More unit study packets</SectionHeading>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-16">
-                  {related.map((relatedPage) => (
-                    <UnitStudyCard key={relatedPage.slug} page={relatedPage} />
-                  ))}
-                </div>
-              </>
-            )}
+            <SectionHeading>More unit study packets</SectionHeading>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-16">
+              {related.map((relatedPage) => (
+                <UnitStudyCard key={relatedPage.slug} page={relatedPage} />
+              ))}
+              {/* Related pages that aren't live yet (or are drafts on
+                  production) are skipped, so the hub fills the gap. */}
+              {related.length < 3 && (
+                <Link
+                  href="/unit-studies"
+                  className="group flex flex-col justify-center rounded-2xl border border-dashed border-sage/40 bg-white p-8 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <h3 className="font-display text-lg font-bold text-dark mb-2">Every unit study packet</h3>
+                  <p className="text-sm leading-relaxed text-dark/70 mb-4">
+                    See all the themes we have made so far, each with real pages from a sample packet.
+                  </p>
+                  <span className="text-sm font-bold text-sage group-hover:underline">Browse the unit studies →</span>
+                </Link>
+              )}
+            </div>
             <SectionHeading>Packets for the days you need one</SectionHeading>
             <SituationCardRow situations={useCases} />
             <p className="mt-10 text-center text-sm">
