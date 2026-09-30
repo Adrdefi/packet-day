@@ -1,0 +1,227 @@
+{
+  "slug": "pumpkins",
+  "status": "draft",
+  "theme": {
+    "name": "Pumpkins",
+    "keyword": "pumpkin unit study",
+    "inputUsed": "Pumpkins: life cycle from seed to jack o lantern and pumpkin science",
+    "season": "fall"
+  },
+  "meta": {
+    "title": "Printable Pumpkins Unit Study for Kids (K-8) | Packet Day",
+    "description": "A printable pumpkin unit study that follows one pumpkin from seed to jack-o-lantern, with a float test, skip counting and a word search. Free to start."
+  },
+  "h1": "Pumpkins Unit Study Packet for Kids",
+  "answerCapsule": "A pumpkin unit study packet is a printable school day about the pumpkin life cycle for kids in K to 8. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, a movement break, a science lab, coloring and a certificate, about 112 minutes of activities, plus breaks. Free to start.",
+  "sample": {
+    "childFirstName": "Theo",
+    "grade": 2,
+    "pageCount": 14,
+    "characterName": "Patch the pumpkin",
+    "characterDescription": "A smiling orange pumpkin with a curly green vine who tells her own life story, from seed to jack-o-lantern.",
+    "generatedOn": "2026-09-29"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Theo's Pumpkin Patch Adventure Day: Patch the pumpkin with a curly vine, chips for 6 activities, 112 minutes and grade 2, and Patch's mission note to Theo.",
+      "caption": "Patch asks for help on page one. Theo is in.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Patch's Pumpkin Patch Math: five quick calculations such as 36 + 25 and 5 x 3, and word problems about planting seeds, picking pumpkins and wagons.",
+      "caption": "Two digit adding and subtracting, with wagons.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, From Seed to Jack-o-Lantern: Patch tells how she grew from a flat seed to a vine, a flower and a pumpkin, followed by comprehension questions.",
+      "caption": "A whole life cycle in three short paragraphs.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Patch's Pumpkin Word Search: a 10 by 10 grid hiding pumpkin, seed, sprout, vine, flower, stem, soil, orange, harvest and lantern.",
+      "caption": "Ten words, every one from the life cycle.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, Grow Like a Pumpkin Dance: six moves from curling up like a seed to buzzing like a bee to making a silly jack-o-lantern face.",
+      "caption": "Seed, sprout, vine, bee, pumpkin, face. In that order.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, Patch's Pumpkin Science Lab: describe the outside of a pumpkin, predict whether it floats or sinks and test it, then look inside and count seeds in tens.",
+      "caption": "The float test is the one they remember.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page: Theo and Patch in a pumpkin patch with a curly vine, big leaves, a pumpkin flower, a carved jack-o-lantern and a wooden wheelbarrow under the sun.",
+      "caption": "Leave the wheelbarrow for last. It has a lot of wood grain.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Theo's Pumpkin Patch Adventure Day with Patch at the top and signature lines for a grown up and the child.",
+      "caption": "Signed by a grown up, proudly taped somewhere.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Patch's Pumpkin Patch Math",
+      "detail": "Five quick problems, four word problems about seeds, wagons and vines, and a draw and solve: 5 jack-o-lanterns with 2 triangle eyes each."
+    },
+    {
+      "subject": "Reading",
+      "activity": "From Seed to Jack-o-Lantern",
+      "detail": "Patch tells her own life story, then five questions, including putting the stages in order."
+    },
+    {
+      "subject": "Writing",
+      "activity": "My Life as a Pumpkin Seed",
+      "detail": "Your kid pretends to be a seed next to Patch and writes 4 to 5 sentences about growing up, with at least two color words."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Patch's Pumpkin Word Search",
+      "detail": "Ten life cycle words hidden in the grid, harvest and lantern included."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Grow Like a Pumpkin Dance",
+      "detail": "Your kid acts out every stage, from a curled up seed to a rocking pumpkin, and ends on their silliest jack-o-lantern face."
+    },
+    {
+      "subject": "Science",
+      "activity": "Patch's Pumpkin Science Lab",
+      "detail": "Describe a real pumpkin, predict whether it floats and test it in a tub of water, then open it up and count the seeds by tens."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Patch",
+    "body": "Patch is the pumpkin telling this whole story. The reading page is her life story in her own voice, from a tiny flat seed in warm spring soil to the jack-o-lantern glowing at the end.\n\nShe plants the seeds in the math problems, loads the wagons and helps carve the jack-o-lantern eyes in the draw and solve. The writing prompt plants Theo right next to her in the garden, and the science lab makes him her lab partner.\n\nOn the reflection page Patch says Theo is officially a Pumpkin Patch Expert, and the certificate reads: Patch is proud of you, Theo."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child practices math, reading, writing and science through one pumpkin's life: two digit adding and subtracting, early multiplication, reading for order and detail, a short piece of writing and a real experiment.\n\nIn math, Theo adds and subtracts with regrouping (72 minus 38 is there) and meets multiplication by skip counting: 5 wagons of 2 pumpkins, 3 branches of 10 leaves, 5 jack-o-lanterns with 2 eyes each.\n\nThe reading asks him to recall a detail, put five stages in order, explain what \"like umbrellas\" says about the leaves and use a clue to explain why the bees mattered.\n\nScience is the part that feels like play. He describes a pumpkin with three describing words, makes a prediction and tests it, estimates the seeds and then counts some in groups of 10."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "This sample is grade 2, so here we can be specific. The story is three short paragraphs with one comparison to figure out, the math stays within 100 with skip counting by 2s, 5s and 10s, and the writing asks for 4 to 5 sentences. Kindergarten and first grade packets are written for their own grade."
+    },
+    {
+      "band": "3-5",
+      "body": "For grades 3 to 5, the pumpkin theme comes with longer reading, harder vocabulary, math at their grade level and longer writing. We are not showing a grades 3 to 5 pumpkin packet here, so this is how packets grow, not a preview."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect longer reading again, harder vocabulary, math at their grade level and more writing. We have not seen a grades 6 to 8 pumpkin packet either, so we are not describing one. The theme and the character stay. The difficulty changes."
+    }
+  ],
+  "natalieNote": {
+    "body": "Oliver once asked for only Megalodons three days in a row. He got three completely different packets.\n\nSo if your kid finishes this one and wants more pumpkins tomorrow, make another. Same pumpkin obsession, new story, new problems.",
+    "basedOn": "site"
+  },
+  "faqs": [
+    {
+      "q": "Do pumpkins really float?",
+      "a": "Yes, pumpkins float, even though they are about 90 percent water. The inside is mostly hollow and full of air, which makes the whole pumpkin lighter than the water it pushes aside. That's the surprise in the science lab: Theo writes his prediction first, then tests it in a tub or sink. Most kids guess sink."
+    },
+    {
+      "q": "Do I need a real pumpkin for the science lab?",
+      "a": "No, a small real pumpkin is best, but the packet works without one. A photo covers the describing and observing questions, and you can talk through the float prediction together instead of testing it. If you do use a real pumpkin, a grown up handles all the cutting, and a towel nearby helps with the seeds."
+    },
+    {
+      "q": "What are the stages of a pumpkin life cycle?",
+      "a": "A pumpkin grows from seed to sprout to vine to flower, and then the flower becomes a small green pumpkin that turns orange by fall. Bees carry pollen between the flowers, which is how the flowers turn into pumpkins. The reading asks your kid to put five of those stages in order, and the movement break acts them all out."
+    },
+    {
+      "q": "Is a pumpkin a fruit or a vegetable?",
+      "a": "A pumpkin is a fruit to a botanist, because it grows from a flower and holds the seeds. In the kitchen most people treat it like a vegetable. That makes a good question to ask at the end of the science lab, when your kid is holding a spoonful of seeds and can see the answer for themselves."
+    },
+    {
+      "q": "How do I make this a fall or Halloween school day?",
+      "a": "Print it in October and let the pumpkin carry the day, from the morning math to the afternoon float test. The parent note suggests rinsing and roasting the seeds you counted as a snack afterward. For a second themed day in late October, the bats packet is a natural partner."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, each packet is written by AI from scratch around your kid's grade and interests. We are a homeschool family, and our own kids test packets all the time. They are good, and they are not flawless, so skim it before you print. The parent answer key is there so checking the math takes a couple of minutes, not a whole afternoon."
+    }
+  ],
+  "related": [
+    "bats",
+    "thanksgiving",
+    "kitchen-science"
+  ],
+  "useCaseLinks": [
+    "/fun-friday",
+    "/screen-free",
+    "/multiple-kids"
+  ],
+  "factsToVerify": [
+    {
+      "claim": "Pumpkins are about 90 percent water yet float, because they are mostly hollow and full of air (also packet facts).",
+      "source": "https://www.canr.msu.edu/news/fun_with_science_and_pumpkins",
+      "verified": true
+    },
+    {
+      "claim": "A pumpkin is botanically a fruit (a berry called a pepo) because it grows from a flower and contains seeds; it is cooked like a vegetable.",
+      "source": "https://agrilifetoday.tamu.edu/2025/10/14/is-a-pumpkin-a-fruit-or-a-vegetable/",
+      "verified": true
+    },
+    {
+      "claim": "Pumpkin life cycle: seed, sprout, vine, flower, green pumpkin, orange pumpkin; bees pollinate the flowers.",
+      "source": "https://portal.ct.gov/-/media/caes/documents/publications/pollinators/pollinationofpumpkinandwintersquashpdf.pdf",
+      "verified": true
+    },
+    {
+      "claim": "Pumpkin flowers usually stay open for only one morning (packet fact on the reading page).",
+      "source": "https://vegcropshotline.org/article/pumpkin-fruit-set/",
+      "verified": true
+    },
+    {
+      "claim": "The heaviest pumpkin ever grown weighed more than 2,700 pounds (packet fact on the math page). The Guinness record is 2,749 pounds, set in 2023.",
+      "source": "https://www.guinnessworldrecords.com/world-records/heaviest-pumpkin",
+      "verified": true
+    },
+    {
+      "claim": "The word pumpkin comes from the Greek pepon, meaning large melon (packet fact on the puzzle page).",
+      "source": "https://www.etymonline.com/word/pumpkin",
+      "verified": true
+    },
+    {
+      "claim": "One pumpkin can hold hundreds of seeds (packet fact on the writing page).",
+      "source": "https://www.nybg.org/blogs/plant-talk/2010/10/garden-programming/eleven-giant-pumpkin-fun-facts/",
+      "verified": true
+    },
+    {
+      "claim": "The human body has more than 600 muscles (packet fact on the movement page).",
+      "source": "https://my.clevelandclinic.org/health/body/21887-muscle",
+      "verified": true
+    }
+  ],
+  "dateModified": "2026-09-29"
+}

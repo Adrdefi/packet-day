@@ -12,12 +12,17 @@ export function sampleLabel(page: UnitStudyPage): string {
   return `A sample packet made for a ${gradePhrase(page.sample.grade)} learner named ${page.sample.childFirstName}`;
 }
 
+/** The theme name as it reads mid sentence: "a bats packet", but "a Thanksgiving packet". */
+export function themeInSentence(page: UnitStudyPage): string {
+  return page.theme.properNoun ? page.theme.name : page.theme.name.toLowerCase();
+}
+
 export function signupHref(page: UnitStudyPage): string {
   return `/signup?from=unit-studies-${page.slug}`;
 }
 
 export function primaryCtaLabel(page: UnitStudyPage): string {
-  return `Make your own ${page.theme.name.toLowerCase()} packet free`;
+  return `Make your own ${themeInSentence(page)} packet free`;
 }
 
 /** The date shown as "Updated": dateModified, else datePublished. */

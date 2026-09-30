@@ -1,0 +1,231 @@
+{
+  "slug": "polar-animals",
+  "status": "draft",
+  "theme": {
+    "name": "Polar animals",
+    "keyword": "polar animals unit study",
+    "inputUsed": "Polar animals: penguins and polar bears and how they survive the cold",
+    "season": "winter"
+  },
+  "meta": {
+    "title": "Printable Polar Animals Unit Study for K-8 | Packet Day",
+    "description": "A printable polar animals unit study on how penguins and polar bears stay warm, with a blubber glove experiment and grade 3 math. Free to start."
+  },
+  "h1": "Polar Animals Unit Study Packet for Kids",
+  "answerCapsule": "A polar animals unit study packet is a printable school day about how penguins and polar bears survive the cold, for kids in K to 8. This grade 3 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, movement, science, coloring and a certificate, about 117 minutes of activities, plus breaks. Free to start.",
+  "sample": {
+    "childFirstName": "Ezra",
+    "grade": 3,
+    "pageCount": 14,
+    "characterName": "Pebble the penguin",
+    "characterDescription": "A cheerful penguin in blue earmuffs and a red scarf who lives in Antarctica and brings along her friend Nanook the polar bear.",
+    "generatedOn": "2026-09-29"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Ezra's Polar Animals Adventure Day: Pebble the penguin in earmuffs and a red scarf sliding on ice, chips for 6 activities, 117 minutes and grade 3, and Pebble's mission note.",
+      "caption": "Pebble makes Ezra an official Polar Explorer on page one.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Pebble's Penguin Counting Challenge: six quick calculations such as 6 x 7 and 245 minus 128, and word problems about a penguin huddle, Nanook's walk and sharing fish.",
+      "caption": "Three digit subtraction, with a beach full of penguins.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, Built for the Cold: a story about Pebble in Antarctica and Nanook in the Arctic, covering blubber, huddles, clear polar bear hair, black skin and wide paws.",
+      "caption": "Why a polar bear's fur isn't really white.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Frozen Word Hunt: a 10 by 10 grid hiding penguin, polar, blubber, Arctic, huddle, feathers, iceberg, snow and fur.",
+      "caption": "Feathers is the tricky one.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, Polar Animal Wiggle Warm-Up: waddle like a penguin, stomp like a polar bear, belly slide, shiver for 10 seconds and stretch up tall.",
+      "caption": "The belly slide happens on the living room rug.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, The Blubber Glove Experiment: predict, then time a bare finger and a finger in a shortening filled glove in ice water, and compare the two times.",
+      "caption": "Shortening, two zip bags and a bowl of ice water. Towel recommended.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page: Ezra in a puffy winter coat with Pebble the penguin and a polar bear cub, an igloo, a tall iceberg, a fishing hole with a jumping fish and a pile of snowballs.",
+      "caption": "A make believe scene, and the packet says so.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Ezra's Polar Animals Adventure Day with Pebble at the top and signature lines for a grown up and the child.",
+      "caption": "Official Polar Explorer, signed and dated.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Pebble's Penguin Counting Challenge",
+      "detail": "Six quick problems, word problems about a huddle of 6 rows and a beach of 412 penguins, and a draw and solve with 5 penguins on each of 3 icebergs."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Built for the Cold",
+      "detail": "A story about Pebble in Antarctica and Nanook in the Arctic and the body parts that keep them warm, then five questions."
+    },
+    {
+      "subject": "Writing",
+      "activity": "My Day in Antarctica with Pebble",
+      "detail": "A story about one day on the ice with Pebble, at least 3 sentences for each of three prompts, including the middle of the huddle."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Frozen Word Hunt",
+      "detail": "Nine cold weather words hidden in the grid, blubber and iceberg included."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Polar Animal Wiggle Warm-Up",
+      "detail": "Waddling with stiff flipper arms, polar bear stomps, pretend belly slides and a ten second shiver."
+    },
+    {
+      "subject": "Science",
+      "activity": "The Blubber Glove Experiment",
+      "detail": "Your kid predicts, times a bare finger in ice water, times it again inside a shortening glove, then compares and explains."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Pebble",
+    "body": "Pebble is the penguin in blue earmuffs who runs Ezra's day, and she brings a friend. Nanook the polar bear shows up in the math problems and the reading story, even though the story is careful to say the two would never meet in the wild.\n\nPebble counts her colony in the math, explains blubber and huddles in the reading, saves Ezra a spot in the huddle in the writing prompt and cheers him through the blubber glove test.\n\nThe coloring page puts Ezra, Pebble and a polar bear cub together in the snow, and calls it a make believe scene right in the instructions. The certificate reads: Pebble is proud of you, Ezra."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child practices math, reading, writing and science around one big idea, adaptations: grade 3 math facts and three digit numbers, a story with new science words, a written adventure and a real experiment with a timer.\n\nIn math, Ezra adds and subtracts three digit numbers with regrouping (245 minus 128), works through multiplication facts like 6 x 7, and divides 24 fish between 4 friends.\n\nThe reading teaches three words, blubber, huddle and adaptation, and asks him to explain each using clues from the story. One question asks why the penguins take turns in the middle of the huddle, which takes real thinking.\n\nThe science page is a proper experiment. Ezra writes a prediction, collects two times in seconds, compares them and explains the result using the word blubber."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "For kindergarten through grade 2, the same polar theme comes with shorter reading, easier vocabulary, math at their grade level and shorter writing. We are not showing a grades K to 2 polar animals packet here, so this is how packets change, not a preview of one."
+    },
+    {
+      "band": "3-5",
+      "body": "This sample is grade 3, so here we can be specific. The story teaches three science words, the math covers three digit adding and subtracting, multiplication facts and simple division, and the writing asks for at least 3 sentences for each of three prompts."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect longer reading, harder vocabulary, math at their grade level and more writing. We have not seen a grades 6 to 8 polar animals packet, so we are not describing one. The theme and the character stay. The difficulty changes."
+    }
+  ],
+  "natalieNote": {
+    "body": "Vivian once asked for volcanoes but also unicorns, and it worked.\n\nSo if your kid wants penguins and polar bears in the same packet, even though they live at opposite ends of the Earth, ask for it. This one handles the mix well: the story explains that the two never meet, and the coloring page puts them together anyway and calls it make believe.",
+    "basedOn": "site"
+  },
+  "faqs": [
+    {
+      "q": "Do penguins and polar bears live together?",
+      "a": "No, penguins and polar bears never meet in the wild, because they live at opposite ends of the Earth. Most penguins live in the Southern Hemisphere and polar bears live in the Arctic. The reading story says this plainly, and the parent note points out that the coloring page shows them together as a make believe scene on purpose."
+    },
+    {
+      "q": "How does the blubber glove experiment work?",
+      "a": "You fill one zip top bag with about a cup of vegetable shortening, tuck a second bag inside it and seal them together, so the shortening sits between two layers. Your kid times a bare finger in ice water, then times the same finger inside the glove. The glove usually wins by a lot. A grown up should supervise."
+    },
+    {
+      "q": "Is a polar bear's fur really white?",
+      "a": "No, a polar bear's fur only looks white. The hairs are actually clear, and the long outer hairs are hollow, so they scatter light and look white. Underneath, the skin is black. That's the surprise the reading page promises Ezra."
+    },
+    {
+      "q": "Why do penguins huddle?",
+      "a": "Penguins huddle to share body heat during storms, standing so close together that the group stays much warmer than any one bird could alone. The birds keep shifting, so the ones on the cold outside get a turn in the warm middle. The reading question about taking turns is worth talking through before your kid writes an answer."
+    },
+    {
+      "q": "Is this a good snow day packet?",
+      "a": "Yes, it fits a snow day or a cold week well, and it needs very little: shortening, two zip bags and a bowl of ice water for the science, plus a pencil. The movement break includes a ten second shiver, which is easy to act out after coming in from the snow. Keep a towel handy for the experiment."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes every packet from scratch around your kid's grade and the topic you give it. We homeschool too, and our own kids test packets constantly. They are good, not perfect, so skim it before printing. We double checked the facts on this page, and the parent answer key makes checking the math take a couple of minutes."
+    }
+  ],
+  "related": [
+    "ocean-animals",
+    "weather",
+    "bats"
+  ],
+  "useCaseLinks": [
+    "/sick-day",
+    "/screen-free"
+  ],
+  "factsToVerify": [
+    {
+      "claim": "Penguins and polar bears never meet in the wild; most penguins live in the Southern Hemisphere and polar bears live in the Arctic (packet fact).",
+      "source": "https://www.coolantarctica.com/Antarctica%20fact%20file/wildlife/Arctic_animals/polar-bear.php",
+      "verified": true
+    },
+    {
+      "claim": "Polar bear hairs are clear, the long guard hairs are hollow, and the skin underneath is black (packet fact). The packet says each hair is hollow; only the outer guard hairs are.",
+      "source": "https://www.loc.gov/everyday-mysteries/categories/zoology/item/is-a-polar-bears-fur-transparent/",
+      "verified": true
+    },
+    {
+      "claim": "Penguins huddle to share warmth and take turns moving between the cold outside and the warm middle (packet fact).",
+      "source": "https://www.audubon.org/news/not-so-black-and-white-research-reveals-intricacies-penguin-huddles",
+      "verified": true
+    },
+    {
+      "claim": "Emperor penguin huddles can hold thousands of birds (packet says more than 5,000; Audubon reports more than 4,000).",
+      "source": "https://www.audubon.org/news/not-so-black-and-white-research-reveals-intricacies-penguin-huddles",
+      "verified": true
+    },
+    {
+      "claim": "Emperor penguin fathers keep the egg on their feet for about two months without eating (packet fact).",
+      "source": "https://www.whoi.edu/oceanus/feature/fascinating-facts-about-emperor-penguins/",
+      "verified": true
+    },
+    {
+      "claim": "Polar bear blubber can be up to 4 inches thick (packet fact).",
+      "source": "https://www.pbs.org/wnet/nature/bears-of-the-last-frontier-polar-bear-fact-sheet/7053/",
+      "verified": true
+    },
+    {
+      "claim": "Some polar bears have been tracked swimming for many days in a row (packet fact). The record is about 9.7 days of continuous swimming.",
+      "source": "https://www.guinnessworldrecords.com/world-records/511269-longest-polar-bear-swim-%E2%80%93-duration",
+      "verified": true
+    },
+    {
+      "claim": "Blubber is a thick layer of fat that insulates, which the shortening glove demonstrates (packet science page).",
+      "source": "https://polarbeartours.ca/polarBearPhysiology/blubber/",
+      "verified": true
+    },
+    {
+      "claim": "Shivering is fast muscle movement that makes heat (packet fact on the movement page).",
+      "source": "https://www.childrensmuseum.org/blog/why-do-i-shiver-when-i%E2%80%99m-cold",
+      "verified": true
+    }
+  ],
+  "dateModified": "2026-09-29"
+}

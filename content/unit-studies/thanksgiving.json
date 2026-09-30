@@ -1,0 +1,253 @@
+{
+  "slug": "thanksgiving",
+  "status": "draft",
+  "theme": {
+    "name": "Thanksgiving",
+    "keyword": "thanksgiving unit study",
+    "inputUsed": "Thanksgiving: the Mayflower voyage and the first harvest feast",
+    "season": "fall",
+    "properNoun": true
+  },
+  "meta": {
+    "title": "Printable Thanksgiving Unit Study for K-8 | Packet Day",
+    "description": "A printable Thanksgiving unit study on the Mayflower, the 1621 harvest and the Wampanoag Three Sisters garden, with real grade 4 math. Free to start."
+  },
+  "h1": "Thanksgiving Unit Study Packet for Kids",
+  "answerCapsule": "A Thanksgiving unit study packet is a printable school day about the Mayflower, the 1621 harvest and Wampanoag farming for kids in K to 8. This grade 4 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, movement, science, coloring and a certificate, about 127 minutes of activities, plus breaks. Free to start.",
+  "sample": {
+    "childFirstName": "June",
+    "grade": 4,
+    "pageCount": 14,
+    "characterName": "Barnaby the Ship Mouse",
+    "characterDescription": "A small stowaway mouse in a sailor hat and scarf who rides the Mayflower in a sack of dried peas and narrates the voyage.",
+    "generatedOn": "2026-09-29"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of June's Mayflower Harvest Adventure Day: Barnaby the Ship Mouse on a barrel holding an ear of corn, chips for 6 activities, 127 minutes and grade 4, and Barnaby's mission note.",
+      "caption": "Barnaby reports for duty from the Mayflower.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Counting Supplies on the Mayflower: six quick calculations such as 36 x 47 and 504 divided by 7, and word problems about biscuits, the 66 day voyage, the harvest meal and corn mounds.",
+      "caption": "Long division, with a boat full of biscuits to count.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, Barnaby and the Long Voyage: a true history passage about the Mayflower crossing in 1620, the first winter, Massasoit, Tisquantum and the 1621 harvest celebration.",
+      "caption": "Real history, one small mouse along for the ride.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Barnaby's Harvest Word Search: a 10 by 10 grid hiding Mayflower, Wampanoag, harvest, voyage, feast, corn, squash, ocean and sails.",
+      "caption": "Wampanoag is in the grid. Nine letters, go.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, All Hands on Deck: five sailor moves, from hauling the sails and balancing on one foot to scrubbing the deck and shouting land ho.",
+      "caption": "Shouting land ho three times counts as PE.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, The Secret of the Three Sisters Garden: how the Wampanoag grew corn, beans and squash together in one mound, with questions on climbing beans, squash leaves and nitrogen in the soil.",
+      "caption": "The page that tells the other half of the story.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page: June and Barnaby on the deck of a tall ship with the wheel, a barrel, a coil of rope, a basket of corn and a pumpkin, with the sails and ocean behind them.",
+      "caption": "The coil of rope takes a while. That's the point.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for June's Mayflower Harvest Adventure Day with Barnaby at the top and signature lines for a grown up and the child.",
+      "caption": "Barnaby signs off with pride. You sign the line.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Counting Supplies on the Mayflower",
+      "detail": "Six quick problems, word problems about 102 passengers, a 66 day voyage and 288 corn mounds, and an area model for a 23 by 14 foot garden."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Barnaby and the Long Voyage",
+      "detail": "A true history passage from the 1620 crossing to the 1621 harvest, then six questions, including why Wampanoag help mattered so much."
+    },
+    {
+      "subject": "Writing",
+      "activity": "My Mayflower Voyage Journal",
+      "detail": "A dated journal entry of at least two paragraphs, written as a young passenger or as Barnaby, using three of the five senses."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Barnaby's Harvest Word Search",
+      "detail": "Nine words from the voyage and the harvest, Mayflower and Wampanoag included."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "All Hands on Deck",
+      "detail": "Hauling sails, balancing like the ship on big waves, scrubbing the deck, climbing the mast and a big land ho."
+    },
+    {
+      "subject": "Science",
+      "activity": "The Secret of the Three Sisters Garden",
+      "detail": "Why the Wampanoag planted corn, beans and squash in one mound, how each plant helps the others, and what happens to soil planted with corn alone."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Barnaby",
+    "body": "Barnaby the Ship Mouse is a stowaway. The reading passage finds him tucked inside a sack of dried peas when the Mayflower leaves England, hiding in a coil of rope during the storms, and nibbling crumbs at the harvest celebration.\n\nHe counts supplies in the math problems, hides the words in the word search and sails beside June on the coloring page. The writing prompt even lets June write the journal as Barnaby instead of as a passenger.\n\nHe is a useful guide for a heavy subject. The facts in the passage are real, and Barnaby is the one piece of it that is made up, which is a nice thing to point out to your kid."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child practices math, reading, writing and science in one day: grade 4 multiplication and division, reading a true history passage closely, writing a journal entry and learning how Wampanoag farmers made three crops work together.\n\nIn math, June adds and subtracts larger numbers, multiplies two digit numbers (36 x 47), divides with remainders (66 days is 9 weeks and 3 days) and finds a fraction of a set. The draw and solve uses an area model, splitting 23 by 14 into four smaller rectangles.\n\nThe reading questions ask for details, a vocabulary word (fertilize), an explanation using evidence and a personal connection. In science, June explains how corn holds up the beans, how squash leaves shade out weeds, and how beans put nitrogen back into the soil, then predicts what corn alone does to a field over the years."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "For kindergarten through grade 2, the same Thanksgiving theme comes with shorter reading, easier vocabulary, math at their grade level and shorter writing. We are not showing a grades K to 2 Thanksgiving packet here, so this is how packets change, not a preview of one."
+    },
+    {
+      "band": "3-5",
+      "body": "This sample is grade 4, so here we can be specific. The passage is about 290 words of real history, the math reaches two digit multiplication, long division with remainders and area models, and the journal entry asks for at least two paragraphs."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect longer reading, harder vocabulary, math at their grade level and more writing. We have not seen a grades 6 to 8 Thanksgiving packet, so we are not describing one. The theme and the character stay. The difficulty changes."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: Do you do anything around Thanksgiving in your homeschool, like a harvest day, a Mayflower read aloud, or learning about the Wampanoag with Oliver and Vivian? One or two real details from your house would make this note.]",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "Is this Thanksgiving packet historically accurate?",
+      "a": "Yes, the passage sticks to what historians know: 102 passengers, a 66 day crossing, about half the passengers dying that first winter, and a 1621 harvest celebration of about three days with around 90 Wampanoag men, who brought five deer. Most of what we know about that meal comes from one letter by Edward Winslow, which the packet points out."
+    },
+    {
+      "q": "How do I teach Thanksgiving from the Wampanoag perspective?",
+      "a": "Start with the fact that the Wampanoag lived there for thousands of years before 1620 and still live in Massachusetts today. Plymouth was built where Patuxet stood, a village emptied by an epidemic a few years earlier. Since 1970, many Native people have gathered in Plymouth on Thanksgiving for a National Day of Mourning. The science page centers Wampanoag farming."
+    },
+    {
+      "q": "Was there pumpkin pie at the 1621 harvest?",
+      "a": "No, there almost certainly was no pumpkin pie, because the colonists had no ovens and little sugar. Winslow's letter mentions wild birds and the five deer, and corn was surely there. The event was not called Thanksgiving at the time either. It was a harvest celebration, which is how the packet describes it, and reading question five asks about the pie."
+    },
+    {
+      "q": "Who was Squanto?",
+      "a": "Squanto, whose name was Tisquantum, was a Patuxet man who spoke English because an English captain kidnapped him in 1614 and took him to Spain. He made his way to England and back home in 1619, and found his village gone after the epidemic. The packet covers what he taught the colonists, so the rest is worth adding."
+    },
+    {
+      "q": "Is the Mayflower story too sad for a fourth grader?",
+      "a": "No, the packet handles the hard part in one plain sentence: about half the passengers did not survive the first winter. It doesn't dwell on it, and the parent note tells you it is coming so you can be ready. Most fourth graders ask why, which opens the best conversation of the day about cold, hunger and sickness."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes each packet from scratch around your kid's grade and the theme you type in. We are a homeschool family and test packets on our own kids. They are good, and they are not perfect, which matters most on a history theme, so read the passage before you hand it over. The answer key makes checking the math quick."
+    }
+  ],
+  "related": [
+    "pumpkins",
+    "us-constitution",
+    "kitchen-science"
+  ],
+  "useCaseLinks": [
+    "/road-trip",
+    "/multiple-kids",
+    "/fun-friday"
+  ],
+  "factsToVerify": [
+    {
+      "claim": "The Mayflower carried 102 passengers and about 30 crew, was about 100 feet long, took 66 days to cross, and a cracked beam was repaired with a large iron screw (packet facts).",
+      "source": "https://www.pilgrimhall.org/ap_voyage_mayflower_speedwell.htm",
+      "verified": true
+    },
+    {
+      "claim": "About half the Mayflower passengers died during the first winter (packet fact).",
+      "source": "https://plimoth.org/for-students/homework-help/mayflower-and-mayflower-compact",
+      "verified": true
+    },
+    {
+      "claim": "The 1621 harvest celebration lasted about three days, about 90 Wampanoag men came with Massasoit, and they brought five deer; Edward Winslow's letter is the only eyewitness account (packet facts).",
+      "source": "https://plimoth.org/yath/unit-4/eye-witness-account-of-the-1621-harvest-celebration",
+      "verified": true
+    },
+    {
+      "claim": "There was almost certainly no pumpkin pie in 1621: the colonists had no ovens and little sugar; wildfowl, venison and corn were on the table (packet fact).",
+      "source": "https://www.smithsonianmag.com/history/what-food-was-served-at-the-first-thanksgiving-in-1621-511554/",
+      "verified": true
+    },
+    {
+      "claim": "The 1621 event was a harvest celebration and was not called Thanksgiving at the time.",
+      "source": "https://www.britannica.com/topic/When-Was-the-First-Thanksgiving",
+      "verified": true
+    },
+    {
+      "claim": "Plymouth was built on the site of Patuxet, which was emptied by the epidemic of 1616 to 1619.",
+      "source": "https://www.atlasobscura.com/articles/pilgrims-plymouth-colony-patuxet",
+      "verified": true
+    },
+    {
+      "claim": "Tisquantum (Squanto) was kidnapped in 1614 by Thomas Hunt, taken to Spain, reached England, learned English and returned home in 1619 to find Patuxet gone.",
+      "source": "https://plimoth.org/yath/unit-3/tisquantum",
+      "verified": true
+    },
+    {
+      "claim": "Since 1970, United American Indians of New England have held a National Day of Mourning in Plymouth on Thanksgiving Day.",
+      "source": "https://plimoth.org/yath/unit-5/national-day-of-mourning-monument-1998",
+      "verified": true
+    },
+    {
+      "claim": "The Wampanoag still live in Massachusetts; the Mashpee Wampanoag Tribe and the Wampanoag Tribe of Gay Head (Aquinnah) are federally recognized (packet fact).",
+      "source": "https://mashpeewampanoagtribe-nsn.gov/",
+      "verified": true
+    },
+    {
+      "claim": "Three Sisters: corn supports climbing beans, beans add nitrogen to the soil through root bacteria, and squash leaves shade the soil and block weeds (packet science page).",
+      "source": "https://en.wikipedia.org/wiki/Three_Sisters_(agriculture)",
+      "verified": true
+    },
+    {
+      "claim": "Fertilizing corn mounds with fish was a Wampanoag practice taught by Tisquantum (packet fact). Some historians have argued he learned it in Europe; Wampanoag scholars and archaeology support it as a Native practice.",
+      "source": "https://plimoth.org/yath/unit-3/corn-planting-mound-soil-micromorphology-block",
+      "verified": true
+    },
+    {
+      "claim": "Corn cannot plant itself because its husk keeps the kernels wrapped; it depends on people (packet fact).",
+      "source": "https://learn.genetics.utah.edu/content/evolution/corn/",
+      "verified": true
+    },
+    {
+      "claim": "More than 30 muscles move the hand and fingers (packet fact on the movement page).",
+      "source": "https://my.clevelandclinic.org/health/body/25060-anatomy-of-the-hand-and-wrist",
+      "verified": true
+    }
+  ],
+  "dateModified": "2026-09-29"
+}

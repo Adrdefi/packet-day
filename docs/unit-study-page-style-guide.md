@@ -49,7 +49,7 @@ URL `/unit-studies/[slug]`. Hub `/unit-studies`. Target 800 to 1,200 words of vi
 9. **"Which grades is this for?"** Direct answer, then K-2, 3-5 and 6-8 notes on how vocabulary, math level and writing length change. Specific only for the grade of the real sample. General for the others: longer reading, harder vocabulary, math at their grade, longer writing. Never claim specifics for packets we have not seen, and never describe the format of a grade band we have not seen a sample of (no "an informational passage instead of a story").
 10. **Natalie's note.** 2 to 3 short paragraphs, using a real site anecdote or one Natalie supplies, else a `[NATALIE: ...]` placeholder. The page cannot go live with a placeholder.
 11. **FAQ.** 6 questions: 5 theme specific with accurate 40 to 70 word answers, plus "Are these made by AI, and are they any good?" answered honestly.
-12. **Related.** Related packets (3), plus 1 or 2 use case links that fit (`/sick-day`, `/road-trip`, `/fun-friday`, `/multiple-kids`, `/screen-free`), plus links to the hub and `/sample`.
+12. **Related.** Related packets (3), plus 2 to 3 hand picked use case links that genuinely fit, taken from the theme's picks in `lib/unit-studies/themes.ts` (every use case page is picked by at least one theme) (`/sick-day`, `/road-trip`, `/fun-friday`, `/multiple-kids`, `/screen-free`), plus links to the hub and `/sample`.
 13. **Closing.** Closing CTA and one pricing line using the settled claims.
 
 Every question style heading opens with a direct answer sentence before any detail, because AI engines lift the first sentence after a heading.

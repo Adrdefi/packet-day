@@ -19,7 +19,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { unitStudyPageSchema, type UnitStudyPage } from "../lib/unit-studies/schema";
 import { gallerySrc } from "../lib/unit-studies/loader";
-import { THEME_SLUGS, registryProblems } from "../lib/unit-studies/themes";
+import { THEMES, THEME_SLUGS, getTheme, registryProblems } from "../lib/unit-studies/themes";
 import { ENTITY_SENTENCE } from "../lib/unit-studies/entity";
 import { PAGE_RANGE, HOURS_RANGE } from "../lib/situations/figures";
 import { SITUATIONS } from "../lib/situations/registry";
@@ -263,6 +263,15 @@ async function checkPage(
     if (slug === page.slug) linkProblems.push(`related.${i}: a page cannot list itself`);
     else if (!THEME_SLUGS.has(slug)) linkProblems.push(`related.${i}: "${slug}" is not in lib/unit-studies/themes.ts`);
   });
+  if (page.useCaseLinks.length < 2 || page.useCaseLinks.length > 3) {
+    linkProblems.push(`${page.useCaseLinks.length} use case links (needs 2 to 3)`);
+  }
+  const theme = getTheme(page.slug);
+  if (theme) {
+    const planned = [...theme.useCaseLinks].sort().join(", ");
+    const actual = [...page.useCaseLinks].sort().join(", ");
+    if (planned !== actual) linkProblems.push(`useCaseLinks are [${actual}] but lib/unit-studies/themes.ts picks [${planned}] for "${page.slug}"`);
+  }
   page.useCaseLinks.forEach((href, i) => {
     const route = path.join(REPO_ROOT, "app", ...href.split("/").filter(Boolean), "page.tsx");
     if (!fs.existsSync(route)) linkProblems.push(`useCaseLinks.${i}: "${href}" is not a page in app/`);
@@ -334,7 +343,9 @@ async function main() {
   };
 
   for (const problem of registryProblems()) failHard(`theme registry: ${problem}`);
+  const pickedUseCases = new Set(THEMES.flatMap((t) => t.useCaseLinks));
   for (const s of SITUATIONS) {
+    if (!pickedUseCases.has(s.href)) failHard(`theme registry: no theme picks the use case page ${s.href}`);
     if (!(s.slug in SITUATION_COPY)) failHard(`situation "${s.slug}" is missing from SITUATION_COPY in scripts/check-unit-studies.ts`);
   }
 

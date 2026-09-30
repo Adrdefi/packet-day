@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 
 export default function UnitStudiesHubPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-cream">
+    <div className="min-h-screen flex flex-col bg-cream-deep">
       <PublicHeader />
 
       <main className="flex-1">

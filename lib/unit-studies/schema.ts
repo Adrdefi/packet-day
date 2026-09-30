@@ -35,6 +35,8 @@ export const unitStudyPageSchema = z
         keyword: text,
         inputUsed: text,
         season: z.enum(["fall", "winter", "spring", "summer", "evergreen"]),
+        /** True for a name that keeps its capitals mid sentence ("Thanksgiving", "Ancient Egypt"). */
+        properNoun: z.boolean().optional(),
       })
       .strict(),
     meta: z
@@ -91,7 +93,7 @@ export const unitStudyPageSchema = z
       .strict(),
     faqs: z.array(z.object({ q: text, a: text }).strict()).length(6),
     related: z.array(z.string()).max(3),
-    useCaseLinks: z.array(z.string()).min(1).max(2),
+    useCaseLinks: z.array(z.string()).min(2).max(3),
     testimonialId: z.string().optional(),
     factsToVerify: z.array(
       z.object({ claim: text, source: z.string().optional(), verified: z.boolean() }).strict()

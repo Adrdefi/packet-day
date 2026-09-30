@@ -23,6 +23,7 @@ import {
   pricingLine,
   primaryCtaLabel,
   sampleLabel,
+  themeInSentence,
   signupHref,
   updatedDate,
 } from "@/lib/unit-studies/format";
@@ -83,7 +84,7 @@ export default async function UnitStudyPage({ params }: Params) {
 
   const cover = coverOf(page);
   const updated = updatedDate(page);
-  const themeLower = page.theme.name.toLowerCase();
+  const themeLower = themeInSentence(page);
   const article = indefiniteArticle(themeLower);
   const visibleSlugs = new Set(getVisibleUnitStudies().map((entry) => entry.slug));
   const related = page.related
@@ -94,7 +95,7 @@ export default async function UnitStudyPage({ params }: Params) {
     .filter((situation) => situation !== undefined);
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream">
+    <div className="min-h-screen flex flex-col bg-cream-deep">
       <JsonLd data={buildUnitStudyGraph(page)} />
       <JsonLd data={buildUnitStudyFaqJsonLd(page)} />
 
@@ -103,7 +104,7 @@ export default async function UnitStudyPage({ params }: Params) {
 
       <main className="flex-1">
         {/* a + b: H1, answer capsule, byline, then the cover and CTAs */}
-        <section className="px-6 pt-12 pb-16 md:pt-20 md:pb-20 bg-cream">
+        <section className="px-6 pt-12 pb-16 md:pt-20 md:pb-20 bg-cream-deep">
           <div className="max-w-5xl mx-auto grid gap-10 md:grid-cols-[1fr_minmax(0,22rem)] md:items-center">
             <div>
               <h1 className="font-display text-4xl md:text-5xl font-bold text-dark leading-tight mb-6">
@@ -207,7 +208,7 @@ export default async function UnitStudyPage({ params }: Params) {
         {/* e, f: character and learning */}
         <SituationTextSection
           content={{ heading: page.characterSection.heading, paragraphs: paragraphs(page.characterSection.body) }}
-          bgClassName="bg-cream"
+          bgClassName="bg-cream-deep"
         />
         <SituationTextSection
           content={{ heading: page.learning.heading, paragraphs: paragraphs(page.learning.body) }}
@@ -232,7 +233,7 @@ export default async function UnitStudyPage({ params }: Params) {
         {/* h: Natalie's note */}
         <SituationTextSection
           content={{ heading: "A note from Natalie", paragraphs: paragraphs(page.natalieNote.body) }}
-          bgClassName="bg-cream"
+          bgClassName="bg-cream-deep"
         />
 
         {/* i: FAQ, every answer in the HTML and always visible */}
