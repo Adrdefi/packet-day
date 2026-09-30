@@ -46,17 +46,13 @@ Use these exact font pairings. Do not substitute.
 | Body / UI | **Nunito** | 400, 600, 700 | Paragraphs, buttons, labels, form inputs, navigation |
 
 **Loading fonts in Next.js / React:**
+The app self hosts both fonts with `next/font/local` (files and OFL licenses in `app/fonts/`, set up in `app/layout.tsx`), so builds never download from Google:
 ```jsx
-import { Nunito, Fraunces } from 'next/font/google';
+import localFont from 'next/font/local';
 
-const nunito = Nunito({
-  subsets: ['latin'],
+const nunito = localFont({
   variable: '--font-nunito',
-});
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
+  src: [{ path: './fonts/nunito-latin.woff2', weight: '400', style: 'normal' } /* ... */],
 });
 ```
 

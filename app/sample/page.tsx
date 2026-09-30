@@ -9,7 +9,6 @@ import TestimonialCard from "@/components/landing/TestimonialCard";
 import SampleFlipbook from "@/components/sample/SampleFlipbook";
 import GradeToggle from "@/components/sample/GradeToggle";
 import ThemeSignupForm from "@/components/sample/ThemeSignupForm";
-import StickySampleCta from "@/components/sample/StickySampleCta";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, ANDY_PATH } from "@/lib/site";
 import { GENERATION_TIME_TEXT, HOURS_RANGE_TEXT, PAGE_RANGE_TEXT } from "@/lib/situations/figures";
 import { buildFaqJsonLd } from "@/lib/situations/faq-schema";
@@ -17,7 +16,6 @@ import { PLANS } from "@/lib/stripe";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { coverOf, gallerySrc, getLiveUnitStudies } from "@/lib/unit-studies/loader";
 import { pricingLine } from "@/lib/unit-studies/format";
-import { sampleSignupHref } from "@/lib/sample/links";
 import {
   DAY_STEPS,
   DEFAULT_GRADE,
@@ -181,14 +179,15 @@ export default function SamplePage() {
 
         {/* Meet Orbit */}
         <section className="px-6 py-20 bg-cream-deep">
-          <div className="max-w-5xl mx-auto grid gap-10 md:grid-cols-[minmax(0,16rem)_1fr] md:items-center">
-            <div className="mx-auto w-48 md:w-full overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm">
+          <div className="max-w-5xl mx-auto grid gap-8 md:grid-cols-[23.5rem_1fr] md:gap-12 md:items-center">
+            {/* Orbit on her own, from the packet's cover art. Above the heading on mobile, left of it on desktop. */}
+            <div className="mx-auto w-[17rem] md:w-full overflow-hidden rounded-3xl border border-border bg-white p-3 shadow-sm">
               <Image
-                src={SAMPLE_PAGES[13].src}
-                alt={SAMPLE_PAGES[13].alt}
-                width={PAGE_WIDTH}
-                height={PAGE_HEIGHT}
-                sizes="(min-width: 768px) 256px, 192px"
+                src="/sample/orbit.png"
+                alt="Orbit the otter astronaut in a silver spacesuit, holding a ringed planet."
+                width={742}
+                height={741}
+                sizes="(min-width: 768px) 352px, 248px"
                 loading="lazy"
                 className="h-auto w-full"
               />
@@ -329,12 +328,6 @@ export default function SamplePage() {
       </main>
 
       <Footer />
-      <StickySampleCta
-        heroId={HERO_ID}
-        endId={FINAL_CTA_ID}
-        href={sampleSignupHref("sample-sticky")}
-        label="Make one for your kid, free"
-      />
     </div>
   );
 }

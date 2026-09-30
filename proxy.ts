@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { safeNext } from "@/lib/safeNext";
+import { authRouteRedirectPath } from "@/lib/authRouteRedirect";
 
 const PROTECTED = ["/onboarding", "/dashboard", "/generate"];
 const AUTH_ROUTES = ["/login", "/signup", "/check-email"];
@@ -57,9 +58,10 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Authenticated users don't need to see auth pages
+  // Authenticated users don't need to see auth pages. A safe `next` wins
+  // (e.g. /generate?theme=... from /sample), otherwise /dashboard.
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL(authRouteRedirectPath(req.nextUrl.searchParams), req.url));
   }
 
   // Dashboard requires onboarding to be complete. Redirect incomplete

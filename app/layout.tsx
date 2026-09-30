@@ -1,22 +1,43 @@
 import type { Metadata } from "next";
-import { Nunito, Fraunces } from "next/font/google";
+import localFont from "next/font/local";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/site";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
 import "./globals.css";
 
-const nunito = Nunito({
+// Self-hosted (app/fonts/, SIL Open Font License 1.1, license files alongside)
+// so builds never download from Google. These are the same latin files
+// next/font/google served, and each is variable, so one file covers every
+// weight. The weight/style entries repeat the old Google setup one for one
+// (Nunito 400 to 800, Fraunces 400/600/700/900 upright and italic), so the
+// browser picks exactly the same faces as before.
+// Written out in full: next/font needs literal options, not computed ones.
+const nunito = localFont({
   variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+  src: [
+    { path: "./fonts/nunito-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/nunito-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/nunito-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/nunito-latin.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/nunito-latin.woff2", weight: "800", style: "normal" },
+  ],
+  adjustFontFallback: "Arial",
 });
 
-const fraunces = Fraunces({
+const fraunces = localFont({
   variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
   display: "swap",
-  style: ["normal", "italic"],
+  src: [
+    { path: "./fonts/fraunces-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/fraunces-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/fraunces-latin.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/fraunces-latin.woff2", weight: "900", style: "normal" },
+    { path: "./fonts/fraunces-italic-latin.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/fraunces-italic-latin.woff2", weight: "600", style: "italic" },
+    { path: "./fonts/fraunces-italic-latin.woff2", weight: "700", style: "italic" },
+    { path: "./fonts/fraunces-italic-latin.woff2", weight: "900", style: "italic" },
+  ],
+  adjustFontFallback: "Times New Roman",
 });
 
 export const metadata: Metadata = {
