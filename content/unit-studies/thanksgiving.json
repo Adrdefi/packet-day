@@ -1,6 +1,6 @@
 {
   "slug": "thanksgiving",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Thanksgiving",
     "keyword": "thanksgiving unit study",
@@ -127,7 +127,7 @@
     }
   ],
   "natalieNote": {
-    "body": "[NATALIE: Do you do anything around Thanksgiving in your homeschool, like a harvest day, a Mayflower read aloud, or learning about the Wampanoag with Oliver and Vivian? One or two real details from your house would make this note.]",
+    "body": "Our big Thanksgiving tradition with the kids is the Thankful Tree. We cut out paper leaves in different fall colors.\n\nThrough the week leading up to Thanksgiving, we write something we're thankful for on each leaf and glue it to the tree.\n\nSome leaves are sweet, like \"I am thankful for my family.\" Some are fun, like one of Oliver's: \"I am thankful for pepperoni pizza.\"",
     "basedOn": "natalie-supplied"
   },
   "faqs": [
@@ -233,5 +233,7 @@
       "verified": true
     }
   ],
-  "dateModified": "2026-09-29"
+  "natalieReviewedOn": "2026-09-30",
+  "datePublished": "2026-09-30",
+  "dateModified": "2026-09-30"
 }

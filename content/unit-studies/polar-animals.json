@@ -1,6 +1,6 @@
 {
   "slug": "polar-animals",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Polar animals",
     "keyword": "polar animals unit study",
@@ -227,5 +227,7 @@
       "verified": true
     }
   ],
-  "dateModified": "2026-09-29"
+  "natalieReviewedOn": "2026-09-30",
+  "datePublished": "2026-09-30",
+  "dateModified": "2026-09-30"
 }
