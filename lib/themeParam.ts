@@ -18,6 +18,12 @@ export function cleanThemeParam(raw: string | null | undefined): string | null {
   return cleaned || null;
 }
 
+/** The cleaned theme inside a /generate?theme=... path (e.g. signup's `next`), or null. */
+export function themeFromGeneratePath(path: string | null | undefined): string | null {
+  if (!path || !(path === "/generate" || path.startsWith("/generate?"))) return null;
+  return cleanThemeParam(new URLSearchParams(path.slice("/generate".length)).get("theme"));
+}
+
 /** "/generate?theme=dinosaurs", or plain "/generate" with no usable theme. */
 export function generateHrefForTheme(raw: string | null | undefined): string {
   const theme = cleanThemeParam(raw);

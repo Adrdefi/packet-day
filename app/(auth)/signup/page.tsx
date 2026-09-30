@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 import { safeNext } from "@/lib/safeNext";
 import { signupSource } from "@/lib/signupSource";
+import { themeFromGeneratePath } from "@/lib/themeParam";
 
 // ─── Password strength ────────────────────────────────────────────────────────
 
@@ -87,7 +88,14 @@ function SignupForm() {
       ? `${window.location.origin}/auth/callback?next=/checkout-redirect%3Fplan%3D${plan}`
       : `${window.location.origin}/auth/callback`;
 
-    track("signup_started", { plan: plan ?? "free", ...(from ? { from } : {}) });
+    // /sample CTAs (from=sample-...) also log the theme the parent typed, taken
+    // from `next` and cleaned the same way /generate cleans it. Other pages don't.
+    const sampleTheme = from?.startsWith("sample-") ? themeFromGeneratePath(nextPath) : null;
+    track("signup_started", {
+      plan: plan ?? "free",
+      ...(from ? { from } : {}),
+      ...(sampleTheme ? { theme: sampleTheme } : {}),
+    });
 
     const { error: signupError } = await supabase.auth.signUp({
       email,

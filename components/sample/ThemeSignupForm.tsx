@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { cleanThemeParam } from "@/lib/themeParam";
 import { sampleSignupHref } from "@/lib/sample/links";
 
-/** Longest theme shown inside the button before it is shortened. */
-const BUTTON_THEME_MAX = 28;
+/** Longest theme named in the button. Longer ones still carry through to `next`. */
+const BUTTON_THEME_MAX = 24;
 
 interface Props {
   /** The ?from= value for signup tracking, e.g. "sample-hero". */
   from: string;
   inputId: string;
-  /** "Free is 1 packet a month. No card needed." Left out where a full pricing line follows. */
+  /** "1 free packet every month. No card needed." */
   freeLine?: string;
   align?: "left" | "center";
 }
@@ -22,8 +22,6 @@ export default function ThemeSignupForm({ from, inputId, freeLine, align = "left
   const router = useRouter();
   const [theme, setTheme] = useState("");
   const cleaned = cleanThemeParam(theme);
-  const shown =
-    cleaned && cleaned.length > BUTTON_THEME_MAX ? `${cleaned.slice(0, BUTTON_THEME_MAX).trim()}…` : cleaned;
 
   return (
     <form
@@ -54,9 +52,18 @@ export default function ThemeSignupForm({ from, inputId, freeLine, align = "left
         type="submit"
         className="mt-3 w-full rounded-full bg-sage px-8 py-4 text-base font-bold text-cream shadow-sm transition-colors hover:bg-sage-dark break-words"
       >
-        {shown ? `Make a free ${shown} packet` : "Make one for your kid, free"}
+        {!cleaned
+          ? "Make one for your kid, free"
+          : cleaned.length > BUTTON_THEME_MAX
+            ? "Make my free packet"
+            : `Make a free ${cleaned} packet`}
       </button>
-      {freeLine && <p className="mt-3 text-sm font-semibold text-sage-dark">{freeLine}</p>}
+      {freeLine && (
+        // Centered under the button on mobile; lined up with the button's edge on desktop.
+        <p className={`mt-3 text-sm font-semibold text-sage-dark text-center ${align === "center" ? "" : "md:text-left"}`}>
+          {freeLine}
+        </p>
+      )}
     </form>
   );
 }

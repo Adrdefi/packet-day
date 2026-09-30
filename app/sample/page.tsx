@@ -53,7 +53,7 @@ const MAX_UNIT_STUDIES = 6;
 const SHOWN_TESTIMONIALS = ["chanty", "bridget-j", "barbara-r"];
 
 const freeCount = PLANS.free.packetsPerMonth;
-const FREE_LINE = `Free is ${freeCount} packet${freeCount === 1 ? "" : "s"} a month. No card needed.`;
+const FREE_LINE = `${freeCount} free packet${freeCount === 1 ? "" : "s"} every month. No card needed.`;
 
 const FAQS = [
   {
@@ -184,7 +184,7 @@ export default function SamplePage() {
             <div className="mx-auto w-[17rem] md:w-full overflow-hidden rounded-3xl border border-border bg-white p-3 shadow-sm">
               <Image
                 src="/sample/orbit.png"
-                alt="Orbit the otter astronaut in a silver spacesuit, holding a ringed planet."
+                alt="Orbit the otter astronaut in a silver spacesuit, reaching for a ringed planet."
                 width={742}
                 height={741}
                 sizes="(min-width: 768px) 352px, 248px"
@@ -321,7 +321,7 @@ export default function SamplePage() {
             <p className="mb-10 text-lg text-dark/70 leading-relaxed">
               Tell us what they love right now. We build a whole school day around it in {GENERATION_TIME_TEXT}.
             </p>
-            <ThemeSignupForm from="sample-footer" inputId="sample-theme-footer" align="center" />
+            <ThemeSignupForm from="sample-footer" inputId="sample-theme-footer" freeLine={FREE_LINE} align="center" />
             <p className="mt-4 text-sm font-semibold text-sage-dark">{pricingLine()}</p>
           </div>
         </section>
