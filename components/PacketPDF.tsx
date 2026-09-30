@@ -153,12 +153,36 @@ function worksheetAnswerLines(band: 'K-2' | '3-5' | '6-8'): number {
 // ─── Text helpers ─────────────────────────────────────────────────────────────
 
 /**
- * Rounds a duration up to the nearest 10 minutes for "at a glance" display
- * only (Today at a Glance schedule rows) — never the underlying data, never
- * the exact duration shown in an activity's own header.
+ * Joins a fill-in expression like "___ x ___ = ___" with no-break spaces so
+ * a line can't wrap in the middle of it ("___ x" on one line, "___ = ___"
+ * on the next). Only runs of blanks and math operators are touched.
  */
-function roundUpToNearestTen(minutes: number): number {
-  return Math.ceil(minutes / 10) * 10;
+function keepBlankExpressionsTogether(text: string): string {
+  return text.replace(/_{2,}(?:[ \t]*[x\u00D7*+\-\u2212\u00F7/=][ \t]*_{2,})+/g, (expression) =>
+    expression.replace(/[ \t]+/g, '\u00A0'),
+  );
+}
+
+/**
+ * Parent friendly answer lists. The generator separates answers with "||"
+ * (the same separator the prompt uses for instructions). A list of short
+ * answers reads "1) 933  2) 632  3) 312"; anything else just gets "; ".
+ */
+function formatAnswerList(text: string, numbered: boolean): string {
+  if (!text.includes('||')) return text;
+  const parts = text.split('||').map((part) => part.trim()).filter(Boolean);
+  return numbered
+    ? parts.map((part, i) => `${i + 1}) ${part}`).join('   ')
+    : parts.join('; ');
+}
+
+/** Drops every sentence that mentions an answer key. */
+function withoutAnswerKeySentences(text: string): string {
+  const sentences = text.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) ?? [];
+  return sentences
+    .filter((sentence) => !/answer\s*keys?/i.test(sentence))
+    .join('')
+    .trim();
 }
 
 /** First name only, for a childName that turns out to contain more than one word. */
@@ -385,6 +409,17 @@ function generateWordSearch(
 const FOOTER_BOTTOM = 20;
 const RENDER_PROP_Y_OFFSET = 86.42;
 
+// Framed pages (cover, certificate) draw their gold border inside the page
+// edge, where FOOTER_BOTTOM would put the footer text right on the lines.
+// Their frame insets live here so the footer can sit FRAMED_FOOTER_GAP above
+// the inner frame line; see ChildPageFooter's frameInset prop.
+const COVER_FRAME = { outer: 16, inner: 22 } as const;
+const CERT_FRAME = { outer: 20, inner: 27 } as const;
+const FRAMED_FOOTER_GAP = 8;
+
+// Corner mascot on the Today at a Glance page.
+const NOTES_MASCOT = { top: 40, right: 40, size: 110 } as const;
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -398,10 +433,10 @@ const styles = StyleSheet.create({
   // ── Cover: decorative frame ─────────────────────────────────────────────────
   coverFrameOuter: {
     position: 'absolute',
-    top: 16,
-    bottom: 16,
-    left: 16,
-    right: 16,
+    top: COVER_FRAME.outer,
+    bottom: COVER_FRAME.outer,
+    left: COVER_FRAME.outer,
+    right: COVER_FRAME.outer,
     borderWidth: 2,
     borderColor: color.honey,
     borderRadius: 4,
@@ -409,10 +444,10 @@ const styles = StyleSheet.create({
   },
   coverFrameInner: {
     position: 'absolute',
-    top: 22,
-    bottom: 22,
-    left: 22,
-    right: 22,
+    top: COVER_FRAME.inner,
+    bottom: COVER_FRAME.inner,
+    left: COVER_FRAME.inner,
+    right: COVER_FRAME.inner,
     borderWidth: 1,
     borderColor: color.honey,
     borderRadius: 3,
@@ -1059,10 +1094,14 @@ const styles = StyleSheet.create({
     color: color.textSecondary,
     marginBottom: 4,
   },
+  // Writing room above the line, and a gap before the trailing fun fact box
+  // (Draw & Solve's own page now ends right after this line).
   mathAnswerLine: {
     borderBottomWidth: 1.5,
     borderBottomStyle: 'dotted' as const,
     borderBottomColor: color.answerRule,
+    marginTop: 18,
+    marginBottom: 14,
   },
 
   // ── Puzzle break (word search) ───────────────────────────────────────────────
@@ -1121,10 +1160,10 @@ const styles = StyleSheet.create({
   },
   certFrameOuter: {
     position: 'absolute',
-    top: 20,
-    bottom: 20,
-    left: 20,
-    right: 20,
+    top: CERT_FRAME.outer,
+    bottom: CERT_FRAME.outer,
+    left: CERT_FRAME.outer,
+    right: CERT_FRAME.outer,
     borderWidth: 3,
     borderColor: color.honey,
     borderRadius: 6,
@@ -1132,10 +1171,10 @@ const styles = StyleSheet.create({
   },
   certFrameInner: {
     position: 'absolute',
-    top: 27,
-    bottom: 27,
-    left: 27,
-    right: 27,
+    top: CERT_FRAME.inner,
+    bottom: CERT_FRAME.inner,
+    left: CERT_FRAME.inner,
+    right: CERT_FRAME.inner,
     borderWidth: 1.5,
     borderColor: color.honey,
     borderRadius: 4,
@@ -1250,11 +1289,17 @@ const styles = StyleSheet.create({
   },
   mascotImageNotes: {
     position: 'absolute',
-    top: 40,
-    right: 40,
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    top: NOTES_MASCOT.top,
+    right: NOTES_MASCOT.right,
+    width: NOTES_MASCOT.size,
+    height: NOTES_MASCOT.size,
+    borderRadius: NOTES_MASCOT.size / 2,
+  },
+  // Tall enough (from the 48pt page padding) to end 10pt below the mascot,
+  // and kept clear of it on the right.
+  notesHeaderWithMascot: {
+    minHeight: NOTES_MASCOT.top + NOTES_MASCOT.size + 10 - 48,
+    paddingRight: NOTES_MASCOT.size + NOTES_MASCOT.right - 48 + 8,
   },
   sectionLabel: {
     ...typeStyle(typeScale.sectionLabel),
@@ -1491,7 +1536,7 @@ function CoverPage({
 
   return (
     <Page size="LETTER" style={styles.coverPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} frameInset={COVER_FRAME.inner} />
 
       {/* Decorative border frames */}
       <View style={styles.coverFrameOuter} />
@@ -1809,7 +1854,7 @@ function MathSections({
           <View key={i} style={styles.mathCalcCell}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Text style={styles.mathCalcNumber}>{i + 1}.</Text>
-              <Text style={[styles.mathCalcEquation, { fontSize: bandTable[band].quickCalcSize }]}>{prob}</Text>
+              <Text style={[styles.mathCalcEquation, { fontSize: bandTable[band].quickCalcSize }]}>{keepBlankExpressionsTogether(prob)}</Text>
             </View>
             <View style={styles.mathCalcAnswerLine} />
           </View>
@@ -1825,7 +1870,7 @@ function MathSections({
           minPresenceAhead={drawAndSolve === '' && i === wordProblems.length - 1 ? trailingReserve : undefined}
           style={[styles.mathWordBox, { flexGrow: 1, flexBasis: 'auto' }]}
         >
-          <Text style={[styles.mathWordText, { fontSize: bandTable[band].bodySize }]}>{prob}</Text>
+          <Text style={[styles.mathWordText, { fontSize: bandTable[band].bodySize }]}>{keepBlankExpressionsTogether(prob)}</Text>
           <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
             <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
             <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
@@ -1836,15 +1881,27 @@ function MathSections({
       {/* Draw & Solve — already wrap={false} as a whole unit (chunk 4), so
           it's a safe minPresenceAhead anchor despite the stretch drawBox
           inside it: unlike OpenWorkspaceTemplate's writing-lines/coloring
-          blocks, this one was already atomic before chunk 8 touched it. */}
+          blocks, this one was already atomic before chunk 8 touched it.
+
+          The label lives INSIDE the atomic block, so the two always move
+          together: the block either fits under the word problems or starts
+          the next page with its label on top. As a separate element before
+          the block, the label could stay at the bottom of the word problems
+          page while the block moved on. (A forced page break isn't used:
+          react-pdf ignores `break` on this experimentalPagination page,
+          tested on both the label Text and this View.)
+
+          The block claims its page's spare height, so the drawing box has no
+          maxHeight: capped at 340pt it left that spare height as an empty
+          band under "My answer". */}
       {drawAndSolve !== '' && (
         <>
-          <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Draw & solve</Text>
           <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 1.4, flexBasis: 'auto' }}>
+            <Text style={[styles.mathSectionLabel, { color: colors.label }]}>Draw & solve</Text>
             <View style={styles.mathDrawPromptBubble}>
-              <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{drawAndSolve}</Text>
+              <Text style={[styles.mathDrawPromptText, { fontSize: bandTable[band].bodySize }]}>{keepBlankExpressionsTogether(drawAndSolve)}</Text>
             </View>
-            <View style={[styles.mathDrawBox, { minHeight: bandTable[band].openAreaMinHeight, flexGrow: 1.4, flexBasis: 'auto', maxHeight: 340 }]}>
+            <View style={[styles.mathDrawBox, { minHeight: bandTable[band].openAreaMinHeight, flexGrow: 1.4, flexBasis: 'auto' }]}>
               <Text style={styles.mathDrawBoxLabel}>Draw here</Text>
             </View>
             <Text style={styles.mathAnswerLineLabel}>My answer:</Text>
@@ -1871,15 +1928,29 @@ function MathSections({
 // `inset` matches the host page's own content padding so the footer sits at
 // that page's content edge rather than floating at a value borrowed from a
 // different page's margins.
+//
+// `frameInset` is for pages with a decorative border (cover, certificate):
+// the inner frame line's distance from the page edge. The footer then sits
+// FRAMED_FOOTER_GAP above that line instead of at FOOTER_BOTTOM, which is
+// where the border runs.
 
-function ChildPageFooter({ hasParentSheet, inset }: { hasParentSheet: boolean; inset: number }) {
+function ChildPageFooter({
+  hasParentSheet,
+  inset,
+  frameInset,
+}: {
+  hasParentSheet: boolean;
+  inset: number;
+  frameInset?: number;
+}) {
+  const bottom = frameInset === undefined ? FOOTER_BOTTOM : frameInset + FRAMED_FOOTER_GAP;
   return (
     <>
-      <Text style={[styles.footerText, styles.childPageFooterLeft, { left: inset }]} fixed>
+      <Text style={[styles.footerText, styles.childPageFooterLeft, { left: inset, bottom }]} fixed>
         Made with love by Packet Day · packetday.com
       </Text>
       <Text
-        style={[styles.footerText, styles.childPageFooterRight, { right: inset }]}
+        style={[styles.footerText, styles.childPageFooterRight, { right: inset, bottom: bottom - RENDER_PROP_Y_OFFSET }]}
         fixed
         render={({ pageNumber, totalPages }) =>
           `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
@@ -1992,24 +2063,39 @@ function WorksheetTemplate({
         ) : (
           <>
             <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>How to do it</Text>
-            {activity.instructions.map((step, i) => (
-              <View
-                wrap={false}
-                key={i}
-                minPresenceAhead={i === activity.instructions.length - 1 ? trailingReserve : undefined}
-                style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
-              >
-                <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-                  <QuestionBullet index={i} band={band} colors={colors} />
-                  <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+            {(() => {
+              const question = (step: string, i: number, reserve?: number) => (
+                <View
+                  wrap={false}
+                  key={i}
+                  minPresenceAhead={reserve}
+                  style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
+                >
+                  <View style={[styles.instructionRow, { marginBottom: 2 }]}>
+                    <QuestionBullet index={i} band={band} colors={colors} />
+                    <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+                  </View>
+                  <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
+                    {Array.from({ length: answerLines }, (_, j) => (
+                      <View key={j} style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+                    ))}
+                  </View>
                 </View>
-                <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: answerLines * bandTable[band].answerLinePitch * 1.75 }]}>
-                  {Array.from({ length: answerLines }, (_, j) => (
-                    <View key={j} style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
-                  ))}
-                </View>
-              </View>
-            ))}
+              );
+              const steps = activity.instructions;
+              if (steps.length < 2) return steps.map((step, i) => question(step, i, trailingReserve));
+              // The last two questions move as one unit, so the last one can
+              // never land alone at the top of an otherwise half blank page.
+              return (
+                <>
+                  {steps.slice(0, -2).map((step, i) => question(step, i))}
+                  <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 2, flexBasis: 'auto' }}>
+                    {question(steps[steps.length - 2], steps.length - 2)}
+                    {question(steps[steps.length - 1], steps.length - 1)}
+                  </View>
+                </>
+              );
+            })()}
           </>
         )}
 
@@ -2083,23 +2169,37 @@ function ReadingTemplate({
         {questions.length > 0 && (
           <Text minPresenceAhead={90} style={[styles.instructionsLabel, { color: colors.label }]}>Comprehension questions</Text>
         )}
-        {questions.map((step, i) => (
-          <View
-            wrap={false}
-            key={i}
-            minPresenceAhead={i === questions.length - 1 ? trailingReserve : undefined}
-            style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
-          >
-            <View style={[styles.instructionRow, { marginBottom: 2 }]}>
-              <QuestionBullet index={i} band={band} colors={colors} />
-              <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+        {(() => {
+          const question = (step: string, i: number, reserve?: number) => (
+            <View
+              wrap={false}
+              key={i}
+              minPresenceAhead={reserve}
+              style={[styles.questionBox, { flexGrow: 1, flexBasis: 'auto' }]}
+            >
+              <View style={[styles.instructionRow, { marginBottom: 2 }]}>
+                <QuestionBullet index={i} band={band} colors={colors} />
+                <Text minPresenceAhead={60} style={[styles.instructionText, { fontSize: bandTable[band].bodySize }]}>{sanitizeText(step)}</Text>
+              </View>
+              <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
+                <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+                <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
+              </View>
             </View>
-            <View style={[styles.answerLineGroup, { flexGrow: 1, marginTop: bandTable[band].answerLinePitch / 2, maxHeight: 2 * bandTable[band].answerLinePitch * 1.75 }]}>
-              <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
-              <View style={[styles.answerLineInBox, styles.answerLineGroupLine, { marginTop: 0 }]} />
-            </View>
-          </View>
-        ))}
+          );
+          if (questions.length < 2) return questions.map((step, i) => question(step, i, trailingReserve));
+          // Same pairing as WorksheetTemplate: the last two questions move
+          // together, so the last one never lands alone on a new page.
+          return (
+            <>
+              {questions.slice(0, -2).map((step, i) => question(step, i))}
+              <View wrap={false} minPresenceAhead={trailingReserve} style={{ flexGrow: 2, flexBasis: 'auto' }}>
+                {question(questions[questions.length - 2], questions.length - 2)}
+                {question(questions[questions.length - 1], questions.length - 1)}
+              </View>
+            </>
+          );
+        })()}
 
         {/* Fun fact */}
         {activity.fun_fact && <FunFactBox funFact={activity.fun_fact} band={band} />}
@@ -2192,7 +2292,7 @@ function OpenWorkspaceTemplate({
         {/* Response area */}
         {contentType === 'writing_prompt' && (
           <>
-            <Text minPresenceAhead={90} style={[styles.writingSpaceHeader, { color: colors.label }]}>My writing space</Text>
+            <Text minPresenceAhead={90} style={[styles.writingSpaceHeader, { color: colors.label }, activity.fun_fact ? { marginTop: 14 } : {}]}>My writing space</Text>
             <View style={[styles.answerLineGroup, { flexGrow: 1, flexBasis: 'auto', maxHeight: lineCount * bandTable[band].answerLinePitch * 1.5 }]}>
               {Array.from({ length: lineCount }, (_, i) => (
                 <View key={i} style={[styles.writingLine, styles.answerLineGroupLine, { marginBottom: 0 }]} />
@@ -2384,7 +2484,7 @@ function CertificatePage({
 
   return (
     <Page size="LETTER" style={styles.certificatePage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} frameInset={CERT_FRAME.inner} />
 
       {/* Decorative frames */}
       <View style={styles.certFrameOuter} />
@@ -2459,7 +2559,11 @@ function ParentNotesPage({
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
   const hasAnswerKeys = activities.some((a) => !!a.answer_key);
-  const noteBody = sanitizeText(parentNotes) || parentNote(childName, theme);
+  // The generator's note sometimes says where answer keys are, and has
+  // gotten it wrong ("included with each activity"). The template states
+  // where they really are, so any sentence of the note about answer keys is
+  // dropped in favor of that one.
+  const noteBody = withoutAnswerKeySentences(sanitizeText(parentNotes)) || parentNote(childName, theme);
   const answerKeySentence = hasAnswerKeys
     ? ` Answer keys are on the last page: a separate parent sheet you don't need to print for ${childName}.`
     : '';
@@ -2471,10 +2575,14 @@ function ParentNotesPage({
         <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
       )}
 
-      <Text style={styles.notesPageTitle}>Today at a Glance</Text>
-      <Text style={[styles.notesPageSubtitle, { fontSize: bandTable[band].bodySize }]}>
-        {activities.length} activities  ·  {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
-      </Text>
+      {/* With a mascot, the header block reaches below the corner image so
+          the first summary row's duration can't run into it. */}
+      <View style={mascotImageUrl ? styles.notesHeaderWithMascot : undefined}>
+        <Text style={styles.notesPageTitle}>Today at a Glance</Text>
+        <Text style={[styles.notesPageSubtitle, { fontSize: bandTable[band].bodySize }]}>
+          {activities.length} activities  ·  {activities.reduce((s, a) => s + a.estimated_minutes, 0)} min total
+        </Text>
+      </View>
 
       <Text style={styles.sectionLabel}>Activity Summary</Text>
       {/* Spec section 6 — "Parent-sheet key stack", MAY STRETCH weight 1, no
@@ -2490,11 +2598,10 @@ function ParentNotesPage({
                 <Text style={{ fontFamily: 'Fraunces', fontWeight: 700 }}>{activity.subject}: </Text>
                 {activity.title}
               </Text>
-              {/* Rounded up to the nearest 10 min for at-a-glance scanning —
-                  never the exact figure from the underlying data (used
-                  as-is in the header total above and each activity's own
-                  page header). */}
-              <Text style={styles.summaryDuration}>{roundUpToNearestTen(activity.estimated_minutes)} min</Text>
+              {/* The same estimated_minutes each activity's own page header
+                  prints, so the two always agree (a rounded-up figure here
+                  used to read 30 min against a page that said 25). */}
+              <Text style={styles.summaryDuration}>{activity.estimated_minutes} min</Text>
             </View>
           );
         })}
@@ -2679,19 +2786,19 @@ function ParentAnswerSheetPage({ childName, activities }: { childName: string; a
                 <View style={styles.parentSheetMathStack}>
                   <Text style={styles.parentSheetAnswerBody}>
                     <Text style={styles.parentSheetAnswerLabel}>Quick calculations: </Text>
-                    {mathSections.quickCalculations}
+                    {formatAnswerList(mathSections.quickCalculations, true)}
                   </Text>
                   <Text style={styles.parentSheetAnswerBody}>
                     <Text style={styles.parentSheetAnswerLabel}>Word problems: </Text>
-                    {mathSections.wordProblems}
+                    {formatAnswerList(mathSections.wordProblems, false)}
                   </Text>
                   <Text style={styles.parentSheetAnswerBody}>
                     <Text style={styles.parentSheetAnswerLabel}>Draw and solve: </Text>
-                    {mathSections.drawAndSolve}
+                    {formatAnswerList(mathSections.drawAndSolve, false)}
                   </Text>
                 </View>
               ) : (
-                <Text style={styles.parentSheetAnswerBody}>{sanitizeText(activity.answer_key)}</Text>
+                <Text style={styles.parentSheetAnswerBody}>{formatAnswerList(sanitizeText(activity.answer_key), false)}</Text>
               )}
             </View>
           );

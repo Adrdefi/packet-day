@@ -174,7 +174,7 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
     "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
   },
   "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
-  "parent_notes": "Context for the parent. Plain text. No emoji."
+  "parent_notes": "Context for the parent. Plain text. No emoji. Do not say where the answer keys are; the packet adds that line itself."
 }
 
 Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring" | "puzzle_break"
