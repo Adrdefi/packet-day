@@ -14,7 +14,7 @@ const PAGES = [
   {
     path: "/sample",
     name: "Sample packet",
-    description: "A real, full length packet made for a real 3rd grader, answer key included.",
+    description: "Every page of a real outer space packet made for a grade 4 learner named Kai, answer key included, plus the same theme at grades 1 and 7.",
   },
   { path: "/pricing", name: "Pricing", description: "The Free and Unlimited plans." },
   { path: "/about", name: "About", description: "The homeschool family who built Packet Day." },

@@ -216,10 +216,12 @@ function SignupForm() {
         Already have an account?{" "}
         <Link
           href={(() => {
-            // Keep plan and from on the bounce to login, so its "create an
-            // account" link can send them back with both.
+            // Keep plan, next and from on the bounce to login, so login
+            // lands where signup would have and its "create an account"
+            // link can send them back with all three.
             const params = new URLSearchParams();
             if (plan) params.set("plan", plan);
+            if (nextPath) params.set("next", nextPath);
             if (from) params.set("from", from);
             const qs = params.toString();
             return qs ? `/login?${qs}` : "/login";

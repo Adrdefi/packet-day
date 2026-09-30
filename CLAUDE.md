@@ -25,7 +25,7 @@ Packet Day generates personalized, printable daily learning packets for homescho
 - ✅ "You made it. Let's build something good today."
 - ❌ "Your packet is ready."
 - ✅ "Aria's Ocean Adventure packet is ready to print!"
-- **Keep factual copy honest.** `/sample` features Noah, a real kid who is NOT Natalie's child.
+- **Keep factual copy honest.** `/sample` features Kai (grade 4), with Mia (grade 1) and Jonah (grade 7) in its grade toggle. None of them is Natalie's child. Label them as sample packets and never imply a real family used them unless Andy confirms it.
 - **Never add, edit, or mark testimonials as verified in `lib/testimonials.ts`** without Andy confirming the person and quote are real.
 
 ---

@@ -23,6 +23,11 @@ export const NATALIE_ANCHOR = "natalie-riggs";
 export const NATALIE_PATH = `/about#${NATALIE_ANCHOR}`;
 export const NATALIE_ID = `${SITE_URL}${NATALIE_PATH}`;
 
+/** Andy's element id on /about, matching Natalie's. His JSON-LD Person @id points at it too. */
+export const ANDY_ANCHOR = "andy-riggs";
+export const ANDY_PATH = `/about#${ANDY_ANCHOR}`;
+export const ANDY_ID = `${SITE_URL}${ANDY_PATH}`;
+
 /**
  * openGraph/twitter fields that app/layout.tsx sets at the root
  * (siteName/locale/type, card/site) — a page-level `openGraph` or `twitter`

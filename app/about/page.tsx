@@ -10,6 +10,8 @@ import {
   DEFAULT_TWITTER,
   DEFAULT_OG_IMAGE,
   NATALIE_ANCHOR,
+  ANDY_ANCHOR,
+  ANDY_ID,
   NATALIE_ID,
 } from "@/lib/site";
 
@@ -170,7 +172,7 @@ const AT_A_GLANCE: { label: string; value: ReactNode }[] = [
 ];
 
 const natalieId = NATALIE_ID;
-const andyId = `${SITE_URL}/about#andy-riggs`;
+const andyId = ANDY_ID;
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -398,7 +400,7 @@ export default function AboutPage() {
                 teacher, mom of two, and the reason Packet Day exists. She was our first user, and
                 she still is.
               </p>
-              <p>
+              <p id={ANDY_ANCHOR}>
                 <strong className="text-dark">Andy Riggs, Co-Founder and Developer.</strong> Andy
                 builds and runs the product. He made Packet Day to take pressure off Natalie&apos;s
                 hardest days and give the kids fun work they can do at their own pace.

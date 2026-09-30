@@ -128,6 +128,11 @@ function OnboardingContent() {
   // "Generate {child}'s First Packet" link is an explicit alternate action
   // the user chose on purpose and always goes to /generate.
   const nextPath = safeNext(searchParams.get("next"));
+  // The first packet button follows `next` only when it is /generate (for
+  // example /generate?theme=dinosaurs from /sample). safeNext has already
+  // limited it to a same site path.
+  const firstPacketHref =
+    nextPath && (nextPath === "/generate" || nextPath.startsWith("/generate?")) ? nextPath : "/generate";
 
   // Guards the effect below so the completion write + event fire at most
   // once per user, even if the effect re-runs (e.g. React Strict Mode).
@@ -345,7 +350,7 @@ function OnboardingContent() {
                 </p>
 
                 <Link
-                  href="/generate"
+                  href={firstPacketHref}
                   className="block w-full bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-sm mb-4"
                 >
                   Generate {savedChild.name}&apos;s First Packet →

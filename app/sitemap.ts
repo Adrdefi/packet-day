@@ -36,6 +36,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE_URL}/sample`,
+      // Rebuilt around Kai's outer space packet.
+      lastModified: new Date("2026-09-30"),
       changeFrequency: "monthly",
       priority: 0.7,
     },

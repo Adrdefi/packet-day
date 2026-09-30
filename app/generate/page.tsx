@@ -10,6 +10,7 @@ import Wordmark from "@/components/layout/Wordmark";
 import { isPaidStatus } from "@/lib/isPaid";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import { safeNext } from "@/lib/safeNext";
+import { cleanThemeParam } from "@/lib/themeParam";
 import UpgradeModal from "@/components/UpgradeModal";
 import PacketResultView, { type SavedPacket } from "@/components/packet/PacketResultView";
 
@@ -308,7 +309,8 @@ function GenerateContent() {
 
   // Form fields
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-  const [theme, setTheme] = useState("");
+  // A ?theme= link (from /sample, through signup) only fills the starting value.
+  const [theme, setTheme] = useState(() => cleanThemeParam(searchParams.get("theme")) ?? "");
   const [packetLength, setPacketLength] = useState<"half" | "full">("full");
   const [todayNote, setTodayNote] = useState("");
   const [error, setError] = useState("");

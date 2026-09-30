@@ -17,6 +17,7 @@ import StepArt from "@/components/landing/art/StepArt";
 import TomorrowArt from "@/components/landing/art/TomorrowArt";
 import LandingIcon, { type LandingIconName } from "@/components/landing/art/LandingIcon";
 import { TESTIMONIALS } from "@/lib/testimonials";
+import TestimonialCard from "@/components/landing/TestimonialCard";
 import { PLANS } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 
@@ -477,42 +478,13 @@ export default function Home() {
 
             <div className="grid sm:grid-cols-2 gap-6 mb-6 max-w-3xl mx-auto">
               {TESTIMONIALS.filter((t) => t.verified && !t.featured).map((t) => (
-                <div
-                  key={t.id}
-                  className="bg-white rounded-2xl p-7 border border-border flex flex-col sm:[&:last-child:nth-child(odd)]:col-span-2"
-                >
-                  <p className="text-dark/80 text-sm leading-relaxed mb-6 flex-1">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 mt-auto">
-                    <div className="w-10 h-10 rounded-full bg-sage flex items-center justify-center text-cream font-bold text-sm shrink-0">
-                      {t.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-dark text-sm">{t.name}</div>
-                      <div className="text-muted text-xs">{t.credential}</div>
-                    </div>
-                  </div>
-                </div>
+                <TestimonialCard key={t.id} testimonial={t} />
               ))}
             </div>
 
             {/* Highlighted testimonial — full width */}
             {TESTIMONIALS.filter((t) => t.verified && t.featured).map((t) => (
-              <div key={t.id} className="bg-sage rounded-2xl p-8 md:p-10">
-                <blockquote className="font-display text-xl md:text-2xl text-cream font-bold leading-snug mb-6">
-                  &ldquo;{t.quote}&rdquo;
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-cream/20 flex items-center justify-center text-cream font-bold shrink-0">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-cream">{t.name}</div>
-                    <div className="text-cream/70 text-sm">{t.credential}</div>
-                  </div>
-                </div>
-              </div>
+              <TestimonialCard key={t.id} testimonial={t} featured />
             ))}
           </div>
         </section>
