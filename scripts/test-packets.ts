@@ -12,6 +12,14 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "../lib/config";
+import {
+  TITLE_MAX_CHARS,
+  TITLE_MAX_WORDS,
+  buildTitleBrief,
+  isTitleStyle,
+  pickTitleStyle,
+  titleRejectionReason,
+} from "../lib/titleStyles";
 
 // ─── Inline the system prompt so this script is self-contained ────────────────
 // (Importing from the route would drag in Next.js server internals)
@@ -110,10 +118,22 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
 </coloring_page_rules>
 
+<title_rules>
+Write packet_title by following the title_brief in the user message.
+The title is a promise, and the packet must keep it:
+- packet_mission (the cover) sets up exactly what the title promises: the quest, the mystery, the challenge, the expedition, or the episode.
+- The reading passage story delivers it: the child and the mascot actually do the thing the title promises.
+- packet_celebration (the mascot's message on the reflection page) calls back to the title and tells the child the promise was kept.
+For the classic style, the promise is a great day exploring the theme.
+</title_rules>
+
 <output_schema>
 {
-  "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
+  "packet_title": "The title, written to the title_brief. Plain text, no emoji, no dashes.",
+  "title_style": "The style you actually used: quest | mystery | versus | expedition | episode | classic",
   "greeting": "2-3 sentences. Warm and direct to the child. Plain text. No emoji.",
+  "packet_mission": "2-3 sentences. The mascot gives the child a themed quest ('Your mission today is to...'). Direct address. Mascot's voice. Plain text. No emoji.",
+  "packet_celebration": "2-3 sentences. Mascot's victory message for the final page. References specific activities the child completed. Warm and celebratory. Plain text. No emoji.",
   "mascot_name": "Fun character name — no emoji",
   "mascot_description": "A cute cartoon [character] [action], [accessories], bright colors, simple clean lines, white background, kid-friendly illustration",
   "mascot_emoji_cluster": "5-6 emoji representing the theme — ONLY field that may contain emoji",
@@ -176,7 +196,7 @@ function validatePacket(parsed: Record<string, unknown>, gradeBand: string): Val
   const warnings: string[] = [];
 
   // ── Top-level text fields must be emoji-free ────────────────────────────────
-  const topFields = ["packet_title", "greeting", "daily_reflection", "parent_notes"] as const;
+  const topFields = ["packet_title", "greeting", "packet_mission", "packet_celebration", "daily_reflection", "parent_notes"] as const;
   for (const field of topFields) {
     const val = parsed[field];
     if (typeof val === "string" && hasEmoji(val)) {
@@ -306,6 +326,23 @@ function validatePacket(parsed: Record<string, unknown>, gradeBand: string): Val
 
 // ─── Generation ───────────────────────────────────────────────────────────────
 
+// Title checks: the code safety net's rules are failures, the prompt's
+// tighter length rules are warnings.
+function validateTitle(parsed: Record<string, unknown>, childName: string): { failures: string[]; warnings: string[] } {
+  const failures: string[] = [];
+  const warnings: string[] = [];
+  const title = parsed.packet_title;
+  const rejection = titleRejectionReason(title, childName);
+  if (rejection) failures.push(`packet_title ${rejection} (would fall back to classic): ${String(title ?? "")}`);
+  if (!isTitleStyle(parsed.title_style)) failures.push(`title_style not one of the six: ${String(parsed.title_style ?? "missing")}`);
+  if (typeof title === "string") {
+    if (title.length > TITLE_MAX_CHARS) warnings.push(`packet_title is ${title.length} characters (prompt asks for ${TITLE_MAX_CHARS} max)`);
+    if (title.trim().split(/\s+/).length > TITLE_MAX_WORDS) warnings.push(`packet_title is over ${TITLE_MAX_WORDS} words`);
+    if (/[-‐-―]/.test(title)) failures.push(`packet_title has a dash: ${title}`);
+  }
+  return { failures, warnings };
+}
+
 async function generateTestPacket(tc: TestCase, theme: string): Promise<Record<string, unknown>> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -333,6 +370,15 @@ All math must stay within the ${tc.gradeDisplay} difficulty band — do not go e
 Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
 </grade_reminders>
 
+${buildTitleBrief({
+  childName: tc.childName,
+  gradeLevel: tc.gradeLevel,
+  theme,
+  style: pickTitleStyle(null),
+  packetNumber: 1,
+  recentTitles: [],
+})}
+
 Create the packet now. Return only the JSON object.`;
 
   const response = await client.messages.create({
@@ -343,8 +389,9 @@ Create the packet now. Return only the JSON object.`;
     messages: [{ role: "user", content: userPrompt }],
   });
 
-  const content = response.content[0];
-  if (content.type !== "text") throw new Error("Non-text response from Claude");
+  // Thinking models put a thinking block first; the JSON is in the text block.
+  const content = response.content.find((b) => b.type === "text");
+  if (!content || content.type !== "text") throw new Error("Non-text response from Claude");
 
   const raw = content.text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
   const start = raw.indexOf("{");
@@ -408,13 +455,17 @@ async function main() {
       const parsed = await generateTestPacket(tc, theme);
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
       const result = validatePacket(parsed, tc.gradeBand);
+      const titleResult = validateTitle(parsed, tc.childName);
+      result.failures.push(...titleResult.failures);
+      result.warnings.push(...titleResult.warnings);
+      result.pass = result.failures.length === 0;
 
       const activities = Array.isArray(parsed.activities) ? parsed.activities as Record<string, unknown>[] : [];
       const readingAct = activities.find(a => a.content_type === "reading_passage");
       const mathAct = activities.find(a => (a.subject as string)?.toLowerCase().includes("math"));
 
       console.log(`\n  [${result.pass ? "PASS" : "FAIL"}] ${tc.gradeBand} — ${tc.childName} (${elapsed}s)`);
-      console.log(`  Title: ${String(parsed.packet_title ?? "").slice(0, 70)}`);
+      console.log(`  Title: ${String(parsed.packet_title ?? "").slice(0, 70)} (${String(parsed.title_style ?? "no style")})`);
       console.log(`  Activities: ${activities.length} | Content types: ${activities.map(a => a.content_type ?? "?").join(", ")}`);
 
       if (readingAct) {

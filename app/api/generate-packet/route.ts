@@ -11,6 +11,15 @@ import { renderAndCachePacketPdf, buildFilename } from "@/lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "@/components/PacketPDF";
 import { sendPacketReadyEmail } from "@/lib/resend";
 import { track } from "@vercel/analytics/server";
+import {
+  buildClassicTitle,
+  buildTitleBrief,
+  isTitleStyle,
+  normalizeTitleStyle,
+  pickTitleStyle,
+  titleRejectionReason,
+  type TitleStyle,
+} from "@/lib/titleStyles";
 
 // Lazy — only instantiated when the route is actually called
 function getAnthropic() {
@@ -144,9 +153,19 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
   GOOD: "A girl and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
 </coloring_page_rules>
 
+<title_rules>
+Write packet_title by following the title_brief in the user message.
+The title is a promise, and the packet must keep it:
+- packet_mission (the cover) sets up exactly what the title promises: the quest, the mystery, the challenge, the expedition, or the episode.
+- The reading passage story delivers it: the child and the mascot actually do the thing the title promises.
+- packet_celebration (the mascot's message on the reflection page) calls back to the title and tells the child the promise was kept.
+For the classic style, the promise is a great day exploring the theme.
+</title_rules>
+
 <output_schema>
 {
-  "packet_title": "[Name]'s [Theme] Adventure Day — plain text, no emoji",
+  "packet_title": "The title, written to the title_brief. Plain text, no emoji, no dashes.",
+  "title_style": "The style you actually used: quest | mystery | versus | expedition | episode | classic",
   "greeting": "2-3 sentences. Warm and direct to the child. Plain text. No emoji.",
   "packet_mission": "2-3 sentences. The mascot gives the child a themed quest ('Your mission today is to...'). Direct address. Mascot's voice. Plain text. No emoji.",
   "packet_celebration": "2-3 sentences. Mascot's victory message for the final page. References specific activities the child completed. Warm and celebratory. Plain text. No emoji.",
@@ -219,8 +238,9 @@ function buildUserPrompt(
   child: Child,
   theme: string,
   packetLength: "half" | "full",
-  specialNotes?: string,
-  date?: string
+  specialNotes: string | undefined,
+  date: string | undefined,
+  titleBrief: string
 ): string {
   const gradeDisplay =
     child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
@@ -261,6 +281,8 @@ Coloring scene for this grade: exactly ${coloringObjectCount} specific named obj
 All math must stay within the ${gradeDisplay} difficulty band — do not go easier or harder.
 Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
 </grade_reminders>
+
+${titleBrief}
 
 Create the packet now. Return only the JSON object.`;
 }
@@ -354,7 +376,7 @@ function extractFirstJSON(text: string): string | null {
 
 // ─── JSON parser ──────────────────────────────────────────────────────────────
 
-function parsePacketJSON(text: string): ParsedPacketContent {
+function parsePacketJSON(text: string, requestedStyle: TitleStyle): ParsedPacketContent {
   const cleaned = text
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
@@ -375,6 +397,9 @@ function parsePacketJSON(text: string): ParsedPacketContent {
   const result: ParsedPacketContent = {
     packet_title: parsed.packet_title,
     title: parsed.title,
+    // The model may switch styles if the requested one fits the theme badly;
+    // anything missing or outside the six falls back to what we asked for.
+    title_style: isTitleStyle(parsed.title_style) ? parsed.title_style : requestedStyle,
     activities: parsed.activities,
   };
 
@@ -601,12 +626,66 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Child not found." }, { status: 404 });
   }
 
+  // Title history for this child, read with the user's own session so RLS
+  // applies. Never fatal: a failed read just means no history (style picked
+  // as if the last one were classic, and no packet number).
+  let packetNumber: number | null = null;
+  let recentTitles: string[] = [];
+  let previousStyle: TitleStyle = "classic";
+  try {
+    const [countResult, recentResult] = await Promise.all([
+      supabase
+        .from("packets")
+        .select("id", { count: "exact", head: true })
+        .eq("child_id", child.id),
+      supabase
+        .from("packets")
+        .select("generated_content->packet_title, generated_content->title, generated_content->title_style")
+        .eq("child_id", child.id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+    if (countResult.error) {
+      console.error("[generate-packet] Packet count query failed:", countResult.error.message);
+    } else if (typeof countResult.count === "number") {
+      packetNumber = countResult.count + 1;
+    }
+    if (recentResult.error) {
+      console.error("[generate-packet] Recent titles query failed:", recentResult.error.message);
+    } else if (recentResult.data) {
+      const rows = recentResult.data as { packet_title: unknown; title: unknown; title_style: unknown }[];
+      recentTitles = rows
+        .map((r) => r.packet_title ?? r.title)
+        .filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+      if (rows.length > 0) previousStyle = normalizeTitleStyle(rows[0].title_style);
+    }
+  } catch (err) {
+    console.error(
+      "[generate-packet] Title history lookup threw:",
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+
+  // Episode needs a real number; without one, re-pick until it isn't episode.
+  let requestedStyle = pickTitleStyle(previousStyle);
+  while (requestedStyle === "episode" && packetNumber === null) {
+    requestedStyle = pickTitleStyle(previousStyle);
+  }
+
   const userPrompt = buildUserPrompt(
     child as Child,
     theme.trim(),
     typedPacketLength,
     specialNotes?.trim(),
-    date
+    date,
+    buildTitleBrief({
+      childName: child.name,
+      gradeLevel: child.grade_level,
+      theme: theme.trim(),
+      style: requestedStyle,
+      packetNumber,
+      recentTitles,
+    })
   );
 
   const stream = new ReadableStream({
@@ -633,7 +712,7 @@ export async function POST(req: NextRequest) {
 
         try {
           claudeCall = await callClaude(userPrompt, typedPacketLength, onToken);
-          generatedContent = parsePacketJSON(claudeCall.text);
+          generatedContent = parsePacketJSON(claudeCall.text, requestedStyle);
         } catch (err) {
           console.error("[generate-packet] Generation failed:", {
             message: err instanceof Error ? err.message : String(err),
@@ -657,6 +736,16 @@ export async function POST(req: NextRequest) {
           controller.close();
           return;
         }
+
+        // Safety net: a title the cover can't use is replaced with the classic
+        // title built in code. Logged after the insert, when there's an id.
+        const rejectedTitle = generatedContent.packet_title ?? generatedContent.title;
+        const titleProblem = titleRejectionReason(rejectedTitle, child.name);
+        if (titleProblem) {
+          generatedContent.packet_title = buildClassicTitle(child.name, theme.trim());
+          generatedContent.title_style = "classic";
+        }
+        if (packetNumber !== null) generatedContent.packet_number = packetNumber;
 
         const { data: savedPacket, error: insertError } = await supabase
           .from("packets")
@@ -701,6 +790,14 @@ export async function POST(req: NextRequest) {
 
         packetSaved = true;
         const packetId = savedPacket.id;
+        if (titleProblem) {
+          console.warn("[generate-packet] Replaced packet title with the classic fallback:", {
+            packetId,
+            reason: titleProblem,
+            rejectedTitle: rejectedTitle ?? null,
+            fallbackTitle: generatedContent.packet_title,
+          });
+        }
         const mascotDescription = generatedContent.mascot_description;
         const coloringScene = generatedContent.coloring_page?.coloring_scene ?? null;
 

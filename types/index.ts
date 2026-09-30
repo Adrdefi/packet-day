@@ -1,3 +1,5 @@
+import type { TitleStyle } from "@/lib/titleStyles";
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export type SubscriptionStatus = "free" | "pro" | "cancelled";
@@ -83,6 +85,10 @@ export interface PacketContent {
   title?: string;
   // New field name
   packet_title?: string;
+  /** Title style actually used (lib/titleStyles.ts). Missing on older packets, which count as "classic". */
+  title_style?: TitleStyle;
+  /** This child's lifetime packet count, including this one, stamped at generation. Missing on older packets. */
+  packet_number?: number;
   greeting?: string;
   mascot_name?: string;
   mascot_description?: string;
