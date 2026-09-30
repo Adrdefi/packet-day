@@ -16,6 +16,7 @@ import { PLANS } from "@/lib/stripe";
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { coverOf, gallerySrc, getLiveUnitStudies } from "@/lib/unit-studies/loader";
 import { pricingLine } from "@/lib/unit-studies/format";
+import { PLAN_PRICE } from "@/lib/plans";
 import {
   DAY_STEPS,
   DEFAULT_GRADE,
@@ -54,6 +55,9 @@ const SHOWN_TESTIMONIALS = ["chanty", "bridget-j", "barbara-r"];
 
 const freeCount = PLANS.free.packetsPerMonth;
 const FREE_LINE = `${freeCount} free packet${freeCount === 1 ? "" : "s"} every month. No card needed.`;
+
+// Closing line under the free line: only the paid plan, prices from lib/plans.ts.
+const UNLIMITED_LINE = `Want more? Unlimited is $${Math.round(PLAN_PRICE.yearly / 12)} a month billed annually or $${PLAN_PRICE.monthly} month to month.`;
 
 const FAQS = [
   {
@@ -322,7 +326,7 @@ export default function SamplePage() {
               Tell us what they love right now. We build a whole school day around it in {GENERATION_TIME_TEXT}.
             </p>
             <ThemeSignupForm from="sample-footer" inputId="sample-theme-footer" freeLine={FREE_LINE} align="center" />
-            <p className="mt-4 text-sm font-semibold text-sage-dark">{pricingLine()}</p>
+            <p className="mt-4 text-sm font-semibold text-sage-dark">{UNLIMITED_LINE}</p>
           </div>
         </section>
       </main>
