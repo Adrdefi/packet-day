@@ -101,8 +101,17 @@ body {
 }
 
 .animate-ticker-left:hover,
-.animate-ticker-right:hover {
+.animate-ticker-right:hover,
+.animate-ticker-left:focus-within,
+.animate-ticker-right:focus-within {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker-left,
+  .animate-ticker-right {
+    animation: none;
+  }
 }
 
 /* ─── Confetti Animation ──────────────────────────────────────────────────── */

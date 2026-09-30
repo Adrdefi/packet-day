@@ -3,6 +3,7 @@ import { getAllPosts } from "@/lib/blog";
 import { SITUATIONS } from "@/lib/situations/registry";
 import { SITUATION_UPDATED } from "@/lib/situations/sitemap-dates";
 import { SITE_URL } from "@/lib/site";
+import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
 
 // Not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
 // sitemap must always state the canonical production domain no matter which
@@ -82,5 +83,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...postPages, ...situationPages];
+  // Live pages only (never drafts, even on a preview build). The hub is
+  // listed only once there is at least one live page to list on it.
+  const liveUnitStudies = getLiveUnitStudies();
+  const unitStudyDate = (page: (typeof liveUnitStudies)[number]) => page.dateModified ?? page.datePublished!;
+  const unitStudyPages: MetadataRoute.Sitemap =
+    liveUnitStudies.length === 0
+      ? []
+      : [
+          {
+            url: `${BASE_URL}/unit-studies`,
+            lastModified: new Date(liveUnitStudies.map(unitStudyDate).sort().at(-1)!),
+            changeFrequency: "weekly",
+            priority: 0.7,
+          },
+          ...liveUnitStudies.map((page) => ({
+            url: `${BASE_URL}/unit-studies/${page.slug}`,
+            lastModified: new Date(unitStudyDate(page)),
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+          })),
+        ];
+
+  return [...staticPages, ...postPages, ...situationPages, ...unitStudyPages];
 }

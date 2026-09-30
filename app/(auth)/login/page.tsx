@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug } from "@/lib/plans";
 import { safeNext } from "@/lib/safeNext";
+import { signupSource } from "@/lib/signupSource";
 
 function LoginForm() {
   const router = useRouter();
@@ -28,6 +29,8 @@ function LoginForm() {
     const params = new URLSearchParams();
     if (plan) params.set("plan", plan);
     if (validatedNext) params.set("next", validatedNext);
+    const from = signupSource(searchParams.get("from"));
+    if (from) params.set("from", from);
     const qs = params.toString();
     return qs ? `/signup?${qs}` : "/signup";
   })();

@@ -7,6 +7,7 @@ import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { isPlanSlug, PLAN_PRICE } from "@/lib/plans";
 import { safeNext } from "@/lib/safeNext";
+import { signupSource } from "@/lib/signupSource";
 
 // ─── Password strength ────────────────────────────────────────────────────────
 
@@ -58,6 +59,8 @@ function SignupForm() {
   // survives the email-confirmation round trip — app/auth/confirm/route.ts
   // reads it back out once the user is verified.
   const nextPath = safeNext(searchParams.get("next"));
+  // Which page sent them here (e.g. "unit-studies-bats"), for analytics only.
+  const from = signupSource(searchParams.get("from"));
   const planDetail =
     plan === "yearly"
       ? `Unlimited Annual: $${PLAN_PRICE.yearly} billed yearly`
@@ -84,7 +87,7 @@ function SignupForm() {
       ? `${window.location.origin}/auth/callback?next=/checkout-redirect%3Fplan%3D${plan}`
       : `${window.location.origin}/auth/callback`;
 
-    track("signup_started", { plan: plan ?? "free" });
+    track("signup_started", { plan: plan ?? "free", ...(from ? { from } : {}) });
 
     const { error: signupError } = await supabase.auth.signUp({
       email,
@@ -212,7 +215,15 @@ function SignupForm() {
       <p className="text-center text-sm text-muted mt-6">
         Already have an account?{" "}
         <Link
-          href={plan ? `/login?plan=${plan}` : "/login"}
+          href={(() => {
+            // Keep plan and from on the bounce to login, so its "create an
+            // account" link can send them back with both.
+            const params = new URLSearchParams();
+            if (plan) params.set("plan", plan);
+            if (from) params.set("from", from);
+            const qs = params.toString();
+            return qs ? `/login?${qs}` : "/login";
+          })()}
           className="text-sage font-semibold hover:underline"
         >
           Log in

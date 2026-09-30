@@ -137,3 +137,13 @@ export function getVisibleUnitStudies(): UnitStudyPage[] {
 export function getUnitStudy(slug: string): UnitStudyPage | undefined {
   return getVisibleUnitStudies().find((page) => page.slug === slug);
 }
+
+/**
+ * Pages whose status is "live", on every deployment. Anything that tells the
+ * outside world about unit studies (sitemap, llms.txt, IndexNow, the footer
+ * and homepage links) uses this, so a draft is never announced, even on a
+ * preview build.
+ */
+export function getLiveUnitStudies(): UnitStudyPage[] {
+  return getAllUnitStudies().filter((page) => page.status === "live");
+}

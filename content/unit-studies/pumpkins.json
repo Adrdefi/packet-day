@@ -1,6 +1,6 @@
 {
   "slug": "pumpkins",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Pumpkins",
     "keyword": "pumpkin unit study",
@@ -223,5 +223,7 @@
       "verified": true
     }
   ],
+  "natalieReviewedOn": "2026-09-29",
+  "datePublished": "2026-09-29",
   "dateModified": "2026-09-29"
 }

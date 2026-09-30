@@ -1,5 +1,22 @@
 import Link from "next/link";
 import Wordmark from "./Wordmark";
+import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
+
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+/** The unit studies link only appears once at least one unit study page is live. */
+function footerLinks(): FooterLink[] {
+  return [
+    ...(getLiveUnitStudies().length > 0 ? [{ label: "Unit studies", href: "/unit-studies" }] : []),
+    { label: "About", href: "/about" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Contact", href: "/contact" },
+  ];
+}
 
 export default function Footer() {
   return (
@@ -16,14 +33,14 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-center gap-4">
-          <div className="flex gap-6">
-            {["About", "Privacy", "Terms", "Contact"].map((link) => (
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            {footerLinks().map((link) => (
               <Link
-                key={link}
-                href={`/${link.toLowerCase()}`}
+                key={link.href}
+                href={link.href}
                 className="text-cream/50 hover:text-cream text-sm transition-colors"
               >
-                {link}
+                {link.label}
               </Link>
             ))}
           </div>

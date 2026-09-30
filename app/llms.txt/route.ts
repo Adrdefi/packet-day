@@ -3,6 +3,7 @@ import { SITE_URL } from "@/lib/site";
 import { getAllPosts } from "@/lib/blog";
 import { SITUATIONS } from "@/lib/situations/registry";
 import { PAGE_RANGE_TEXT, HOURS_RANGE_TEXT } from "@/lib/situations/figures";
+import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
 
 // Built once at build time from the same sources the site uses (plan prices,
 // figures, situation registry, blog posts), so it can't drift from the pages.
@@ -27,6 +28,18 @@ function link(name: string, path: string, description: string): string {
 // Post titles end in a decorative emoji that's noise in a plain-text index.
 function stripTrailingEmoji(title: string): string {
   return title.replace(/(\s*\p{Extended_Pictographic}️?)+\s*$/u, "");
+}
+
+function unitStudySection(): string[] {
+  const pages = getLiveUnitStudies();
+  if (pages.length === 0) return [];
+  return [
+    "## Unit studies",
+    "",
+    link("Unit studies", "/unit-studies", "Themed sample packets, with real pages from each one."),
+    ...pages.map((page) => link(page.h1, `/unit-studies/${page.slug}`, page.meta.description)),
+    "",
+  ];
 }
 
 function buildLlmsTxt(): string {
@@ -62,6 +75,8 @@ function buildLlmsTxt(): string {
       link(stripTrailingEmoji(post.title), `/blog/${post.slug}`, post.metaDescription)
     ),
     "",
+    // Live pages only, and the section only once there is one.
+    ...unitStudySection(),
   ].join("\n");
 }
 

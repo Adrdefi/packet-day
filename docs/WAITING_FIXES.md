@@ -39,3 +39,11 @@ Last updated: 2026-09-29
 **What happens.** Newer models can write em dashes, and the copy rule bans them in anything a family reads. Round 3 had none in all 6 packets, but nothing in code stops them.
 
 **What to do.** Strip or replace em dashes (and "--") in generated packet text before rendering, next to the existing emoji stripping. Check the other places generated text shows up (the packet-ready email and the packet page) before calling it done.
+
+---
+
+## 4. History themes repeat common myths
+
+**What happens.** The Thanksgiving test packet (grade 4, 2026-09-29) was mostly accurate, but it slipped in two familiar myths. A math word problem calls the 90 Wampanoag men at the 1621 harvest "guests", though Winslow's letter, the only eyewitness account, never says they were invited. The coloring page puts a pumpkin on the Mayflower's deck, and pumpkins are native to the Americas. The unit study page names both as talking points and leaves them out of its gallery.
+
+**What to do.** Tweak the generator prompt for history themes: avoid invitation framing for the 1621 harvest, and avoid anachronisms (objects, foods or animals that could not be in that time and place), including in the coloring scene. Check a few history theme packets after the change (Thanksgiving, Ancient Rome, the Constitution).

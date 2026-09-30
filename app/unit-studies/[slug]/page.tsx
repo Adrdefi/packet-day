@@ -12,7 +12,7 @@ import DraftBanner from "@/components/unit-studies/DraftBanner";
 import UnitStudyCard from "@/components/unit-studies/UnitStudyCard";
 import { SITUATIONS } from "@/lib/situations/registry";
 import { HOURS_RANGE_TEXT, PAGE_RANGE_TEXT } from "@/lib/situations/figures";
-import { DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE, NATALIE_PATH } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, NATALIE_PATH } from "@/lib/site";
 import { coverOf, gallerySrc, getUnitStudy, getVisibleUnitStudies } from "@/lib/unit-studies/loader";
 import { buildUnitStudyFaqJsonLd, buildUnitStudyGraph, unitStudyUrl } from "@/lib/unit-studies/jsonld";
 import { ENTITY_SENTENCE } from "@/lib/unit-studies/entity";
@@ -45,6 +45,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
   const url = unitStudyUrl(page.slug);
   const { title, description } = page.meta;
+  // Prebuilt card from app/og/unit-studies/[slug], drawn with the page's real cover.
+  const ogImage = {
+    url: `${SITE_URL}/og/unit-studies/${page.slug}`,
+    width: 1200,
+    height: 630,
+    alt: `${page.h1}: the cover of a real sample packet`,
+  };
 
   return {
     // `absolute` bypasses the root layout's "%s | Packet Day" template; the
@@ -58,13 +65,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       title,
       description,
       url,
-      images: [DEFAULT_OG_IMAGE],
+      images: [ogImage],
     },
     twitter: {
       ...DEFAULT_TWITTER,
       title,
       description,
-      images: [DEFAULT_OG_IMAGE.url],
+      images: [ogImage.url],
     },
   };
 }

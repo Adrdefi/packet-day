@@ -61,6 +61,39 @@ function isHomepageOnlyComponent(ref: string, filePath: string): boolean {
   return importers.length === 1 && importers[0] === "app/page.tsx";
 }
 
+interface UnitStudyState {
+  live: boolean;
+  dateModified: string | null;
+}
+
+/** A unit study content file's status and date at a commit, or null if it didn't exist or can't be read. */
+function unitStudyAt(ref: string, file: string): UnitStudyState | null {
+  if (!existsAt(ref, file)) return null;
+  try {
+    const page = JSON.parse(git(["show", `${ref}:${file}`]));
+    return { live: page.status === "live", dateModified: page.dateModified ?? page.datePublished ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A unit study page is submitted when it goes live, or when a live page's
+ * dateModified changes. When the set of live pages changes (one goes live or
+ * stops being live), the hub and the sitemap are submitted too. Draft edits
+ * submit nothing.
+ */
+function unitStudyPaths(base: string, head: string, file: string, slug: string): string[] {
+  const before = unitStudyAt(base, file);
+  const after = unitStudyAt(head, file);
+  const wasLive = before?.live ?? false;
+  const isLive = after?.live ?? false;
+  const paths: string[] = [];
+  if (isLive && (!wasLive || before?.dateModified !== after?.dateModified)) paths.push(`/unit-studies/${slug}`);
+  if (wasLive !== isLive) paths.push("/unit-studies", "/sitemap.xml");
+  return paths;
+}
+
 /** Maps changed files between two commits to page paths. Skips anything that doesn't map cleanly. */
 function changedPaths(base: string, head: string): Set<string> {
   const diff = git(["diff", "--name-status", "--no-renames", base, head]);
@@ -73,8 +106,11 @@ function changedPaths(base: string, head: string): Set<string> {
     const blogPost = file.match(/^content\/blog\/([a-z0-9-]+)\.md$/);
     const situationData = file.match(/^lib\/situations\/([a-z0-9-]+)\.ts$/);
     const topLevelPage = file.match(/^app\/([a-z0-9-]+)\/page\.tsx$/);
+    const unitStudy = file.match(/^content\/unit-studies\/([a-z0-9-]+)\.json$/);
 
-    if (blogPost) {
+    if (unitStudy) {
+      mapped = unitStudyPaths(base, head, file, unitStudy[1]);
+    } else if (blogPost) {
       mapped = [`/blog/${blogPost[1]}`];
       // A new or removed post changes the blog list too.
       if (status === "A" || status === "D") mapped.push("/blog");
@@ -118,7 +154,8 @@ async function main() {
     urlList = [];
     for (const path of paths) {
       const url = path === "/" ? SITE_URL : `${SITE_URL}${path}`;
-      if (sitemapUrls.has(url)) urlList.push(url);
+      // The sitemap itself is never listed inside the sitemap, so it passes on its own.
+      if (sitemapUrls.has(url) || path === "/sitemap.xml") urlList.push(url);
       else console.log(`  ${url} is not in the live sitemap, so it won't be submitted`);
     }
   } else {

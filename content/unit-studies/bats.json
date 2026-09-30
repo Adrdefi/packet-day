@@ -1,6 +1,6 @@
 {
   "slug": "bats",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Bats",
     "keyword": "bats unit study",
@@ -232,5 +232,7 @@
       "verified": true
     }
   ],
+  "natalieReviewedOn": "2026-09-29",
+  "datePublished": "2026-09-29",
   "dateModified": "2026-09-29"
 }

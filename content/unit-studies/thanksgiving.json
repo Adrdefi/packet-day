@@ -32,14 +32,6 @@
       "kind": "cover"
     },
     {
-      "file": "math.png",
-      "alt": "Math page, Counting Supplies on the Mayflower: six quick calculations such as 36 x 47 and 504 divided by 7, and word problems about biscuits, the 66 day voyage, the harvest meal and corn mounds.",
-      "caption": "Long division, with a boat full of biscuits to count.",
-      "width": 1200,
-      "height": 1553,
-      "kind": "math"
-    },
-    {
       "file": "reading.png",
       "alt": "Reading page, Barnaby and the Long Voyage: a true history passage about the Mayflower crossing in 1620, the first winter, Massasoit, Tisquantum and the 1621 harvest celebration.",
       "caption": "Real history, one small mouse along for the ride.",
@@ -70,14 +62,6 @@
       "width": 1200,
       "height": 1553,
       "kind": "science"
-    },
-    {
-      "file": "coloring.png",
-      "alt": "Coloring page: June and Barnaby on the deck of a tall ship with the wheel, a barrel, a coil of rope, a basket of corn and a pumpkin, with the sails and ocean behind them.",
-      "caption": "The coil of rope takes a while. That's the point.",
-      "width": 1200,
-      "height": 1553,
-      "kind": "coloring"
     },
     {
       "file": "certificate.png",
@@ -149,7 +133,7 @@
   "faqs": [
     {
       "q": "Is this Thanksgiving packet historically accurate?",
-      "a": "Yes, the passage sticks to what historians know: 102 passengers, a 66 day crossing, about half the passengers dying that first winter, and a 1621 harvest celebration of about three days with around 90 Wampanoag men, who brought five deer. Most of what we know about that meal comes from one letter by Edward Winslow, which the packet points out."
+      "a": "Mostly, yes, with two small liberties worth pointing out. The facts hold: 102 passengers, 66 days at sea, about 90 Wampanoag men at a three day harvest celebration. But one math problem calls those men guests, though Winslow's letter never says they were invited, and the coloring page puts a pumpkin on the Mayflower. Pumpkins are native to the Americas. Both make great talking points."
     },
     {
       "q": "How do I teach Thanksgiving from the Wampanoag perspective?",
