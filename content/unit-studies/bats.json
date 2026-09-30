@@ -12,11 +12,11 @@
     "description": "A printable bats unit study with a bug counting math page, a short echolocation story, a word search and a clap test you can try at home. Free to start."
   },
   "h1": "Bats Unit Study Packet for Kids",
-  "answerCapsule": "A bats unit study packet is a printable school day about bats, echolocation and night animals for kids in kindergarten through 8th grade. This grade 2 sample has 15 pages: math, reading, writing, a word search, a movement break and science, plus a coloring page, a certificate and an answer key. About 105 minutes. Free to start.",
+  "answerCapsule": "A bats unit study packet is a printable school day about bats and echolocation for kids in kindergarten through 8th grade. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, a movement break, science, a coloring page and a certificate, about 105 minutes of activities, plus breaks. Free to start.",
   "sample": {
     "childFirstName": "Maya",
     "grade": 2,
-    "pageCount": 15,
+    "pageCount": 14,
     "characterName": "Echo the bat",
     "characterDescription": "A little brown bat in a purple scarf and a tiny headlamp who guides Maya through the day and signs her certificate.",
     "generatedOn": "2026-09-29"
@@ -125,7 +125,7 @@
   },
   "learning": {
     "heading": "What will my child learn?",
-    "body": "Math, mostly. Maya adds and subtracts two digit numbers with regrouping (82 minus 49 is on there), then meets multiplication as equal groups: 5 baby bats eating 2 bugs each, and 4 branches with 5 bats on each one.\n\nThe reading questions ask her to recall details, explain two new words and guess why Echo isn't scared of the dark. The writing page asks for 4 to 6 sentences about her own night flight.\n\nScience is where the vocabulary pays off. Nocturnal and echolocation come back from the story, the clap test lets her hear an echo for herself, and the last questions ask her to compare night and day animals and predict what happens to a bat that loses its home."
+    "body": "Your child practices math, reading, writing and science: regrouping and a first taste of multiplication, a short story with two new words, a few sentences of their own and a hands on sound test.\n\nIn math, Maya adds and subtracts two digit numbers with regrouping (82 minus 49 is on there), then meets multiplication as equal groups: 5 baby bats eating 2 bugs each, and 4 branches with 5 bats on each one.\n\nThe reading questions ask her to recall details, explain two new words and guess why Echo isn't scared of the dark. The writing page asks for 4 to 6 sentences about her own night flight.\n\nScience is where the vocabulary pays off. Nocturnal and echolocation come back from the story, the clap test lets her hear an echo for herself, and the last questions ask her to compare night and day animals and predict what happens to a bat that loses its home."
   },
   "gradeBands": [
     {
@@ -134,15 +134,15 @@
     },
     {
       "band": "3-5",
-      "body": "For grades 3 to 5, expect a longer reading passage, more new vocabulary, math at their grade level and more writing. We are not showing a grades 3 to 5 bats packet here, so this is how packets grow, not a preview."
+      "body": "For grades 3 to 5, the same bat theme comes with longer reading, harder vocabulary, math at their grade level and longer writing. We are not showing a grades 3 to 5 bats packet here, so this is how packets grow, not a preview."
     },
     {
       "band": "6-8",
-      "body": "For grades 6 to 8, expect an informational passage instead of a simple story, math such as equations and ratios, and writing that asks your kid to take a position and back it up. The theme and the character stay. The difficulty changes."
+      "body": "For grades 6 to 8, expect longer reading, harder vocabulary, math at their grade level and more writing. We are not showing a grades 6 to 8 bats packet here either. The theme and the character stay. The difficulty is what changes."
     }
   ],
   "natalieNote": {
-    "body": "Oliver once asked for only Megalodons three days in a row. He got three completely different packets, and I stopped worrying that a kid could wear out a theme.\n\nSo if your kid finishes this one and wants more bats tomorrow, make another. Same obsession, new story, new problems. Bats also stretch nicely through October, when Halloween tries to eat the whole month.",
+    "body": "Oliver once asked for only Megalodons three days in a row. He got three completely different packets.\n\nSo if your kid finishes this one and wants more bats tomorrow, make another. Same obsession, new story, new problems.",
     "basedOn": "site"
   },
   "faqs": [
@@ -160,7 +160,7 @@
     },
     {
       "q": "Are bats really blind?",
-      "a": "No, bats can see, and some see quite well, so blind as a bat is a myth. Many bats still hunt mostly by echolocation because it works in total darkness. That's exactly what the science page asks: why would a bat use sound instead of only its eyes at night?"
+      "a": "No, bats can see, and some see quite well, so \"blind as a bat\" is a myth. Many bats still hunt mostly by echolocation because it works in total darkness. That's exactly what the science page asks: why would a bat use sound instead of only its eyes at night?"
     },
     {
       "q": "How long does the bats packet take?",

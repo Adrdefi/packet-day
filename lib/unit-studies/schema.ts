@@ -50,6 +50,7 @@ export const unitStudyPageSchema = z
         childFirstName: text,
         /** 0 is kindergarten. */
         grade: z.number().int().min(0).max(8),
+        /** Child pages only, as the packet's own "1 of N" footer counts them. The parent answer key is not included. */
         pageCount: z.number().int().positive(),
         characterName: text,
         characterDescription: text,

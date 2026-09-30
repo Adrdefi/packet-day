@@ -52,7 +52,7 @@ export function buildUnitStudyGraph(page: UnitStudyPage) {
         "@type": "CreativeWork",
         "@id": `${url}#sample`,
         name: `${page.theme.name} sample packet`,
-        description: `${sampleLabel(page)}. A ${page.sample.pageCount} page printable packet shown as a sample of what Packet Day makes.`,
+        description: `${sampleLabel(page)}. A ${page.sample.pageCount} page printable packet plus a parent answer key, shown as a sample of what Packet Day makes.`,
         educationalLevel: gradePhrase(page.sample.grade),
         learningResourceType: "Printable learning packet",
         about: page.theme.name,

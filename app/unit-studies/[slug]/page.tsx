@@ -165,7 +165,7 @@ export default async function UnitStudyPage({ params }: Params) {
             <p className="max-w-3xl text-dark/70 leading-relaxed mb-10">
               {article === "an" ? "An" : "A"} {themeLower} packet is a full school day on paper: {PAGE_RANGE_TEXT} built around{" "}
               {themeLower}, roughly {HOURS_RANGE_TEXT} with breaks. This sample has{" "}
-              {page.sample.pageCount} pages, and {page.sample.characterName} guides the whole day.
+              {page.sample.pageCount} pages plus a parent answer key, and {page.sample.characterName} guides the whole day.
             </p>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-6">
               {page.gallery.map((item) => (
