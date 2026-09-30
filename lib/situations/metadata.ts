@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { SituationPageMetadata, SituationRegistryEntry } from "./types";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER } from "@/lib/site";
 
 /**
  * Builds the full `Metadata` object for a situation page, including its OG
@@ -22,11 +22,14 @@ export function buildSituationMetadata(
     title: { absolute: pageMeta.titleTag },
     description: pageMeta.metaDescription,
     alternates: { canonical: pageMeta.canonical },
+    // A page-level openGraph/twitter object replaces the root layout's
+    // instead of merging (see lib/site.ts), so the shared defaults are
+    // spread back in first and this page's own values go on top.
     openGraph: {
+      ...DEFAULT_OPEN_GRAPH,
       title: pageMeta.titleTag,
       description: pageMeta.metaDescription,
       url: pageMeta.canonical,
-      type: "website",
       images: [
         {
           url: imageUrl,
@@ -37,7 +40,7 @@ export function buildSituationMetadata(
       ],
     },
     twitter: {
-      card: "summary_large_image",
+      ...DEFAULT_TWITTER,
       title: pageMeta.titleTag,
       description: pageMeta.metaDescription,
       images: [imageUrl],
