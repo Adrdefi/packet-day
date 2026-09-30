@@ -176,6 +176,9 @@ function formatAnswerList(text: string, numbered: boolean): string {
     : parts.join('; ');
 }
 
+/** The generator's "||" list separator, with or without spaces around it. */
+const PIPE_SEPARATOR = /\s*\|\|\s*/;
+
 /** Drops every sentence that mentions an answer key. */
 function withoutAnswerKeySentences(text: string): string {
   const sentences = text.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) ?? [];
@@ -1833,14 +1836,23 @@ function MathSections({
     if (upper.includes('QUICK CALCULATIONS')) {
       quickCalcsLabel = label;
       const cleaned = rest.replace(/^solve these problems:\s*/i, '');
-      const byPipe = cleaned.split(' || ').map((s) => s.trim()).filter(Boolean);
+      const byPipe = cleaned.split(PIPE_SEPARATOR).map((s) => s.trim()).filter(Boolean);
       quickCalcs = byPipe.length > 1 ? byPipe : cleaned.split(' / ').map((s) => s.trim()).filter(Boolean);
     } else if (upper.includes('WORD PROBLEMS')) {
-      const byPipe = rest.split(' || ').map((s) => s.trim()).filter(Boolean);
+      const byPipe = rest.split(PIPE_SEPARATOR).map((s) => s.trim()).filter(Boolean);
       wordProblems = byPipe.length > 1 ? byPipe : rest.split(' / ').map((s) => s.trim()).filter(Boolean);
     } else if (upper.includes('DRAW') && upper.includes('SOLVE')) {
       // Matches "DRAW & SOLVE", "DRAW AND SOLVE", "Draw & Solve", etc.
-      drawAndSolve = rest;
+      // The generator sometimes packs a second step into the prompt with
+      // "||" ("d = ___ h + ___ || My answer: ___ hours"). Each part gets its
+      // own line. A bare "My answer: ___" part is dropped because the block
+      // already prints its own "My answer" line; one that adds a unit
+      // ("My answer: ___ hours") is kept.
+      drawAndSolve = rest
+        .split(PIPE_SEPARATOR)
+        .map((part) => part.trim())
+        .filter((part) => part && !/^my answer\s*:?\s*_*\s*$/i.test(part))
+        .join('\n');
     }
   }
 
