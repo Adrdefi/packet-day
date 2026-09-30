@@ -87,23 +87,24 @@ export async function renderAndCachePacketPdf(
         storagePath,
       });
     } else {
-      // Fire-and-forget — does not block the caller on this DB round trip.
-      supabase
+      // Awaited, not fire-and-forget: a route can return right after this,
+      // and on Vercel an unawaited write may never run, leaving an uploaded
+      // PDF that pdf_url never points to. A thrown error lands in the catch
+      // below, so this still can never break the caller.
+      const { error: pdfUrlUpdateError } = await supabase
         .from("packets")
         .update({ pdf_url: uploadData.path })
-        .eq("id", packetId)
-        .then(({ error: pdfUrlUpdateError }) => {
-          if (pdfUrlUpdateError) {
-            console.error("[packetPdfRender] Failed to save pdf_url after upload:", {
-              message: pdfUrlUpdateError.message,
-              packetId,
-              storagePath,
-            });
-          }
+        .eq("id", packetId);
+      if (pdfUrlUpdateError) {
+        console.error("[packetPdfRender] Failed to save pdf_url after upload:", {
+          message: pdfUrlUpdateError.message,
+          packetId,
+          storagePath,
         });
+      }
     }
   } catch (err) {
-    console.error("[packetPdfRender] Storage upload threw:", {
+    console.error("[packetPdfRender] Storage upload or pdf_url save threw:", {
       message: err instanceof Error ? err.message : String(err),
       packetId,
       userId,
