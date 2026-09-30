@@ -187,3 +187,24 @@ export function titleRejectionReason(title: unknown, childName: string): string 
   if (title.trim().length > TITLE_SAFETY_MAX_CHARS) return `longer than ${TITLE_SAFETY_MAX_CHARS} characters`;
   return null;
 }
+
+/**
+ * The small line above the cover title on packets with a packet number:
+ * "Nova · Adventure #7" (K-5) or "Nova · Mission File 07" (6-8). Episode
+ * titles already carry the number, so those show only the mascot name.
+ * Returns null when there's no packet number (every packet made before
+ * rotating titles), and the cover then renders exactly as it always has.
+ */
+export function buildCoverKicker(input: {
+  mascotName: string | null | undefined;
+  packetNumber: number | null | undefined;
+  titleStyle: string | null | undefined;
+  band: BandKey;
+}): string | null {
+  const n = input.packetNumber;
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 1) return null;
+  const mascot = input.mascotName?.trim() || null;
+  if (input.titleStyle === "episode") return mascot;
+  const count = input.band === "6-8" ? `Mission File ${String(n).padStart(2, "0")}` : `Adventure #${n}`;
+  return mascot ? `${mascot} · ${count}` : count;
+}

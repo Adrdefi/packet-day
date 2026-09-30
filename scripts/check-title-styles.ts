@@ -18,6 +18,7 @@
 import {
   TITLE_STYLES,
   buildClassicTitle,
+  buildCoverKicker,
   buildTitleBrief,
   normalizeTitleStyle,
   pickTitleStyle,
@@ -92,6 +93,27 @@ expect("brief carries the packet number", brief.includes("Packet number: 8"));
 expect("brief lists recent titles", brief.includes("- Anders' Bicycle Adventure Day"));
 expect("brief uses the 6-8 voice", brief.includes("No exclamation points"));
 expect("brief does not offer the chosen style as a switch", !brief.includes("- episode:"));
+
+const k = (mascotName: string | null, packetNumber: number | null | undefined, titleStyle: string | null, band: "K-2" | "3-5" | "6-8") =>
+  buildCoverKicker({ mascotName, packetNumber, titleStyle, band });
+const kickerCases: [string, string | null, string | null][] = [
+  ["K-2 with mascot", k("Nova", 7, "quest", "K-2"), "Nova · Adventure #7"],
+  ["3-5 with mascot", k("Nova", 7, "mystery", "3-5"), "Nova · Adventure #7"],
+  ["6-8 pads to 2 digits", k("Nova", 7, "versus", "6-8"), "Nova · Mission File 07"],
+  ["6-8 two digits as is", k("Nova", 34, "versus", "6-8"), "Nova · Mission File 34"],
+  ["6-8 three digits as is", k("Nova", 123, "versus", "6-8"), "Nova · Mission File 123"],
+  ["episode shows only the mascot", k("Nova", 7, "episode", "3-5"), "Nova"],
+  ["episode with no mascot shows nothing", k(null, 7, "episode", "6-8"), null],
+  ["no mascot, K-5", k(null, 7, "quest", "K-2"), "Adventure #7"],
+  ["no mascot, 6-8", k("  ", 7, "quest", "6-8"), "Mission File 07"],
+  ["old packet: no number", k("Nova", undefined, null, "3-5"), null],
+  ["old packet: null number", k("Nova", null, null, "6-8"), null],
+  ["bad number", k("Nova", 0, "quest", "3-5"), null],
+  ["missing style is not episode", k("Nova", 2, null, "3-5"), "Nova · Adventure #2"],
+];
+for (const [label, actual, expected] of kickerCases) {
+  expect(`kicker: ${label}`, actual === expected, `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+}
 
 if (failures.length > 0) {
   process.stderr.write(`\nTITLE STYLE CHECK FAILED (${failures.length} problem${failures.length === 1 ? "" : "s"}):\n\n`);

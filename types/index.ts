@@ -87,6 +87,8 @@ export interface PacketContent {
   packet_title?: string;
   /** Title style actually used (lib/titleStyles.ts). Missing on older packets, which count as "classic". */
   title_style?: TitleStyle;
+  /** Title style the server asked for; title_style is what the model actually used. Missing on older packets. */
+  requested_style?: TitleStyle;
   /** This child's lifetime packet count, including this one, stamped at generation. Missing on older packets. */
   packet_number?: number;
   greeting?: string;

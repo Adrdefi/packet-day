@@ -120,11 +120,11 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
 
 <title_rules>
 Write packet_title by following the title_brief in the user message.
-The title is a promise, and the packet must keep it:
-- packet_mission (the cover) sets up exactly what the title promises: the quest, the mystery, the challenge, the expedition, or the episode.
-- The reading passage story delivers it: the child and the mascot actually do the thing the title promises.
-- packet_celebration (the mascot's message on the reflection page) calls back to the title and tells the child the promise was kept.
-For the classic style, the promise is a great day exploring the theme.
+The whole packet must deliver what the title sets up:
+- packet_mission (the cover) sets up exactly what the title offers: the quest, the mystery, the challenge, the expedition, or the episode.
+- The reading passage story delivers it: the child and the mascot actually do the thing the title describes.
+- packet_celebration (the mascot's closing message on the reflection page) calls back to the title naturally, the way a friend would. Never use the words "promise" or "promised" in it.
+For the classic style, the title simply offers a great day exploring the theme.
 </title_rules>
 
 <output_schema>

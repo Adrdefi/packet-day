@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { CreateEmailRequestOptions } from "resend";
+import { possessive } from "@/lib/possessive";
 
 export const FROM_EMAIL = "Packet Day <hello@packetday.com>";
 
@@ -72,6 +73,8 @@ interface SendPacketReadyEmailParams {
   childName: string;
   theme: string;
   mascotName: string | null;
+  /** Rotating-title packets only: the packet's own title, used in the subject. Null keeps today's subject. */
+  packetTitle?: string | null;
   heroImageUrl: string | null;
   subjects: string[];
   pdfBuffer: Uint8Array;
@@ -81,7 +84,10 @@ interface SendPacketReadyEmailParams {
 }
 
 export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
-  const { to, childName, theme, mascotName, heroImageUrl, subjects, pdfBuffer, filename, testSubjectPrefix } = params;
+  const { to, childName, theme, mascotName, packetTitle, heroImageUrl, subjects, pdfBuffer, filename, testSubjectPrefix } = params;
+  const subjectLine = packetTitle?.trim()
+    ? `${packetTitle.trim()} is ready to print!`
+    : `${possessive(childName)} ${theme} packet is ready to print!`;
 
   const subjectsPhrase = buildSubjectsPhrase(subjects);
   const mascotIntro = buildMascotIntro(mascotName);
@@ -98,7 +104,7 @@ export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
         </tr>${heroRow}
         <tr>
           <td align="center" style="padding:20px 40px 0 40px;">
-            <h1 style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:24px;font-weight:700;color:#1A1A2E;line-height:1.3;">${childName}'s ${theme} packet is ready!</h1>
+            <h1 style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:24px;font-weight:700;color:#1A1A2E;line-height:1.3;">${possessive(childName)} ${theme} packet is ready!</h1>
           </td>
         </tr>
         <tr>
@@ -127,7 +133,7 @@ export async function sendPacketReadyEmail(params: SendPacketReadyEmailParams) {
     from: NATALIE_FROM,
     replyTo: NATALIE_REPLY_TO,
     to,
-    subject: `${testSubjectPrefix ?? ""}${childName}'s ${theme} packet is ready to print!`,
+    subject: `${testSubjectPrefix ?? ""}${subjectLine}`,
     html,
     attachments: [
       {

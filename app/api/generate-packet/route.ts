@@ -155,11 +155,11 @@ SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the color
 
 <title_rules>
 Write packet_title by following the title_brief in the user message.
-The title is a promise, and the packet must keep it:
-- packet_mission (the cover) sets up exactly what the title promises: the quest, the mystery, the challenge, the expedition, or the episode.
-- The reading passage story delivers it: the child and the mascot actually do the thing the title promises.
-- packet_celebration (the mascot's message on the reflection page) calls back to the title and tells the child the promise was kept.
-For the classic style, the promise is a great day exploring the theme.
+The whole packet must deliver what the title sets up:
+- packet_mission (the cover) sets up exactly what the title offers: the quest, the mystery, the challenge, the expedition, or the episode.
+- The reading passage story delivers it: the child and the mascot actually do the thing the title describes.
+- packet_celebration (the mascot's closing message on the reflection page) calls back to the title naturally, the way a friend would. Never use the words "promise" or "promised" in it.
+For the classic style, the title simply offers a great day exploring the theme.
 </title_rules>
 
 <output_schema>
@@ -400,6 +400,7 @@ function parsePacketJSON(text: string, requestedStyle: TitleStyle): ParsedPacket
     // The model may switch styles if the requested one fits the theme badly;
     // anything missing or outside the six falls back to what we asked for.
     title_style: isTitleStyle(parsed.title_style) ? parsed.title_style : requestedStyle,
+    requested_style: requestedStyle,
     activities: parsed.activities,
   };
 
@@ -958,6 +959,8 @@ export async function POST(req: NextRequest) {
             dailyReflection: generatedContent.daily_reflection ?? null,
             packetMission: generatedContent.packet_mission ?? null,
             packetCelebration: generatedContent.packet_celebration ?? null,
+            packetNumber: generatedContent.packet_number ?? null,
+            titleStyle: generatedContent.title_style ?? null,
           };
           const pdfBuffer = await renderAndCachePacketPdf({
             supabase,
@@ -976,6 +979,9 @@ export async function POST(req: NextRequest) {
                 childName: child.name,
                 theme: savedPacket.theme,
                 mascotName: generatedContent.mascot_name ?? null,
+                // Only rotating-title packets carry title_style; the email
+                // keeps today's subject for anything without one.
+                packetTitle: generatedContent.title_style ? generatedContent.packet_title ?? null : null,
                 heroImageUrl: hostedMascotUrl,
                 subjects,
                 pdfBuffer,

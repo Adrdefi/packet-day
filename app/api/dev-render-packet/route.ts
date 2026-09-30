@@ -86,6 +86,8 @@ export async function GET(req: NextRequest) {
     dailyReflection: content.daily_reflection ?? null,
     packetMission: content.packet_mission ?? null,
     packetCelebration: content.packet_celebration ?? null,
+    packetNumber: content.packet_number ?? null,
+    titleStyle: content.title_style ?? null,
   };
 
   let pdfBuffer: Uint8Array;

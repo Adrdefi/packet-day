@@ -27,6 +27,7 @@ import {
   type BandKey,
 } from "@/lib/pdf-tokens";
 import { shortTitle } from "@/lib/pdf-fields";
+import { buildCoverKicker } from "@/lib/titleStyles";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -116,6 +117,10 @@ export interface PacketPDFProps {
   dailyReflection?: string | null;
   packetMission?: string | null;
   packetCelebration?: string | null;
+  /** generated_content.packet_number. Missing on packets made before rotating titles. */
+  packetNumber?: number | null;
+  /** generated_content.title_style. Missing on packets made before rotating titles. */
+  titleStyle?: string | null;
 }
 
 // ─── Grade-band helpers ───────────────────────────────────────────────────────
@@ -1532,8 +1537,19 @@ function CoverPage({
   greeting,
   activities,
   packetMission,
-}: PacketPDFProps) {
+  packetNumber,
+  titleStyle,
+  band,
+}: PacketPDFProps & { band: BandKey }) {
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
+  // Null for every packet made before rotating titles, which keeps their
+  // cover exactly as it was: mascot name under the image, nothing without one.
+  const kicker = buildCoverKicker({
+    mascotName: sanitizeText(mascotName),
+    packetNumber,
+    titleStyle,
+    band,
+  });
   const missionText = sanitizeText(packetMission) || sanitizeText(greeting) || greetingMessage(childName, theme);
   const hasParentSheet = activities.some((a) => !!a.answer_key);
 
@@ -1558,14 +1574,19 @@ function CoverPage({
         {mascotImageUrl ? (
           <>
             <Image src={mascotImageUrl} style={styles.mascotImageCover} />
-            {mascotName && (
-              <Text style={styles.mascotNameText}>{sanitizeText(mascotName)}</Text>
+            {kicker !== null ? (
+              <Text style={styles.mascotNameText}>{kicker}</Text>
+            ) : (
+              mascotName && <Text style={styles.mascotNameText}>{sanitizeText(mascotName)}</Text>
             )}
           </>
         ) : (
-          <View style={styles.mascotFallbackCircle}>
-            <Text style={styles.mascotFallbackEmoji}>{childEmoji}</Text>
-          </View>
+          <>
+            <View style={styles.mascotFallbackCircle}>
+              <Text style={styles.mascotFallbackEmoji}>{childEmoji}</Text>
+            </View>
+            {kicker !== null && <Text style={styles.mascotNameText}>{kicker}</Text>}
+          </>
         )}
 
         {/* Packet title — Fraunces bold, large */}
@@ -2838,7 +2859,7 @@ export default function PacketPDF(props: PacketPDFProps) {
       subject={`${props.theme} · ${props.childName}`}
       creator="packetday.com"
     >
-      <CoverPage {...props} />
+      <CoverPage {...props} band={bandForGrade(props.childGrade)} />
       <ParentNotesPage {...props} />
       {props.activities.map((activity, i) => (
         <ActivityPage
