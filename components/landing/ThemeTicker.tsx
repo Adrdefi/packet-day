@@ -3,6 +3,7 @@ import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
 
 const ROW1 = [
   "🦈 Sharks",
+  "🦇 Bats",
   "🌋 Volcanoes",
   "🚀 Outer Space",
   "🏰 Medieval Castles",
@@ -20,6 +21,7 @@ const ROW1 = [
 
 const ROW2 = [
   "🎨 Famous Artists",
+  "🎃 Pumpkins",
   "🌿 Rainforest Animals",
   "❄️ Arctic Explorers",
   "🏎️ Race Cars & Physics",
@@ -39,6 +41,10 @@ const ROW2 = [
 // planned theme. A chip only becomes a link once that theme's page is live.
 const CHIP_THEME: Record<string, string> = {
   "🦈 Sharks": "sharks",
+  "🦇 Bats": "bats",
+  "🎃 Pumpkins": "pumpkins",
+  "❄️ Arctic Explorers": "polar-animals",
+  "🐝 Beekeeping": "insects",
   "🌋 Volcanoes": "volcanoes",
   "🚀 Outer Space": "outer-space",
   "🏰 Medieval Castles": "medieval-castles",
