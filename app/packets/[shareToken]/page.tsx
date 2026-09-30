@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import PublicHeader from "@/components/layout/PublicHeader";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import type { PacketContent } from "@/types";
 import { ViewCounter } from "./ViewCounter";
@@ -88,7 +89,7 @@ export async function generateMetadata({
   const packet = data?.[0] ?? null;
 
   if (!packet) {
-    return { title: "Packet Not Found" };
+    return { title: "Packet Not Found", robots: { index: false, follow: true } };
   }
 
   const gradeLabel = GRADE_LABELS[packet.grade_level] ?? `Grade ${packet.grade_level}`;
@@ -111,6 +112,9 @@ export async function generateMetadata({
     title: { absolute: title },
     description,
     alternates: { canonical: `${SITE_URL}/packets/${shareToken}` },
+    // Share links are private family packets: they still open and preview
+    // normally when shared, but search engines never list them.
+    robots: { index: false, follow: true },
     openGraph: {
       ...DEFAULT_OPEN_GRAPH,
       title,
@@ -150,30 +154,9 @@ export default async function SharePage({
   }
   const packet = data?.[0] ?? null;
 
-  if (!packet) {
-    return (
-      <div className="min-h-screen bg-cream flex flex-col">
-        <PublicHeader />
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="text-center max-w-md">
-            <div className="text-6xl mb-6">📭</div>
-            <h1 className="font-display text-2xl font-bold text-dark mb-3">
-              Hmm, this packet link has expired or doesn&apos;t exist.
-            </h1>
-            <p className="text-muted text-sm leading-relaxed mb-8">
-              The family who shared it may have removed it, or the link might have a typo. Either way, you can make your own!
-            </p>
-            <Link
-              href="/signup"
-              className="inline-block bg-sage text-cream font-bold py-3 px-8 rounded-xl hover:bg-sage-dark transition-colors"
-            >
-              Create your own free packet →
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // A real 404 status, not a 200, so a dead link never looks like a page.
+  // The friendly message lives in ./not-found.tsx.
+  if (!packet) notFound();
 
   const p = packet as PacketData;
   const activities = p.generated_content.activities ?? [];
