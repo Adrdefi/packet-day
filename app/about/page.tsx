@@ -46,7 +46,8 @@ export const metadata: Metadata = {
 const PACKET_CONTENTS = [
   "Reading and math at your child's grade level",
   "A rotating subject like science or history",
-  "A puzzle break and a movement break",
+  "A puzzle break that rotates between a word search, maze, mini sudoku and crossword, plus a joke of the day",
+  "A movement break",
   "A coloring page",
   "A custom character who shows up throughout the day",
   "A completion certificate",

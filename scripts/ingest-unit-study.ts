@@ -269,7 +269,7 @@ function classify(pageNumber: number, items: TextItem[], previous: PageInfo | un
     return withSummary({ ...base, kind: "coloring", confidence: "low", reason: "very little text" });
   }
   const clues: [PageKind, RegExp][] = [
-    ["puzzle", /word search|find these words|crossword|maze/],
+    ["puzzle", /word search|find these words|crossword|maze|sudoku/],
     ["movement", /stretch|jump|hop|wiggle|march/],
     ["math", /\d+\s*[+\-x×÷]\s*\d+\s*=/],
     ["science", /experiment|observe|predict|hypothesis/],

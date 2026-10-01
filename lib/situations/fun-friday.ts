@@ -32,7 +32,7 @@ export const metadata: SituationPageMetadata = {
   metaDescription:
     "Every Friday is packet day in our homeschool: their own pace, then pizza night. Make your kid's Fun Friday packet in a minute or two. Free, no card required.",
   canonical: `${SITE_URL}/fun-friday`,
-  updated: "2026-09-24",
+  updated: "2026-10-01",
 };
 
 const CTA_LABEL = "Make My Free Fun Friday Packet";
@@ -169,7 +169,7 @@ export const checklist: ChecklistContent = {
   headingEmoji: "✅",
   items: [
     `A print-ready PDF (${PAGE_RANGE_TEXT}) generated in a minute or two, made fresh for your kid, never pre-made`,
-    `Math, reading, a puzzle break, a movement break, and a coloring page, plus one rotating subject like science or history. A full school day, roughly ${HOURS_RANGE_TEXT} with breaks.`,
+    `Math, reading, a puzzle break (a word search, maze, mini sudoku, or crossword, with a joke of the day), a movement break, and a coloring page, plus one rotating subject like science or history. A full school day, roughly ${HOURS_RANGE_TEXT} with breaks.`,
     "Grade-level matched (K-8), themed to your child's obsession, with one invented character through every subject",
     "Answer keys, so Friday stays relaxing",
     "Household-items-only supply lists",

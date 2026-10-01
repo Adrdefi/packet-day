@@ -199,7 +199,7 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   { q: "What ages?", a: "Kindergarten through 8th grade." },
   {
     q: "What's actually in a packet?",
-    a: "Reading, math, and writing, plus a rotating subject like science or history, a puzzle break, a get up and move break, a coloring page, and a certificate at the end. There's an answer sheet for you in the back. It's 11 to 17 pages, a full school day, roughly 2 to 5 hours with breaks.",
+    a: "Reading, math, and writing, plus a rotating subject like science or history, a puzzle break (a word search, maze, mini sudoku, or crossword that gets harder by grade, plus a joke of the day), a get up and move break, a coloring page, and a certificate at the end. There's an answer sheet for you in the back. It's 11 to 17 pages, a full school day, roughly 2 to 5 hours with breaks.",
   },
   { q: "How do I get it?", a: "It downloads right away and lands in your inbox too." },
   { q: "Do I need a special printer?", a: "Nope. Any home printer works." },

@@ -259,7 +259,8 @@ export default function Home() {
 
             <p className="text-center text-dark/70 mt-10 max-w-2xl mx-auto">
               That’s 4 of the 14 pages in Oliver’s Constitution Adventure Day. Inside: math,
-              reading, writing, history, a word search, a movement break and a coloring page.
+              reading, writing, history, a word search, a movement break and a coloring page. The puzzle
+              break changes from packet to packet, so the next one might be a maze, a mini sudoku or a crossword.
             </p>
             <p className="text-center mt-4">
               <Link href="/sample" className="text-sage font-bold hover:underline">
