@@ -2,7 +2,7 @@
 
 Approved fixes for the packet PDF that are not built yet. Highest priority first. Don't start one until Andy says to.
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ---
 
@@ -61,6 +61,16 @@ From the outer space sample packets made for /sample (Kai grade 4, Mia grade 1, 
 **What happens.** Jonah's grade 7 outer space packet has 14 kid pages (the certificate is page 14) and a 2 page answer key. Every kid page footer says "N of 15" when it should say "N of 14". Kai's and Mia's packets, whose answer keys are 1 page, correctly say "of 14".
 
 **What to do.** Find where the footer total is counted in `components/PacketPDF.tsx` and make it count kid pages only, however long the answer key runs. Remember the `RENDER_PROP_Y_OFFSET` note in CLAUDE.md when touching the footer.
+
+**Update 2026-10-01 (branch `feat/puzzle-rotation`).** Fixed for NEW packets only (packets with puzzle data): `renderPacketPdf` renders once, and if the parent sheet ran past one page it renders again with the real kid page total (`kidPageTotal`). Old packets with two-page parent sheets show the wrong total page count in kid page footers (option C). Fix separately. Real example: packet `64ef5f7a` (April) prints "14 of 15" on its last kid page.
+
+---
+
+## 5b. Parent sheet page 1 has no footer when the sheet runs to two pages
+
+**What happens.** When the parent answer sheet runs to two pages, only the second page shows "Made with love by Packet Day · packetday.com" and "Parent sheet · not part of the packet". The first page has no footer. Confirmed on `main` (real packet `64ef5f7a` from April) and on new puzzle packets (real packet `309fe81f`, 2026-10-01), so it predates puzzle rotation.
+
+**What to do.** The footer is a `fixed` View inside `ParentAnswerSheetPage` in `components/PacketPDF.tsx`. Find why it doesn't repeat on the first page of a wrapped sheet, and fix it. Check old packets render the same everywhere else.
 
 ---
 

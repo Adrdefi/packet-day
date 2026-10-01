@@ -1,4 +1,6 @@
 import type { TitleStyle } from "@/lib/titleStyles";
+import type { PuzzleJoke } from "@/lib/puzzles/jokes";
+import type { PuzzleType, StoredPuzzle } from "@/lib/puzzles/types";
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,8 @@ export interface PacketActivity {
   encouragement?: string;
   /** One-sentence themed wow-fact or joke rendered as a honey callout. */
   fun_fact?: string | null;
+  /** Puzzle break only: the built puzzle (lib/puzzles). Missing on packets made before puzzle rotation. */
+  puzzle?: StoredPuzzle;
 }
 
 export interface PacketColoringPage {
@@ -103,6 +107,10 @@ export interface PacketContent {
   coloring_page?: PacketColoringPage;
   daily_reflection?: string;
   parent_notes?: string;
+  /** Puzzle type actually built for the puzzle break. Missing on older packets (and on any whose puzzle fell back to the old word search). */
+  puzzle_type?: PuzzleType;
+  /** The puzzle break's Joke of the Day, kept at the top level for the "never repeat" history. */
+  joke?: PuzzleJoke;
 }
 
 // ─── Packet ───────────────────────────────────────────────────────────────────

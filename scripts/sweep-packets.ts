@@ -139,6 +139,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { resolveContentType } from "../components/PacketPDF";
+import { bandForGrade } from "../lib/pdf-tokens";
+import { planPuzzlePage } from "../lib/puzzles/pageLayout";
 import { renderPacketPdf } from "../lib/packetPdfRender";
 import type { PacketPDFProps, PDFActivity, PDFColoringPage } from "../components/PacketPDF";
 import type { PacketContent } from "../types";
@@ -598,15 +600,57 @@ export function isBlankPage(page: PageData): boolean {
 // ─── Dropped-character detector ────────────────────────────────────────────
 
 interface CheckableField {
-  field: "instruction" | "fun_fact" | "encouragement" | "description" | "word_search_word";
+  field:
+    | "instruction"
+    | "fun_fact"
+    | "encouragement"
+    | "description"
+    | "word_search_word"
+    | "puzzle_intro"
+    | "joke_question"
+    | "crossword_clue";
   activityIndex: number;
   activitySubject: string;
   text: string;
 }
 
-export function checkableFields(activities: PDFActivity[]): CheckableField[] {
+/**
+ * Fields a rotating puzzle break (activity.puzzle) actually prints. Its page
+ * is not the old word search: no description, no instructions word list,
+ * crossword answers never printed (only clues, plus the K-2 word bank), and
+ * the Did You Know only when the page plan kept it. Checking anything else
+ * raises false alarms.
+ */
+function puzzlePageFields(activity: PDFActivity, activityIndex: number, gradeLevel: string): CheckableField[] {
+  const stored = activity.puzzle!;
+  const subject = activity.subject;
+  const out: CheckableField[] = [];
+  const push = (field: CheckableField["field"], text: string | null | undefined) => {
+    if (text && text.trim()) out.push({ field, activityIndex, activitySubject: subject, text });
+  };
+  const band = bandForGrade(gradeLevel);
+  const plan = planPuzzlePage(stored, activity.title, activity.fun_fact, band, activity.estimated_minutes, activity.encouragement);
+  push("puzzle_intro", plan.intro);
+  push("fun_fact", plan.fact);
+  if (stored.joke) push("joke_question", stored.joke.question);
+  else push("encouragement", activity.encouragement);
+  const data = stored.data;
+  if (data.type === "word_search") for (const w of data.words) push("word_search_word", w.word);
+  if (data.type === "crossword") {
+    for (const w of data.wordBank ?? []) push("word_search_word", w);
+    // Printed with its number first ("3. Tall four sided..."), so check it that way.
+    for (const e of data.entries) push("crossword_clue", `${e.number}. ${e.clue}`);
+  }
+  return out;
+}
+
+export function checkableFields(activities: PDFActivity[], gradeLevel = ""): CheckableField[] {
   const fields: CheckableField[] = [];
   activities.forEach((activity, activityIndex) => {
+    if (activity.puzzle?.data) {
+      fields.push(...puzzlePageFields(activity, activityIndex, gradeLevel));
+      return;
+    }
     // Real DB rows leave content_type null (confirmed against live data, not
     // just a hypothetical) — resolveContentType's subject-keyword fallback is
     // what actually decides rendering, so this MUST call the same function
@@ -834,7 +878,7 @@ async function sweepOnePacket(packet: PacketRow): Promise<PacketReport> {
     blankPageNumbers = pages.filter(isBlankPage).map((p) => p.pageNum);
     blankPageCount = blankPageNumbers.length;
     const content = packet.generated_content;
-    const fields = checkableFields(content.activities as PDFActivity[]);
+    const fields = checkableFields(content.activities as PDFActivity[], packet.grade_level);
     findings = detectDroppedCharacters(fields, pages);
   } catch (err) {
     // Introspection failure shouldn't fail the whole packet — the render

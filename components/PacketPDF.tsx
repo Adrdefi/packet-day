@@ -28,6 +28,17 @@ import {
 } from "@/lib/pdf-tokens";
 import { shortTitle } from "@/lib/pdf-fields";
 import { buildCoverKicker } from "@/lib/titleStyles";
+import type { StoredPuzzle } from "@/lib/puzzles/types";
+import {
+  BLOCK_GAP,
+  MAZE_CELL,
+  MAZE_MARGIN_X,
+  PUNCHLINE_SHARE,
+  PUZZLE_TYPE,
+  gridViewBox,
+  planPuzzlePage,
+} from "@/lib/puzzles/pageLayout";
+import { MazeLabelRow, PuzzleGrid, SudokuShapeKey } from "@/components/pdf/puzzleGrids";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -92,6 +103,8 @@ export interface PDFActivity {
   answer_key?: string | null;
   encouragement?: string;
   fun_fact?: string | null;
+  /** Puzzle break only: the built rotating puzzle. Missing on packets made before rotation, which render the old word search. */
+  puzzle?: StoredPuzzle;
 }
 
 export interface PDFColoringPage {
@@ -121,6 +134,18 @@ export interface PacketPDFProps {
   packetNumber?: number | null;
   /** generated_content.title_style. Missing on packets made before rotating titles. */
   titleStyle?: string | null;
+  /**
+   * Kid page total for the "N of M" footers, set by renderPacketPdf only when
+   * a puzzle packet's parent sheet ran past one page. Unset, footers print
+   * totalPages minus one, exactly as always.
+   */
+  kidPageTotal?: number | null;
+  /**
+   * Puzzle packets only: told how many pages the parent sheet took and the
+   * document's total, once react-pdf knows them. renderPacketPdf uses it to
+   * decide whether a second render with kidPageTotal is needed.
+   */
+  onParentSheetPages?: (sheetPages: number, totalPages: number) => void;
 }
 
 // ─── Grade-band helpers ───────────────────────────────────────────────────────
@@ -928,6 +953,37 @@ const styles = StyleSheet.create({
     ...typeStyle(typeScale.answerKeyEmphasis),
     color: color.textPrimary,
   },
+  // Rotating puzzle break entry: small solved grid left, notes right.
+  parentSheetPuzzleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  parentSheetPuzzleNotes: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    flexDirection: 'column',
+    gap: 6,
+  },
+  // Word search key: three compact columns of "WORD row,col direction".
+  parentSheetWordList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 1,
+  },
+  parentSheetWordEntry: {
+    fontFamily: 'Nunito',
+    fontWeight: 400,
+    fontSize: 9.5,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    width: '33.3%',
+    paddingRight: 6,
+  },
+  parentSheetWordEntryWord: {
+    fontWeight: 700,
+  },
   parentSheetDivider: {
     borderBottomWidth: 0.75,
     borderBottomColor: color.faintDivider,
@@ -1140,6 +1196,87 @@ const styles = StyleSheet.create({
   wordListLabel: {
     ...typeStyle(typeScale.sectionLabel),
     marginBottom: 8,
+  },
+
+  // ── Rotating puzzle break (RotatingPuzzleTemplate) ───────────────────────────
+  // Sizes here must match lib/puzzles/pageLayout.ts's PUZZLE_TYPE, which
+  // plans the page's height budget from them.
+  // Not activityContent: its flex:1 means flexBasis 0, which overrides the
+  // explicit height and collapses the block.
+  puzzlePageBody: {
+    flexDirection: 'column',
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+  },
+  puzzleGridArea: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  puzzleShapeKey: {
+    alignItems: 'center',
+    height: 30,
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  puzzleClueColumns: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  puzzleClueColumn: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  puzzleClueHeading: {
+    ...typeStyle(typeScale.sectionLabel),
+    marginBottom: 4,
+  },
+  puzzleClueText: {
+    fontFamily: 'Nunito',
+    fontWeight: 400,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    marginBottom: 3,
+  },
+  puzzleClueNumber: {
+    fontWeight: 700,
+  },
+  puzzleJoke: {
+    flexDirection: 'column',
+    gap: 4,
+    borderRadius: 10.5,
+    paddingVertical: 10.5,
+    paddingHorizontal: 13.5,
+    backgroundColor: color.honeyTint,
+  },
+  puzzleJokeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13.5,
+  },
+  puzzleJokeQuestion: {
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    fontSize: 12,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  // Printed upside down so the answer isn't spoiled; flip the page to read it.
+  puzzleJokePunchline: {
+    fontFamily: 'Fraunces',
+    fontWeight: 800,
+    fontSize: 12,
+    lineHeight: 1.3,
+    color: color.coralDark,
+    textAlign: 'right',
+    flexShrink: 0,
+    transform: 'rotate(180deg)',
   },
   wordListGrid: {
     flexDirection: 'row',
@@ -1539,6 +1676,7 @@ function CoverPage({
   packetMission,
   packetNumber,
   titleStyle,
+  kidPageTotal,
   band,
 }: PacketPDFProps & { band: BandKey }) {
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
@@ -1551,11 +1689,11 @@ function CoverPage({
     band,
   });
   const missionText = sanitizeText(packetMission) || sanitizeText(greeting) || greetingMessage(childName, theme);
-  const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const hasParentSheet = activities.some(hasParentSheetEntry);
 
   return (
     <Page size="LETTER" style={styles.coverPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} frameInset={COVER_FRAME.inner} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} frameInset={COVER_FRAME.inner} kidPageTotal={kidPageTotal} />
 
       {/* Decorative border frames */}
       <View style={styles.coverFrameOuter} />
@@ -1971,10 +2109,13 @@ function ChildPageFooter({
   hasParentSheet,
   inset,
   frameInset,
+  kidPageTotal,
 }: {
   hasParentSheet: boolean;
   inset: number;
   frameInset?: number;
+  /** Set only for puzzle packets whose parent sheet ran past one page (see renderPacketPdf). */
+  kidPageTotal?: number | null;
 }) {
   const bottom = frameInset === undefined ? FOOTER_BOTTOM : frameInset + FRAMED_FOOTER_GAP;
   return (
@@ -1986,7 +2127,7 @@ function ChildPageFooter({
         style={[styles.footerText, styles.childPageFooterRight, { right: inset, bottom: bottom - RENDER_PROP_Y_OFFSET }]}
         fixed
         render={({ pageNumber, totalPages }) =>
-          `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
+          `${pageNumber} of ${kidPageTotal ?? (hasParentSheet ? totalPages - 1 : totalPages)}`
         }
       />
     </>
@@ -2067,6 +2208,7 @@ function WorksheetTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2074,6 +2216,7 @@ function WorksheetTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2085,7 +2228,7 @@ function WorksheetTemplate({
 
   return (
     <Page size="LETTER" experimentalPagination style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2159,6 +2302,7 @@ function ReadingTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2166,6 +2310,7 @@ function ReadingTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2187,7 +2332,7 @@ function ReadingTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2252,6 +2397,7 @@ function OpenWorkspaceTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2259,6 +2405,7 @@ function OpenWorkspaceTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2290,7 +2437,7 @@ function OpenWorkspaceTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2387,6 +2534,7 @@ function PuzzleBreakTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2394,6 +2542,7 @@ function PuzzleBreakTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2414,7 +2563,7 @@ function PuzzleBreakTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2460,6 +2609,143 @@ function PuzzleBreakTemplate({
   );
 }
 
+// ─── Template D2 — Rotating Puzzle Break ──────────────────────────────────────
+//
+// Word search, maze, sudoku, or crossword, from activity.puzzle (built at
+// generation by lib/puzzles). Always exactly one page: wrap={false}, and
+// lib/puzzles/pageLayout.ts plans every block's height so the grid gets
+// exactly the space that's left. The Joke of the Day replaces the
+// encouragement callout; the encouragement lives in the mascot intro.
+
+function RotatingPuzzleTemplate({
+  activity,
+  colors,
+  childGrade,
+  mascotImageUrl,
+  hasParentSheet,
+  kidPageTotal,
+}: {
+  activity: PDFActivity;
+  colors: ActivityColor;
+  childName: string;
+  childGrade: string;
+  mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
+  kidPageTotal?: number | null;
+}) {
+  const stored = activity.puzzle as StoredPuzzle;
+  const puzzle = stored.data;
+  const band = bandForGrade(childGrade);
+  const title = sanitizeText(shortTitle(activity));
+  const plan = planPuzzlePage(
+    { ...stored, intro: sanitizeText(stored.intro) },
+    title,
+    activity.fun_fact ? sanitizeText(activity.fun_fact) : null,
+    band,
+    activity.estimated_minutes,
+    stored.joke ? null : activity.encouragement ? sanitizeText(activity.encouragement) : null
+  );
+  const headerActivity: PDFActivity = { ...activity, materials: ['pencil'] };
+  const mascotSize = bandTable[band].stripMascot;
+  const joke = stored.joke;
+  const jokeInner = plan.contentWidth - 27;
+  const clueSize = PUZZLE_TYPE.clue[band];
+  // The maze entrance and exit cells' centers, in points from the grid's edge.
+  const mazeCellCenter = ((MAZE_MARGIN_X + MAZE_CELL / 2) * plan.gridWidth) / gridViewBox(puzzle).width;
+
+  return (
+    // Not wrap={false} on the Page itself: react-pdf then sizes the page to
+    // its content instead of letter. One unbreakable block exactly the
+    // content area's height keeps it to one letter page; anything the plan
+    // underestimated is clipped rather than spilling onto a second page.
+    <Page size="LETTER" style={[styles.activityPage, { padding: plan.padding }]}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={plan.padding} kidPageTotal={kidPageTotal} />
+      <View wrap={false} style={[styles.puzzlePageBody, { height: plan.contentHeight }]}>
+        <ActivityHeader activity={headerActivity} colors={colors} />
+
+        <View style={[styles.characterStrip, { backgroundColor: familyBg(colors), marginBottom: BLOCK_GAP }]}>
+          {mascotImageUrl && (
+            <Image src={mascotImageUrl} style={[styles.characterStripMascot, { width: mascotSize, height: mascotSize }]} />
+          )}
+          <Text style={styles.characterStripText}>{plan.intro}</Text>
+        </View>
+
+        {plan.fact && (
+          <View style={{ marginBottom: BLOCK_GAP }}>
+            <FunFactBox funFact={plan.fact} band={band} />
+          </View>
+        )}
+
+        <View style={styles.puzzleGridArea}>
+          {puzzle.type === 'sudoku' && puzzle.shapes && (
+            <View style={styles.puzzleShapeKey}>
+              <SudokuShapeKey size={26} />
+            </View>
+          )}
+          {puzzle.type === 'maze' && <MazeLabelRow kind="start" width={plan.gridWidth} cellCenter={mazeCellCenter} />}
+          <PuzzleGrid puzzle={puzzle} width={plan.gridWidth} height={plan.gridHeight} />
+          {puzzle.type === 'maze' && (
+            <MazeLabelRow kind="finish" width={plan.gridWidth} cellCenter={plan.gridWidth - mazeCellCenter} />
+          )}
+        </View>
+
+        {puzzle.type === 'word_search' && (
+          <View style={{ marginBottom: BLOCK_GAP }}>
+            <Text style={[styles.wordListLabel, { color: colors.label }]}>Find these words</Text>
+            <View style={styles.wordListGrid}>
+              {puzzle.words.map((w) => (
+                <View key={w.word} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
+                  <Text style={[styles.wordListText, { color: colors.label }]}>{w.word}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {puzzle.type === 'crossword' && puzzle.wordBank && (
+          <View style={[styles.wordListGrid, { marginBottom: BLOCK_GAP }]}>
+            {puzzle.wordBank.map((w) => (
+              <View key={w} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
+                <Text style={[styles.wordListText, { color: colors.label }]}>{w}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {puzzle.type === 'crossword' && (
+          <View style={[styles.puzzleClueColumns, { marginBottom: BLOCK_GAP }]}>
+            {(['across', 'down'] as const).map((dir) => (
+              <View key={dir} style={styles.puzzleClueColumn}>
+                <Text style={[styles.puzzleClueHeading, { color: colors.label }]}>{dir === 'across' ? 'Across' : 'Down'}</Text>
+                {puzzle.entries
+                  .filter((e) => e.dir === dir)
+                  .map((e) => (
+                    <Text key={`${dir}${e.number}`} style={[styles.puzzleClueText, { fontSize: clueSize }]}>
+                      <Text style={styles.puzzleClueNumber}>{e.number}. </Text>
+                      {sanitizeText(e.clue)}
+                    </Text>
+                  ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* No joke (missing, or over its cap): the original encouragement callout instead, never an empty box. */}
+        {!joke && <EndOfActivityCallout activity={activity} isBreak={true} />}
+        {joke && (
+          <View style={styles.puzzleJoke}>
+            <Text style={styles.funFactLabel}>Joke of the day</Text>
+            <View style={styles.puzzleJokeRow}>
+              <Text style={styles.puzzleJokeQuestion}>{sanitizeText(joke.question)}</Text>
+              <Text style={[styles.puzzleJokePunchline, { width: jokeInner * PUNCHLINE_SHARE }]}>{sanitizeText(joke.punchline)}</Text>
+            </View>
+          </View>
+        )}
+      </View>
+    </Page>
+  );
+}
+
 // ─── Activity page dispatcher ─────────────────────────────────────────────────
 
 function ActivityPage({
@@ -2468,19 +2754,25 @@ function ActivityPage({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const contentType = resolveContentType(activity);
   const colors = accentFamily[familyForActivity(contentType)];
 
-  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet };
+  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet, kidPageTotal };
 
   if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
+  // Rotating puzzles render only when the packet stored one. Every packet
+  // made before rotation (and any whose puzzle fell back to nothing) keeps
+  // the original word search template, untouched.
+  if (contentType === 'puzzle_break' && activity.puzzle?.data) return <RotatingPuzzleTemplate {...sharedProps} />;
   if (contentType === 'puzzle_break')     return <PuzzleBreakTemplate {...sharedProps} />;
   if (contentType === 'writing_prompt' || contentType === 'movement_activity' || contentType === 'coloring') {
     return <OpenWorkspaceTemplate {...sharedProps} />;
@@ -2498,6 +2790,7 @@ function CertificatePage({
   mascotImageUrl,
   mascotName,
   activities,
+  kidPageTotal,
 }: {
   childName: string;
   childGrade: string;
@@ -2506,9 +2799,10 @@ function CertificatePage({
   mascotImageUrl?: string | null;
   mascotName?: string | null;
   activities: PDFActivity[];
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
-  const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const hasParentSheet = activities.some(hasParentSheetEntry);
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
   const childFirstName = firstNameOnly(childName);
   const mascotSignoff = mascotName
@@ -2517,7 +2811,7 @@ function CertificatePage({
 
   return (
     <Page size="LETTER" style={styles.certificatePage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} frameInset={CERT_FRAME.inner} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} frameInset={CERT_FRAME.inner} kidPageTotal={kidPageTotal} />
 
       {/* Decorative frames */}
       <View style={styles.certFrameOuter} />
@@ -2589,9 +2883,10 @@ function ParentNotesPage({
   activities,
   mascotImageUrl,
   parentNotes,
+  kidPageTotal,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
-  const hasAnswerKeys = activities.some((a) => !!a.answer_key);
+  const hasAnswerKeys = activities.some(hasParentSheetEntry);
   // The generator's note sometimes says where answer keys are, and has
   // gotten it wrong ("included with each activity"). The template states
   // where they really are, so any sentence of the note about answer keys is
@@ -2602,7 +2897,7 @@ function ParentNotesPage({
     : '';
   return (
     <Page size="LETTER" style={styles.notesPage}>
-      <ChildPageFooter hasParentSheet={hasAnswerKeys} inset={48} />
+      <ChildPageFooter hasParentSheet={hasAnswerKeys} inset={48} kidPageTotal={kidPageTotal} />
 
       {mascotImageUrl && (
         <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
@@ -2678,19 +2973,21 @@ function ColoringPage({
   mascotImageUrl,
   childGrade,
   activities,
+  kidPageTotal,
 }: {
   coloringPage: PDFColoringPage;
   coloringImageUrl?: string | null;
   mascotImageUrl?: string | null;
   childGrade: string;
   activities: PDFActivity[];
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
-  const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const hasParentSheet = activities.some(hasParentSheetEntry);
   return (
     <Page size="LETTER" style={styles.coloringPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} kidPageTotal={kidPageTotal} />
       <Text style={styles.coloringHeaderText}>Color me!</Text>
       <Text style={styles.coloringTitle}>{sanitizeText(coloringPage.title)}</Text>
       <View style={styles.coloringBox}>
@@ -2717,12 +3014,13 @@ function CelebrationPage({
   packetCelebration,
   mascotName,
   mascotImageUrl,
+  kidPageTotal,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
-  const hasParentSheet = activities.some((a) => !!a.answer_key);
+  const hasParentSheet = activities.some(hasParentSheetEntry);
   return (
     <Page size="LETTER" style={styles.notesPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} kidPageTotal={kidPageTotal} />
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
       <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
       <View style={styles.dailyReflectionRule} />
@@ -2783,8 +3081,98 @@ function CelebrationPage({
 // activity pages and gathered here as a single appendix at the very back of
 // the document. Only renders when at least one activity has an answer_key.
 
-function ParentAnswerSheetPage({ childName, activities }: { childName: string; activities: PDFActivity[] }) {
-  const withKeys = activities.filter((a) => !!a.answer_key);
+/**
+ * True when an activity puts something on the parent sheet: its written
+ * answer_key, or (rotating puzzle breaks only) its solved puzzle. Packets made
+ * before puzzle rotation have no activity.puzzle, so for them this is
+ * exactly the old `!!answer_key` check.
+ */
+function hasParentSheetEntry(a: PDFActivity): boolean {
+  return !!a.answer_key || !!a.puzzle?.data;
+}
+
+/** Longest side of a puzzle's solved grid on the parent sheet, in points. */
+const ANSWER_GRID_MAX = 130;
+
+/** The way each word search direction reads, kept short for the compact key. */
+const WORD_DIRECTION_NAMES: Record<string, string> = {
+  E: 'right',
+  W: 'left',
+  S: 'down',
+  N: 'up',
+  SE: 'down right',
+  NE: 'up right',
+  SW: 'down left',
+  NW: 'up left',
+};
+
+/** What the solved grid shows, in text: word positions for a word search, answers for a crossword. */
+function puzzleAnswerSummary(puzzle: StoredPuzzle['data']): { label: string; body: string } {
+  switch (puzzle.type) {
+    case 'word_search':
+      return { label: 'Word search', body: 'start square (row, column) and direction of each word.' };
+    case 'maze':
+      return { label: 'Maze', body: 'The one path from START to FINISH is drawn in coral.' };
+    case 'sudoku':
+      return { label: 'Sudoku', body: `Answers are in coral; the starting ${puzzle.shapes ? 'shapes' : 'numbers'} are in black.` };
+    case 'crossword': {
+      const list = (dir: 'across' | 'down') =>
+        puzzle.entries.filter((e) => e.dir === dir).map((e) => `${e.number} ${e.answer}`).join(', ');
+      return { label: 'Crossword', body: `Across: ${list('across')}. Down: ${list('down')}.` };
+    }
+  }
+}
+
+/** The puzzle break's entry on the parent sheet: a small solved grid, and the joke's punchline right side up. */
+function PuzzleAnswerGroup({ activity }: { activity: PDFActivity }) {
+  const stored = activity.puzzle as StoredPuzzle;
+  const vb = gridViewBox(stored.data);
+  const scale = ANSWER_GRID_MAX / Math.max(vb.width, vb.height);
+  const summary = puzzleAnswerSummary(stored.data);
+  const joke = stored.joke;
+  return (
+    <View style={styles.parentSheetPuzzleRow}>
+      <PuzzleGrid puzzle={stored.data} width={Math.floor(vb.width * scale)} height={Math.floor(vb.height * scale)} solved />
+      <View style={styles.parentSheetPuzzleNotes}>
+        <Text style={styles.parentSheetAnswerBody}>
+          <Text style={styles.parentSheetAnswerLabel}>{summary.label}: </Text>
+          {summary.body}
+        </Text>
+        {stored.data.type === 'word_search' && (
+          <View style={styles.parentSheetWordList}>
+            {stored.data.words.map((w) => (
+              <Text key={w.word} style={styles.parentSheetWordEntry}>
+                <Text style={styles.parentSheetWordEntryWord}>{w.word}</Text> {w.y + 1},{w.x + 1} {WORD_DIRECTION_NAMES[w.dir]}
+              </Text>
+            ))}
+          </View>
+        )}
+        {joke && (
+          <Text style={styles.parentSheetAnswerBody}>
+            <Text style={styles.parentSheetAnswerLabel}>Joke of the day: </Text>
+            {sanitizeText(joke.question)} {sanitizeText(joke.punchline)}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function ParentAnswerSheetPage({
+  childName,
+  activities,
+  onPages,
+}: {
+  childName: string;
+  activities: PDFActivity[];
+  onPages?: (sheetPages: number, totalPages: number) => void;
+}) {
+  // The puzzle entry goes last, so if it doesn't fit, the whole block (it's
+  // wrap={false}) moves to the next page instead of pushing other answers.
+  const withKeys = [
+    ...activities.filter((a) => hasParentSheetEntry(a) && !a.puzzle?.data),
+    ...activities.filter((a) => !!a.puzzle?.data),
+  ];
   if (withKeys.length === 0) return null;
 
   const childFirstName = firstNameOnly(childName);
@@ -2815,7 +3203,9 @@ function ParentAnswerSheetPage({ childName, activities }: { childName: string; a
           const group = (
             <View key={`group-${i}`} wrap={false} style={styles.parentSheetGroup}>
               <Text style={styles.parentSheetSubject}>{sanitizeText(activity.subject)}</Text>
-              {mathSections ? (
+              {activity.puzzle?.data ? (
+                <PuzzleAnswerGroup activity={activity} />
+              ) : mathSections ? (
                 <View style={styles.parentSheetMathStack}>
                   <Text style={styles.parentSheetAnswerBody}>
                     <Text style={styles.parentSheetAnswerLabel}>Quick calculations: </Text>
@@ -2844,6 +3234,18 @@ function ParentAnswerSheetPage({ childName, activities }: { childName: string; a
         <Text style={styles.footerText}>Made with love by Packet Day · packetday.com</Text>
         <Text style={styles.footerText}>Parent sheet · not part of the packet</Text>
       </View>
+      {/* Puzzle packets only: reports how many pages this sheet took once
+          react-pdf knows (the totals round), and prints nothing. */}
+      {onPages && (
+        <Text
+          fixed
+          style={styles.footerText}
+          render={({ subPageTotalPages, totalPages }) => {
+            if (typeof subPageTotalPages === 'number' && typeof totalPages === 'number') onPages(subPageTotalPages, totalPages);
+            return '';
+          }}
+        />
+      )}
     </Page>
   );
 }
@@ -2851,7 +3253,7 @@ function ParentAnswerSheetPage({ childName, activities }: { childName: string; a
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function PacketPDF(props: PacketPDFProps) {
-  const hasParentSheet = props.activities.some((a) => !!a.answer_key);
+  const hasParentSheet = props.activities.some(hasParentSheetEntry);
   return (
     <Document
       title={props.title}
@@ -2869,6 +3271,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           childGrade={props.childGrade}
           mascotImageUrl={props.mascotImageUrl}
           hasParentSheet={hasParentSheet}
+          kidPageTotal={props.kidPageTotal}
         />
       ))}
       {props.coloringPage && (
@@ -2878,6 +3281,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
           childGrade={props.childGrade}
           activities={props.activities}
+          kidPageTotal={props.kidPageTotal}
         />
       )}
       <CelebrationPage {...props} />
@@ -2890,8 +3294,13 @@ export default function PacketPDF(props: PacketPDFProps) {
         mascotImageUrl={props.mascotImageUrl}
         mascotName={props.mascotName}
         activities={props.activities}
+        kidPageTotal={props.kidPageTotal}
       />
-      <ParentAnswerSheetPage childName={props.childName} activities={props.activities} />
+      <ParentAnswerSheetPage
+        childName={props.childName}
+        activities={props.activities}
+        onPages={props.activities.some((a) => !!a.puzzle?.data) ? props.onParentSheetPages : undefined}
+      />
     </Document>
   );
 }

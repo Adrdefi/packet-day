@@ -70,3 +70,6 @@ test-*.pdf
 
 # Model bakeoff output (PDFs and images; some carry a child name, and the repo is public)
 model-bakeoff-*/
+
+# Puzzle rotation design files (contain test children's names, and the repo is public)
+docs/puzzle-rotation/

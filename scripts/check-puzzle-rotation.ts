@@ -1,0 +1,273 @@
+/**
+ * Checks the puzzle break rotation and storage (no AI calls).
+ *
+ *   npm run check-puzzle-rotation
+ *
+ * - pickPuzzleType never returns the previous type, treats a missing or
+ *   unknown one as word search, and can reach every other type.
+ * - normalizeJoke cleans dashes, rejects missing or overlong lines.
+ * - buildPuzzleBrief asks for clues only for a crossword, passes recent
+ *   jokes, and never mentions a page number.
+ * - attachPuzzleBreak stores activity.puzzle plus top level puzzle_type and
+ *   joke, sets minutes from code, keeps an old style word list for the
+ *   current renderer, removes the model's raw puzzle fields, and falls back
+ *   correctly (new word search, then no puzzle data).
+ *
+ * Exits 1 on any failure.
+ */
+
+import type { PacketActivity, PacketContent } from "../types";
+import type { BandKey } from "../lib/pdf-tokens";
+import { attachPuzzleBreak } from "../lib/puzzles/attach";
+import { buildPuzzleBrief } from "../lib/puzzles/brief";
+import { normalizeJoke } from "../lib/puzzles/jokes";
+import { PUZZLE_TEXT_CAPS, splitSentences, stockEncouragement, stockIntro, wholeSentences } from "../lib/puzzles/textCaps";
+import { PUZZLE_MINUTES, devPuzzleTypeOverride, normalizePuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
+import { PUZZLE_TYPES, type PuzzleType } from "../lib/puzzles/types";
+import { validatePuzzle } from "../lib/puzzles";
+import { THEME_WORD_LISTS } from "./lib/puzzle-word-lists";
+
+const failures: string[] = [];
+let passed = 0;
+function expect(label: string, ok: boolean, detail = "") {
+  if (ok) passed++;
+  else failures.push(`${label}${detail ? `: ${detail}` : ""}`);
+}
+
+// ─── Picker ────────────────────────────────────────────────────────────────
+
+const RANDOM_VALUES = [0, 0.0001, 0.2, 0.34, 0.5, 0.67, 0.8, 0.9999, 0.999999999];
+const previousValues: unknown[] = [...PUZZLE_TYPES, null, undefined, "", "riddle", 7];
+for (const previous of previousValues) {
+  const expected = normalizePuzzleType(previous);
+  const seen = new Set<PuzzleType>();
+  for (const r of RANDOM_VALUES) {
+    const picked = pickPuzzleType(previous, () => r);
+    seen.add(picked);
+    expect(`pick after ${JSON.stringify(previous)} with ${r}`, picked !== expected && PUZZLE_TYPES.includes(picked), picked);
+  }
+  const missing = PUZZLE_TYPES.filter((t) => t !== expected && !seen.has(t));
+  expect(`every type reachable after ${JSON.stringify(previous)}`, missing.length === 0, missing.join(","));
+}
+for (let i = 0; i < 2000; i++) {
+  expect("missing previous never picks word search", pickPuzzleType(undefined) !== "word_search");
+}
+
+// ─── Dev override ──────────────────────────────────────────────────────────
+
+{
+  const env = process.env as Record<string, string | undefined>;
+  const saved = { node: env.NODE_ENV, override: env.PUZZLE_TYPE_OVERRIDE };
+  env.PUZZLE_TYPE_OVERRIDE = "maze";
+  env.NODE_ENV = "production";
+  expect("override: ignored in production (header)", devPuzzleTypeOverride("crossword") === null);
+  expect("override: ignored in production (env)", devPuzzleTypeOverride(null) === null);
+  env.NODE_ENV = "test";
+  expect("override: ignored outside development", devPuzzleTypeOverride("crossword") === null);
+  env.NODE_ENV = "development";
+  expect("override: header wins in development", devPuzzleTypeOverride("crossword") === "crossword");
+  expect("override: env in development", devPuzzleTypeOverride(null) === "maze");
+  expect("override: junk ignored", devPuzzleTypeOverride("riddle") === "maze");
+  env.PUZZLE_TYPE_OVERRIDE = "";
+  expect("override: nothing set", devPuzzleTypeOverride(null) === null);
+  env.NODE_ENV = saved.node;
+  env.PUZZLE_TYPE_OVERRIDE = saved.override;
+}
+
+// ─── Jokes ─────────────────────────────────────────────────────────────────
+
+expect("joke: plain joke kept", JSON.stringify(normalizeJoke({ question: "Why did the comet blush?", punchline: "It saw the Milky Way!" })) === JSON.stringify({ question: "Why did the comet blush?", punchline: "It saw the Milky Way!" }));
+expect("joke: em dash becomes a comma", normalizeJoke({ question: "What do you call a sleepy dino — a dino snore?", punchline: "Yes!" })?.question === "What do you call a sleepy dino, a dino snore?");
+expect("joke: spaced hyphen becomes a comma", normalizeJoke({ question: "Knock knock - who is there?", punchline: "Lettuce." })?.question === "Knock knock, who is there?");
+expect("joke: word hyphen kept", normalizeJoke({ question: "What is a T-rex's favorite number?", punchline: "Eight!" })?.question === "What is a T-rex's favorite number?");
+expect("joke: missing punchline rejected", normalizeJoke({ question: "Why?" }) === null);
+expect("joke: not an object rejected", normalizeJoke("Why? Because.") === null);
+expect("joke: overlong rejected", normalizeJoke({ question: "x".repeat(200), punchline: "y" }) === null);
+
+// ─── Length caps ───────────────────────────────────────────────────────────
+
+expect("sentences: split keeps punctuation", JSON.stringify(splitSentences("Find the bugs! Look closely. Ready?")) === JSON.stringify(["Find the bugs!", "Look closely.", "Ready?"]));
+expect("sentences: T. rex is not a sentence end", splitSentences("A T. rex had huge teeth. It ate meat.").length === 2);
+expect("sentences: Dr. and Mt. are not sentence ends", splitSentences("Dr. Reyes climbed Mt. Fuji at dawn. It was cold.").length === 2);
+expect("sentences: decimals stay whole", splitSentences("It weighs 3.5 tons. Wow!").length === 2);
+expect("sentences: a closing quote stays with its sentence", splitSentences('She said "Go!" Then she ran.')[0] === 'She said "Go!"');
+expect("whole: short text untouched", wholeSentences("Find the bugs, Lily!", 50) === "Find the bugs, Lily!");
+expect("whole: keeps only the sentences that fit", wholeSentences("Jordan, start at the top. Trust your sharp eyes and take it one letter at a time.", 40) === "Jordan, start at the top.");
+expect("whole: first sentence too long gives null", wholeSentences("Jordan, the lava tubes twist in every direction so start at the top.", 40) === null);
+{
+  // Whatever the cap, the result is a run of whole original sentences, with nothing added.
+  const source = "Lily, look for the bug words. They hide across and down. Your sharp eyes will spot them! Circle each one you find.";
+  const sentences = splitSentences(source);
+  for (let cap = 10; cap <= source.length + 5; cap++) {
+    const t = wholeSentences(source, cap);
+    if (t === null) {
+      expect(`whole at ${cap}: null only when the first sentence is over`, sentences[0].length > cap);
+      continue;
+    }
+    const n = splitSentences(t).length;
+    expect(`whole at ${cap}: whole sentences only`, t === sentences.slice(0, n).join(" ") && t.length <= cap, t);
+    expect(`whole at ${cap}: ends at a sentence end`, /[.!?]$/.test(t), t);
+  }
+}
+for (const seed of [0, 1, 2, 3, 7, 4294967295]) {
+  for (const mascot of ["Pip", null]) {
+    const line = stockIntro("Lily", mascot, seed);
+    expect(`stock intro ${seed} ${mascot}: names the child`, line.includes("Lily"));
+    expect(`stock intro ${seed} ${mascot}: fits the smallest cap`, line.length <= PUZZLE_TEXT_CAPS["K-2"].introChars, line);
+    expect(`stock intro ${seed} ${mascot}: no dashes`, !/[–—-]/.test(line));
+    if (mascot) expect(`stock intro ${seed}: names the mascot`, line.includes("Pip"));
+  }
+  const enc = stockEncouragement("Lily", seed);
+  expect(`stock encouragement ${seed}: names the child, no dashes`, enc.includes("Lily") && !/[–—-]/.test(enc));
+}
+for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
+  const caps = PUZZLE_TEXT_CAPS[band];
+  const c = { question: caps.jokeQuestionChars, punchline: caps.jokePunchlineChars };
+  expect(`joke caps ${band}: short joke kept`, normalizeJoke({ question: "Why are fish so smart?", punchline: "They live in schools!" }, c) !== null);
+  expect(`joke caps ${band}: long question dropped`, normalizeJoke({ question: "Why ".repeat(30), punchline: "Ha!" }, c) === null);
+  expect(`joke caps ${band}: long punchline dropped`, normalizeJoke({ question: "Why?", punchline: "Because ".repeat(15) }, c) === null);
+  expect(`caps ${band}: prompt words fit under the character caps`, caps.introWords * 5 < caps.introChars && caps.factWords * 5 < caps.factChars);
+}
+
+// Over the caps at generation: stock intro, no Did You Know, and the
+// encouragement callout in place of a dropped joke.
+{
+  const long = "Lily, this puzzle is packed with tricky turns and hidden surprises so take your time and check every corner twice because you have solved much harder and trickier puzzles than this one before today.";
+  const content = packet(THEME_WORD_LISTS["K-2"][0].words.map((w) => w.word), {
+    puzzle_intro: long,
+    fun_fact: long,
+    joke: { question: "Why did the very curious young explorer pack a second shiny compass for the long trip?", punchline: "Ha!" },
+  });
+  content.mascot_name = "Pip";
+  attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "1", childName: "Lily", theme: "Bugs", seed: 5 });
+  const act = content.activities[3];
+  expect("over cap: stock intro with the mascot", act.puzzle?.intro === stockIntro("Lily", "Pip", 5), act.puzzle?.intro);
+  expect("over cap: Did You Know dropped", act.fun_fact === null);
+  expect("over cap: joke dropped", act.puzzle?.joke === null && content.joke === undefined);
+  expect("over cap: encouragement callout instead", act.encouragement === stockEncouragement("Lily", 5));
+}
+{
+  // A joke that fits keeps no fallback encouragement.
+  const content = packet(THEME_WORD_LISTS["K-2"][0].words.map((w) => w.word));
+  attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "1", childName: "Lily", theme: "Bugs", seed: 5 });
+  expect("joke kept: no fallback encouragement", content.activities[3].encouragement === undefined);
+}
+
+// ─── Brief ─────────────────────────────────────────────────────────────────
+
+for (const type of PUZZLE_TYPES) {
+  for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
+    const brief = buildPuzzleBrief({ type, band, childFirstName: "Kai", theme: "Outer Space", recentJokes: [{ question: "Q1?", punchline: "P1!" }] });
+    expect(`brief ${type} ${band}: names the type`, brief.includes(`Puzzle type for the puzzle_break activity: ${type}`));
+    expect(`brief ${type} ${band}: clues only for crossword`, brief.includes("- clues:") === (type === "crossword"));
+    expect(`brief ${type} ${band}: passes recent jokes`, brief.includes("- Q1? / P1!"));
+    expect(`brief ${type} ${band}: no page numbers`, !/page \d/i.test(brief));
+    expect(`brief ${type} ${band}: addresses the child`, brief.includes("speaking to Kai by name"));
+    expect(`brief ${type} ${band}: no em dashes`, !/[–—]/.test(brief));
+    expect(`brief ${type} ${band}: states the intro word cap`, brief.includes(`${PUZZLE_TEXT_CAPS[band].introWords} words at most`));
+    if (type === "crossword") expect(`brief crossword ${band}: vocabulary answers only`, brief.includes("never a plot detail"));
+    expect(`brief ${type} ${band}: intro never claims every answer is in the reading`, brief.includes("Never claim every answer or clue is in today's reading"));
+    expect(`brief ${type} ${band}: no "every clue comes from today's reading"`, !/every clue comes from today's reading/i.test(brief));
+    if (type === "crossword") expect(`brief crossword ${band}: no "the reading's" possessive`, brief.includes(`Never write "the reading's" as a possessive`));
+  }
+}
+expect("brief with no history", buildPuzzleBrief({ type: "maze", band: "3-5", childFirstName: "Kai", theme: "Pirates", recentJokes: [] }).includes("- (none yet)"));
+
+// ─── Attach ────────────────────────────────────────────────────────────────
+
+function packet(words: string[], extra: Record<string, unknown> = {}): PacketContent {
+  const puzzleActivity = {
+    subject: "Puzzle Break",
+    content_type: "puzzle_break",
+    title: "Lost in the Galaxy",
+    description: "A space puzzle.",
+    instructions: words,
+    estimated_minutes: 99,
+    answer_key: "Words to find: lots",
+    fun_fact: "A day on Venus is longer than its year.",
+    puzzle_intro: "Kai, the stars are hiding words. You can do this!",
+    joke: { question: "How do you throw a party in space?", punchline: "You planet!" },
+    ...extra,
+  } as unknown as PacketActivity;
+  const other = { subject: "Math", content_type: "worksheet", title: "M", description: "d", instructions: ["a"], estimated_minutes: 20 } as PacketActivity;
+  return { packet_title: "Kai's Space Day", activities: [other, other, other, puzzleActivity, other, other] };
+}
+
+const GRADES: Record<BandKey, string> = { "K-2": "1", "3-5": "4", "6-8": "7" };
+for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
+  for (const type of PUZZLE_TYPES) {
+    const list = THEME_WORD_LISTS[band][0].words;
+    const clues = Object.fromEntries(list.map((w) => [w.word, w.clue]));
+    const content = packet(list.map((w) => w.word), type === "crossword" ? { clues } : {});
+    const r = attachPuzzleBreak(content, { requestedType: type, gradeLevel: GRADES[band], childName: "Kai Lopez", theme: "Outer Space", seed: 42 });
+    const act = content.activities[3];
+    const raw = act as unknown as Record<string, unknown>;
+    const label = `attach ${type} ${band}`;
+    expect(`${label}: found and built`, r.found && r.builtType === type && !r.fellBack, JSON.stringify(r));
+    expect(`${label}: activity.puzzle stored and valid`, !!act.puzzle && validatePuzzle(act.puzzle.data, GRADES[band]) === null);
+    expect(`${label}: top level puzzle_type`, content.puzzle_type === type);
+    expect(`${label}: top level joke`, content.joke?.punchline === "You planet!");
+    expect(`${label}: stored joke`, act.puzzle?.joke?.question === "How do you throw a party in space?");
+    expect(`${label}: intro from the model`, act.puzzle?.intro === "Kai, the stars are hiding words. You can do this!");
+    expect(`${label}: minutes from code`, act.estimated_minutes === PUZZLE_MINUTES[type][band], String(act.estimated_minutes));
+    expect(`${label}: raw model fields removed`, !("puzzle_intro" in raw) && !("joke" in raw) && !("clues" in raw));
+    expect(`${label}: answer key cleared`, act.answer_key === null);
+    expect(`${label}: legacy word list for the old renderer`, act.instructions.length === 10 && act.instructions.every((w) => /^[A-Z]{3,10}$/.test(w)), act.instructions.join(","));
+    expect(`${label}: title kept`, act.title === "Lost in the Galaxy");
+    expect(`${label}: seed stored`, act.puzzle?.seed === 42);
+    expect(`${label}: other activities untouched`, content.activities[0].estimated_minutes === 20);
+    if (type === "crossword") {
+      expect(`${label}: clues reach the grid`, act.puzzle?.data.type === "crossword" && act.puzzle.data.entries.every((e) => e.clue === clues[e.answer]));
+    }
+  }
+}
+
+// Crossword with no clues falls back to the new word search, with code written copy.
+{
+  const content = packet(THEME_WORD_LISTS["3-5"][0].words.map((w) => w.word));
+  const r = attachPuzzleBreak(content, { requestedType: "crossword", gradeLevel: "4", childName: "Kai", theme: "outer space", seed: 1 });
+  const act = content.activities[3];
+  expect("no clues: falls back to word search", r.fellBack && r.builtType === "word_search" && content.puzzle_type === "word_search");
+  expect("no clues: code written title", act.title === "Outer Space Word Search", act.title);
+  expect("no clues: code written intro", act.puzzle?.intro.startsWith("Kai, can you find every hidden outer space word?") === true, act.puzzle?.intro);
+  expect("no clues: intro has no dashes", !/[–—-]/.test(act.puzzle?.intro ?? ""));
+  expect("no clues: word search minutes", act.estimated_minutes === PUZZLE_MINUTES.word_search["3-5"]);
+}
+
+// Too few words for anything: no puzzle data, old renderer fields intact.
+{
+  const content = packet(["SUN", "MOON", "STAR"]);
+  const r = attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "4", childName: "Kai", theme: "Space", seed: 1 });
+  const act = content.activities[3];
+  expect("maze with few words still builds a maze", r.builtType === "maze" && !r.fellBack);
+  const content2 = packet(["SUN", "MOON", "STAR"]);
+  const r2 = attachPuzzleBreak(content2, { requestedType: "word_search", gradeLevel: "4", childName: "Kai", theme: "Space", seed: 1 });
+  const act2 = content2.activities[3];
+  expect("word search with few words: no puzzle", r2.builtType === null && r2.fellBack && act2.puzzle === undefined && content2.puzzle_type === undefined);
+  expect("no puzzle: joke still saved for history", content2.joke?.punchline === "You planet!");
+  expect("no puzzle: old renderer still has words", act2.instructions.join(",") === "SUN,MOON,STAR");
+  expect("no puzzle: minutes from code", act2.estimated_minutes === PUZZLE_MINUTES.word_search["3-5"]);
+  void act;
+}
+
+// No puzzle break activity (half day): nothing changes.
+{
+  const content: PacketContent = { packet_title: "Kai", activities: [{ subject: "Math", title: "M", description: "d", instructions: [], estimated_minutes: 20 }] };
+  const before = JSON.stringify(content);
+  const r = attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "4", childName: "Kai", theme: "Space", seed: 1 });
+  expect("no puzzle activity: not found, untouched", !r.found && JSON.stringify(content) === before);
+}
+
+// Garbage model output never throws.
+{
+  const content = packet(null as unknown as string[], { joke: "ha", clues: 5, puzzle_intro: 12 });
+  const r = attachPuzzleBreak(content, { requestedType: "crossword", gradeLevel: "7", childName: "Kai", theme: "Space", seed: 1 });
+  expect("garbage: no throw, no puzzle", r.found && r.builtType === null && content.activities[3].puzzle === undefined);
+}
+
+if (failures.length > 0) {
+  process.stderr.write(`\nPUZZLE ROTATION CHECK FAILED (${failures.length} problem${failures.length === 1 ? "" : "s"}):\n\n`);
+  for (const f of failures.slice(0, 40)) process.stderr.write(`  ${f}\n`);
+  process.exit(1);
+}
+process.stdout.write(`Puzzle rotation check passed: ${passed} checks.\n`);
