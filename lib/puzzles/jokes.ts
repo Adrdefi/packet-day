@@ -11,20 +11,24 @@ export const JOKE_MAX_CHARS = 110;
 /** Em dash, en dash, and the other dash characters, plus a spaced hyphen used as punctuation. */
 const DASHES = /\s*[‒–—―−]\s*|\s+-+\s+|\s*--+\s*/g;
 
-function cleanLine(raw: unknown): string | null {
+function cleanLine(raw: unknown, maxChars: number): string | null {
   if (typeof raw !== "string") return null;
   // The brand never uses dashes as punctuation; swap any for a comma.
   const text = raw.replace(DASHES, ", ").replace(/\s+/g, " ").trim();
-  if (!text || text.length > JOKE_MAX_CHARS) return null;
+  if (!text || text.length > maxChars) return null;
   return text;
 }
 
-/** The model's joke, cleaned, or null if it's missing or unusable. */
-export function normalizeJoke(raw: unknown): PuzzleJoke | null {
+/**
+ * The model's joke, cleaned, or null if it's missing or unusable. With
+ * `caps` (the band's line limits), a line over its cap drops the whole joke:
+ * a joke can't be trimmed without breaking it.
+ */
+export function normalizeJoke(raw: unknown, caps?: { question: number; punchline: number }): PuzzleJoke | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  const question = cleanLine(r.question);
-  const punchline = cleanLine(r.punchline);
+  const question = cleanLine(r.question, Math.min(caps?.question ?? JOKE_MAX_CHARS, JOKE_MAX_CHARS));
+  const punchline = cleanLine(r.punchline, Math.min(caps?.punchline ?? JOKE_MAX_CHARS, JOKE_MAX_CHARS));
   if (!question || !punchline) return null;
   return { question, punchline };
 }

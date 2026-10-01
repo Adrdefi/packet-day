@@ -21,6 +21,7 @@ import type { BandKey } from "../lib/pdf-tokens";
 import { attachPuzzleBreak } from "../lib/puzzles/attach";
 import { buildPuzzleBrief } from "../lib/puzzles/brief";
 import { normalizeJoke } from "../lib/puzzles/jokes";
+import { PUZZLE_TEXT_CAPS, trimToCap } from "../lib/puzzles/textCaps";
 import { PUZZLE_MINUTES, normalizePuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
 import { PUZZLE_TYPES, type PuzzleType } from "../lib/puzzles/types";
 import { validatePuzzle } from "../lib/puzzles";
@@ -62,6 +63,33 @@ expect("joke: missing punchline rejected", normalizeJoke({ question: "Why?" }) =
 expect("joke: not an object rejected", normalizeJoke("Why? Because.") === null);
 expect("joke: overlong rejected", normalizeJoke({ question: "x".repeat(200), punchline: "y" }) === null);
 
+// ─── Length caps ───────────────────────────────────────────────────────────
+
+expect("trim: short text untouched", trimToCap("Find the bugs, Lily!", 50) === "Find the bugs, Lily!");
+expect("trim: cuts at a sentence end", trimToCap("Jordan, start at the top. Trust your sharp eyes and take it one letter at a time.", 40) === "Jordan, start at the top.");
+{
+  const t = trimToCap("Jordan, the lava tubes twist in every direction so start at the top and find the one path", 40);
+  expect("trim: falls back to a word boundary with an ellipsis", t === "Jordan, the lava tubes twist in every…", t);
+  expect("trim: never longer than the cap", t.length <= 40);
+}
+{
+  // Every cut lands where the original has a space: never mid word.
+  const source = "Supercalifragilistic words everywhere around the volcano rim tonight";
+  for (let cap = 22; cap < source.length; cap++) {
+    const t = trimToCap(source, cap);
+    const kept = t.endsWith("…") ? t.slice(0, -1) : t;
+    expect(`trim at ${cap}: whole words only`, source.startsWith(kept) && (source[kept.length] === " " || kept.length === source.length), t);
+  }
+}
+for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
+  const caps = PUZZLE_TEXT_CAPS[band];
+  const c = { question: caps.jokeQuestionChars, punchline: caps.jokePunchlineChars };
+  expect(`joke caps ${band}: short joke kept`, normalizeJoke({ question: "Why are fish so smart?", punchline: "They live in schools!" }, c) !== null);
+  expect(`joke caps ${band}: long question dropped`, normalizeJoke({ question: "Why ".repeat(30), punchline: "Ha!" }, c) === null);
+  expect(`joke caps ${band}: long punchline dropped`, normalizeJoke({ question: "Why?", punchline: "Because ".repeat(15) }, c) === null);
+  expect(`caps ${band}: prompt words fit under the character caps`, caps.introWords * 5 < caps.introChars && caps.factWords * 5 < caps.factChars);
+}
+
 // ─── Brief ─────────────────────────────────────────────────────────────────
 
 for (const type of PUZZLE_TYPES) {
@@ -73,6 +101,8 @@ for (const type of PUZZLE_TYPES) {
     expect(`brief ${type} ${band}: no page numbers`, !/page \d/i.test(brief));
     expect(`brief ${type} ${band}: addresses the child`, brief.includes("speaking to Kai by name"));
     expect(`brief ${type} ${band}: no em dashes`, !/[–—]/.test(brief));
+    expect(`brief ${type} ${band}: states the intro word cap`, brief.includes(`${PUZZLE_TEXT_CAPS[band].introWords} words at most`));
+    if (type === "crossword") expect(`brief crossword ${band}: vocabulary answers only`, brief.includes("never a plot detail"));
   }
 }
 expect("brief with no history", buildPuzzleBrief({ type: "maze", band: "3-5", childFirstName: "Kai", theme: "Pirates", recentJokes: [] }).includes("- (none yet)"));

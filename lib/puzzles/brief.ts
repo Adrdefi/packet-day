@@ -1,6 +1,7 @@
 import type { BandKey } from "@/lib/pdf-tokens";
 import { CROSSWORD_BANDS } from "./crossword";
 import { formatRecentJokes, type PuzzleJoke } from "./jokes";
+import { PUZZLE_TEXT_CAPS } from "./textCaps";
 import type { PuzzleType } from "./types";
 
 // The <puzzle_brief> block for the user prompt. The server has already picked
@@ -39,9 +40,12 @@ const WHAT_THE_CHILD_SEES: Record<PuzzleType, Record<BandKey, string>> = {
 };
 
 const CLUE_RULES: Record<BandKey, string> = {
-  "K-2": "Clues are read out loud by a grown up: 4 to 8 simple, concrete words each, like \"A baby dino hatches from this.\"",
-  "3-5": "Clues are 5 to 12 words each, at a grade 3 to 5 reading level. Some may point back to today's reading.",
-  "6-8": "Clues are 5 to 14 words each and draw on facts from today's reading passage, so the passage is the way to solve them.",
+  "K-2":
+    "Clues are read out loud by a grown up: simple definitions of 4 to 8 concrete words, like \"A baby dino hatches from this.\" No story references at all.",
+  "3-5":
+    "Clues are definitions of 5 to 12 words at a grade 3 to 5 reading level. At most 2 clues may mention the child or the mascot.",
+  "6-8":
+    "Clues are definitions or concept clues of 5 to 14 words. At most 3 clues may use a detail from today's reading, and only to clue a real vocabulary word. No riddles, no mystery or \"suspect\" style clues.",
 };
 
 export interface PuzzleBriefInput {
@@ -55,9 +59,10 @@ export interface PuzzleBriefInput {
 export function buildPuzzleBrief(input: PuzzleBriefInput): string {
   const { type, band, childFirstName: name, theme } = input;
   const maxLen = maxWordLength(band);
+  const caps = PUZZLE_TEXT_CAPS[band];
   const crossword = type === "crossword";
   const wordUse = crossword
-    ? "These are the crossword answers. Put the best ones first; code fits as many as it can and drops the rest."
+    ? "These are the crossword answers. Every answer is a real theme vocabulary word a kid would learn from (like TRANSIT, NEBULA, THORAX), never a plot detail or a generic story word (like DOME, GRAPH, PATTERN, MIRROR, SHADOW). Put the best ones first; code fits as many as it can and drops the rest."
     : type === "word_search"
       ? "These are the words to find. Put the best ones first; code fits as many as it can and drops the rest."
       : "The puzzle itself doesn't use these words. Code keeps them as a backup word search, so write them as carefully as for a real one.";
@@ -69,11 +74,11 @@ Code builds and checks the grid. You write only the words${crossword ? ", clues,
 
 For the puzzle_break activity:
 - title: a fun puzzle title for this ${type.replace("_", " ")}, tied to the theme. 6 words or fewer. No dashes, no emoji.
-- puzzle_intro: 1 or 2 short sentences in the mascot's voice, speaking to ${name} by name. Say what to do in this puzzle and end with a warm, specific nudge of encouragement. Never say how many words or answers there are. Never mention a page number; say "today's reading" if you need to point to the story.
-- fun_fact: a Did You Know fact about ${theme}, one sentence, surprising and specific. It is about the theme, not about puzzles, word searches, or language.
+- puzzle_intro: 1 or 2 short sentences, ${caps.introWords} words at most, in the mascot's voice, speaking to ${name} by name. Say what to do in this puzzle and end with a warm, specific nudge of encouragement. Never say how many words or answers there are. Never mention a page number; say "today's reading" if you need to point to the story.
+- fun_fact: a Did You Know fact about ${theme}, one sentence of ${caps.factWords} words at most, surprising and specific. It is about the theme, not about puzzles, word searches, or language.
 - instructions: exactly ${CANDIDATE_WORD_COUNT} theme words, uppercase letters only, 3 to ${maxLen} letters each, no spaces or punctuation. Every word different, no word hidden inside another word (not SUN and SUNSET), no word that reads the same backwards (like NOON). Words ${name} knows or meets in today's reading. ${wordUse}${crossword ? `
 - clues: an object with one clue for every word in instructions, keyed by the word exactly as written there. ${CLUE_RULES[band]} A clue never contains its own answer. No page numbers, no dashes.` : ""}
-- joke: a Joke of the Day as {"question": "...", "punchline": "..."}. Tied to ${theme}. Right for grades ${band}: ${band === "K-2" ? "simple, silly, easy to get" : band === "3-5" ? "puns and wordplay a 9 year old gets" : "clever wordplay a middle schooler would groan at"}. Two short lines, each under 12 words. Kind: no meanness, no put downs, no gross out or potty humor. No dashes.
+- joke: a Joke of the Day as {"question": "...", "punchline": "..."}. Tied to ${theme}. Right for grades ${band}: ${band === "K-2" ? "simple, silly, easy to get" : band === "3-5" ? "puns and wordplay a 9 year old gets" : "clever wordplay a middle schooler would groan at"}. Two short lines: the question ${caps.jokeQuestionWords} words at most, the punchline ${caps.jokePunchlineWords} words at most. Kind: no meanness, no put downs, no gross out or potty humor. No dashes.
 - Leave out encouragement for the puzzle_break; it lives at the end of puzzle_intro.
 - answer_key: null. The answer key is built automatically.
 

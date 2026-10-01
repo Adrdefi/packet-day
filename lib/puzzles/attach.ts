@@ -4,6 +4,7 @@ import type { PacketContent } from "@/types";
 import { buildPuzzle } from "./index";
 import { normalizeJoke } from "./jokes";
 import { PUZZLE_MINUTES } from "./rotation";
+import { PUZZLE_TEXT_CAPS, trimToCap } from "./textCaps";
 import { PUZZLE_GENERATOR_VERSION, type PuzzleType, type PuzzleWordInput, type StoredPuzzle } from "./types";
 import { normalizeWord } from "./words";
 
@@ -93,7 +94,8 @@ export function attachPuzzleBreak(
       });
     result.candidateCount = candidates.length;
 
-    const joke = normalizeJoke(raw.joke);
+    const caps = PUZZLE_TEXT_CAPS[band];
+    const joke = normalizeJoke(raw.joke, { question: caps.jokeQuestionChars, punchline: caps.jokePunchlineChars });
     result.hasJoke = joke !== null;
     if (joke) content.joke = joke;
 
@@ -109,6 +111,11 @@ export function attachPuzzleBreak(
         activity.description = copy.intro;
       }
     }
+
+    // Caps keep the page to one printed page; trimming is rare because the
+    // prompt asks for these lengths in words.
+    intro = trimToCap(intro, caps.introChars);
+    if (typeof activity.fun_fact === "string") activity.fun_fact = trimToCap(activity.fun_fact, caps.factChars);
 
     // Old style word list for the current renderer.
     const legacy: string[] = [];
