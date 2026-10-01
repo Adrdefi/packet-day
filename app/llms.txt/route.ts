@@ -55,6 +55,7 @@ function buildLlmsTxt(): string {
     "",
     `- Each packet is ${PAGE_RANGE_TEXT}, built around the kid's current obsession, with an invented character who shows up through every subject.`,
     "- Packets include math, reading, science, art and movement breaks.",
+    "- Each full day packet has a puzzle break that rotates between a word search, maze, mini sudoku and crossword, harder for older grades (a shape sudoku for a kindergartner, a 9 by 9 for a seventh grader), plus a joke of the day.",
     `- A packet is a full school day, roughly ${HOURS_RANGE_TEXT} with breaks.`,
     "- A packet is generated in a minute or two. The parent downloads the PDF, and it is emailed to them too.",
     "- Answer keys are included.",
