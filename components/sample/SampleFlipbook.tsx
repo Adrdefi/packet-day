@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import type { SamplePage } from "@/lib/sample/content";
+import PageLightbox, { type LightboxPage } from "./PageLightbox";
 
 interface Props {
   pages: SamplePage[];
@@ -18,6 +19,7 @@ interface Props {
 export default function SampleFlipbook({ pages, width, height }: Props) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [current, setCurrent] = useState(0);
+  const [openPage, setOpenPage] = useState<LightboxPage | null>(null);
   const last = pages.length - 1;
 
   const goTo = useCallback(
@@ -68,7 +70,11 @@ export default function SampleFlipbook({ pages, width, height }: Props) {
             aria-label={i === last ? "Parent answer key" : `Page ${i + 1} of ${pages.length}`}
           >
             <figure>
-              <div className="relative overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm">
+              <button
+                type="button"
+                onClick={() => setOpenPage({ src: page.src, alt: page.alt, label: i === last ? "Parent answer key" : page.label })}
+                className="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
                 <span className="absolute left-3 top-3 rounded-full bg-cream/95 px-3 py-1 text-xs font-bold text-sage-dark shadow-sm">
                   {i === last ? "Parent answer key" : page.label}
                 </span>
@@ -82,7 +88,8 @@ export default function SampleFlipbook({ pages, width, height }: Props) {
                   loading={i === 0 ? "eager" : "lazy"}
                   className="h-auto w-full"
                 />
-              </div>
+                <span className="sr-only">, opens full size</span>
+              </button>
               <figcaption className="mt-3 min-h-[3rem] text-center text-sm leading-snug text-dark/70">
                 {page.caption}
               </figcaption>
@@ -103,6 +110,8 @@ export default function SampleFlipbook({ pages, width, height }: Props) {
           <span aria-hidden="true">→</span>
         </button>
       </div>
+      <p className="mt-2 text-center text-xs text-dark/60">Tap a page to see it full size.</p>
+      <PageLightbox page={openPage} width={width} height={height} onClose={() => setOpenPage(null)} />
     </div>
   );
 }

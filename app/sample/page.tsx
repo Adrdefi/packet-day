@@ -36,7 +36,7 @@ const OG_IMAGE = {
   url: `${SITE_URL}/og/sample`,
   width: 1200,
   height: 630,
-  alt: "The cover of Kai and the Missing Planet, a real sample packet",
+  alt: "The cover of Kai's Expedition Across the Solar System, a real sample packet",
 };
 
 export const metadata: Metadata = {
@@ -181,14 +181,14 @@ export default function SamplePage() {
           </div>
         </section>
 
-        {/* Meet Nova */}
+        {/* Meet Cosmo */}
         <section className="px-6 py-20 bg-cream-deep">
           <div className="max-w-5xl mx-auto grid gap-8 md:grid-cols-[23.5rem_1fr] md:gap-12 md:items-center">
-            {/* Nova on their own, from the packet's cover art. Above the heading on mobile, left of it on desktop. */}
+            {/* Cosmo on their own, from the packet's cover art. Above the heading on mobile, left of it on desktop. */}
             <div className="mx-auto w-[17rem] md:w-full overflow-hidden rounded-3xl border border-border bg-white p-3 shadow-sm">
               <Image
-                src="/sample/nova.png"
-                alt="Nova the fox astronaut in a shiny silver spacesuit, waving and holding a magnifying glass."
+                src="/sample/cosmo.png"
+                alt="Cosmo the puppy astronaut in an orange spacesuit with a star patch, floating and waving one paw."
                 width={742}
                 height={742}
                 sizes="(min-width: 768px) 352px, 248px"
@@ -197,14 +197,13 @@ export default function SamplePage() {
               />
             </div>
             <div>
-              <SectionHeading>Meet Nova</SectionHeading>
+              <SectionHeading>Meet Cosmo</SectionHeading>
               <p className="mb-5 text-dark/70 leading-relaxed">
                 {/* Plain text on purpose: built from constants, this paragraph came out of
                     the build with words missing (a string folding bug), so it names Kai directly. */}
-                Nova is a fox astronaut in a shiny silver spacesuit, with a magnifying glass for detective work. On the
-                cover Nova brings Kai an urgent case: an old star chart shows nine planets, but today we only count
-                eight. In the reading they follow the clues to find out why Pluto is now called a dwarf planet, and the
-                certificate ends with &ldquo;Nova is proud of you, Kai.&rdquo;
+                Cosmo is a puppy astronaut in an orange spacesuit with a star patch. On the cover Cosmo sends Kai off
+                to map the solar system from the Sun all the way out to Neptune. In the reading they fly past every
+                planet while Kai draws the map, and the certificate ends with &ldquo;Cosmo is proud of you, Kai.&rdquo;
               </p>
               <p className="font-semibold text-dark">Every packet invents its own character.</p>
             </div>

@@ -28,6 +28,13 @@ Packet Day generates personalized, printable daily learning packets for homescho
 - **Keep factual copy honest.** `/sample` features Kai (grade 4), with Mia (grade 1) and Jonah (grade 7) in its grade toggle. None of them is Natalie's child. Label them as sample packets and never imply a real family used them unless Andy confirms it.
 - **Never add, edit, or mark testimonials as verified in `lib/testimonials.ts`** without Andy confirming the person and quote are real.
 
+### Sample packet fact check (`/sample` and any other showcase)
+
+- Before keeping any packet as a sample, check every science, history, and number claim in it: the reading, every Did You Know, puzzle clues and words, science steps, the parent notes, and the answer key. Work every math answer yourself.
+- Also flag loose wording a careful parent could call wrong, even if it is technically defensible. Examples that slipped through once: "Pluto was renamed in 2006" (it was reclassified, not renamed) and "more massive planets mean heavier surface weight" (surface gravity depends on mass and radius; Uranus is the counterexample).
+- Report every flag to Andy, including ones you decided to keep, and say why.
+- If anything is wrong, or loose enough that you would not defend it to a careful parent, regenerate the packet with the same forced puzzle type. Never hand edit a sample packet. Fact check the new one the same way.
+
 ---
 
 ## Tech stack

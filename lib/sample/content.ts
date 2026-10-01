@@ -8,7 +8,7 @@ import type { LandingIconName } from "@/components/landing/art/LandingIcon";
 
 export const SAMPLE_CHILD = "Kai";
 export const SAMPLE_GRADE = 4;
-export const SAMPLE_CHARACTER = "Nova";
+export const SAMPLE_CHARACTER = "Cosmo";
 
 export const PAGE_WIDTH = 1200;
 export const PAGE_HEIGHT = 1553;
@@ -24,73 +24,73 @@ export interface SamplePage {
 const PAGES: Omit<SamplePage, "src">[] = [
   {
     label: "Cover",
-    caption: "The cover. Nova the fox astronaut hands Kai an urgent case: a missing planet.",
-    alt: "Cover of Kai and the Missing Planet: Nova the fox astronaut with a magnifying glass, 6 activities, 117 minutes, grade 4, and a mission note from Nova.",
+    caption: "The cover. Cosmo the puppy astronaut sends Kai off to map the whole solar system.",
+    alt: "Cover of Kai's Expedition Across the Solar System: Cosmo the puppy astronaut in an orange spacesuit, 6 activities, 138 minutes, grade 4, and a mission note from Cosmo.",
   },
   {
     label: "Today at a glance",
-    caption: "Today at a glance: six activities, 117 minutes, and a short note for you.",
+    caption: "Today at a glance: six activities, 138 minutes, and a short note for you.",
     alt: "Today at a Glance page listing the six activities with their minutes, a note for the parent and lines for observations.",
   },
   {
     label: "Math",
-    caption: "Mission Control Math: two digit multiplication, division and a fraction of the rocky planets.",
-    alt: "Math page, Mission Control Math: six quick problems like 24 x 13 and 756 divided by 6, then four space word problems.",
+    caption: "Rocket Fuel Math: two digit multiplication, long division and a fraction of the rocky planets.",
+    alt: "Math page, Rocket Fuel Math: six quick problems like 47 x 36 and 432 divided by 8, then four space word problems.",
   },
   {
     label: "Math, draw and solve",
-    caption: "Draw and solve: an area model for Nova's launch pad, 23 tiles by 14 tiles.",
-    alt: "Draw and solve page: a big box to draw an area model for 23 x 14, a Jupiter fact and a bonus challenge.",
+    caption: "Draw and solve: an area model for 16 rows of 23 stars.",
+    alt: "Draw and solve page: a big box to draw an area model for 16 x 23, a fact about sunlight and a bonus challenge.",
   },
   {
     label: "Reading",
-    caption: "Reading: an old star chart in Grandpa's attic shows nine planets. Where did the ninth one go?",
-    alt: "Reading page, The Case of the Ninth Planet: a mystery story about Kai and Nova finding an old star chart with Pluto on it.",
+    caption: "Reading: Kai and Cosmo fly from Mercury to Neptune and map every planet on the way.",
+    alt: "Reading page, The Great Solar System Map: a story about Kai and Cosmo mapping every planet from Mercury to Neptune.",
   },
   {
     label: "Reading questions",
-    caption: "Six questions about the story, from what orbit means to whether Pluto should still be a planet.",
-    alt: "The end of the story and six comprehension questions, with lines to write each answer.",
+    caption: "Five questions about the story, from what makes craters to why Jupiter needed two boxes on the map.",
+    alt: "Five comprehension questions about the story with lines to write each answer, and a Venus fact.",
   },
   {
     label: "Writing",
-    caption: "Writing: Kai writes a detective report about a mystery object far beyond Neptune.",
-    alt: "Writing page, Detective Report from the Edge of Space: four prompts for a two paragraph report, with writing lines.",
+    caption: "Writing: Kai writes an explorer's log about a brand new planet past Neptune.",
+    alt: "Writing page, Explorer's Log: A Brand New Planet: four prompts for a two paragraph log entry, with writing lines.",
   },
   {
     label: "Puzzle break",
     caption: "Puzzle break: a solar system crossword, with a joke of the day.",
-    alt: "Solar System Clue Crossword: a crossword grid with 11 space clues, like the eighth planet and a tool that makes faraway stars look closer, and a joke of the day.",
+    alt: "Cosmo's Solar System Crossword: a crossword grid with 11 space clues, like the biggest planet and an icy space traveler with a long glowing tail, and a joke of the day.",
   },
   {
     label: "Movement break",
-    caption: "Movement break: count down, blast off, moonwalk and orbit the room.",
-    alt: "Rocket Launch Countdown: six moves, from a countdown jump to slow moonwalk steps and 10 star jumps.",
+    caption: "Movement break: count down, blast off, orbit a pretend Sun and dodge the asteroid belt.",
+    alt: "Rocket Launch Workout: six moves, from a countdown jump to jogging around a chair or pillow Sun and 10 side hops each way.",
   },
   {
     label: "Science",
-    caption: "Science: a flashlight and a ball show how Earth spins and orbits.",
-    alt: "Science page, Spin and Orbit Investigation: shine a flashlight on a ball, spin it to show day and night, then walk it around the light.",
+    caption: "Science: track a stick's shadow outside, then swing a sock on a string to see how gravity holds an orbit.",
+    alt: "Science page, Planet Scientist Field Notes: mark a stick's shadow twice, explain why it moved, then swing a sock on a string and let go.",
   },
   {
     label: "More science",
-    caption: "More science: how bright is sunlight on Pluto, and why does Neptune take so long to go around the Sun?",
-    alt: "Second science page with two thinking questions, a Mercury and Neptune fact and a bonus challenge.",
+    caption: "More science: what if Earth moved to where Venus is, and how the rocky and giant planets differ.",
+    alt: "Second science page with two thinking questions, a Neptune fact and a bonus challenge.",
   },
   {
     label: "Coloring page",
-    caption: "Coloring page: Kai and Nova spot a faraway dwarf planet through a telescope.",
-    alt: "Coloring page, Kai and Nova Spot a Faraway Dwarf Planet: a kid and a fox in spacesuits next to a telescope and a rocket, with a ringed planet and a comet overhead.",
+    caption: "Coloring page: Kai and Cosmo float past a ringed planet.",
+    alt: "Coloring page, Kai and Cosmo Float Past the Ringed Planet: a kid and a puppy in spacesuits floating near a rocket, a telescope, a ringed planet, a crescent moon and a comet.",
   },
   {
     label: "Daily reflection",
-    caption: "Daily reflection: Nova says case closed, and Kai answers one last question.",
-    alt: "Daily Reflection page: a note from Nova, one question about the day and lines to answer it.",
+    caption: "Daily reflection: Cosmo says expedition complete, and Kai answers one last question.",
+    alt: "Daily Reflection page: a note from Cosmo, one question about the day and lines to answer it.",
   },
   {
     label: "Certificate",
     caption: "The certificate, with a spot for your signature and Kai's.",
-    alt: "Certificate of completion for Kai, with signature lines and the words Nova is proud of you, Kai.",
+    alt: "Certificate of completion for Kai, with signature lines and the words Cosmo is proud of you, Kai.",
   },
   {
     label: "Parent answer key",
@@ -115,13 +115,13 @@ export interface DayStep {
 
 /** From Kai's Today at a Glance page, then the pages that close the day. */
 export const DAY_STEPS: DayStep[] = [
-  { icon: "math", kind: "Math", title: "Mission Control Math", minutes: 25 },
-  { icon: "reading", kind: "Reading", title: "The Case of the Ninth Planet", minutes: 25 },
-  { icon: "artPe", kind: "Writing", title: "Detective Report from the Edge of Space", minutes: 20 },
-  { icon: "limitless", kind: "Puzzle break", title: "Solar System Clue Crossword", minutes: 15 },
-  { icon: "peBreaks", kind: "Movement break", title: "Rocket Launch Countdown", minutes: 7 },
-  { icon: "science", kind: "Science", title: "Spin and Orbit Investigation", minutes: 25 },
-  { icon: "original", kind: "Coloring page", title: "Kai and Nova Spot a Faraway Dwarf Planet", note: "Whenever they want" },
+  { icon: "math", kind: "Math", title: "Rocket Fuel Math", minutes: 30 },
+  { icon: "reading", kind: "Reading", title: "The Great Solar System Map", minutes: 25 },
+  { icon: "artPe", kind: "Writing", title: "Explorer's Log: A Brand New Planet", minutes: 25 },
+  { icon: "limitless", kind: "Puzzle break", title: "Cosmo's Solar System Crossword", minutes: 15 },
+  { icon: "peBreaks", kind: "Movement break", title: "Rocket Launch Workout", minutes: 8 },
+  { icon: "science", kind: "Science", title: "Planet Scientist Field Notes", minutes: 35 },
+  { icon: "original", kind: "Coloring page", title: "Kai and Cosmo Float Past the Ringed Planet", note: "Whenever they want" },
   { icon: "gradeAligned", kind: "Certificate", title: "Signed by you and Kai", note: "At the end" },
   { icon: "answerKeys", kind: "Answer key", title: "For you, not for Kai", note: "On your phone" },
 ];
@@ -158,37 +158,37 @@ export const GRADE_SAMPLES: GradeSample[] = [
   {
     grade: 4,
     childName: "Kai",
-    character: "Nova the fox",
-    caption: "Two digit multiplication, a Pluto mystery and a crossword.",
+    character: "Cosmo the puppy",
+    caption: "Two digit multiplication, a map of the planets and a crossword.",
     math: {
       src: "/sample/toggle/grade-4-math.png",
-      alt: "Grade 4 math page, Mission Control Math: problems like 36 x 25 and 756 divided by 6, and four space word problems.",
+      alt: "Grade 4 math page, Rocket Fuel Math: problems like 47 x 36 and 432 divided by 8, and four space word problems.",
     },
     reading: {
       src: "/sample/toggle/grade-4-reading.png",
-      alt: "Grade 4 reading page, The Case of the Ninth Planet: a mystery story about Kai and Nova the fox finding an old star chart with nine planets.",
+      alt: "Grade 4 reading page, The Great Solar System Map: Kai and Cosmo the puppy map every planet from Mercury to Neptune.",
     },
     puzzle: {
       src: "/sample/toggle/grade-4-puzzle.png",
-      alt: "Grade 4 puzzle page, Solar System Clue Crossword: a crossword with 11 space clues and a joke of the day.",
+      alt: "Grade 4 puzzle page, Cosmo's Solar System Crossword: a crossword with 11 space clues and a joke of the day.",
     },
   },
   {
     grade: 7,
     childName: "Jonah",
     character: "Kepler the owl",
-    caption: "Two step equations, escape velocity and a 9 by 9 sudoku.",
+    caption: "Two step equations, the hunt for Planet Nine and a 9 by 9 sudoku.",
     math: {
       src: "/sample/toggle/grade-7-math.png",
-      alt: "Grade 7 math page, Launch Control Equations: integers, two step equations, a mean, the volume of a cylinder and word problems about a rocket launch.",
+      alt: "Grade 7 math page, Fuel Burns and Flight Paths: two step equations, a mean, the volume of a cylinder and word problems about rocket fuel, asteroid counts and saving for a telescope.",
     },
     reading: {
       src: "/sample/toggle/grade-7-reading.png",
-      alt: "Grade 7 reading page, The Second Launch: Jonah and Kepler the owl work out why their first simulated rocket launch failed to reach escape velocity.",
+      alt: "Grade 7 reading page, The Planet Found on Paper: Jonah and Kepler the owl weigh the evidence for Planet Nine and learn how Neptune was found with math first.",
     },
     puzzle: {
       src: "/sample/toggle/grade-7-puzzle.png",
-      alt: "Grade 7 puzzle page, Kepler's Orbital Number Grid: a 9 by 9 sudoku, a Venus fact and a joke of the day.",
+      alt: "Grade 7 puzzle page, Kepler's Orbit Grid Challenge: a 9 by 9 sudoku, a Saturn fact and a joke of the day.",
     },
   },
 ];

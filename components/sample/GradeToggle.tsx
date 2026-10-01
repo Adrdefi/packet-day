@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import type { GradeSample } from "@/lib/sample/content";
+import PageLightbox, { type LightboxPage } from "./PageLightbox";
 
 interface Props {
   samples: GradeSample[];
@@ -14,6 +15,7 @@ interface Props {
 /** Tabs that swap the math, reading and puzzle pages between three real packets on the same theme. */
 export default function GradeToggle({ samples, defaultGrade, width, height }: Props) {
   const [grade, setGrade] = useState(defaultGrade);
+  const [openPage, setOpenPage] = useState<LightboxPage | null>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const active = samples.find((sample) => sample.grade === grade) ?? samples[0];
 
@@ -62,29 +64,38 @@ export default function GradeToggle({ samples, defaultGrade, width, height }: Pr
         </p>
         <p className="mt-1 text-center text-dark/70">{active.caption}</p>
         <p className="mt-1 mb-6 text-center text-xs text-dark/60">Guide: {active.character}</p>
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden">
           {[
             { label: "Math page", image: active.math },
             { label: "Reading page", image: active.reading },
             { label: "Puzzle page", image: active.puzzle },
           ].map(({ label, image }) => (
-            <figure key={image.src}>
-              <div className="overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm">
+            <figure key={image.src} className="w-[75%] shrink-0 snap-center md:w-auto">
+              <button
+                type="button"
+                onClick={() => setOpenPage({ src: image.src, alt: image.alt, label: `Grade ${active.grade} ${label.toLowerCase()}` })}
+                className="block w-full cursor-zoom-in overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
                 <Image
                   src={image.src}
                   alt={image.alt}
                   width={width}
                   height={height}
-                  sizes="(min-width: 1024px) 300px, 33vw"
+                  sizes="(min-width: 768px) 300px, 75vw"
                   loading="lazy"
                   className="h-auto w-full"
                 />
-              </div>
+                <span className="sr-only">, opens full size</span>
+              </button>
               <figcaption className="mt-2 text-center text-xs font-semibold uppercase tracking-wide text-dark/60">{label}</figcaption>
             </figure>
           ))}
         </div>
+        <p className="mt-3 text-center text-xs text-dark/60">
+          <span className="md:hidden">Swipe for more pages →&nbsp; </span>Tap a page to see it full size.
+        </p>
       </div>
+      <PageLightbox page={openPage} width={width} height={height} onClose={() => setOpenPage(null)} />
     </div>
   );
 }
