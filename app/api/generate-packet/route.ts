@@ -10,7 +10,7 @@ import { attachPuzzleBreak } from "@/lib/puzzles/attach";
 import { buildPuzzleBrief } from "@/lib/puzzles/brief";
 import { normalizeJoke, type PuzzleJoke } from "@/lib/puzzles/jokes";
 import { newPuzzleSeed } from "@/lib/puzzles/random";
-import { pickPuzzleType } from "@/lib/puzzles/rotation";
+import { devPuzzleTypeOverride, pickPuzzleType } from "@/lib/puzzles/rotation";
 import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "@/lib/config";
 import { estimatePacketCostUsd, type ClaudeUsage } from "@/lib/aiCost";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -533,7 +533,10 @@ export async function POST(req: NextRequest) {
 
   // The server picks the puzzle type before the AI call, never the child's
   // previous one. Half day packets have no puzzle break.
-  const requestedPuzzleType = typedPacketLength === "full" ? pickPuzzleType(previousPuzzleType) : null;
+  const requestedPuzzleType =
+    typedPacketLength === "full"
+      ? devPuzzleTypeOverride(req.headers.get("x-dev-puzzle-type")) ?? pickPuzzleType(previousPuzzleType)
+      : null;
 
   const userPrompt = buildUserPrompt(
     child as Child,

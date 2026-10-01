@@ -22,7 +22,7 @@ import { attachPuzzleBreak } from "../lib/puzzles/attach";
 import { buildPuzzleBrief } from "../lib/puzzles/brief";
 import { normalizeJoke } from "../lib/puzzles/jokes";
 import { PUZZLE_TEXT_CAPS, splitSentences, stockEncouragement, stockIntro, wholeSentences } from "../lib/puzzles/textCaps";
-import { PUZZLE_MINUTES, normalizePuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
+import { PUZZLE_MINUTES, devPuzzleTypeOverride, normalizePuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
 import { PUZZLE_TYPES, type PuzzleType } from "../lib/puzzles/types";
 import { validatePuzzle } from "../lib/puzzles";
 import { THEME_WORD_LISTS } from "./lib/puzzle-word-lists";
@@ -51,6 +51,27 @@ for (const previous of previousValues) {
 }
 for (let i = 0; i < 2000; i++) {
   expect("missing previous never picks word search", pickPuzzleType(undefined) !== "word_search");
+}
+
+// ─── Dev override ──────────────────────────────────────────────────────────
+
+{
+  const env = process.env as Record<string, string | undefined>;
+  const saved = { node: env.NODE_ENV, override: env.PUZZLE_TYPE_OVERRIDE };
+  env.PUZZLE_TYPE_OVERRIDE = "maze";
+  env.NODE_ENV = "production";
+  expect("override: ignored in production (header)", devPuzzleTypeOverride("crossword") === null);
+  expect("override: ignored in production (env)", devPuzzleTypeOverride(null) === null);
+  env.NODE_ENV = "test";
+  expect("override: ignored outside development", devPuzzleTypeOverride("crossword") === null);
+  env.NODE_ENV = "development";
+  expect("override: header wins in development", devPuzzleTypeOverride("crossword") === "crossword");
+  expect("override: env in development", devPuzzleTypeOverride(null) === "maze");
+  expect("override: junk ignored", devPuzzleTypeOverride("riddle") === "maze");
+  env.PUZZLE_TYPE_OVERRIDE = "";
+  expect("override: nothing set", devPuzzleTypeOverride(null) === null);
+  env.NODE_ENV = saved.node;
+  env.PUZZLE_TYPE_OVERRIDE = saved.override;
 }
 
 // ─── Jokes ─────────────────────────────────────────────────────────────────

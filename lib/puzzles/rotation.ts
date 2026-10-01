@@ -33,3 +33,17 @@ export const PUZZLE_MINUTES: Record<PuzzleType, Record<BandKey, number>> = {
   sudoku: { "K-2": 10, "3-5": 15, "6-8": 25 },
   crossword: { "K-2": 10, "3-5": 15, "6-8": 20 },
 };
+
+/**
+ * Development only: force the puzzle type, for testing and for regenerating
+ * /sample. Read from the PUZZLE_TYPE_OVERRIDE env var or, per request, the
+ * x-dev-puzzle-type header. Ignored entirely unless NODE_ENV is
+ * "development" (npm run dev), so production and Vercel previews (both run
+ * with NODE_ENV "production") never honor it.
+ */
+export function devPuzzleTypeOverride(headerValue: string | null | undefined): PuzzleType | null {
+  if (process.env.NODE_ENV !== "development") return null;
+  if (isPuzzleType(headerValue)) return headerValue;
+  const fromEnv = process.env.PUZZLE_TYPE_OVERRIDE;
+  return isPuzzleType(fromEnv) ? fromEnv : null;
+}
