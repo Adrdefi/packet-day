@@ -4,7 +4,7 @@ import type { PacketContent } from "@/types";
 import { buildPuzzle } from "./index";
 import { normalizeJoke } from "./jokes";
 import { PUZZLE_MINUTES } from "./rotation";
-import { PUZZLE_TEXT_CAPS, trimToCap } from "./textCaps";
+import { PUZZLE_TEXT_CAPS, stockEncouragement, stockIntro, wholeSentences } from "./textCaps";
 import { PUZZLE_GENERATOR_VERSION, type PuzzleType, type PuzzleWordInput, type StoredPuzzle } from "./types";
 import { normalizeWord } from "./words";
 
@@ -113,9 +113,18 @@ export function attachPuzzleBreak(
     }
 
     // Caps keep the page to one printed page; trimming is rare because the
-    // prompt asks for these lengths in words.
-    intro = trimToCap(intro, caps.introChars);
-    if (typeof activity.fun_fact === "string") activity.fun_fact = trimToCap(activity.fun_fact, caps.factChars);
+    // prompt asks for these lengths in words. Only whole sentences are ever
+    // kept, and nothing is added to them.
+    // - Intro: if even its first sentence is too long, a stock line.
+    // - Did You Know: if its first sentence is too long, no box.
+    // - Joke: never cut. One over its cap was already dropped above; the old
+    //   encouragement callout then takes its place, never an empty box.
+    intro = wholeSentences(intro, caps.introChars) ?? stockIntro(name, content.mascot_name, opts.seed);
+    if (typeof activity.fun_fact === "string") activity.fun_fact = wholeSentences(activity.fun_fact, caps.factChars);
+    if (!joke) {
+      const own = typeof raw.encouragement === "string" ? wholeSentences(raw.encouragement, caps.introChars) : null;
+      activity.encouragement = own ?? stockEncouragement(name, opts.seed);
+    }
 
     // Old style word list for the current renderer.
     const legacy: string[] = [];

@@ -21,7 +21,7 @@ import type { BandKey } from "../lib/pdf-tokens";
 import { attachPuzzleBreak } from "../lib/puzzles/attach";
 import { buildPuzzleBrief } from "../lib/puzzles/brief";
 import { normalizeJoke } from "../lib/puzzles/jokes";
-import { PUZZLE_TEXT_CAPS, trimToCap } from "../lib/puzzles/textCaps";
+import { PUZZLE_TEXT_CAPS, splitSentences, stockEncouragement, stockIntro, wholeSentences } from "../lib/puzzles/textCaps";
 import { PUZZLE_MINUTES, normalizePuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
 import { PUZZLE_TYPES, type PuzzleType } from "../lib/puzzles/types";
 import { validatePuzzle } from "../lib/puzzles";
@@ -65,21 +65,39 @@ expect("joke: overlong rejected", normalizeJoke({ question: "x".repeat(200), pun
 
 // ─── Length caps ───────────────────────────────────────────────────────────
 
-expect("trim: short text untouched", trimToCap("Find the bugs, Lily!", 50) === "Find the bugs, Lily!");
-expect("trim: cuts at a sentence end", trimToCap("Jordan, start at the top. Trust your sharp eyes and take it one letter at a time.", 40) === "Jordan, start at the top.");
+expect("sentences: split keeps punctuation", JSON.stringify(splitSentences("Find the bugs! Look closely. Ready?")) === JSON.stringify(["Find the bugs!", "Look closely.", "Ready?"]));
+expect("sentences: T. rex is not a sentence end", splitSentences("A T. rex had huge teeth. It ate meat.").length === 2);
+expect("sentences: Dr. and Mt. are not sentence ends", splitSentences("Dr. Reyes climbed Mt. Fuji at dawn. It was cold.").length === 2);
+expect("sentences: decimals stay whole", splitSentences("It weighs 3.5 tons. Wow!").length === 2);
+expect("sentences: a closing quote stays with its sentence", splitSentences('She said "Go!" Then she ran.')[0] === 'She said "Go!"');
+expect("whole: short text untouched", wholeSentences("Find the bugs, Lily!", 50) === "Find the bugs, Lily!");
+expect("whole: keeps only the sentences that fit", wholeSentences("Jordan, start at the top. Trust your sharp eyes and take it one letter at a time.", 40) === "Jordan, start at the top.");
+expect("whole: first sentence too long gives null", wholeSentences("Jordan, the lava tubes twist in every direction so start at the top.", 40) === null);
 {
-  const t = trimToCap("Jordan, the lava tubes twist in every direction so start at the top and find the one path", 40);
-  expect("trim: falls back to a word boundary with an ellipsis", t === "Jordan, the lava tubes twist in every…", t);
-  expect("trim: never longer than the cap", t.length <= 40);
-}
-{
-  // Every cut lands where the original has a space: never mid word.
-  const source = "Supercalifragilistic words everywhere around the volcano rim tonight";
-  for (let cap = 22; cap < source.length; cap++) {
-    const t = trimToCap(source, cap);
-    const kept = t.endsWith("…") ? t.slice(0, -1) : t;
-    expect(`trim at ${cap}: whole words only`, source.startsWith(kept) && (source[kept.length] === " " || kept.length === source.length), t);
+  // Whatever the cap, the result is a run of whole original sentences, with nothing added.
+  const source = "Lily, look for the bug words. They hide across and down. Your sharp eyes will spot them! Circle each one you find.";
+  const sentences = splitSentences(source);
+  for (let cap = 10; cap <= source.length + 5; cap++) {
+    const t = wholeSentences(source, cap);
+    if (t === null) {
+      expect(`whole at ${cap}: null only when the first sentence is over`, sentences[0].length > cap);
+      continue;
+    }
+    const n = splitSentences(t).length;
+    expect(`whole at ${cap}: whole sentences only`, t === sentences.slice(0, n).join(" ") && t.length <= cap, t);
+    expect(`whole at ${cap}: ends at a sentence end`, /[.!?]$/.test(t), t);
   }
+}
+for (const seed of [0, 1, 2, 3, 7, 4294967295]) {
+  for (const mascot of ["Pip", null]) {
+    const line = stockIntro("Lily", mascot, seed);
+    expect(`stock intro ${seed} ${mascot}: names the child`, line.includes("Lily"));
+    expect(`stock intro ${seed} ${mascot}: fits the smallest cap`, line.length <= PUZZLE_TEXT_CAPS["K-2"].introChars, line);
+    expect(`stock intro ${seed} ${mascot}: no dashes`, !/[–—-]/.test(line));
+    if (mascot) expect(`stock intro ${seed}: names the mascot`, line.includes("Pip"));
+  }
+  const enc = stockEncouragement("Lily", seed);
+  expect(`stock encouragement ${seed}: names the child, no dashes`, enc.includes("Lily") && !/[–—-]/.test(enc));
 }
 for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
   const caps = PUZZLE_TEXT_CAPS[band];
@@ -88,6 +106,30 @@ for (const band of ["K-2", "3-5", "6-8"] as BandKey[]) {
   expect(`joke caps ${band}: long question dropped`, normalizeJoke({ question: "Why ".repeat(30), punchline: "Ha!" }, c) === null);
   expect(`joke caps ${band}: long punchline dropped`, normalizeJoke({ question: "Why?", punchline: "Because ".repeat(15) }, c) === null);
   expect(`caps ${band}: prompt words fit under the character caps`, caps.introWords * 5 < caps.introChars && caps.factWords * 5 < caps.factChars);
+}
+
+// Over the caps at generation: stock intro, no Did You Know, and the
+// encouragement callout in place of a dropped joke.
+{
+  const long = "Lily, this puzzle is packed with tricky turns and hidden surprises so take your time and check every corner twice because you have solved much harder and trickier puzzles than this one before today.";
+  const content = packet(THEME_WORD_LISTS["K-2"][0].words.map((w) => w.word), {
+    puzzle_intro: long,
+    fun_fact: long,
+    joke: { question: "Why did the very curious young explorer pack a second shiny compass for the long trip?", punchline: "Ha!" },
+  });
+  content.mascot_name = "Pip";
+  attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "1", childName: "Lily", theme: "Bugs", seed: 5 });
+  const act = content.activities[3];
+  expect("over cap: stock intro with the mascot", act.puzzle?.intro === stockIntro("Lily", "Pip", 5), act.puzzle?.intro);
+  expect("over cap: Did You Know dropped", act.fun_fact === null);
+  expect("over cap: joke dropped", act.puzzle?.joke === null && content.joke === undefined);
+  expect("over cap: encouragement callout instead", act.encouragement === stockEncouragement("Lily", 5));
+}
+{
+  // A joke that fits keeps no fallback encouragement.
+  const content = packet(THEME_WORD_LISTS["K-2"][0].words.map((w) => w.word));
+  attachPuzzleBreak(content, { requestedType: "maze", gradeLevel: "1", childName: "Lily", theme: "Bugs", seed: 5 });
+  expect("joke kept: no fallback encouragement", content.activities[3].encouragement === undefined);
 }
 
 // ─── Brief ─────────────────────────────────────────────────────────────────

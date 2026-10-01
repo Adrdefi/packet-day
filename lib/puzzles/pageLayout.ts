@@ -1,6 +1,6 @@
 import { band as bandTable, type BandKey } from "@/lib/pdf-tokens";
 import { GLYPH_WIDTHS } from "./fontMetrics";
-import { PUZZLE_TEXT_CAPS, trimToCap } from "./textCaps";
+import { PUZZLE_TEXT_CAPS, wholeSentences } from "./textCaps";
 import type { BuiltPuzzle, StoredPuzzle } from "./types";
 
 // Height budget for the rotating puzzle break page (components/PacketPDF.tsx,
@@ -171,7 +171,9 @@ export function planPuzzlePage(
   title: string,
   rawFact: string | null | undefined,
   band: BandKey,
-  minutes: number
+  minutes: number,
+  /** Shown in the old encouragement callout when there's no joke. */
+  encouragement?: string | null
 ): PuzzlePagePlan {
   const pad = PAGE_PADDING[band];
   const contentWidth = PAGE_WIDTH - 2 * pad;
@@ -181,8 +183,9 @@ export function planPuzzlePage(
   const p = stored.data;
   const T = PUZZLE_TYPE;
 
-  const intro = trimToCap(stored.intro, caps.introChars);
-  const fullFact = rawFact ? trimToCap(rawFact, caps.factChars) : null;
+  // Stored text is already capped at generation; this only guards older data.
+  const intro = wholeSentences(stored.intro, caps.introChars) ?? stored.intro;
+  const fullFact = rawFact ? wholeSentences(rawFact, caps.factChars) : null;
 
   const minutesWidth = textWidth(`${minutes} min · pencil`, T.durationSize, "bold");
   const titleLines = estimateLines(title, T.title.size, contentWidth - 12 - minutesWidth, "display", -0.02 * T.title.size);
@@ -214,6 +217,10 @@ export function planPuzzlePage(
     const qH = estimateLines(joke.question, T.jokeQuestion.size, qW, "bold") * T.jokeQuestion.size * T.jokeQuestion.lineHeight;
     const pH = estimateLines(joke.punchline, T.jokePunchline.size, pW, "display") * T.jokePunchline.size * T.jokePunchline.lineHeight;
     jokeBox = 21 + T.calloutLabel.size * T.calloutLabel.lineHeight + 4 + Math.max(qH, pH) + BLOCK_GAP;
+  } else if (encouragement) {
+    // The original encouragement callout: min height 44, 10.5pt padding, calloutBody text.
+    const lines = estimateLines(encouragement, 11, contentWidth - 27);
+    jokeBox = Math.max(44, 21 + lines * 11 * 1.45) + BLOCK_GAP;
   }
 
   const vb = gridViewBox(p);
