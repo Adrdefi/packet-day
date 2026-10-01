@@ -966,6 +966,24 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 6,
   },
+  // Word search key: three compact columns of "WORD row,col direction".
+  parentSheetWordList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 1,
+  },
+  parentSheetWordEntry: {
+    fontFamily: 'Nunito',
+    fontWeight: 400,
+    fontSize: 9.5,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    width: '33.3%',
+    paddingRight: 6,
+  },
+  parentSheetWordEntryWord: {
+    fontWeight: 700,
+  },
   parentSheetDivider: {
     borderBottomWidth: 0.75,
     borderBottomColor: color.faintDivider,
@@ -3076,26 +3094,23 @@ function hasParentSheetEntry(a: PDFActivity): boolean {
 /** Longest side of a puzzle's solved grid on the parent sheet, in points. */
 const ANSWER_GRID_MAX = 130;
 
-/** How each word search direction reads to a parent. Rows count from the top, columns from the left. */
+/** The way each word search direction reads, kept short for the compact key. */
 const WORD_DIRECTION_NAMES: Record<string, string> = {
-  E: 'across',
-  W: 'backwards across',
+  E: 'right',
+  W: 'left',
   S: 'down',
-  N: 'backwards up',
-  SE: 'diagonal down right',
-  NE: 'diagonal up right',
-  SW: 'backwards diagonal down left',
-  NW: 'backwards diagonal up left',
+  N: 'up',
+  SE: 'down right',
+  NE: 'up right',
+  SW: 'down left',
+  NW: 'up left',
 };
 
 /** What the solved grid shows, in text: word positions for a word search, answers for a crossword. */
 function puzzleAnswerSummary(puzzle: StoredPuzzle['data']): { label: string; body: string } {
   switch (puzzle.type) {
     case 'word_search':
-      return {
-        label: 'Word search',
-        body: puzzle.words.map((w) => `${w.word}: row ${w.y + 1}, col ${w.x + 1}, ${WORD_DIRECTION_NAMES[w.dir]}`).join('. ') + '.',
-      };
+      return { label: 'Word search', body: 'start square (row, column) and direction of each word.' };
     case 'maze':
       return { label: 'Maze', body: 'The one path from START to FINISH is drawn in coral.' };
     case 'sudoku':
@@ -3123,6 +3138,15 @@ function PuzzleAnswerGroup({ activity }: { activity: PDFActivity }) {
           <Text style={styles.parentSheetAnswerLabel}>{summary.label}: </Text>
           {summary.body}
         </Text>
+        {stored.data.type === 'word_search' && (
+          <View style={styles.parentSheetWordList}>
+            {stored.data.words.map((w) => (
+              <Text key={w.word} style={styles.parentSheetWordEntry}>
+                <Text style={styles.parentSheetWordEntryWord}>{w.word}</Text> {w.y + 1},{w.x + 1} {WORD_DIRECTION_NAMES[w.dir]}
+              </Text>
+            ))}
+          </View>
+        )}
         {joke && (
           <Text style={styles.parentSheetAnswerBody}>
             <Text style={styles.parentSheetAnswerLabel}>Joke of the day: </Text>
