@@ -134,6 +134,18 @@ export interface PacketPDFProps {
   packetNumber?: number | null;
   /** generated_content.title_style. Missing on packets made before rotating titles. */
   titleStyle?: string | null;
+  /**
+   * Kid page total for the "N of M" footers, set by renderPacketPdf only when
+   * a puzzle packet's parent sheet ran past one page. Unset, footers print
+   * totalPages minus one, exactly as always.
+   */
+  kidPageTotal?: number | null;
+  /**
+   * Puzzle packets only: told how many pages the parent sheet took and the
+   * document's total, once react-pdf knows them. renderPacketPdf uses it to
+   * decide whether a second render with kidPageTotal is needed.
+   */
+  onParentSheetPages?: (sheetPages: number, totalPages: number) => void;
 }
 
 // ─── Grade-band helpers ───────────────────────────────────────────────────────
@@ -1646,6 +1658,7 @@ function CoverPage({
   packetMission,
   packetNumber,
   titleStyle,
+  kidPageTotal,
   band,
 }: PacketPDFProps & { band: BandKey }) {
   const totalMinutes = activities.reduce((s, a) => s + a.estimated_minutes, 0);
@@ -1662,7 +1675,7 @@ function CoverPage({
 
   return (
     <Page size="LETTER" style={styles.coverPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} frameInset={COVER_FRAME.inner} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} frameInset={COVER_FRAME.inner} kidPageTotal={kidPageTotal} />
 
       {/* Decorative border frames */}
       <View style={styles.coverFrameOuter} />
@@ -2078,10 +2091,13 @@ function ChildPageFooter({
   hasParentSheet,
   inset,
   frameInset,
+  kidPageTotal,
 }: {
   hasParentSheet: boolean;
   inset: number;
   frameInset?: number;
+  /** Set only for puzzle packets whose parent sheet ran past one page (see renderPacketPdf). */
+  kidPageTotal?: number | null;
 }) {
   const bottom = frameInset === undefined ? FOOTER_BOTTOM : frameInset + FRAMED_FOOTER_GAP;
   return (
@@ -2093,7 +2109,7 @@ function ChildPageFooter({
         style={[styles.footerText, styles.childPageFooterRight, { right: inset, bottom: bottom - RENDER_PROP_Y_OFFSET }]}
         fixed
         render={({ pageNumber, totalPages }) =>
-          `${pageNumber} of ${hasParentSheet ? totalPages - 1 : totalPages}`
+          `${pageNumber} of ${kidPageTotal ?? (hasParentSheet ? totalPages - 1 : totalPages)}`
         }
       />
     </>
@@ -2174,6 +2190,7 @@ function WorksheetTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2181,6 +2198,7 @@ function WorksheetTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2192,7 +2210,7 @@ function WorksheetTemplate({
 
   return (
     <Page size="LETTER" experimentalPagination style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2266,6 +2284,7 @@ function ReadingTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2273,6 +2292,7 @@ function ReadingTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2294,7 +2314,7 @@ function ReadingTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2359,6 +2379,7 @@ function OpenWorkspaceTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2366,6 +2387,7 @@ function OpenWorkspaceTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2397,7 +2419,7 @@ function OpenWorkspaceTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2494,6 +2516,7 @@ function PuzzleBreakTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2501,6 +2524,7 @@ function PuzzleBreakTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const bc = getBandConfig(band);
@@ -2521,7 +2545,7 @@ function PuzzleBreakTemplate({
 
   return (
     <Page size="LETTER" style={[styles.activityPage, { padding: bc.cardPad + 24 }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={bc.cardPad + 24} kidPageTotal={kidPageTotal} />
       <View style={styles.activityContent}>
         <ActivityHeader activity={activity} colors={colors} />
         <CharacterStrip activity={activity} colors={colors} mascotImageUrl={mascotImageUrl} band={band} />
@@ -2581,6 +2605,7 @@ function RotatingPuzzleTemplate({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   colors: ActivityColor;
@@ -2588,6 +2613,7 @@ function RotatingPuzzleTemplate({
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const stored = activity.puzzle as StoredPuzzle;
   const puzzle = stored.data;
@@ -2615,7 +2641,7 @@ function RotatingPuzzleTemplate({
     // content area's height keeps it to one letter page; anything the plan
     // underestimated is clipped rather than spilling onto a second page.
     <Page size="LETTER" style={[styles.activityPage, { padding: plan.padding }]}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={plan.padding} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={plan.padding} kidPageTotal={kidPageTotal} />
       <View wrap={false} style={[styles.puzzlePageBody, { height: plan.contentHeight }]}>
         <ActivityHeader activity={headerActivity} colors={colors} />
 
@@ -2710,17 +2736,19 @@ function ActivityPage({
   childGrade,
   mascotImageUrl,
   hasParentSheet,
+  kidPageTotal,
 }: {
   activity: PDFActivity;
   childName: string;
   childGrade: string;
   mascotImageUrl?: string | null;
   hasParentSheet: boolean;
+  kidPageTotal?: number | null;
 }) {
   const contentType = resolveContentType(activity);
   const colors = accentFamily[familyForActivity(contentType)];
 
-  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet };
+  const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet, kidPageTotal };
 
   if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
   // Rotating puzzles render only when the packet stored one. Every packet
@@ -2744,6 +2772,7 @@ function CertificatePage({
   mascotImageUrl,
   mascotName,
   activities,
+  kidPageTotal,
 }: {
   childName: string;
   childGrade: string;
@@ -2752,6 +2781,7 @@ function CertificatePage({
   mascotImageUrl?: string | null;
   mascotName?: string | null;
   activities: PDFActivity[];
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const hasParentSheet = activities.some(hasParentSheetEntry);
@@ -2763,7 +2793,7 @@ function CertificatePage({
 
   return (
     <Page size="LETTER" style={styles.certificatePage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} frameInset={CERT_FRAME.inner} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={56} frameInset={CERT_FRAME.inner} kidPageTotal={kidPageTotal} />
 
       {/* Decorative frames */}
       <View style={styles.certFrameOuter} />
@@ -2835,6 +2865,7 @@ function ParentNotesPage({
   activities,
   mascotImageUrl,
   parentNotes,
+  kidPageTotal,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
   const hasAnswerKeys = activities.some(hasParentSheetEntry);
@@ -2848,7 +2879,7 @@ function ParentNotesPage({
     : '';
   return (
     <Page size="LETTER" style={styles.notesPage}>
-      <ChildPageFooter hasParentSheet={hasAnswerKeys} inset={48} />
+      <ChildPageFooter hasParentSheet={hasAnswerKeys} inset={48} kidPageTotal={kidPageTotal} />
 
       {mascotImageUrl && (
         <Image src={mascotImageUrl} style={styles.mascotImageNotes} />
@@ -2924,19 +2955,21 @@ function ColoringPage({
   mascotImageUrl,
   childGrade,
   activities,
+  kidPageTotal,
 }: {
   coloringPage: PDFColoringPage;
   coloringImageUrl?: string | null;
   mascotImageUrl?: string | null;
   childGrade: string;
   activities: PDFActivity[];
+  kidPageTotal?: number | null;
 }) {
   const band = bandForGrade(childGrade);
   const imageUrl = coloringImageUrl ?? mascotImageUrl ?? null;
   const hasParentSheet = activities.some(hasParentSheetEntry);
   return (
     <Page size="LETTER" style={styles.coloringPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} kidPageTotal={kidPageTotal} />
       <Text style={styles.coloringHeaderText}>Color me!</Text>
       <Text style={styles.coloringTitle}>{sanitizeText(coloringPage.title)}</Text>
       <View style={styles.coloringBox}>
@@ -2963,12 +2996,13 @@ function CelebrationPage({
   packetCelebration,
   mascotName,
   mascotImageUrl,
+  kidPageTotal,
 }: PacketPDFProps) {
   const band = bandForGrade(childGrade);
   const hasParentSheet = activities.some(hasParentSheetEntry);
   return (
     <Page size="LETTER" style={styles.notesPage}>
-      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} />
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={48} kidPageTotal={kidPageTotal} />
       <Text style={styles.notesPageTitle}>Daily Reflection</Text>
       <Text style={styles.notesPageSubtitle}>Take a moment to think about today&apos;s learning.</Text>
       <View style={styles.dailyReflectionRule} />
@@ -3042,11 +3076,26 @@ function hasParentSheetEntry(a: PDFActivity): boolean {
 /** Longest side of a puzzle's solved grid on the parent sheet, in points. */
 const ANSWER_GRID_MAX = 130;
 
-/** One line saying what the solved grid shows, plus the crossword's answers in text. */
+/** How each word search direction reads to a parent. Rows count from the top, columns from the left. */
+const WORD_DIRECTION_NAMES: Record<string, string> = {
+  E: 'across',
+  W: 'backwards across',
+  S: 'down',
+  N: 'backwards up',
+  SE: 'diagonal down right',
+  NE: 'diagonal up right',
+  SW: 'backwards diagonal down left',
+  NW: 'backwards diagonal up left',
+};
+
+/** What the solved grid shows, in text: word positions for a word search, answers for a crossword. */
 function puzzleAnswerSummary(puzzle: StoredPuzzle['data']): { label: string; body: string } {
   switch (puzzle.type) {
     case 'word_search':
-      return { label: 'Word search', body: `All ${puzzle.words.length} words are highlighted.` };
+      return {
+        label: 'Word search',
+        body: puzzle.words.map((w) => `${w.word}: row ${w.y + 1}, col ${w.x + 1}, ${WORD_DIRECTION_NAMES[w.dir]}`).join('. ') + '.',
+      };
     case 'maze':
       return { label: 'Maze', body: 'The one path from START to FINISH is drawn in coral.' };
     case 'sudoku':
@@ -3085,8 +3134,21 @@ function PuzzleAnswerGroup({ activity }: { activity: PDFActivity }) {
   );
 }
 
-function ParentAnswerSheetPage({ childName, activities }: { childName: string; activities: PDFActivity[] }) {
-  const withKeys = activities.filter(hasParentSheetEntry);
+function ParentAnswerSheetPage({
+  childName,
+  activities,
+  onPages,
+}: {
+  childName: string;
+  activities: PDFActivity[];
+  onPages?: (sheetPages: number, totalPages: number) => void;
+}) {
+  // The puzzle entry goes last, so if it doesn't fit, the whole block (it's
+  // wrap={false}) moves to the next page instead of pushing other answers.
+  const withKeys = [
+    ...activities.filter((a) => hasParentSheetEntry(a) && !a.puzzle?.data),
+    ...activities.filter((a) => !!a.puzzle?.data),
+  ];
   if (withKeys.length === 0) return null;
 
   const childFirstName = firstNameOnly(childName);
@@ -3148,6 +3210,18 @@ function ParentAnswerSheetPage({ childName, activities }: { childName: string; a
         <Text style={styles.footerText}>Made with love by Packet Day · packetday.com</Text>
         <Text style={styles.footerText}>Parent sheet · not part of the packet</Text>
       </View>
+      {/* Puzzle packets only: reports how many pages this sheet took once
+          react-pdf knows (the totals round), and prints nothing. */}
+      {onPages && (
+        <Text
+          fixed
+          style={styles.footerText}
+          render={({ subPageTotalPages, totalPages }) => {
+            if (typeof subPageTotalPages === 'number' && typeof totalPages === 'number') onPages(subPageTotalPages, totalPages);
+            return '';
+          }}
+        />
+      )}
     </Page>
   );
 }
@@ -3173,6 +3247,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           childGrade={props.childGrade}
           mascotImageUrl={props.mascotImageUrl}
           hasParentSheet={hasParentSheet}
+          kidPageTotal={props.kidPageTotal}
         />
       ))}
       {props.coloringPage && (
@@ -3182,6 +3257,7 @@ export default function PacketPDF(props: PacketPDFProps) {
           mascotImageUrl={props.mascotImageUrl}
           childGrade={props.childGrade}
           activities={props.activities}
+          kidPageTotal={props.kidPageTotal}
         />
       )}
       <CelebrationPage {...props} />
@@ -3194,8 +3270,13 @@ export default function PacketPDF(props: PacketPDFProps) {
         mascotImageUrl={props.mascotImageUrl}
         mascotName={props.mascotName}
         activities={props.activities}
+        kidPageTotal={props.kidPageTotal}
       />
-      <ParentAnswerSheetPage childName={props.childName} activities={props.activities} />
+      <ParentAnswerSheetPage
+        childName={props.childName}
+        activities={props.activities}
+        onPages={props.activities.some((a) => !!a.puzzle?.data) ? props.onParentSheetPages : undefined}
+      />
     </Document>
   );
 }

@@ -333,8 +333,8 @@ async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: str
   const old = await oldPageCountAt(packet, f.gradeLevel, mascot);
   const now = await pageCounts(doc);
   if (now.kid !== old.kid) fail(`${label}: ${now.kid} kid pages, expected ${old.kid} (puzzle on exactly one page)`);
-  // The parent sheet gains the puzzle's entry; it must not gain a page.
-  if (now.sheet !== old.sheet) fail(`${label}: parent sheet is ${now.sheet} pages, was ${old.sheet} without the puzzle entry`);
+  // The parent sheet may flow onto a second page; checkSheet below makes
+  // sure the puzzle block never splits and every footer total is right.
   const joke = act.puzzle?.joke ?? null;
   const marker = joke ? /JOKEOFTHEDAY/i : new RegExp((act.encouragement ?? "").replace(/\s+/g, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 30));
   const PUZZLE_PAGE = await findPage(doc, marker);
@@ -358,8 +358,7 @@ async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: str
       fail(`${label}: text "${it.str.slice(0, 30)}" at ${it.x.toFixed(0)},${it.y.toFixed(0)} is outside the page content`);
     }
   }
-  const kidPages = now.kid; // the parent sheet isn't counted
-  if (!items.some((it) => it.str.trim() === `${PUZZLE_PAGE} of ${kidPages}`)) fail(`${label}: page number "${PUZZLE_PAGE} of ${kidPages}" missing from the footer`);
+  void old;
   const pageString = items.map((i) => i.str).join("").replace(/\s+/g, "");
   if (joke) {
     const firstWord = joke.punchline.split(/\s+/)[0];
@@ -371,32 +370,86 @@ async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: str
     fail(`${label}: no joke and no encouragement callout`);
   }
 
-  // Parent sheet: saved as answer-keys/<band>-<type>.png (one file per page).
-  if (variant === "normal" && now.sheet > 0) {
-    await mkdir(path.join(OUT_DIR, "answer-keys"), { recursive: true });
-    let sheetText = "";
-    const sheetItems: TextItem[] = [];
-    for (let p = now.kid + 1; p <= doc.numPages; p++) {
-      const { png: sheetPng } = await rasterPage(doc, p);
-      const suffix = now.sheet > 1 ? `-p${p - now.kid}` : "";
-      const sheetPath = path.join(OUT_DIR, "answer-keys", `${f.band}-${f.type}${suffix}.png`);
-      await writeFile(sheetPath, sheetPng);
-      answerKeyPaths.push(path.relative(REPO_ROOT, sheetPath));
-      const t = await pageText(doc, p);
-      sheetItems.push(...t.items);
-      sheetText += t.items.map((i) => i.str).join("");
-    }
-    const flat = sheetText.replace(/\s+/g, "");
-    if (!/PUZZLEBREAK/i.test(flat)) fail(`${label}: no Puzzle Break entry on the parent sheet`);
-    if (joke) {
-      if (!flat.includes(joke.punchline.replace(/\s+/g, ""))) fail(`${label}: punchline missing from the parent sheet`);
-      if (sheetItems.some((i) => i.a < 0)) fail(`${label}: something is upside down on the parent sheet`);
-    }
-  }
+  await checkFooters(doc, now, label);
+  if (variant === "normal") await checkSheet(doc, now, label, joke, `${f.band}-${f.type}`, act.puzzle?.data.type ?? "");
   return path.relative(REPO_ROOT, pngPath);
 }
 
 const answerKeyPaths: string[] = [];
+
+/**
+ * A packet whose parent sheet must run to two pages: the fixture packet with
+ * answer keys added to the activities that had none (copies of its own real
+ * keys), and the 6-8 word search. Checks the sheet flows to a second page,
+ * the puzzle block stays whole, and every kid footer shows the real total.
+ */
+async function renderSpillTest(fx: Fixtures, mascot: string): Promise<void> {
+  const content = JSON.parse(JSON.stringify(fx.oldPacket.content)) as PacketContent;
+  const keys = content.activities.map((a) => a.answer_key).filter((k): k is string => !!k);
+  content.activities.forEach((a, i) => {
+    if (!a.answer_key && a.content_type !== "puzzle_break") a.answer_key = keys[i % keys.length];
+  });
+  const f = fx.puzzles.find((p) => p.band === "6-8" && p.type === "word_search")!;
+  const index = content.activities.findIndex((a) => a.content_type === "puzzle_break");
+  content.activities[index] = JSON.parse(JSON.stringify(f.activity));
+  attachPuzzleBreak(content, { requestedType: f.type, gradeLevel: f.gradeLevel, childName: f.childName, theme: f.theme, seed: 20261001 });
+  const buf = await renderPacketPdf(propsFor(content, f, mascot), "render-puzzles spill test");
+  const pdfPath = path.join(OUT_DIR, "spill-test.pdf");
+  await writeFile(pdfPath, buf);
+  const doc = await loadPdf(pdfPath);
+  const now = await pageCounts(doc);
+  if (now.sheet < 2) fail(`spill test: parent sheet is ${now.sheet} page, expected it to flow onto a second`);
+  const footers = await checkFooters(doc, now, "spill test");
+  const joke = content.activities[index].puzzle?.joke ?? null;
+  await checkSheet(doc, now, "spill test", joke, "spill-test", "word_search");
+  console.log(`
+Spill test: ${doc.numPages} pages (${now.kid} kid pages + ${now.sheet} parent sheet pages). Kid footers: ${footers[0]} ... ${footers[footers.length - 1]}`);
+}
+
+const SUMMARY_LABEL: Record<string, string> = { word_search: "Wordsearch:", maze: "Maze:", sudoku: "Sudoku:", crossword: "Crossword:" };
+
+/** Every kid page's footer must read "N of <real kid page count>". Returns the footers seen. */
+async function checkFooters(doc: PdfDocument, now: PageCounts, label: string): Promise<string[]> {
+  const seen: string[] = [];
+  for (let p = 1; p <= now.kid; p++) {
+    const { items } = await pageText(doc, p);
+    const footer = items.map((i) => i.str.trim()).find((t) => /^\d+ of \d+$/.test(t));
+    seen.push(footer ?? "(none)");
+    if (footer !== `${p} of ${now.kid}`) fail(`${label}: page ${p} footer reads "${footer ?? "nothing"}", expected "${p} of ${now.kid}"`);
+  }
+  return seen;
+}
+
+/**
+ * Saves the parent sheet (answer-keys/<name>.png, or -p1/-p2 when it runs
+ * to two pages) and checks the puzzle entry: present, all on one page
+ * (label, summary, and punchline together), punchline right side up.
+ */
+async function checkSheet(doc: PdfDocument, now: PageCounts, label: string, joke: { punchline: string } | null, name: string, type: string): Promise<void> {
+  if (now.sheet === 0) {
+    fail(`${label}: no parent sheet`);
+    return;
+  }
+  await mkdir(path.join(OUT_DIR, "answer-keys"), { recursive: true });
+  let puzzlePage = -1;
+  for (let p = now.kid + 1; p <= doc.numPages; p++) {
+    const { png } = await rasterPage(doc, p);
+    const suffix = now.sheet > 1 ? `-p${p - now.kid}` : "";
+    const sheetPath = path.join(OUT_DIR, "answer-keys", `${name}${suffix}.png`);
+    await writeFile(sheetPath, png);
+    answerKeyPaths.push(path.relative(REPO_ROOT, sheetPath));
+    const { items } = await pageText(doc, p);
+    const flat = items.map((i) => i.str).join("").replace(/\s+/g, "");
+    if (items.some((i) => i.a < 0)) fail(`${label}: something is upside down on the parent sheet`);
+    if (/PUZZLEBREAK/i.test(flat)) {
+      puzzlePage = p;
+      // The block is one unbreakable unit: its summary and joke share the label's page.
+      if (!flat.includes(SUMMARY_LABEL[type] ?? "")) fail(`${label}: puzzle answer split across pages (summary not with its label)`);
+      if (joke && !flat.includes(joke.punchline.replace(/\s+/g, ""))) fail(`${label}: puzzle answer split across pages (punchline not with its label)`);
+    }
+  }
+  if (puzzlePage === -1) fail(`${label}: no Puzzle Break entry on the parent sheet`);
+}
 
 async function main() {
   const baseline = process.argv.includes("--baseline");
@@ -414,6 +467,7 @@ async function main() {
   // over its cap ("-overflow.png").
   for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot, "max"));
   for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot, "overflow"));
+  await renderSpillTest(fx, mascot);
   console.log("\nPuzzle pages:");
   for (const w of written) console.log(`  ${w}`);
   console.log("\nParent sheets:");

@@ -37,6 +37,31 @@ export function buildFilename(childName: string, theme: string, date: string): s
  * it. Neither step can fail the render. `packetId` only labels log lines.
  */
 export async function renderPacketPdf(props: PacketPDFProps, packetId: string): Promise<Uint8Array> {
+  // Packets made before puzzle rotation render exactly as always: one pass,
+  // kid footers at "totalPages minus one" (wrong when their parent sheet runs
+  // to two pages; see docs/WAITING_FIXES.md).
+  if (!props.activities.some((a) => !!a.puzzle?.data)) return renderOnce(props, packetId);
+
+  // Puzzle packets: the parent sheet may flow onto a second page. Render
+  // once; only if the sheet wasn't exactly one page, render again with the
+  // real kid page total. Packets whose sheet fits pay nothing extra.
+  let sheetPages: number | null = null;
+  let totalPages: number | null = null;
+  const first = await renderOnce(
+    {
+      ...props,
+      onParentSheetPages: (sheet, total) => {
+        sheetPages = sheet;
+        totalPages = total;
+      },
+    },
+    packetId
+  );
+  if (sheetPages === null || totalPages === null || sheetPages === 1) return first;
+  return renderOnce({ ...props, kidPageTotal: (totalPages as number) - (sheetPages as number) }, packetId);
+}
+
+async function renderOnce(props: PacketPDFProps, packetId: string): Promise<Uint8Array> {
   await prepareFontsForRender(packetId);
   try {
     return await renderToBuffer(createElement(PacketPDF, props) as React.ReactElement<PacketPDFProps>);

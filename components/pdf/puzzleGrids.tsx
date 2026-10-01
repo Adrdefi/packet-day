@@ -2,7 +2,7 @@
 // an exact size the page plans in lib/puzzles/pageLayout.ts. Each takes
 // `solved` so the parent answer key can reuse the same drawing.
 
-import { Circle, G, Line, Path, Polyline, Rect, Svg, Text } from "@react-pdf/renderer";
+import { Circle, G, Line, Path, Rect, Svg, Text } from "@react-pdf/renderer";
 import { color } from "@/lib/pdf-tokens";
 import {
   CW_CELL,
@@ -113,25 +113,26 @@ function MazeGrid({ p, solved }: { p: MazePuzzle; solved: boolean }) {
 
   let route = "";
   if (solved) {
-    const pts: string[] = [`${startX},${oy - 4}`];
+    const pts: string[] = [`M${startX} ${oy - 4}`];
     let x = 0;
     let y = 0;
-    pts.push(`${ox + c / 2},${oy + c / 2}`);
+    pts.push(`L${ox + c / 2} ${oy + c / 2}`);
     for (const step of p.solution) {
       if (step === "N") y--;
       if (step === "S") y++;
       if (step === "E") x++;
       if (step === "W") x--;
-      pts.push(`${ox + x * c + c / 2},${oy + y * c + c / 2}`);
+      pts.push(`L${ox + x * c + c / 2} ${oy + y * c + c / 2}`);
     }
-    pts.push(`${finishX},${bottom + 4}`);
+    pts.push(`L${finishX} ${bottom + 4}`);
     route = pts.join(" ");
   }
 
   return (
     <G>
       {solved && (
-        <Polyline points={route} fill="none" stroke={color.coral} strokeWidth={c * 0.3} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={0.9} />
+        // One solid line along the route, drawn as a single open path so it reads as one route.
+        <Path d={route} fill="none" stroke={color.coral} strokeWidth={c * 0.2} strokeLinecap="round" strokeLinejoin="round" />
       )}
       <Path d={segs.join(" ")} stroke={INK} strokeWidth={MAZE_STROKE[p.band]} strokeLinecap="round" fill="none" />
     </G>
