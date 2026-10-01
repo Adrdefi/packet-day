@@ -1,0 +1,797 @@
+{
+ "_note": "Real model output from scripts/test-packets.ts --matrix (text only, test names). Used by scripts/render-puzzle-fixtures.ts.",
+ "puzzles": [
+  {
+   "band": "K-2",
+   "type": "word_search",
+   "gradeLevel": "K",
+   "childName": "Lily",
+   "theme": "Bugs",
+   "packetTitle": "Lily's Backyard Bug Expedition",
+   "mascotName": "Dot",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Dot's Hidden Bug Words",
+    "description": "Lily searches the grid for bug words from today's reading.",
+    "puzzle_intro": "Lily, look for the bug words hiding in the grid, going across and down just like a marching ant. Your sharp explorer eyes are going to spot them, I just know it!",
+    "fun_fact": "A honeybee flaps its wings about 200 times every second, and that is what makes the buzzing sound.",
+    "passage": null,
+    "instructions": [
+     "BUG",
+     "ANT",
+     "BEE",
+     "LEAF",
+     "WING",
+     "BUZZ",
+     "WORM",
+     "MOTH",
+     "FLY",
+     "HIVE",
+     "LEGS",
+     "SPOT",
+     "GRASS",
+     "LOG",
+     "ROCK",
+     "HONEY",
+     "DIRT",
+     "CRAWL"
+    ],
+    "joke": {
+     "question": "What do you call a bug that loves to dance?",
+     "punchline": "A jitterbug!"
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil",
+     "crayons"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "K-2",
+   "type": "maze",
+   "gradeLevel": "1",
+   "childName": "Lily",
+   "theme": "Farm Animals",
+   "packetTitle": "Lily vs. the Busy Barnyard",
+   "mascotName": "Buttercup",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Lead Buttercup Back to the Barn",
+    "puzzle_intro": "Lily, I wandered too far into the meadow! Trace the one path from START to FINISH to help me get home, and go slow and steady like a careful farmer.",
+    "description": "Lily traces a path through a farm maze to help Buttercup get back to the barn.",
+    "fun_fact": "Pigs roll in mud because they cannot sweat, and the cool mud keeps them from getting too hot.",
+    "passage": null,
+    "instructions": [
+     "COW",
+     "HEN",
+     "HORSE",
+     "SHEEP",
+     "GOAT",
+     "DUCK",
+     "BARN",
+     "HAY",
+     "EGGS",
+     "MUD",
+     "CORN",
+     "FARM",
+     "LAMB",
+     "CHICK",
+     "MILK",
+     "FENCE",
+     "CALF",
+     "PONY"
+    ],
+    "joke": {
+     "question": "What does a cow read every morning?",
+     "punchline": "The moospaper!"
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil",
+     "crayons"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "K-2",
+   "type": "sudoku",
+   "gradeLevel": "2",
+   "childName": "Lily",
+   "theme": "Dinosaurs",
+   "packetTitle": "Lily and the Secret Dino Egg",
+   "mascotName": "Rexi",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Rexi's Dino Shape Sudoku",
+    "description": "Lily fills in a 4 by 4 shape sudoku so every row, column, and box has one of each shape.",
+    "puzzle_intro": "Lily, draw the missing circles, squares, triangles, and stars so every row, column, and box has just one of each. Take it one square at a time, just like you followed the clues in today's reading!",
+    "fun_fact": "Maiasaura built their nests close together, like a big dinosaur neighborhood.",
+    "passage": null,
+    "instructions": [
+     "FOSSIL",
+     "EGG",
+     "NEST",
+     "BONES",
+     "ROAR",
+     "TAIL",
+     "CLAW",
+     "SPIKE",
+     "HORN",
+     "DIG",
+     "ROCK",
+     "LEAF",
+     "TOOTH",
+     "MUD",
+     "BABY",
+     "BRUSH",
+     "CLUE",
+     "PLANT"
+    ],
+    "joke": {
+     "question": "What do you call a sleeping dinosaur?",
+     "punchline": "A dino snore!"
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil",
+     "eraser"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "K-2",
+   "type": "crossword",
+   "gradeLevel": "K",
+   "childName": "Lily",
+   "theme": "Ocean",
+   "packetTitle": "Lily and the Secret Seashell",
+   "mascotName": "Ollie",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Ollie's Under the Sea Crossword",
+    "description": "Lily listens to clues and fills in a mini ocean crossword using a word bank.",
+    "puzzle_intro": "Lily, listen to each clue, pick a word from the word bank, and write one letter in each box. Your sharp ocean eyes will find every one!",
+    "fun_fact": "An octopus has three hearts and blue blood!",
+    "joke": {
+     "question": "What did the ocean say to the beach?",
+     "punchline": "Nothing, it just waved!"
+    },
+    "passage": null,
+    "instructions": [
+     "SHARK",
+     "WHALE",
+     "CRAB",
+     "FISH",
+     "SHELL",
+     "WAVE",
+     "SAND",
+     "TURTLE",
+     "SQUID",
+     "CORAL",
+     "SEAL",
+     "CLAM",
+     "KELP",
+     "REEF",
+     "TIDE",
+     "PEARL",
+     "GILLS",
+     "EEL"
+    ],
+    "clues": {
+     "SHARK": "A big fish with sharp teeth.",
+     "WHALE": "The biggest animal in the sea.",
+     "CRAB": "It walks sideways and has claws.",
+     "FISH": "It swims and breathes underwater.",
+     "SHELL": "A hard cover found on beaches.",
+     "WAVE": "Water that rolls onto the beach.",
+     "SAND": "Tiny grains that cover the beach.",
+     "TURTLE": "A slow animal with a hard back.",
+     "SQUID": "A sea animal with ten arms.",
+     "CORAL": "A colorful rocky home for fish.",
+     "SEAL": "A furry animal that barks and swims.",
+     "CLAM": "A sea animal that opens and closes.",
+     "KELP": "A tall seaweed that grows underwater.",
+     "REEF": "An underwater place where coral grows.",
+     "TIDE": "The sea rising and falling each day.",
+     "PEARL": "A shiny gem made inside an oyster.",
+     "GILLS": "Body parts fish use to breathe.",
+     "EEL": "A long fish shaped like a snake."
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "3-5",
+   "type": "word_search",
+   "gradeLevel": "3",
+   "childName": "Marcus",
+   "theme": "Outer Space",
+   "packetTitle": "Nova and Marcus, Episode 1",
+   "mascotName": "Nova",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Hunt for Hidden Space Words",
+    "description": "Marcus searches the star grid for words from today's space adventure.",
+    "puzzle_intro": "Marcus, these space words are hiding across, down, and on a slant, just like stars tucked into the night sky. Use those sharp astronaut eyes and circle each one you spot!",
+    "fun_fact": "Saturn is so light for its size that it would float if you could find a bathtub big enough to hold it.",
+    "passage": null,
+    "instructions": [
+     "ROCKET",
+     "PLANET",
+     "ORBIT",
+     "COMET",
+     "GALAXY",
+     "ASTEROID",
+     "CRATER",
+     "MOON",
+     "STAR",
+     "ASTRONAUT",
+     "SATURN",
+     "JUPITER",
+     "MARS",
+     "GRAVITY",
+     "TELESCOPE",
+     "HELMET",
+     "METEOR",
+     "LAUNCH"
+    ],
+    "joke": {
+     "question": "How do you throw a party in outer space?",
+     "punchline": "You planet!"
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil",
+     "crayons"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "3-5",
+   "type": "maze",
+   "gradeLevel": "4",
+   "childName": "Marcus",
+   "theme": "Pirates",
+   "packetTitle": "Marcus and Captain Squawk, Episode 1",
+   "mascotName": "Captain Squawk",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Escape Through Skull Rock Caves",
+    "description": "Find the one true path through a winding pirate maze from START to FINISH.",
+    "puzzle_intro": "Ahoy, Marcus! Guide our crew from START at the top all the way to FINISH at the bottom without getting trapped in a dead end. Trace slowly with your finger first, just like a careful navigator reading a map.",
+    "fun_fact": "Many pirate crews signed written rules called articles, and some even promised extra pay to any pirate who was injured during a battle.",
+    "joke": {
+     "question": "Why couldn't the pirate play cards?",
+     "punchline": "Because he was sitting on the deck!"
+    },
+    "passage": null,
+    "instructions": [
+     "PIRATE",
+     "PARROT",
+     "TREASURE",
+     "COMPASS",
+     "SPYGLASS",
+     "ANCHOR",
+     "GALLEON",
+     "ISLAND",
+     "CANNON",
+     "SAILS",
+     "CHEST",
+     "GOLD",
+     "COINS",
+     "HORIZON",
+     "CAPTAIN",
+     "SHOVEL",
+     "BEACH",
+     "WAVES"
+    ],
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "3-5",
+   "type": "sudoku",
+   "gradeLevel": "5",
+   "childName": "Marcus",
+   "theme": "Rainforest",
+   "packetTitle": "Marcus' Quest for the Golden Frog",
+   "mascotName": "Mango",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Golden Frog Number Hunt",
+    "puzzle_intro": "Marcus, it's Mango! Fill every row, column, and box with the numbers 1 to 6 just once, and use the clues each number gives you the way a smart explorer reads the trail.",
+    "description": "A 6 by 6 rainforest sudoku to give your brain a fun break.",
+    "fun_fact": "Rainforests cover only about 6 percent of Earth's land, yet they are home to more than half of all the world's plant and animal species.",
+    "passage": null,
+    "instructions": [
+     "CANOPY",
+     "TOUCAN",
+     "JAGUAR",
+     "SLOTH",
+     "PARROT",
+     "MONKEY",
+     "FROG",
+     "VINES",
+     "ORCHID",
+     "RIVER",
+     "LIZARD",
+     "BUTTERFLY",
+     "RAINFALL",
+     "BEETLE",
+     "TAPIR",
+     "GECKO",
+     "FERNS",
+     "ROOTS"
+    ],
+    "joke": {
+     "question": "Why are rainforest frogs always so happy?",
+     "punchline": "They just eat whatever bugs them!"
+    },
+    "estimated_minutes": 15,
+    "materials": [
+     "pencil",
+     "eraser"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "3-5",
+   "type": "crossword",
+   "gradeLevel": "4",
+   "childName": "Marcus",
+   "theme": "Bugs",
+   "packetTitle": "Marcus' Quest for the Golden Beetle",
+   "mascotName": "Ziggy",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Ziggy's Buggy Crossword Challenge",
+    "description": "Solve a crossword packed with real bug vocabulary words.",
+    "puzzle_intro": "Marcus, read each clue and fill in the bug words across and down the grid. You met lots of these in today's reading, so you are ready to crack it!",
+    "fun_fact": "Some cicadas live underground for 17 years before crawling out, shedding their skin, and singing in the trees for just a few weeks.",
+    "joke": {
+     "question": "Why did the bee get married?",
+     "punchline": "Because he finally found his honey!"
+    },
+    "passage": null,
+    "instructions": [
+     "THORAX",
+     "ABDOMEN",
+     "ANTENNAE",
+     "CHRYSALIS",
+     "LARVA",
+     "PUPA",
+     "POLLEN",
+     "NECTAR",
+     "BEETLE",
+     "INSECT",
+     "MOLT",
+     "COLONY",
+     "HIVE",
+     "QUEEN",
+     "MANDIBLE",
+     "LADYBUG",
+     "FIREFLY",
+     "COCOON"
+    ],
+    "clues": {
+     "THORAX": "Middle body part of an insect where the legs attach",
+     "ABDOMEN": "The back section of an insect's body",
+     "ANTENNAE": "Two feelers on a bug's head for smelling and touching",
+     "CHRYSALIS": "Hard case where a caterpillar becomes a butterfly",
+     "LARVA": "Young wormlike stage of an insect after hatching",
+     "PUPA": "Resting stage between the larva and the adult",
+     "POLLEN": "Yellow powder bees carry from flower to flower",
+     "NECTAR": "Sweet liquid inside flowers that bees and butterflies drink",
+     "BEETLE": "Insect with hard front wings that cover its back",
+     "INSECT": "Small animal with six legs and three body parts",
+     "MOLT": "To shed an old skin or shell to grow bigger",
+     "COLONY": "A large group of ants living and working together",
+     "HIVE": "Home where honeybees store honey and raise their young",
+     "QUEEN": "The ant or bee that lays all the eggs",
+     "MANDIBLE": "Strong jaw an insect uses to bite and chew",
+     "LADYBUG": "Red beetle with black spots, just like Ziggy",
+     "FIREFLY": "Flying beetle whose body glows on summer nights",
+     "COCOON": "Silky wrap a moth caterpillar spins around itself"
+    },
+    "estimated_minutes": 15,
+    "materials": [
+     "pencil"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "6-8",
+   "type": "word_search",
+   "gradeLevel": "7",
+   "childName": "Jordan",
+   "theme": "Ancient Rome",
+   "packetTitle": "Lucius and Jordan, Episode 1",
+   "mascotName": "Lucius",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Lost in the Roman Forum",
+    "puzzle_intro": "Jordan, Roman words are hiding in every direction in this grid, even backwards and on the diagonal, so hunt for them like a scout searching the Forum. Trust your sharp eyes and take it one letter at a time.",
+    "description": "A challenging Ancient Rome word search with words hidden in all eight directions.",
+    "fun_fact": "Ancient Romans grabbed quick meals at street counters called thermopolia, and archaeologists in Pompeii found one with traces of food still inside the serving pots.",
+    "passage": null,
+    "instructions": [
+     "AQUEDUCT",
+     "COLOSSEUM",
+     "GLADIATOR",
+     "CONCRETE",
+     "FORUM",
+     "SENATE",
+     "EMPEROR",
+     "LEGION",
+     "CHARIOT",
+     "TOGA",
+     "INSULA",
+     "REPUBLIC",
+     "PANTHEON",
+     "CAESAR",
+     "TIBER",
+     "LATIN",
+     "MOSAIC",
+     "ARCH"
+    ],
+    "joke": {
+     "question": "Why did the Romans build their roads so straight?",
+     "punchline": "So their soldiers would never go round the bend."
+    },
+    "estimated_minutes": 15,
+    "materials": [
+     "pencil",
+     "highlighter (optional)"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "6-8",
+   "type": "maze",
+   "gradeLevel": "7",
+   "childName": "Jordan",
+   "theme": "Volcanoes",
+   "packetTitle": "Jordan vs. the Volcano",
+   "mascotName": "Cinder",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Escape the Lava Tube Maze",
+    "description": "Find the one safe path through a winding network of underground lava tubes.",
+    "puzzle_intro": "Jordan, the lava tubes under Mount Kalema twist in every direction, so start at the top and find the one path out to the bottom. Take your time at the dead ends, because a sharp eye like yours will spot the way through.",
+    "fun_fact": "After an underwater eruption in 2012, a floating raft of pumice larger than 400 square kilometers drifted across the Pacific Ocean.",
+    "passage": null,
+    "instructions": [
+     "MAGMA",
+     "LAVA",
+     "CRATER",
+     "VENT",
+     "ASH",
+     "PLUME",
+     "BASALT",
+     "TILTMETER",
+     "SULFUR",
+     "VISCOSITY",
+     "ERUPTION",
+     "CALDERA",
+     "PUMICE",
+     "OBSIDIAN",
+     "TECTONIC",
+     "MANTLE",
+     "SEISMIC",
+     "SUMMIT"
+    ],
+    "joke": {
+     "question": "Why are volcanoes such good listeners?",
+     "punchline": "Because they always let you vent."
+    },
+    "estimated_minutes": 10,
+    "materials": [
+     "pencil"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "6-8",
+   "type": "sudoku",
+   "gradeLevel": "8",
+   "childName": "Jordan",
+   "theme": "Ancient Egypt",
+   "packetTitle": "Jordan and Nefer, Episode 1",
+   "mascotName": "Nefer",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "The Pharaoh's Number Vault",
+    "puzzle_intro": "Jordan, Khufu's builders needed every block in exactly the right place, and this grid is the same: fill every row, column, and 3 by 3 box with the numbers 1 to 9 once each. Use the same patient logic you used to crack that cartouche, and the vault will open.",
+    "description": "A classic 9 by 9 sudoku with an Ancient Egypt theme.",
+    "fun_fact": "Cleopatra lived closer in time to the first Moon landing than to the building of the Great Pyramid.",
+    "passage": null,
+    "instructions": [
+     "PYRAMID",
+     "PHARAOH",
+     "NILE",
+     "SPHINX",
+     "MUMMY",
+     "SCARAB",
+     "PAPYRUS",
+     "SCRIBE",
+     "TOMB",
+     "OBELISK",
+     "CARTOUCHE",
+     "DESERT",
+     "FALCON",
+     "LOTUS",
+     "TEMPLE",
+     "ANKH",
+     "DELTA",
+     "GIZA"
+    ],
+    "joke": {
+     "question": "Why could the pharaoh never admit a mistake?",
+     "punchline": "He was always in denial."
+    },
+    "estimated_minutes": 15,
+    "materials": [
+     "pencil",
+     "eraser"
+    ],
+    "answer_key": null
+   }
+  },
+  {
+   "band": "6-8",
+   "type": "crossword",
+   "gradeLevel": "7",
+   "childName": "Jordan",
+   "theme": "Outer Space",
+   "packetTitle": "Jordan vs. Escape Velocity",
+   "mascotName": "Vega",
+   "activity": {
+    "subject": "Puzzle Break",
+    "content_type": "puzzle_break",
+    "title": "Escape Velocity Crossword",
+    "description": "A space science crossword built from the vocabulary in today's reading.",
+    "puzzle_intro": "Jordan, use each clue to fill the grid with the space science you met in today's reading. You already outran gravity once today, so these words are yours to claim.",
+    "fun_fact": "A day on Venus lasts longer than its year: Venus takes about 243 Earth days to spin once but only about 225 days to orbit the Sun.",
+    "passage": null,
+    "instructions": [
+     "GRAVITY",
+     "VELOCITY",
+     "THRUST",
+     "ATMOSPHERE",
+     "ORBIT",
+     "TRAJECTORY",
+     "SATELLITE",
+     "FRICTION",
+     "NEBULA",
+     "GALAXY",
+     "MASS",
+     "FUEL",
+     "ROCKET",
+     "LAUNCH",
+     "ASTEROID",
+     "COMET",
+     "METEOR",
+     "PLANET"
+    ],
+    "clues": {
+     "GRAVITY": "Force that pulls objects with mass toward one another",
+     "VELOCITY": "Speed of an object moving in a specific direction",
+     "THRUST": "Pushing force produced as engines blast hot gas downward",
+     "ATMOSPHERE": "Layer of gases wrapped around a planet like Earth",
+     "ORBIT": "Curved path one object follows around another in space",
+     "TRAJECTORY": "The path a launched object traces through the sky",
+     "SATELLITE": "Object that circles a planet, such as the Moon",
+     "FRICTION": "Force that resists motion when air or surfaces rub together",
+     "NEBULA": "Glowing cloud of gas and dust where stars are born",
+     "GALAXY": "Huge system of billions of stars, like the Milky Way",
+     "MASS": "Amount of matter in an object, measured in kilograms",
+     "FUEL": "Material burned by engines to produce energy and power",
+     "ROCKET": "Vehicle Jordan flew in the training launch with Vega",
+     "LAUNCH": "To send a spacecraft upward off the ground",
+     "ASTEROID": "Rocky body orbiting the Sun, many found between Mars and Jupiter",
+     "COMET": "Icy body that grows a glowing tail near the Sun",
+     "METEOR": "Streak of light from a space rock burning in the sky",
+     "PLANET": "Large round world that orbits a star, such as Mars"
+    },
+    "joke": {
+     "question": "How do astronauts organize a party in outer space?",
+     "punchline": "They planet."
+    },
+    "estimated_minutes": 15,
+    "materials": [
+     "pencil"
+    ],
+    "answer_key": null
+   }
+  }
+ ],
+ "oldPacket": {
+  "gradeLevel": "4",
+  "childName": "Marcus",
+  "theme": "Pirates",
+  "content": {
+   "packet_title": "Marcus and Captain Squawk, Episode 1",
+   "title_style": "episode",
+   "greeting": "Ahoy, Marcus! Today you set sail on the very first episode of your pirate adventure series. Grab your pencil, because every page holds a new challenge waiting for a sharp first mate like you.",
+   "packet_mission": "Ahoy, first mate Marcus! Your mission today is to join my crew aboard the Salty Feather, crack the numbers of the high seas, follow a real treasure map, and find out why our ship stays afloat. Every task you finish brings us one step closer to the lost treasure of Coral Island, so hoist the sails and let's begin Episode 1!",
+   "packet_celebration": "Shiver me feathers, Marcus, you did it! You solved treasure chest math, dug up the gold in today's reading, wrote the next chapter of our story, and built a boat that floats. Episode 1 is in the logbook, and I cannot wait to see where that second map takes us next time!",
+   "mascot_name": "Captain Squawk",
+   "mascot_description": "A cute cartoon green parrot standing proudly with one wing raised in a salute, wearing a tiny black pirate hat with a white skull and a little red sash, holding a brass spyglass, bright colors, simple clean lines, white background, kid-friendly illustration",
+   "mascot_emoji_cluster": "🏴‍☠️🦜💰🗺️⚓🏝️",
+   "activities": [
+    {
+     "subject": "Math",
+     "content_type": "worksheet",
+     "title": "Treasure Chest Calculations",
+     "description": "Practice multiplication, long division, and fractions while helping Captain Squawk count and share pirate treasure.",
+     "encouragement": "Marcus, every coin you count today fills Captain Squawk's treasure chest, so show those big multiplication problems who the real captain is!",
+     "fun_fact": "Real Spanish gold coins called doubloons were so valuable that just one could pay a sailor's wages for several weeks.",
+     "passage": null,
+     "instructions": [
+      "CAPTAIN SQUAWK'S QUICK CALCULATIONS: 34 x 6 = ___ || 96 divided by 4 = ___ || 23 x 14 = ___ || 852 divided by 6 = ___ || 45 x 32 = ___",
+      "WORD PROBLEMS: Captain Squawk found 12 treasure chests on Coral Island. Each chest holds 24 gold coins. How many gold coins did he find in all? || Marcus steered the Salty Feather 156 miles in 4 days. The ship sailed the same distance each day. How many miles did it sail each day? || The Salty Feather has 8 sails. Marcus raised 3 of them. What fraction of the sails is still NOT raised? || The crew found 252 silver coins and shared them equally among 7 pirates. Then each pirate gave 9 coins to Captain Squawk for parrot crackers. How many coins does each pirate have left?",
+      "DRAW & SOLVE: The deck of the Salty Feather is shaped like a rectangle that is 16 planks wide and 23 planks long. Draw a rectangle and split it into an area model: break 16 into 10 + 6 and 23 into 20 + 3. Find the area of each of the four smaller boxes, then add them together to find the total number of planks. ___ x ___ = ___"
+     ],
+     "estimated_minutes": 30,
+     "materials": [
+      "pencil",
+      "eraser",
+      "scratch paper"
+     ],
+     "answer_key": "Quick Calculations: 34 x 6 = 204; 96 divided by 4 = 24; 23 x 14 = 322; 852 divided by 6 = 142; 45 x 32 = 1,440. Word Problems: 1) 12 x 24 = 288 gold coins. 2) 156 divided by 4 = 39 miles per day. 3) 5/8 of the sails are not raised. 4) 252 divided by 7 = 36 coins each, then 36 - 9 = 27 coins left for each pirate. Draw and Solve: 10 x 20 = 200, 10 x 3 = 30, 6 x 20 = 120, 6 x 3 = 18. Total: 200 + 30 + 120 + 18 = 368, so 16 x 23 = 368 planks."
+    },
+    {
+     "subject": "Reading",
+     "content_type": "reading_passage",
+     "title": "The Lost Treasure of Coral Island",
+     "description": "Read the story of Marcus and Captain Squawk's first treasure hunt, then answer questions about it.",
+     "encouragement": "Marcus, read like a true first mate with a spyglass, and watch closely for every clue on that treasure map!",
+     "fun_fact": "Real pirates almost never buried their treasure; most of them spent or shared their loot quickly, so buried treasure maps are mostly a storybook idea.",
+     "passage": "Marcus stood on the deck of the Salty Feather, a wooden galleon. A galleon is a large sailing ship with tall masts. Perched on his shoulder was Captain Squawk, a bright green parrot wearing a tiny black hat.\n\n\"Welcome aboard, first mate!\" squawked the captain. \"Today begins our very first adventure. Somewhere out there is the lost treasure of Coral Island.\"\n\nCaptain Squawk dropped a rolled map into Marcus's hands. It showed a rock shaped like a skull, a tall palm tree, and a big red X. Marcus lifted a brass spyglass to his eye. A spyglass is a small telescope that makes faraway things look close. Far off on the horizon, the line where the sea meets the sky, he spotted a tiny island.\n\n\"Steer north!\" Marcus called. He checked the compass, and its needle pointed straight ahead. The crew pulled the ropes, and the white sails filled with wind. Waves splashed over the bow, the front of the ship.\n\nWhen they reached the island, Marcus rowed a small boat to the sandy beach. He found the skull rock right away. Then he counted twenty steps to the tallest palm tree. Captain Squawk flapped above him, pointing with one wing. \"Dig there, matey!\"\n\nMarcus dug and dug until his shovel hit something hard. He pulled up a wooden chest with iron corners. Inside sat a pile of gold coins, a silver anchor necklace, and another map.\n\n\"Another map?\" Marcus asked.\n\nCaptain Squawk ruffled his feathers proudly. \"Every great treasure leads to the next one. That, first mate, is a clue for our next episode.\"\n\nMarcus grinned. Their adventure was only beginning.",
+     "instructions": [
+      "What three things were drawn on the treasure map? List all three.",
+      "The story says Marcus spotted an island on the horizon. Using clues from the story, explain what the word horizon means in your own words.",
+      "Why do you think Captain Squawk was proud instead of disappointed when Marcus found a second map inside the chest? Use details from the story to support your answer.",
+      "Draw the treasure map from the story. Include the skull rock, the palm tree, and the red X, and draw a dotted line showing the path Marcus took.",
+      "If you found a treasure chest like Marcus did, what would you hope to find inside, and why? Write 2 to 3 sentences."
+     ],
+     "estimated_minutes": 25,
+     "materials": [
+      "pencil",
+      "colored pencils",
+      "paper"
+     ],
+     "answer_key": "1) A rock shaped like a skull, a tall palm tree, and a big red X. 2) Answers should explain that the horizon is the line far away where the sea and the sky seem to meet. 3) Possible answer: He was proud because a second map means more adventures; he says every great treasure leads to the next one and calls it a clue for the next episode. 4) Drawings should include the skull rock, palm tree, red X, and a path from the rock to the tree. 5) Answers will vary; look for a clear wish and a reason."
+    },
+    {
+     "subject": "Writing",
+     "content_type": "writing_prompt",
+     "title": "Episode 2: The Second Map",
+     "description": "Write the next chapter of the pirate adventure, where Marcus and Captain Squawk follow the mysterious second map.",
+     "encouragement": "Marcus, you are the author of Episode 2, so make Captain Squawk's next voyage the most exciting one yet!",
+     "fun_fact": "Pirate captains kept a daily ship's log, writing down the weather, the wind, and how far the ship traveled each day.",
+     "passage": null,
+     "instructions": [
+      "At the end of today's reading, Marcus found a second map inside the treasure chest. Write Episode 2 of the adventure, telling what happens when Marcus and Captain Squawk follow the new map. Write at least two paragraphs.",
+      "Start by describing the second map. What pictures, symbols, or landmarks are drawn on it? Where does it lead?",
+      "What problem or danger do Marcus and Captain Squawk face on their journey, such as a storm, a sea creature, or a tricky riddle? How do they work together to solve it?",
+      "How does your episode end? Do they find treasure, discover a surprise, or find yet another clue that leads to Episode 3?"
+     ],
+     "estimated_minutes": 30,
+     "materials": [
+      "pencil",
+      "lined paper"
+     ],
+     "answer_key": null
+    },
+    {
+     "subject": "Puzzle Break",
+     "content_type": "puzzle_break",
+     "title": "Escape Through Skull Rock Caves",
+     "description": "Find the one true path through a winding pirate maze from START to FINISH.",
+     "fun_fact": "Many pirate crews signed written rules called articles, and some even promised extra pay to any pirate who was injured during a battle.",
+     "passage": null,
+     "instructions": [
+      "PIRATE",
+      "PARROT",
+      "TREASURE",
+      "COMPASS",
+      "SPYGLASS",
+      "ANCHOR",
+      "GALLEON",
+      "ISLAND",
+      "CANNON",
+      "SAILS"
+     ],
+     "estimated_minutes": 10,
+     "materials": [
+      "pencil"
+     ],
+     "answer_key": null,
+     "encouragement": "Marcus, you navigate like a true captain. Every word you find is treasure!"
+    },
+    {
+     "subject": "Movement Break",
+     "content_type": "movement_activity",
+     "title": "Swab the Deck Shake Out",
+     "description": "A quick pirate themed energizer to get your body moving before the last activity.",
+     "encouragement": "Marcus, every great pirate needs strong sea legs, so let's see you hop, climb, and swab like a real first mate!",
+     "fun_fact": "Your body has more than 600 muscles, and you use about 200 of them every time you take a single step.",
+     "passage": null,
+     "instructions": [
+      "Climb the ship's mast! Reach one hand up high, then the other, and climb in place for 20 big reaches.",
+      "Swab the deck! Pretend to push a mop back and forth across the floor while you squat low, 10 times.",
+      "Walk the plank! Walk heel to toe in a straight line across the room with your arms out for balance.",
+      "Ride the waves! Rock side to side on your feet like the ship is rolling in a storm for 15 seconds.",
+      "Dig for treasure! Do 10 fast digging motions, then jump up and shout Ahoy, I found the gold!",
+      "Rest like Captain Squawk! Stand on one foot like a parrot on a perch and count to 10, then switch feet."
+     ],
+     "estimated_minutes": 7,
+     "materials": [],
+     "answer_key": null
+    },
+    {
+     "subject": "Science",
+     "content_type": "worksheet",
+     "title": "Why Does a Pirate Ship Float?",
+     "description": "Build a small foil boat to explore buoyancy and discover how heavy wooden ships stay on top of the water.",
+     "encouragement": "Marcus, you are the ship builder of the Salty Feather today, so build a boat strong enough to carry Captain Squawk's treasure!",
+     "fun_fact": "Some large pirate ships weighed more than 300 tons, yet they floated because their wide hulls pushed aside a huge amount of water.",
+     "passage": null,
+     "instructions": [
+      "OBSERVE: Take one small square of aluminum foil and squeeze it into a tight ball. Take a second square of the same size and fold up the edges to make a flat boat shape. Gently place both in a bowl of water. Describe what happens to each one.",
+      "EXPLAIN: Both pieces of foil weigh the same amount. Why do you think the boat shape floats while the tight ball sinks or floats lower? Think about how much water each shape pushes out of the way.",
+      "PREDICT: How many pennies do you think your foil boat can carry before it sinks? Write your prediction and explain why you chose that number.",
+      "TEST AND RECORD: Add pennies to your boat one at a time, placing them carefully. Record how many pennies it held before water came in. Was your prediction too high, too low, or close? What did you notice about the boat as it got heavier?",
+      "COMPARE: Real pirate ships were made of heavy wood and carried cannons, crew, and treasure. How is your foil boat like a pirate ship? How is it different?",
+      "IMPROVE: If you were the ship builder for Captain Squawk, how would you change your boat's shape so it could carry even more treasure? Draw your new design and explain why it would work better."
+     ],
+     "estimated_minutes": 30,
+     "materials": [
+      "aluminum foil",
+      "bowl or sink of water",
+      "about 30 pennies",
+      "pencil",
+      "towel"
+     ],
+     "answer_key": "1) The flat boat floats on top of the water, while the tight ball sinks or floats much lower. 2) The boat shape spreads out and pushes aside more water. When an object pushes aside water that weighs as much as the object does, the water pushes back up and it floats. This upward push is called buoyancy. 3) Predictions will vary; look for a reason. 4) Results will vary, often between 10 and 30 pennies. The boat sinks lower in the water as it gets heavier. 5) Alike: both have a hollow shape that pushes aside water and floats. Different: real ships are wood, much bigger, have sails, and carry people. 6) Answers will vary; a strong answer mentions a wider base, taller sides, or spreading the weight evenly so the boat pushes aside more water."
+    }
+   ],
+   "coloring_page": {
+    "title": "Marcus and Captain Squawk Find the Treasure",
+    "coloring_scene": "A boy and Captain Squawk, a green parrot wearing a tiny pirate hat, stand together on a sandy island beach next to an open treasure chest, a tall palm tree, a shovel stuck in the sand, a small wooden rowboat, and a large anchor resting on the shore.",
+    "instructions": "Color Marcus and Captain Squawk celebrating their big find! Give Captain Squawk his bright green feathers and make the open treasure chest shine. Choose colors for the tall palm tree, the shovel, the small wooden rowboat, and the large anchor resting on the shore."
+   },
+   "daily_reflection": "Marcus, every pirate adventure needs teamwork. Which activity today felt the most like solving a real treasure hunt, and what skill helped you finish it?",
+   "parent_notes": "This is Marcus's first packet, launching an ongoing episode series with Captain Squawk the parrot. The math section focuses on Grade 4 skills: multiplying 2-digit numbers, long division, and an intro to fractions. The Draw and Solve problem uses an area model, which works well for visual learners. The reading passage defines new vocabulary such as galleon, spyglass, horizon, and bow right in the text. The writing prompt continues the story from the reading, so it helps to finish the reading first. The science experiment needs aluminum foil, a bowl of water, and about 30 pennies; lay down a towel for easy cleanup. Marcus may enjoy keeping his Episode 2 story to build on in future packets."
+  }
+ }
+}

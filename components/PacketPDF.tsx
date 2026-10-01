@@ -28,6 +28,17 @@ import {
 } from "@/lib/pdf-tokens";
 import { shortTitle } from "@/lib/pdf-fields";
 import { buildCoverKicker } from "@/lib/titleStyles";
+import type { StoredPuzzle } from "@/lib/puzzles/types";
+import {
+  BLOCK_GAP,
+  MAZE_CELL,
+  MAZE_MARGIN_X,
+  PUNCHLINE_SHARE,
+  PUZZLE_TYPE,
+  gridViewBox,
+  planPuzzlePage,
+} from "@/lib/puzzles/pageLayout";
+import { MazeLabelRow, PuzzleGrid, SudokuShapeKey } from "@/components/pdf/puzzleGrids";
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -92,6 +103,8 @@ export interface PDFActivity {
   answer_key?: string | null;
   encouragement?: string;
   fun_fact?: string | null;
+  /** Puzzle break only: the built rotating puzzle. Missing on packets made before rotation, which render the old word search. */
+  puzzle?: StoredPuzzle;
 }
 
 export interface PDFColoringPage {
@@ -1140,6 +1153,87 @@ const styles = StyleSheet.create({
   wordListLabel: {
     ...typeStyle(typeScale.sectionLabel),
     marginBottom: 8,
+  },
+
+  // ── Rotating puzzle break (RotatingPuzzleTemplate) ───────────────────────────
+  // Sizes here must match lib/puzzles/pageLayout.ts's PUZZLE_TYPE, which
+  // plans the page's height budget from them.
+  // Not activityContent: its flex:1 means flexBasis 0, which overrides the
+  // explicit height and collapses the block.
+  puzzlePageBody: {
+    flexDirection: 'column',
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+  },
+  puzzleGridArea: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  puzzleShapeKey: {
+    alignItems: 'center',
+    height: 30,
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  puzzleClueColumns: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  puzzleClueColumn: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  puzzleClueHeading: {
+    ...typeStyle(typeScale.sectionLabel),
+    marginBottom: 4,
+  },
+  puzzleClueText: {
+    fontFamily: 'Nunito',
+    fontWeight: 400,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    marginBottom: 3,
+  },
+  puzzleClueNumber: {
+    fontWeight: 700,
+  },
+  puzzleJoke: {
+    flexDirection: 'column',
+    gap: 4,
+    borderRadius: 10.5,
+    paddingVertical: 10.5,
+    paddingHorizontal: 13.5,
+    backgroundColor: color.honeyTint,
+  },
+  puzzleJokeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13.5,
+  },
+  puzzleJokeQuestion: {
+    fontFamily: 'Nunito',
+    fontWeight: 700,
+    fontSize: 12,
+    lineHeight: 1.35,
+    color: color.textPrimary,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  // Printed upside down so the answer isn't spoiled; flip the page to read it.
+  puzzleJokePunchline: {
+    fontFamily: 'Fraunces',
+    fontWeight: 800,
+    fontSize: 12,
+    lineHeight: 1.3,
+    color: color.coralDark,
+    textAlign: 'right',
+    flexShrink: 0,
+    transform: 'rotate(180deg)',
   },
   wordListGrid: {
     flexDirection: 'row',
@@ -2460,6 +2554,138 @@ function PuzzleBreakTemplate({
   );
 }
 
+// ─── Template D2 — Rotating Puzzle Break ──────────────────────────────────────
+//
+// Word search, maze, sudoku, or crossword, from activity.puzzle (built at
+// generation by lib/puzzles). Always exactly one page: wrap={false}, and
+// lib/puzzles/pageLayout.ts plans every block's height so the grid gets
+// exactly the space that's left. The Joke of the Day replaces the
+// encouragement callout; the encouragement lives in the mascot intro.
+
+function RotatingPuzzleTemplate({
+  activity,
+  colors,
+  childGrade,
+  mascotImageUrl,
+  hasParentSheet,
+}: {
+  activity: PDFActivity;
+  colors: ActivityColor;
+  childName: string;
+  childGrade: string;
+  mascotImageUrl?: string | null;
+  hasParentSheet: boolean;
+}) {
+  const stored = activity.puzzle as StoredPuzzle;
+  const puzzle = stored.data;
+  const band = bandForGrade(childGrade);
+  const title = sanitizeText(shortTitle(activity));
+  const plan = planPuzzlePage(
+    { ...stored, intro: sanitizeText(stored.intro) },
+    title,
+    activity.fun_fact ? sanitizeText(activity.fun_fact) : null,
+    band,
+    activity.estimated_minutes
+  );
+  const headerActivity: PDFActivity = { ...activity, materials: ['pencil'] };
+  const mascotSize = bandTable[band].stripMascot;
+  const joke = stored.joke;
+  const jokeInner = plan.contentWidth - 27;
+  const clueSize = PUZZLE_TYPE.clue[band];
+  // The maze entrance and exit cells' centers, in points from the grid's edge.
+  const mazeCellCenter = ((MAZE_MARGIN_X + MAZE_CELL / 2) * plan.gridWidth) / gridViewBox(puzzle).width;
+
+  return (
+    // Not wrap={false} on the Page itself: react-pdf then sizes the page to
+    // its content instead of letter. One unbreakable block exactly the
+    // content area's height keeps it to one letter page; anything the plan
+    // underestimated is clipped rather than spilling onto a second page.
+    <Page size="LETTER" style={[styles.activityPage, { padding: plan.padding }]}>
+      <ChildPageFooter hasParentSheet={hasParentSheet} inset={plan.padding} />
+      <View wrap={false} style={[styles.puzzlePageBody, { height: plan.contentHeight }]}>
+        <ActivityHeader activity={headerActivity} colors={colors} />
+
+        <View style={[styles.characterStrip, { backgroundColor: familyBg(colors), marginBottom: BLOCK_GAP }]}>
+          {mascotImageUrl && (
+            <Image src={mascotImageUrl} style={[styles.characterStripMascot, { width: mascotSize, height: mascotSize }]} />
+          )}
+          <Text style={styles.characterStripText}>{plan.intro}</Text>
+        </View>
+
+        {plan.fact && (
+          <View style={{ marginBottom: BLOCK_GAP }}>
+            <FunFactBox funFact={plan.fact} band={band} />
+          </View>
+        )}
+
+        <View style={styles.puzzleGridArea}>
+          {puzzle.type === 'sudoku' && puzzle.shapes && (
+            <View style={styles.puzzleShapeKey}>
+              <SudokuShapeKey size={26} />
+            </View>
+          )}
+          {puzzle.type === 'maze' && <MazeLabelRow kind="start" width={plan.gridWidth} cellCenter={mazeCellCenter} />}
+          <PuzzleGrid puzzle={puzzle} width={plan.gridWidth} height={plan.gridHeight} />
+          {puzzle.type === 'maze' && (
+            <MazeLabelRow kind="finish" width={plan.gridWidth} cellCenter={plan.gridWidth - mazeCellCenter} />
+          )}
+        </View>
+
+        {puzzle.type === 'word_search' && (
+          <View style={{ marginBottom: BLOCK_GAP }}>
+            <Text style={[styles.wordListLabel, { color: colors.label }]}>Find these words</Text>
+            <View style={styles.wordListGrid}>
+              {puzzle.words.map((w) => (
+                <View key={w.word} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
+                  <Text style={[styles.wordListText, { color: colors.label }]}>{w.word}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {puzzle.type === 'crossword' && puzzle.wordBank && (
+          <View style={[styles.wordListGrid, { marginBottom: BLOCK_GAP }]}>
+            {puzzle.wordBank.map((w) => (
+              <View key={w} style={[styles.wordListItem, { backgroundColor: colors.chip ?? color.creamPanel, borderColor: colors.rule }]}>
+                <Text style={[styles.wordListText, { color: colors.label }]}>{w}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {puzzle.type === 'crossword' && (
+          <View style={[styles.puzzleClueColumns, { marginBottom: BLOCK_GAP }]}>
+            {(['across', 'down'] as const).map((dir) => (
+              <View key={dir} style={styles.puzzleClueColumn}>
+                <Text style={[styles.puzzleClueHeading, { color: colors.label }]}>{dir === 'across' ? 'Across' : 'Down'}</Text>
+                {puzzle.entries
+                  .filter((e) => e.dir === dir)
+                  .map((e) => (
+                    <Text key={`${dir}${e.number}`} style={[styles.puzzleClueText, { fontSize: clueSize }]}>
+                      <Text style={styles.puzzleClueNumber}>{e.number}. </Text>
+                      {sanitizeText(e.clue)}
+                    </Text>
+                  ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {joke && (
+          <View style={styles.puzzleJoke}>
+            <Text style={styles.funFactLabel}>Joke of the day</Text>
+            <View style={styles.puzzleJokeRow}>
+              <Text style={styles.puzzleJokeQuestion}>{sanitizeText(joke.question)}</Text>
+              <Text style={[styles.puzzleJokePunchline, { width: jokeInner * PUNCHLINE_SHARE }]}>{sanitizeText(joke.punchline)}</Text>
+            </View>
+          </View>
+        )}
+      </View>
+    </Page>
+  );
+}
+
 // ─── Activity page dispatcher ─────────────────────────────────────────────────
 
 function ActivityPage({
@@ -2481,6 +2707,10 @@ function ActivityPage({
   const sharedProps = { activity, colors, childName, childGrade, mascotImageUrl, hasParentSheet };
 
   if (contentType === 'reading_passage')  return <ReadingTemplate {...sharedProps} />;
+  // Rotating puzzles render only when the packet stored one. Every packet
+  // made before rotation (and any whose puzzle fell back to nothing) keeps
+  // the original word search template, untouched.
+  if (contentType === 'puzzle_break' && activity.puzzle?.data) return <RotatingPuzzleTemplate {...sharedProps} />;
   if (contentType === 'puzzle_break')     return <PuzzleBreakTemplate {...sharedProps} />;
   if (contentType === 'writing_prompt' || contentType === 'movement_activity' || contentType === 'coloring') {
     return <OpenWorkspaceTemplate {...sharedProps} />;
