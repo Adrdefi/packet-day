@@ -2,6 +2,7 @@ import type { BandKey } from "@/lib/pdf-tokens";
 import { pick, seededRng, shuffle, type Rng } from "./random";
 import { WORD_DIRECTIONS, type PlacedWord, type PuzzleWordInput, type WordDirection, type WordSearchPuzzle } from "./types";
 import { cleanWordList } from "./words";
+import { FILLER_BLOCKLIST } from "./fillerBlocklist";
 
 export interface WordSearchBandConfig {
   size: number;
@@ -22,7 +23,70 @@ export const WORD_SEARCH_BANDS: Record<BandKey, WordSearchBandConfig> = {
 const PLAIN_FILLER = "ABCDEFGHIJKLMNOPRSTUVWY";
 
 const ATTEMPTS_PER_WORD_SET = 120;
+/** Refill rounds for blocked filler words before giving up on this grid. */
+const FILLER_REFILL_ROUNDS = 25;
 const MAX_TOTAL_ATTEMPTS = 500;
+
+/** Every straight line through the grid (rows, columns, both diagonals), as cell lists. */
+function gridLines(n: number): [number, number][][] {
+  const lines: [number, number][][] = [];
+  for (let i = 0; i < n; i++) {
+    lines.push(Array.from({ length: n }, (_, k) => [k, i] as [number, number]));
+    lines.push(Array.from({ length: n }, (_, k) => [i, k] as [number, number]));
+  }
+  for (let d = -(n - 1); d <= n - 1; d++) {
+    const down: [number, number][] = [];
+    const up: [number, number][] = [];
+    for (let x = 0; x < n; x++) {
+      const y1 = x - d;
+      if (y1 >= 0 && y1 < n) down.push([x, y1]);
+      const y2 = n - 1 - x + d;
+      if (y2 >= 0 && y2 < n) up.push([x, y2]);
+    }
+    if (down.length >= 3) lines.push(down);
+    if (up.length >= 3) lines.push(up);
+  }
+  return lines;
+}
+
+/**
+ * Blocklisted words the grid spells, read forwards or backwards along every
+ * line. Each hit lists its cells, so callers can tell filler from words.
+ */
+export function findBlockedWords(grid: readonly string[]): { word: string; cells: [number, number][] }[] {
+  const hits: { word: string; cells: [number, number][] }[] = [];
+  for (const line of gridLines(grid.length)) {
+    for (const cells of [line, [...line].reverse()]) {
+      const text = cells.map(([x, y]) => grid[y][x]).join("");
+      for (const bad of FILLER_BLOCKLIST) {
+        for (let at = text.indexOf(bad); at !== -1; at = text.indexOf(bad, at + 1)) {
+          hits.push({ word: bad, cells: cells.slice(at, at + bad.length) });
+        }
+      }
+    }
+  }
+  return hits;
+}
+
+/** Cells covered by the placed words. Everything else is filler. */
+function wordCells(placed: readonly PlacedWord[]): Set<string> {
+  const cells = new Set<string>();
+  for (const w of placed) {
+    const [dx, dy] = WORD_DIRECTIONS[w.dir];
+    for (let i = 0; i < w.word.length; i++) cells.add(`${w.x + dx * i},${w.y + dy * i}`);
+  }
+  return cells;
+}
+
+/**
+ * Blocklisted words that touch at least one filler cell. A hit made only of
+ * the theme words' own letters (GRASS spelling ASS) isn't filler and is left
+ * alone.
+ */
+export function blockedFillerHits(grid: readonly string[], placed: readonly PlacedWord[]) {
+  const fixed = wordCells(placed);
+  return findBlockedWords(grid).filter((h) => h.cells.some(([x, y]) => !fixed.has(`${x},${y}`)));
+}
 
 /** How many times `word` reads in the grid, counting all 8 directions. */
 export function countOccurrences(grid: readonly string[], word: string): number {
@@ -81,12 +145,27 @@ function tryPlace(words: string[], cfg: WordSearchBandConfig, rng: Rng): { grid:
   }
 
   const pool = cfg.filler === "decoy" ? words.join("") : PLAIN_FILLER;
+  const randomLetter = () => pool[Math.min(Math.floor(rng() * pool.length), pool.length - 1)];
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
-      if (!cells[y][x]) cells[y][x] = pool[Math.min(Math.floor(rng() * pool.length), pool.length - 1)];
+      if (!cells[y][x]) cells[y][x] = randomLetter();
     }
   }
-  const grid = cells.map((row) => row.join(""));
+
+  // Filler must never spell a blocklisted word. Refill just the filler cells
+  // of each hit and scan again; give up on this grid after a few rounds.
+  let grid = cells.map((row) => row.join(""));
+  const fixed = wordCells(placed);
+  for (let round = 0; ; round++) {
+    const hits = blockedFillerHits(grid, placed);
+    if (hits.length === 0) break;
+    if (round >= FILLER_REFILL_ROUNDS) return null;
+    for (const hit of hits) {
+      for (const [x, y] of hit.cells) if (!fixed.has(`${x},${y}`)) cells[y][x] = randomLetter();
+    }
+    grid = cells.map((row) => row.join(""));
+  }
+
   if (!words.every((w) => countOccurrences(grid, w) === 1)) return null;
   return { grid, placed };
 }
@@ -145,5 +224,7 @@ export function validateWordSearch(p: WordSearchPuzzle): string | null {
     const count = countOccurrences(p.grid, w.word);
     if (count !== 1) return `${w.word} appears ${count} times`;
   }
+  const blocked = blockedFillerHits(p.grid, p.words);
+  if (blocked.length > 0) return `filler spells a blocked word (${blocked.length} hit${blocked.length === 1 ? "" : "s"})`;
   return null;
 }

@@ -14,7 +14,9 @@
  * - reports build time (average and max) per type and band,
  * - checks the same seed rebuilds the same puzzle (all but the crossword,
  *   whose layout search is capped by the clock),
- * - runs the deliberately messy word lists and checks the cleanup.
+ * - runs the deliberately messy word lists and checks the cleanup,
+ * - checks the filler blocklist scan finds a planted word in all 8
+ *   directions, and that no built word search's filler spells one.
  *
  * No API calls and no env vars. Exits 1 if any puzzle fails validation, any
  * check fails, or the chosen type fails more than 2% of the time.
@@ -24,7 +26,9 @@ import { bandForGrade, type BandKey } from "../lib/pdf-tokens";
 import { buildPuzzle, validatePuzzle, PUZZLE_TYPES, type BuiltPuzzle, type PuzzleType } from "../lib/puzzles";
 import { seededRng } from "../lib/puzzles/random";
 import { cleanWordList, isPalindrome } from "../lib/puzzles/words";
-import { WORD_SEARCH_BANDS, countOccurrences } from "../lib/puzzles/wordSearch";
+import { WORD_SEARCH_BANDS, blockedFillerHits, countOccurrences, findBlockedWords } from "../lib/puzzles/wordSearch";
+import { FILLER_BLOCKLIST } from "../lib/puzzles/fillerBlocklist";
+import { WORD_DIRECTIONS } from "../lib/puzzles/types";
 import { CROSSWORD_BANDS } from "../lib/puzzles/crossword";
 import { sudokuConfig } from "../lib/puzzles/sudoku";
 import { MESSY_WORD_LISTS, THEME_WORD_LISTS } from "./lib/puzzle-word-lists";
@@ -111,6 +115,9 @@ for (const type of PUZZLE_TYPES) {
           const again = buildPuzzle({ type, gradeLevel, words, seed });
           expect(`${type} ${band} seed ${seed} rebuilds identically`, JSON.stringify(again.puzzle) === JSON.stringify(result.puzzle));
         }
+        if (result.puzzle.type === "word_search") {
+          expect(`${type} ${band} seed ${seed} clean filler`, blockedFillerHits(result.puzzle.grid, result.puzzle.words).length === 0);
+        }
         if (result.puzzle.type === "sudoku" && !result.fellBack) {
           const cfg = sudokuConfig(band, gradeLevel);
           const givens = [...result.puzzle.givens].filter((c) => c !== "0").length;
@@ -120,6 +127,32 @@ for (const type of PUZZLE_TYPES) {
     }
     row.sizeNote = summarize(notes);
     rows.push(row);
+  }
+}
+
+// ─── Filler blocklist ──────────────────────────────────────────────────────
+
+expect("blocklist decodes to A-Z words of 3+ letters", FILLER_BLOCKLIST.length > 30 && FILLER_BLOCKLIST.every((w) => /^[A-Z]{3,}$/.test(w)));
+{
+  // Plant one blocked word in each direction of a blank grid; the scan must find it.
+  const planted = FILLER_BLOCKLIST[0];
+  for (const [dir, [dx, dy]] of Object.entries(WORD_DIRECTIONS)) {
+    for (const [sx, sy] of [[5, 5], [0, 0], [15, 15], [0, 15], [15, 0]]) {
+      const n = 16;
+      const cells = Array.from({ length: n }, () => Array<string>(n).fill("."));
+      let fits = true;
+      for (let i = 0; i < planted.length; i++) {
+        const x = sx + dx * i, y = sy + dy * i;
+        if (x < 0 || y < 0 || x >= n || y >= n) { fits = false; break; }
+        cells[y][x] = planted[i];
+      }
+      if (!fits) continue;
+      const grid = cells.map((r) => r.join(""));
+      expect(`blocklist scan finds a word running ${dir} from ${sx},${sy}`, findBlockedWords(grid).length >= 1);
+      expect(`a planted word in filler running ${dir} is flagged`, blockedFillerHits(grid, []).length >= 1);
+      // The same letters as a placed theme word are not filler and are allowed.
+      expect(`a theme word running ${dir} is not flagged`, blockedFillerHits(grid, [{ word: planted, x: sx, y: sy, dir: dir as keyof typeof WORD_DIRECTIONS }]).length === 0);
+    }
   }
 }
 
@@ -155,6 +188,7 @@ for (const band of BANDS) {
       if (result.puzzle.type === "word_search") {
         expect(`messy word search ${band}: no palindromes`, !answers.some(isPalindrome));
         expect(`messy word search ${band}: each word exactly once`, answers.every((w) => countOccurrences((result.puzzle as { grid: string[] }).grid, w) === 1));
+        expect(`messy word search ${band}: clean filler`, blockedFillerHits(result.puzzle.grid, result.puzzle.words).length === 0);
       }
     }
     messyRows.push(`  ${type.padEnd(11)} ${band.padEnd(4)} built ${ok}/50`);
