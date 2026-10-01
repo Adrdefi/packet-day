@@ -166,6 +166,9 @@ for (const type of PUZZLE_TYPES) {
     expect(`brief ${type} ${band}: no em dashes`, !/[–—]/.test(brief));
     expect(`brief ${type} ${band}: states the intro word cap`, brief.includes(`${PUZZLE_TEXT_CAPS[band].introWords} words at most`));
     if (type === "crossword") expect(`brief crossword ${band}: vocabulary answers only`, brief.includes("never a plot detail"));
+    expect(`brief ${type} ${band}: intro never claims every answer is in the reading`, brief.includes("Never claim every answer or clue is in today's reading"));
+    expect(`brief ${type} ${band}: no "every clue comes from today's reading"`, !/every clue comes from today's reading/i.test(brief));
+    if (type === "crossword") expect(`brief crossword ${band}: no "the reading's" possessive`, brief.includes(`Never write "the reading's" as a possessive`));
   }
 }
 expect("brief with no history", buildPuzzleBrief({ type: "maze", band: "3-5", childFirstName: "Kai", theme: "Pirates", recentJokes: [] }).includes("- (none yet)"));

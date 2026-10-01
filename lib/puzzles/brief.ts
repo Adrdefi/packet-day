@@ -35,7 +35,7 @@ const WHAT_THE_CHILD_SEES: Record<PuzzleType, Record<BandKey, string>> = {
   crossword: {
     "K-2": "A mini crossword of about 5 short words. A grown up reads each clue out loud, and the child picks the answer from a word bank and writes one letter in each box.",
     "3-5": "A crossword of about 11 words, with Across and Down clues.",
-    "6-8": "A crossword of about 14 words. Every clue comes from today's reading, so the child needs to have read it.",
+    "6-8": "A crossword of about 14 words. Some clues connect to today's reading and the rest to the theme.",
   },
 };
 
@@ -74,10 +74,10 @@ Code builds and checks the grid. You write only the words${crossword ? ", clues,
 
 For the puzzle_break activity:
 - title: a fun puzzle title for this ${type.replace("_", " ")}, tied to the theme. 6 words or fewer. No dashes, no emoji.
-- puzzle_intro: 1 or 2 short sentences, ${caps.introWords} words at most, in the mascot's voice, speaking to ${name} by name. Say what to do in this puzzle and end with a warm, specific nudge of encouragement. Never say how many words or answers there are. Never mention a page number; say "today's reading" if you need to point to the story.
+- puzzle_intro: 1 or 2 short sentences, ${caps.introWords} words at most, in the mascot's voice, speaking to ${name} by name. Say what to do in this puzzle and end with a warm, specific nudge of encouragement. Never say how many words or answers there are. Never mention a page number; say "today's reading" if you need to point to the story. Never claim every answer or clue is in today's reading; you may say the clues connect to the reading or the theme.
 - fun_fact: a Did You Know fact about ${theme}, one sentence of ${caps.factWords} words at most, surprising and specific. It is about the theme, not about puzzles, word searches, or language.
 - instructions: exactly ${CANDIDATE_WORD_COUNT} theme words, uppercase letters only, 3 to ${maxLen} letters each, no spaces or punctuation. Every word different, no word hidden inside another word (not SUN and SUNSET), no word that reads the same backwards (like NOON). Words ${name} knows or meets in today's reading. ${wordUse}${crossword ? `
-- clues: an object with one clue for every word in instructions, keyed by the word exactly as written there. ${CLUE_RULES[band]} A clue never contains its own answer. No page numbers, no dashes.` : ""}
+- clues: an object with one clue for every word in instructions, keyed by the word exactly as written there. ${CLUE_RULES[band]} A clue never contains its own answer. Never write "the reading's" as a possessive; refer to the story naturally, like "found in the tomb from today's story". No page numbers, no dashes.` : ""}
 - joke: a Joke of the Day as {"question": "...", "punchline": "..."}. Tied to ${theme}. Right for grades ${band}: ${band === "K-2" ? "simple, silly, easy to get" : band === "3-5" ? "puns and wordplay a 9 year old gets" : "clever wordplay a middle schooler would groan at"}. Two short lines: the question ${caps.jokeQuestionWords} words at most, the punchline ${caps.jokePunchlineWords} words at most. Kind: no meanness, no put downs, no gross out or potty humor. No dashes.
 - Leave out encouragement for the puzzle_break; it lives at the end of puzzle_intro.
 - answer_key: null. The answer key is built automatically.

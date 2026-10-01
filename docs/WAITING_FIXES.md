@@ -66,6 +66,14 @@ From the outer space sample packets made for /sample (Kai grade 4, Mia grade 1, 
 
 ---
 
+## 5b. Parent sheet page 1 has no footer when the sheet runs to two pages
+
+**What happens.** When the parent answer sheet runs to two pages, only the second page shows "Made with love by Packet Day · packetday.com" and "Parent sheet · not part of the packet". The first page has no footer. Confirmed on `main` (real packet `64ef5f7a` from April) and on new puzzle packets (real packet `309fe81f`, 2026-10-01), so it predates puzzle rotation.
+
+**What to do.** The footer is a `fixed` View inside `ParentAnswerSheetPage` in `components/PacketPDF.tsx`. Find why it doesn't repeat on the first page of a wrapped sheet, and fix it. Check old packets render the same everywhere else.
+
+---
+
 ## 6. End of page encouragement says "you are about to..." after the activity is done
 
 **What happens.** The encouragement box prints at the end of an activity but is written as if the activity hasn't started. Kai's packet page 6 (after the reading questions): "Kai, you are about to ride along with Orbit past all eight planets..." Page 11 (after the science questions): "Kai, you are about to be a real space scientist..."
