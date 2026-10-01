@@ -11,7 +11,7 @@ interface Props {
   height: number;
 }
 
-/** Tabs that swap the math and reading pages between three real packets on the same theme. */
+/** Tabs that swap the math, reading and puzzle pages between three real packets on the same theme. */
 export default function GradeToggle({ samples, defaultGrade, width, height }: Props) {
   const [grade, setGrade] = useState(defaultGrade);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -62,10 +62,11 @@ export default function GradeToggle({ samples, defaultGrade, width, height }: Pr
         </p>
         <p className="mt-1 text-center text-dark/70">{active.caption}</p>
         <p className="mt-1 mb-6 text-center text-xs text-dark/60">Guide: {active.character}</p>
-        <div className="grid grid-cols-2 gap-3 md:gap-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
           {[
             { label: "Math page", image: active.math },
             { label: "Reading page", image: active.reading },
+            { label: "Puzzle page", image: active.puzzle },
           ].map(({ label, image }) => (
             <figure key={image.src}>
               <div className="overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm">
@@ -74,7 +75,7 @@ export default function GradeToggle({ samples, defaultGrade, width, height }: Pr
                   alt={image.alt}
                   width={width}
                   height={height}
-                  sizes="(min-width: 1024px) 460px, 50vw"
+                  sizes="(min-width: 1024px) 300px, 33vw"
                   loading="lazy"
                   className="h-auto w-full"
                 />
