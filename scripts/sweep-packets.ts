@@ -638,7 +638,8 @@ function puzzlePageFields(activity: PDFActivity, activityIndex: number, gradeLev
   if (data.type === "word_search") for (const w of data.words) push("word_search_word", w.word);
   if (data.type === "crossword") {
     for (const w of data.wordBank ?? []) push("word_search_word", w);
-    for (const e of data.entries) push("crossword_clue", e.clue);
+    // Printed with its number first ("3. Tall four sided..."), so check it that way.
+    for (const e of data.entries) push("crossword_clue", `${e.number}. ${e.clue}`);
   }
   return out;
 }
