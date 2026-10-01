@@ -19,6 +19,7 @@
     "check-coloring-prompt": "node scripts/run-ts.mjs scripts/check-coloring-prompt.ts",
     "check-title-styles": "node scripts/run-ts.mjs scripts/check-title-styles.ts",
     "check-puzzles": "node scripts/run-ts.mjs scripts/check-puzzles.ts",
+    "check-puzzle-rotation": "node scripts/run-ts.mjs scripts/check-puzzle-rotation.ts",
     "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts",
     "check-unit-studies": "node scripts/run-ts.mjs scripts/check-unit-studies.ts"
   },

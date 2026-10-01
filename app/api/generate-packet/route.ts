@@ -5,6 +5,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Child, PacketContent } from "@/types";
 import { generateBothImages, type ImageGenResult } from "@/lib/generateMascotImage";
 import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/packetPrompt";
+import { bandForGrade } from "@/lib/pdf-tokens";
+import { attachPuzzleBreak } from "@/lib/puzzles/attach";
+import { buildPuzzleBrief } from "@/lib/puzzles/brief";
+import { normalizeJoke, type PuzzleJoke } from "@/lib/puzzles/jokes";
+import { newPuzzleSeed } from "@/lib/puzzles/random";
+import { pickPuzzleType } from "@/lib/puzzles/rotation";
 import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "@/lib/config";
 import { estimatePacketCostUsd, type ClaudeUsage } from "@/lib/aiCost";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -16,6 +22,7 @@ import sharp from "sharp";
 import {
   buildClassicTitle,
   buildTitleBrief,
+  childFirstName,
   isTitleStyle,
   normalizeTitleStyle,
   pickTitleStyle,
@@ -466,8 +473,12 @@ export async function POST(req: NextRequest) {
   let packetNumber: number | null = null;
   let recentTitles: string[] = [];
   let previousStyle: TitleStyle = "classic";
+  // Puzzle history: the child's last 10 FULL DAY packets (half day packets
+  // have no puzzle break). A missing type counts as word search.
+  let previousPuzzleType: unknown = null;
+  let recentJokes: PuzzleJoke[] = [];
   try {
-    const [countResult, recentResult] = await Promise.all([
+    const [countResult, recentResult, puzzleResult] = await Promise.all([
       supabase
         .from("packets")
         .select("id", { count: "exact", head: true })
@@ -476,6 +487,13 @@ export async function POST(req: NextRequest) {
         .from("packets")
         .select("generated_content->packet_title, generated_content->title, generated_content->title_style")
         .eq("child_id", child.id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("packets")
+        .select("generated_content->puzzle_type, generated_content->joke")
+        .eq("child_id", child.id)
+        .eq("packet_length", "full")
         .order("created_at", { ascending: false })
         .limit(10),
     ]);
@@ -493,6 +511,13 @@ export async function POST(req: NextRequest) {
         .filter((t): t is string => typeof t === "string" && t.trim().length > 0);
       if (rows.length > 0) previousStyle = normalizeTitleStyle(rows[0].title_style);
     }
+    if (puzzleResult.error) {
+      console.error("[generate-packet] Puzzle history query failed:", puzzleResult.error.message);
+    } else if (puzzleResult.data) {
+      const rows = puzzleResult.data as { puzzle_type: unknown; joke: unknown }[];
+      if (rows.length > 0) previousPuzzleType = rows[0].puzzle_type;
+      recentJokes = rows.map((r) => normalizeJoke(r.joke)).filter((j): j is PuzzleJoke => j !== null);
+    }
   } catch (err) {
     console.error(
       "[generate-packet] Title history lookup threw:",
@@ -505,6 +530,10 @@ export async function POST(req: NextRequest) {
   while (requestedStyle === "episode" && packetNumber === null) {
     requestedStyle = pickTitleStyle(previousStyle);
   }
+
+  // The server picks the puzzle type before the AI call, never the child's
+  // previous one. Half day packets have no puzzle break.
+  const requestedPuzzleType = typedPacketLength === "full" ? pickPuzzleType(previousPuzzleType) : null;
 
   const userPrompt = buildUserPrompt(
     child as Child,
@@ -519,7 +548,16 @@ export async function POST(req: NextRequest) {
       style: requestedStyle,
       packetNumber,
       recentTitles,
-    })
+    }),
+    requestedPuzzleType
+      ? buildPuzzleBrief({
+          type: requestedPuzzleType,
+          band: bandForGrade(child.grade_level),
+          childFirstName: childFirstName(child.name),
+          theme: theme.trim(),
+          recentJokes,
+        })
+      : null
   );
 
   const stream = new ReadableStream({
@@ -580,6 +618,28 @@ export async function POST(req: NextRequest) {
           generatedContent.title_style = "classic";
         }
         if (packetNumber !== null) generatedContent.packet_number = packetNumber;
+
+        // Build the puzzle break from the model's words, seeded per packet.
+        // attachPuzzleBreak never throws; a failed build falls back to the new
+        // word search, then to no puzzle data (the old word search renders).
+        if (requestedPuzzleType) {
+          const puzzle = attachPuzzleBreak(generatedContent, {
+            requestedType: requestedPuzzleType,
+            gradeLevel: child.grade_level,
+            childName: child.name,
+            theme: theme.trim(),
+            seed: newPuzzleSeed(),
+          });
+          if (!puzzle.found || puzzle.fellBack) {
+            console.warn("[generate-packet] Puzzle break fell back:", {
+              childId,
+              found: puzzle.found,
+              requestedType: puzzle.requestedType,
+              builtType: puzzle.builtType,
+              candidateCount: puzzle.candidateCount,
+            });
+          }
+        }
 
         const { data: savedPacket, error: insertError } = await supabase
           .from("packets")

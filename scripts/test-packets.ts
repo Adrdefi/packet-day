@@ -1,177 +1,56 @@
 /**
  * Packet generation quality test script.
  *
- * Generates one packet per grade band (K-2, 3-5, 6-8) with the same theme
+ * Generates full day packets with the REAL packet writer prompt
+ * (lib/packetPrompt.ts, the same one app/api/generate-packet/route.ts uses)
  * and validates: no emoji in text fields, division renders correctly,
- * passage in its own field, content_type present, math uses || separator.
+ * passage in its own field, content_type present, math uses || separator,
+ * the title rules, and the puzzle break (words, clues, joke, intro). Then it
+ * feeds the real word lists through the puzzle generators (lib/puzzles) and
+ * reports what got built. Text only: no images, no PDF, no database.
  *
  * Usage (requires ANTHROPIC_API_KEY in env):
  *   npx tsx scripts/test-packets.ts
- *   npx tsx scripts/test-packets.ts --theme "Rainforest" --grade K
+ *   npx tsx scripts/test-packets.ts --theme "Rainforest" --grade K --puzzle-type maze
+ *   npx tsx scripts/test-packets.ts --matrix --concurrency 4 --out <folder outside the repo>
+ *
+ *   --matrix         12 packets: each puzzle type in each grade band, varied themes
+ *   --puzzle-type    force one type (word_search | maze | sudoku | crossword); default random
+ *   --out DIR        save each raw model response as JSON (carries test names; keep it outside the repo)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { MODEL, MODELS_WITH_TEMPERATURE, THINKING_MODEL_MAX_TOKENS } from "../lib/config";
+import { SYSTEM_PROMPT, buildUserPrompt } from "../lib/packetPrompt";
+import { bandForGrade, type BandKey } from "../lib/pdf-tokens";
+import { attachPuzzleBreak } from "../lib/puzzles/attach";
+import { buildPuzzleBrief } from "../lib/puzzles/brief";
+import { normalizeJoke } from "../lib/puzzles/jokes";
+import { isPuzzleType, pickPuzzleType } from "../lib/puzzles/rotation";
+import type { PuzzleType } from "../lib/puzzles/types";
+import { normalizeWord } from "../lib/puzzles/words";
+import type { Child, PacketContent } from "../types";
 import {
   TITLE_MAX_CHARS,
   TITLE_MAX_WORDS,
   buildTitleBrief,
+  childFirstName,
   isTitleStyle,
   pickTitleStyle,
   titleRejectionReason,
 } from "../lib/titleStyles";
 
-// ─── Inline the system prompt so this script is self-contained ────────────────
-// (Importing from the route would drag in Next.js server internals)
-
-const SYSTEM_PROMPT = `<role>
-You are a curriculum writer creating printable homeschool learning packets for children K-8. Every packet must feel warm, personal, and theme-connected — as though a beloved teacher designed it specifically for this child.
-</role>
-
-<critical_formatting_rules>
-PLAIN TEXT ONLY in every field except mascot_emoji_cluster.
-The PDF renderer uses Nunito, a font that cannot display emoji glyphs. Any emoji outside mascot_emoji_cluster will print as a blank rectangle and ruin the packet.
-
-Banned from all fields except mascot_emoji_cluster:
-- Emoji of any kind (faces, animals, objects, symbols, flags)
-- Unicode symbols outside standard ASCII punctuation
-- Math operators ÷ and × — write "x" for multiplication, write out "divided by" for division
-
-Problem separator in Quick Calculations: use || (double pipe). NEVER use / as a separator between problems. Fractions like "3/4" are fine — the slash is part of the fraction, not a separator.
-
-JSON output: single raw object, no markdown fences, no text before or after. Start with { end with }.
-</critical_formatting_rules>
-
-<grade_calibration>
-Match complexity exactly to the child's grade. Never mix difficulty levels within one packet.
-
-K-1: Counting 1-20, letters, phonics, addition/subtraction within 10. Very short sentences (5-8 words). Simple vocabulary.
-Grade 2: Addition/subtraction within 1000, skip counting, intro to multiplication. Short paragraphs.
-Grade 3: Multiplication tables 1-10, division intro, 3-digit arithmetic. Can write 2-3 sentences independently.
-Grade 4-5: Multi-step multiplication/division, fractions, decimals, geometry. Paragraph writing. Compare/contrast reasoning.
-Grade 6-8: Algebra (one-step through two-step equations), ratios, statistics, geometry (volume, surface area). Essay-level writing. Abstract reasoning and inference.
-
-READING PASSAGE WORD COUNTS — match grade exactly:
-K-2:  80-150 words. Simple sentences. Familiar vocabulary. One clear main idea.
-3-5: 200-350 words. 2-4 paragraphs. Some new vocabulary (define in context).
-6-8: 400-600 words. Full multi-paragraph structure. Inference required.
-
-MATH DIFFICULTY — all problems in one packet must stay in the same grade band:
-K-1:  Addition/subtraction within 10 only
-Gr 2: Addition/subtraction within 100, intro multiplication (2x, 5x, 10x)
-Gr 3: Multiplication 1-10, division intro, 3-digit addition/subtraction
-Gr 4: Long multiplication (2-digit x 2-digit), long division, fraction intro
-Gr 5: Fractions, decimals to hundredths, percentages, area/perimeter
-Gr 6: Ratios, one-step equations, integers, percent problems
-Gr 7-8: Two-step equations, linear functions, statistics, geometry volume
-</grade_calibration>
-
-<math_structure>
-APPLIES ONLY TO math activities (content_type: "worksheet", subject: "Math").
-The instructions array must contain exactly three strings:
-
-1. "[MASCOT NAME]'S QUICK CALCULATIONS: [4-6 problems separated by ||]"
-   - Pure grade-appropriate arithmetic — no theme required
-   - Separate each problem with || (double pipe), not with /
-   - Write "x" for multiplication. Write "___ divided by ___ = ___" for division.
-   - Progress from easier to harder within the section
-   - Example for Grade 3: "MAX'S QUICK CALCULATIONS: 47 + 38 = ___ || 91 - 54 = ___ || 6 x 7 = ___ || 56 divided by 8 = ___"
-
-2. "WORD PROBLEMS: [3-4 story problems separated by ||]"
-   - Narrative problems starring the mascot and today's theme
-   - Each problem self-contained and solvable with grade-level arithmetic
-   - Separate with ||
-
-3. "DRAW & SOLVE: [one visual problem]"
-   - The child draws to find the answer (groups, number line, shape, etc.)
-   - Include the answer format: "___ x ___ = ___" or "My answer: ___"
-
-Section labels in ALL CAPS at start of string. No emoji. This structure applies ONLY to math.
-</math_structure>
-
-<reading_writing_rules>
-READING ACTIVITY (content_type: "reading_passage"):
-- "passage" field: the full themed reading passage. Must meet the grade-band word count above.
-  Theme and mascot should appear in the story.
-- "instructions" array: comprehension questions ONLY — never include passage text here.
-  Include at least: 1 recall question, 1 vocabulary/inference question, 1 personal connection.
-- passage field must be a non-empty string for reading activities.
-
-WRITING ACTIVITY (content_type: "writing_prompt"):
-- "instructions" array: opening prompt sentence, then 2-3 scaffolding questions.
-  Scaffold from concrete (describe what you see) to creative (what would you do next?).
-  Invite the child to use the mascot or theme in their writing.
-- "passage" field: null (not needed for writing).
-
-SCIENCE/HISTORY WORKSHEET (content_type: "worksheet"):
-- Each instruction step should be substantive — a question worth 3-5 lines of response.
-  Not just "draw a picture" — ask for observation, explanation, comparison, or prediction.
-</reading_writing_rules>
-
-<coloring_page_rules>
-SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image.
-- coloring_scene must list: the child and mascot (by name), the setting, and exactly 3-5 specific named objects.
-- coloring_page.title must reference ONLY characters and objects that appear in coloring_scene. No new elements.
-- coloring_page.instructions must reference ONLY characters and objects that appear in coloring_scene. No new elements.
-- coloring_scene is passed verbatim to the image generator — make it concrete and visual, not vague.
-  BAD: "Aria and Bubbles having a fun ocean adventure"
-  GOOD: "Aria and Bubbles the seahorse float in an underwater cave surrounded by a treasure chest, three starfish, a coral arch, and a school of tiny blue fish"
-</coloring_page_rules>
-
-<title_rules>
-Write packet_title by following the title_brief in the user message.
-The whole packet must deliver what the title sets up:
-- packet_mission (the cover) sets up exactly what the title offers: the quest, the mystery, the challenge, the expedition, or the episode.
-- The reading passage story delivers it: the child and the mascot actually do the thing the title describes.
-- packet_celebration (the mascot's closing message on the reflection page) calls back to the title naturally, the way a friend would. Never use the words "promise" or "promised" in it.
-For the classic style, the title simply offers a great day exploring the theme.
-</title_rules>
-
-<output_schema>
-{
-  "packet_title": "The title, written to the title_brief. Plain text, no emoji, no dashes.",
-  "title_style": "The style you actually used: quest | mystery | versus | expedition | episode | classic",
-  "greeting": "2-3 sentences. Warm and direct to the child. Plain text. No emoji.",
-  "packet_mission": "2-3 sentences. The mascot gives the child a themed quest ('Your mission today is to...'). Direct address. Mascot's voice. Plain text. No emoji.",
-  "packet_celebration": "2-3 sentences. Mascot's victory message for the final page. References specific activities the child completed. Warm and celebratory. Plain text. No emoji.",
-  "mascot_name": "Fun character name — no emoji",
-  "mascot_description": "A cute cartoon [character] [action], [accessories], bright colors, simple clean lines, white background, kid-friendly illustration",
-  "mascot_emoji_cluster": "5-6 emoji representing the theme — ONLY field that may contain emoji",
-  "activities": [
-    {
-      "subject": "Math",
-      "content_type": "worksheet",
-      "title": "Activity title — no emoji",
-      "description": "One sentence summary. Plain text. No emoji.",
-      "encouragement": "Personalized hype line using the child's name. References this specific activity. No emoji. Never a generic phrase like 'You've got this!'",
-      "passage": null,
-      "instructions": ["step or question 1", "step or question 2"],
-      "estimated_minutes": 25,
-      "materials": ["pencil", "paper"],
-      "answer_key": "Parent answers or null"
-    }
-  ],
-  "coloring_page": {
-    "title": "[Name] and [Mascot] [Action] — no emoji",
-    "coloring_scene": "Concrete visual description: who is in the scene, the setting, and exactly 3-5 specific objects present. Example: 'Lily and Spark the dragon stand on a pirate ship deck surrounded by a treasure chest, a ship's wheel, three cannons, and a jolly roger flag.' This text is passed verbatim to the image generator — it must be specific, visual, and match the title exactly.",
-    "instructions": "Encouraging instructions for the child referencing ONLY characters and objects named in coloring_scene. Plain text. No emoji."
-  },
-  "daily_reflection": "Thoughtful age-appropriate question. Plain text. No emoji.",
-  "parent_notes": "Context for the parent. Plain text. No emoji."
-}
-
-Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring"
-- reading_passage: put full passage in "passage" field, questions only in "instructions"
-- all others: "passage" must be null
-</output_schema>`;
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TestCase {
-  gradeBand: string;
+  gradeBand: BandKey;
   gradeLevel: string;
   gradeDisplay: string;
   childName: string;
+  theme: string;
+  puzzleType: PuzzleType;
 }
 
 interface ValidationResult {
@@ -191,7 +70,7 @@ function hasEmoji(text: string): boolean {
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-function validatePacket(parsed: Record<string, unknown>, gradeBand: string): ValidationResult {
+function validatePacket(parsed: Record<string, unknown>, gradeBand: BandKey): ValidationResult {
   const failures: string[] = [];
   const warnings: string[] = [];
 
@@ -343,51 +222,127 @@ function validateTitle(parsed: Record<string, unknown>, childName: string): { fa
   return { failures, warnings };
 }
 
-async function generateTestPacket(tc: TestCase, theme: string): Promise<Record<string, unknown>> {
+
+// ─── Puzzle break checks ──────────────────────────────────────────────────────
+
+const PAGE_NUMBER = /\bpages?\s*\d/i;
+const DASH = /[‒–—―]|\s-+\s/;
+
+function findPuzzleActivity(parsed: Record<string, unknown>): Record<string, unknown> | null {
+  const acts = Array.isArray(parsed.activities) ? (parsed.activities as Record<string, unknown>[]) : [];
+  return acts.find((a) => a.content_type === "puzzle_break") ?? null;
+}
+
+function validatePuzzleActivity(parsed: Record<string, unknown>, tc: TestCase): { failures: string[]; warnings: string[] } {
+  const failures: string[] = [];
+  const warnings: string[] = [];
+  const act = findPuzzleActivity(parsed);
+  if (!act) return { failures: ["no puzzle_break activity"], warnings };
+  const acts = parsed.activities as Record<string, unknown>[];
+  if (acts.indexOf(act) !== 3) warnings.push(`puzzle_break is activity ${acts.indexOf(act) + 1}, not 4`);
+
+  const words = Array.isArray(act.instructions) ? (act.instructions as unknown[]) : [];
+  if (words.length < 10) failures.push(`only ${words.length} puzzle words`);
+  else if (words.length < 16 || words.length > 20) warnings.push(`${words.length} puzzle words (asked for 18)`);
+  const badFormat = words.filter((w) => typeof w !== "string" || !/^[A-Z]{3,}$/.test(w));
+  if (badFormat.length) warnings.push(`words not uppercase A-Z: ${badFormat.join(", ")}`);
+
+  const name = childFirstName(tc.childName);
+  const intro = typeof act.puzzle_intro === "string" ? act.puzzle_intro : "";
+  if (!intro) failures.push("puzzle_intro missing");
+  else if (!intro.includes(name)) failures.push(`puzzle_intro doesn't name ${name}`);
+  if (typeof act.encouragement === "string" && act.encouragement.trim()) warnings.push("puzzle_break still has a separate encouragement");
+  if (typeof act.fun_fact === "string" && /word search|crossword|sudoku|maze|language/i.test(act.fun_fact)) {
+    warnings.push(`fun_fact may be about puzzles, not the theme: ${act.fun_fact}`);
+  }
+
+  const joke = normalizeJoke(act.joke);
+  const rawJoke = act.joke as Record<string, unknown> | undefined;
+  if (!joke) failures.push(`joke missing or unusable: ${JSON.stringify(act.joke)}`);
+  if (rawJoke && DASH.test(`${rawJoke.question ?? ""} ${rawJoke.punchline ?? ""}`)) warnings.push("joke had a dash (code swaps it for a comma)");
+  if (joke) {
+    for (const line of [joke.question, joke.punchline]) {
+      if (line.split(/\s+/).length > 12) warnings.push(`joke line over 12 words: ${line}`);
+    }
+  }
+
+  const texts: [string, unknown][] = [["title", act.title], ["puzzle_intro", act.puzzle_intro], ["fun_fact", act.fun_fact]];
+  if (tc.puzzleType === "crossword") {
+    const clues = act.clues && typeof act.clues === "object" ? (act.clues as Record<string, unknown>) : null;
+    if (!clues) failures.push("crossword with no clues object");
+    else {
+      const clueFor = new Map(Object.entries(clues).map(([k, v]) => [normalizeWord(k), v]));
+      const missing = words.filter((w) => typeof w === "string" && typeof clueFor.get(normalizeWord(w)) !== "string");
+      if (missing.length) warnings.push(`${missing.length} words have no clue: ${missing.join(", ")}`);
+      for (const [word, clue] of clueFor) {
+        texts.push([`clue ${word}`, clue]);
+        if (typeof clue === "string" && clue.toUpperCase().includes(word)) warnings.push(`clue for ${word} contains the answer`);
+      }
+    }
+  } else if (act.clues) {
+    warnings.push("clues written for a non-crossword");
+  }
+  for (const [label, text] of texts) {
+    if (typeof text !== "string") continue;
+    if (PAGE_NUMBER.test(text)) failures.push(`${label} mentions a page number: ${text}`);
+    if (DASH.test(text)) warnings.push(`${label} has a dash: ${text}`);
+  }
+  if (typeof act.title === "string" && /[-‐-―]/.test(act.title)) failures.push(`puzzle title has a dash: ${act.title}`);
+  return { failures, warnings };
+}
+
+// ─── Generation ───────────────────────────────────────────────────────────────
+
+interface GenerationResult {
+  parsed: Record<string, unknown>;
+  usage: { input: number; output: number };
+  seconds: number;
+}
+
+async function generateTestPacket(tc: TestCase): Promise<GenerationResult> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const child = {
+    name: tc.childName,
+    grade_level: tc.gradeLevel,
+    learning_style: "visual",
+    favorite_subjects: [],
+    special_notes: null,
+  } as unknown as Child;
 
-  const readingWordCount =
-    tc.gradeBand === "K-2" ? "80-150 words" :
-    tc.gradeBand === "3-5" ? "200-350 words" : "400-600 words";
+  const userPrompt = buildUserPrompt(
+    child,
+    tc.theme,
+    "full",
+    undefined,
+    undefined,
+    buildTitleBrief({
+      childName: tc.childName,
+      gradeLevel: tc.gradeLevel,
+      theme: tc.theme,
+      style: pickTitleStyle(null),
+      packetNumber: 1,
+      recentTitles: [],
+    }),
+    buildPuzzleBrief({
+      type: tc.puzzleType,
+      band: tc.gradeBand,
+      childFirstName: childFirstName(tc.childName),
+      theme: tc.theme,
+      recentJokes: [],
+    })
+  );
 
-  const userPrompt = `<child_profile>
-Name: ${tc.childName}
-Grade: ${tc.gradeDisplay}
-Learning style: visual
-Favorite subjects: varied
-</child_profile>
-
-<packet_request>
-Type: Full-day — exactly 5 activities
-Theme: "${theme}"
-Subjects to cover: math, reading, writing, science or history, one creative or PE activity
-</packet_request>
-
-<grade_reminders>
-Grade: ${tc.gradeDisplay}
-Reading passage for this grade: ${readingWordCount}
-All math must stay within the ${tc.gradeDisplay} difficulty band — do not go easier or harder.
-Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
-</grade_reminders>
-
-${buildTitleBrief({
-  childName: tc.childName,
-  gradeLevel: tc.gradeLevel,
-  theme,
-  style: pickTitleStyle(null),
-  packetNumber: 1,
-  recentTitles: [],
-})}
-
-Create the packet now. Return only the JSON object.`;
-
-  const response = await client.messages.create({
+  const started = Date.now();
+  const legacyModel = MODELS_WITH_TEMPERATURE.has(MODEL);
+  // Streamed, like the real route, so a long thinking response can't time out.
+  const stream = client.messages.stream({
     model: MODEL,
-    max_tokens: MODELS_WITH_TEMPERATURE.has(MODEL) ? 7000 : THINKING_MODEL_MAX_TOKENS,
-    ...(MODELS_WITH_TEMPERATURE.has(MODEL) ? { temperature: 0.7 } : {}),
+    max_tokens: legacyModel ? 8500 : THINKING_MODEL_MAX_TOKENS,
+    ...(legacyModel ? { temperature: 0.7 } : {}),
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
+  const response = await stream.finalMessage();
 
   // Thinking models put a thinking block first; the JSON is in the text block.
   const content = response.content.find((b) => b.type === "text");
@@ -412,10 +367,84 @@ Create the packet now. Return only the JSON object.`;
   }
   if (end === -1) throw new Error("Unterminated JSON");
 
-  return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  return {
+    parsed: JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>,
+    usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
+    seconds: (Date.now() - started) / 1000,
+  };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
+
+const GRADE_DISPLAY = (g: string) => (g === "K" ? "Kindergarten" : `Grade ${g}`);
+const NAMES: Record<BandKey, string> = { "K-2": "Lily", "3-5": "Marcus", "6-8": "Jordan" };
+
+/** Each puzzle type in each band, with varied themes. */
+const MATRIX: [BandKey, string, PuzzleType, string][] = [
+  ["K-2", "K", "word_search", "Bugs"],
+  ["K-2", "1", "maze", "Farm Animals"],
+  ["K-2", "2", "sudoku", "Dinosaurs"],
+  ["K-2", "1", "crossword", "Ocean"],
+  ["3-5", "3", "word_search", "Outer Space"],
+  ["3-5", "4", "maze", "Pirates"],
+  ["3-5", "5", "sudoku", "Rainforest"],
+  ["3-5", "4", "crossword", "Bugs"],
+  ["6-8", "6", "word_search", "Ancient Rome"],
+  ["6-8", "7", "maze", "Volcanoes"],
+  ["6-8", "8", "sudoku", "Ancient Egypt"],
+  ["6-8", "7", "crossword", "Outer Space"],
+];
+
+interface Outcome {
+  tc: TestCase;
+  ok: boolean;
+  error?: string;
+  usage?: { input: number; output: number };
+  attach?: ReturnType<typeof attachPuzzleBreak>;
+  content?: PacketContent;
+}
+
+async function runCase(tc: TestCase, outDir: string | null): Promise<Outcome> {
+  const tag = `${tc.gradeBand} ${tc.puzzleType} (${tc.theme}, ${GRADE_DISPLAY(tc.gradeLevel)})`;
+  try {
+    const gen = await generateTestPacket(tc);
+    const parsed = gen.parsed;
+    if (outDir) writeFileSync(join(outDir, `${tc.gradeBand}-${tc.puzzleType}.json`), JSON.stringify(parsed, null, 2));
+
+    const result = validatePacket(parsed, tc.gradeBand);
+    const titleResult = validateTitle(parsed, tc.childName);
+    const puzzleResult = validatePuzzleActivity(parsed, tc);
+    result.failures.push(...titleResult.failures, ...puzzleResult.failures);
+    result.warnings.push(...titleResult.warnings, ...puzzleResult.warnings);
+    result.pass = result.failures.length === 0;
+
+    // The same build step the route runs after parsing.
+    const content = parsed as unknown as PacketContent;
+    const attach = attachPuzzleBreak(content, {
+      requestedType: tc.puzzleType,
+      gradeLevel: tc.gradeLevel,
+      childName: tc.childName,
+      theme: tc.theme,
+      seed: Math.floor(Math.random() * 4294967296) >>> 0,
+    });
+    if (outDir) writeFileSync(join(outDir, `${tc.gradeBand}-${tc.puzzleType}.built.json`), JSON.stringify(content, null, 2));
+
+    const lines = [`\n[${result.pass ? "PASS" : "FAIL"}] ${tag}  ${gen.seconds.toFixed(0)}s, ${gen.usage.input} in / ${gen.usage.output} out tokens`];
+    lines.push(`  Title: ${String(parsed.packet_title ?? "")} (${String(parsed.title_style ?? "no style")})`);
+    lines.push(
+      `  Puzzle: asked ${attach.requestedType}, built ${attach.builtType ?? "nothing (old word search)"}${attach.fellBack ? " (FELL BACK)" : ""}, ` +
+        `${attach.candidateCount} words in, ${attach.wordsUsed ?? "n/a"} used, ${attach.durationMs} ms`
+    );
+    result.failures.forEach((f) => lines.push(`  FAIL: ${f}`));
+    result.warnings.forEach((w) => lines.push(`  warn: ${w}`));
+    console.log(lines.join("\n"));
+    return { tc, ok: result.pass, usage: gen.usage, attach, content };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.log(`\n[ERROR] ${tag}: ${message}`);
+    return { tc, ok: false, error: message };
+  }
+}
 
 async function main() {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -424,99 +453,83 @@ async function main() {
   }
 
   const args = process.argv.slice(2);
-  const themeIdx = args.indexOf("--theme");
-  const theme = themeIdx !== -1 && args[themeIdx + 1] ? args[themeIdx + 1] : "Space Exploration";
+  const arg = (name: string) => {
+    const i = args.indexOf(name);
+    return i !== -1 && args[i + 1] ? args[i + 1] : null;
+  };
+  const theme = arg("--theme") ?? "Space Exploration";
+  const singleGrade = arg("--grade");
+  const forcedType = arg("--puzzle-type");
+  if (forcedType && !isPuzzleType(forcedType)) {
+    console.error("--puzzle-type must be one of word_search, maze, sudoku, crossword");
+    process.exit(1);
+  }
+  const concurrency = Math.max(1, Number(arg("--concurrency") ?? 1));
+  const outDir = arg("--out");
+  if (outDir) mkdirSync(outDir, { recursive: true });
 
-  const gradeIdx = args.indexOf("--grade");
-  const singleGrade = gradeIdx !== -1 ? args[gradeIdx + 1] : null;
+  let cases: TestCase[];
+  if (args.includes("--matrix")) {
+    cases = MATRIX.map(([band, grade, type, t]) => ({
+      gradeBand: band, gradeLevel: grade, gradeDisplay: GRADE_DISPLAY(grade), childName: NAMES[band], theme: t, puzzleType: type,
+    }));
+  } else {
+    cases = (["K", "4", "7"] as const).map((grade) => {
+      const band = bandForGrade(grade);
+      return {
+        gradeBand: band, gradeLevel: grade, gradeDisplay: GRADE_DISPLAY(grade), childName: NAMES[band], theme,
+        puzzleType: (forcedType as PuzzleType | null) ?? pickPuzzleType(null),
+      };
+    });
+    if (singleGrade) cases = cases.filter((c) => c.gradeLevel === singleGrade || c.gradeBand === singleGrade);
+  }
 
-  const allCases: TestCase[] = [
-    { gradeBand: "K-2", gradeLevel: "K", gradeDisplay: "Kindergarten", childName: "Lily" },
-    { gradeBand: "3-5", gradeLevel: "4", gradeDisplay: "Grade 4",       childName: "Marcus" },
-    { gradeBand: "6-8", gradeLevel: "7", gradeDisplay: "Grade 7",       childName: "Jordan" },
-  ];
-
-  const cases = singleGrade
-    ? allCases.filter(c => c.gradeLevel === singleGrade || c.gradeBand === singleGrade)
-    : allCases;
-
-  console.log(`\nPacket Day — Generation Quality Test`);
-  console.log(`Theme: "${theme}"  |  Model: ${MODEL}`);
+  console.log("\nPacket Day — Generation Quality Test");
+  console.log(`Model: ${MODEL}  |  ${cases.length} full day packet${cases.length === 1 ? "" : "s"}, ${concurrency} at a time`);
   console.log("=".repeat(60));
 
-  let totalPass = 0;
-  let totalFail = 0;
-
-  for (const tc of cases) {
-    console.log(`\nGenerating ${tc.gradeBand} packet for ${tc.childName} (${tc.gradeDisplay})...`);
-    const start = Date.now();
-
-    try {
-      const parsed = await generateTestPacket(tc, theme);
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const result = validatePacket(parsed, tc.gradeBand);
-      const titleResult = validateTitle(parsed, tc.childName);
-      result.failures.push(...titleResult.failures);
-      result.warnings.push(...titleResult.warnings);
-      result.pass = result.failures.length === 0;
-
-      const activities = Array.isArray(parsed.activities) ? parsed.activities as Record<string, unknown>[] : [];
-      const readingAct = activities.find(a => a.content_type === "reading_passage");
-      const mathAct = activities.find(a => (a.subject as string)?.toLowerCase().includes("math"));
-
-      console.log(`\n  [${result.pass ? "PASS" : "FAIL"}] ${tc.gradeBand} — ${tc.childName} (${elapsed}s)`);
-      console.log(`  Title: ${String(parsed.packet_title ?? "").slice(0, 70)} (${String(parsed.title_style ?? "no style")})`);
-      console.log(`  Activities: ${activities.length} | Content types: ${activities.map(a => a.content_type ?? "?").join(", ")}`);
-
-      if (readingAct) {
-        const passageWords = typeof readingAct.passage === "string"
-          ? readingAct.passage.trim().split(/\s+/).length : 0;
-        console.log(`  Reading passage: ${passageWords} words (target ${tc.gradeBand === "K-2" ? "80-150" : tc.gradeBand === "3-5" ? "200-350" : "400-600"})`);
-        console.log(`  Passage in own field: ${!!readingAct.passage ? "YES" : "NO"}`);
-      } else {
-        console.log(`  Reading passage: NO reading_passage activity found`);
-      }
-
-      if (mathAct && Array.isArray(mathAct.instructions)) {
-        const quickCalc = (mathAct.instructions as string[])[0] ?? "";
-        const usesPipe = quickCalc.includes("||");
-        const usesSlash = quickCalc.includes(" / ") && !quickCalc.includes("||");
-        const usesSymbols = quickCalc.includes("÷") || quickCalc.includes("×");
-        console.log(`  Math: || separator=${usesPipe ? "YES" : "NO"} | / separator=${usesSlash ? "YES (BAD)" : "no"} | ÷× symbols=${usesSymbols ? "YES (BAD)" : "no"}`);
-        console.log(`  Math sample: ${quickCalc.slice(0, 100)}`);
-      }
-
-      // Coloring page coherence check
-      const cp = parsed.coloring_page as Record<string, unknown> | undefined;
-      if (cp) {
-        console.log(`\n  Coloring page:`);
-        console.log(`    title        : ${String(cp.title ?? "").slice(0, 80)}`);
-        console.log(`    coloring_scene: ${String(cp.coloring_scene ?? "MISSING").slice(0, 120)}`);
-        console.log(`    instructions : ${String(cp.instructions ?? "").slice(0, 100)}`);
-      }
-
-      if (result.failures.length > 0) {
-        console.log(`\n  FAILURES:`);
-        result.failures.forEach(f => console.log(`    - ${f}`));
-        totalFail++;
-      } else {
-        totalPass++;
-      }
-
-      if (result.warnings.length > 0) {
-        console.log(`\n  WARNINGS:`);
-        result.warnings.forEach(w => console.log(`    ~ ${w}`));
-      }
-
-    } catch (err) {
-      console.log(`\n  [ERROR] ${tc.gradeBand}: ${err instanceof Error ? err.message : String(err)}`);
-      totalFail++;
-    }
+  const outcomes: Outcome[] = [];
+  for (let i = 0; i < cases.length; i += concurrency) {
+    outcomes.push(...(await Promise.all(cases.slice(i, i + concurrency).map((tc) => runCase(tc, outDir)))));
   }
 
   console.log("\n" + "=".repeat(60));
-  console.log(`Result: ${totalPass} passed, ${totalFail} failed out of ${cases.length} packets`);
-  process.exit(totalFail > 0 ? 1 : 0);
+  console.log("Puzzle fit (real model words through the generators):");
+  for (const o of outcomes) {
+    if (!o.attach) {
+      console.log(`  ${o.tc.gradeBand} ${o.tc.puzzleType.padEnd(11)} ERROR ${o.error ?? ""}`);
+      continue;
+    }
+    const a = o.attach;
+    console.log(
+      `  ${o.tc.gradeBand} ${o.tc.puzzleType.padEnd(11)} built ${String(a.builtType ?? "none").padEnd(11)} ` +
+        `${a.fellBack ? "FELL BACK " : "          "}words in ${String(a.candidateCount).padStart(2)}, used ${a.wordsUsed ?? "n/a"}`
+    );
+  }
+
+  console.log("\nJokes:");
+  for (const o of outcomes) {
+    const j = o.content?.joke;
+    console.log(`  ${o.tc.gradeBand} ${o.tc.theme}: ${j ? `${j.question} / ${j.punchline}` : "(none)"}`);
+  }
+
+  console.log("\nCrossword clues:");
+  for (const o of outcomes) {
+    const data = o.content?.activities?.find((a) => a.puzzle)?.puzzle?.data;
+    if (o.tc.puzzleType !== "crossword" || !data || data.type !== "crossword") continue;
+    console.log(`  ${o.tc.gradeBand} ${o.tc.theme} (${data.entries.length} answers, ${data.width}x${data.height}):`);
+    for (const e of data.entries) console.log(`    ${String(e.number).padStart(2)} ${e.dir.padEnd(6)} ${e.answer.padEnd(11)} ${e.clue}`);
+  }
+
+  const used = outcomes.filter((o) => o.usage);
+  if (used.length) {
+    const avg = (k: "input" | "output") => Math.round(used.reduce((s, o) => s + o.usage![k], 0) / used.length);
+    console.log(`\nTokens: average ${avg("input")} in / ${avg("output")} out per packet (output includes thinking)`);
+  }
+
+  const passed = outcomes.filter((o) => o.ok).length;
+  console.log(`\nResult: ${passed} passed, ${outcomes.length - passed} failed out of ${outcomes.length} packets`);
+  process.exit(passed === outcomes.length ? 0 : 1);
 }
 
 main();

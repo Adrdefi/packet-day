@@ -159,18 +159,16 @@ For the classic style, the title simply offers a great day exploring the theme.
 
 Valid content_type values: "reading_passage" | "worksheet" | "writing_prompt" | "movement_activity" | "coloring" | "puzzle_break"
 - reading_passage: put full passage in "passage" field, questions only in "instructions"
-- puzzle_break: instructions array must be a list of 6-10 themed WORDS (uppercase, letters only, 3-10 characters each). No sentences — just the words to find. passage must be null.
+- puzzle_break: follow the <puzzle_brief> in the user message. instructions is a list of themed WORDS only (uppercase letters, no sentences). passage must be null.
 - all others: "passage" must be null
 </output_schema>
 
 <puzzle_break_rules>
 For FULL-DAY packets (6 activities), include a puzzle_break as the 4th activity — after the 3rd subject activity.
 The puzzle_break uses content_type "puzzle_break" and subject "Puzzle Break".
-The instructions array must be EXACTLY a list of 6-10 themed words for the word search grid.
-Each word: uppercase letters only, 3-10 characters, no spaces, no punctuation.
-Example for an Ocean theme: ["OCEAN", "WAVE", "CORAL", "SHARK", "ANCHOR", "TIDE", "REEF", "KELP"]
-The word search grid is generated automatically from this word list and printed on the page, fully solvable — never tell parents it needs to be hand-drawn or generated separately, and never say the word list is in the answer key.
-The fun_fact for a puzzle_break should be an interesting fact about word searches or language.
+The app has already picked the puzzle type and builds the grid itself from your words. The <puzzle_brief> in the user message says which type and exactly what to write.
+On top of the usual activity fields, the puzzle_break has "puzzle_intro" (string) and "joke" ({"question": "...", "punchline": "..."}), and "clues" (an object keyed by word) only when the brief asks for a crossword.
+Every grid is printed on the page and fully solvable — never tell parents to make or print a puzzle elsewhere, and never mention page numbers.
 Do NOT include a puzzle_break in half-day packets.
 </puzzle_break_rules>
 
@@ -192,7 +190,9 @@ export function buildUserPrompt(
   packetLength: "half" | "full",
   specialNotes: string | undefined,
   date: string | undefined,
-  titleBrief: string
+  titleBrief: string,
+  /** The <puzzle_brief> block; null for half day packets, which have no puzzle break. */
+  puzzleBrief: string | null = null
 ): string {
   const gradeDisplay =
     child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
@@ -235,6 +235,8 @@ Zero emoji outside mascot_emoji_cluster. Plain text everywhere else.
 </grade_reminders>
 
 ${titleBrief}
-
+${puzzleBrief ? `
+${puzzleBrief}
+` : ""}
 Create the packet now. Return only the JSON object.`;
 }

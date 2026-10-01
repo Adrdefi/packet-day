@@ -1,4 +1,5 @@
 import type { BandKey } from "@/lib/pdf-tokens";
+import type { PuzzleJoke } from "./jokes";
 
 // The four puzzle break types. Packets made before puzzle rotation have no
 // puzzle data at all; every one of them had a word search.
@@ -96,4 +97,17 @@ export type BuiltPuzzle = WordSearchPuzzle | MazePuzzle | SudokuPuzzle | Crosswo
 export interface PuzzleWordInput {
   word: string;
   clue?: string | null;
+}
+
+/** What's stored on the puzzle break activity as activity.puzzle. The new page renders only when this exists. */
+export interface StoredPuzzle {
+  version: number;
+  seed: number;
+  requested_type: PuzzleType;
+  /** Mascot intro line, addressed to the child, ending with encouragement. */
+  intro: string;
+  joke: PuzzleJoke | null;
+  /** The model's words (and clues, for a crossword), kept so a puzzle can be rebuilt or debugged. */
+  candidate_words: PuzzleWordInput[];
+  data: BuiltPuzzle;
 }
