@@ -5,6 +5,10 @@
  *   npm run render-puzzles
  *   npm run render-puzzles -- --baseline   (old path only, saved as the baseline)
  *
+ * Each type and band also renders a "-max" page (every text block at its
+ * cap, whole sentences) and an "-overflow" page (every block over its cap:
+ * stock intro, no Did You Know, encouragement in place of the joke).
+ *
  * Fixtures: scripts/fixtures/puzzle-rotation.json, real model output from
  * scripts/test-packets.ts --matrix (test names only).
  *
@@ -31,7 +35,7 @@ import { renderPacketPdf } from "../lib/packetPdfRender";
 import { attachPuzzleBreak } from "../lib/puzzles/attach";
 import type { PuzzleType } from "../lib/puzzles/types";
 import { PAGE_PADDING } from "../lib/puzzles/pageLayout";
-import { PUZZLE_TEXT_CAPS } from "../lib/puzzles/textCaps";
+import { PUZZLE_TEXT_CAPS, stockIntro } from "../lib/puzzles/textCaps";
 import { bandForGrade } from "../lib/pdf-tokens";
 import type { PacketContent } from "../types";
 import { loadPdf, type PdfDocument } from "./lib/rasterize-pdf";
@@ -170,18 +174,33 @@ async function renderOldPacket(fx: Fixtures, mascot: string, baseline: boolean):
  * document it will in production. (A tiny document of just the puzzle page
  * loses react-pdf's "N of M" footer entirely; that quirk predates this work.)
  */
-/** Page count of the old packet rendered at a given grade, cached per grade. */
-const oldCounts = new Map<string, number>();
-async function oldPageCountAt(packet: PacketContent, gradeLevel: string, mascot: string): Promise<number> {
+const SHEET_TITLE = /Answerkeyandteachingnotes/i;
+
+interface PageCounts {
+  /** Pages before the parent sheet. */
+  kid: number;
+  /** Parent sheet pages. */
+  sheet: number;
+}
+
+/** Kid pages and parent sheet pages of the old packet rendered at a given grade, cached per grade. */
+const oldCounts = new Map<string, PageCounts>();
+async function oldPageCountAt(packet: PacketContent, gradeLevel: string, mascot: string): Promise<PageCounts> {
   const cached = oldCounts.get(gradeLevel);
   if (cached !== undefined) return cached;
   const content = JSON.parse(JSON.stringify(packet)) as PacketContent;
   const buf = await renderPacketPdf(propsFor(content, { childName: "Marcus", gradeLevel, theme: "Pirates" }, mascot), `render-puzzles old at ${gradeLevel}`);
   const pdfPath = path.join(OUT_DIR, `old-packet-grade-${gradeLevel}.pdf`);
   await writeFile(pdfPath, buf);
-  const n = (await loadPdf(pdfPath)).numPages;
-  oldCounts.set(gradeLevel, n);
-  return n;
+  const doc = await loadPdf(pdfPath);
+  const counts = await pageCounts(doc);
+  oldCounts.set(gradeLevel, counts);
+  return counts;
+}
+
+async function pageCounts(doc: PdfDocument): Promise<PageCounts> {
+  const start = await findPage(doc, SHEET_TITLE);
+  return start === -1 ? { kid: doc.numPages, sheet: 0 } : { kid: start - 1, sheet: doc.numPages - start + 1 };
 }
 
 async function findPage(doc: PdfDocument, pattern: RegExp): Promise<number> {
@@ -192,51 +211,116 @@ async function findPage(doc: PdfDocument, pattern: RegExp): Promise<number> {
   return -1;
 }
 
-/** Words added one at a time while the line stays within `cap` characters (with `end` appended). */
-function fillTo(cap: number, words: string, end: string): string {
+/** Whole sentences, in order, for as long as they fit in `cap`. */
+function sentencesUpTo(cap: number, sentences: string[]): string {
   let out = "";
-  for (const w of words.split(" ")) {
-    const next = out ? `${out} ${w}` : w;
-    if (next.length + end.length > cap) break;
+  for (const s of sentences) {
+    const next = out ? `${out} ${s}` : s;
+    if (next.length > cap) break;
     out = next;
   }
-  return out + end;
+  return out;
 }
 
-/** The worst case the page must still fit: every text block at its cap and a two line title. */
-function stressed(activity: Record<string, unknown>, f: PuzzleFixture): Record<string, unknown> {
+/** The longest line from `options` that fits in `cap`. */
+function longestFitting(cap: number, options: string[]): string {
+  return options.filter((o) => o.length <= cap).sort((a, b) => b.length - a.length)[0];
+}
+
+type Variant = "normal" | "max" | "overflow";
+
+/**
+ * "max": every text block as long as its cap allows, in whole sentences, and
+ * a two line title. "overflow": every block over its cap, so the page must
+ * use the stock intro, leave out the Did You Know, and show the
+ * encouragement callout in place of the joke.
+ */
+function varied(activity: Record<string, unknown>, f: PuzzleFixture, variant: Variant): Record<string, unknown> {
+  if (variant === "normal") return activity;
   const caps = PUZZLE_TEXT_CAPS[bandForGrade(f.gradeLevel)];
+  const title = "The Extraordinary Expedition Across Mysterious Lands";
+  if (variant === "overflow") {
+    const tooLong = `${f.childName}, this puzzle is packed with tricky turns and hidden surprises so take your time and check every single corner twice because you have solved much harder and trickier puzzles than this one before today, so there is truly nothing here that you cannot figure out.`;
+    return {
+      ...activity,
+      title,
+      puzzle_intro: tooLong,
+      fun_fact: "Scientists who study this keep finding surprises, and one of the strangest is that the tiniest details often turn out to explain the very biggest mysteries of all, which is why careful observers notice so much.",
+      joke: {
+        question: "Why did the very curious young explorer decide to pack a second shiny compass for the long winding trip home?",
+        punchline: "Because the first one kept pointing toward the snacks!",
+      },
+    };
+  }
   return {
     ...activity,
-    title: "The Extraordinary Expedition Across Mysterious Lands",
-    puzzle_intro: fillTo(
-      caps.introChars,
-      `${f.childName}, this puzzle is packed with tricky turns and hidden surprises, so take your time, check every corner twice, and trust your sharp eyes because you have solved harder things than this before today and you will solve this one too`,
-      "!"
-    ),
-    fun_fact: fillTo(
-      caps.factChars,
-      "Scientists who study this keep finding surprises, and one of the strangest is that the tiniest details often turn out to explain the biggest mysteries of all, which is why careful observers notice so much more than everyone else",
-      "."
-    ),
+    title,
+    puzzle_intro: sentencesUpTo(caps.introChars, [
+      `${f.childName}, this puzzle is packed with tricky turns.`,
+      "Take your time and check every corner twice.",
+      "Trust your sharp eyes.",
+      "You have solved harder things than this before.",
+      "Go slow and enjoy it.",
+      "You can do it!",
+    ]),
+    fun_fact: sentencesUpTo(caps.factChars, [
+      "Scientists who study this keep finding surprises.",
+      "The tiniest details often explain the biggest mysteries.",
+      "Careful observers notice the most.",
+      "That is why they keep looking.",
+      "Wow!",
+    ]),
     joke: {
-      question: fillTo(caps.jokeQuestionChars, "Why did the very curious young explorer pack a second shiny compass for the long winding trip home", "?"),
-      punchline: fillTo(caps.jokePunchlineChars, "Because the first one kept pointing straight toward the snack cupboard all day long", "!"),
+      question: longestFitting(caps.jokeQuestionChars, [
+        "Why did the explorer pack a second compass?",
+        "Why did the explorer pack a second compass for the trip?",
+        "Why did the curious explorer pack a second compass for the long trip?",
+        "Why did the very curious explorer pack a second compass for the long trip home?",
+      ]),
+      punchline: longestFitting(caps.jokePunchlineChars, [
+        "The first one was lost!",
+        "The first one kept pointing at snacks!",
+        "Because the first one kept pointing at the snacks!",
+        "Because the first one kept pointing straight at the snacks!",
+      ]),
     },
   };
 }
 
-async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: string, stress = false): Promise<string> {
+const ENDS_A_SENTENCE = /[.!?]["'”’)\]]*$/;
+
+async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: string, variant: Variant = "normal"): Promise<string> {
   const content = JSON.parse(JSON.stringify(packet)) as PacketContent;
   const index = content.activities.findIndex((a) => a.content_type === "puzzle_break");
-  const raw = JSON.parse(JSON.stringify(f.activity)) as Record<string, unknown>;
-  content.activities[index] = (stress ? stressed(raw, f) : raw) as unknown as PDFActivity;
+  const raw = varied(JSON.parse(JSON.stringify(f.activity)) as Record<string, unknown>, f, variant);
+  content.activities[index] = raw as unknown as PDFActivity;
   content.packet_title = f.packetTitle ?? f.theme;
   content.mascot_name = f.mascotName ?? content.mascot_name;
+  const sourceIntro = String(raw.puzzle_intro ?? "");
+  const sourceFact = String(raw.fun_fact ?? "");
   const r = attachPuzzleBreak(content, { requestedType: f.type, gradeLevel: f.gradeLevel, childName: f.childName, theme: f.theme, seed: 20261001 });
-  const name = `${f.band}-${f.type}${stress ? "-stress" : ""}`;
-  const label = `${f.band} ${f.type}${stress ? " (stress)" : ""}`;
+  const suffix = variant === "normal" ? "" : `-${variant}`;
+  const name = `${f.band}-${f.type}${suffix}`;
+  const label = `${f.band} ${f.type}${variant === "normal" ? "" : ` (${variant})`}`;
   if (r.builtType !== f.type) fail(`${label}: built ${r.builtType ?? "nothing"}`);
+
+  // Text is only ever whole sentences: the source's own sentences from the
+  // start, or the stock intro; never a cut sentence and nothing added.
+  const act = content.activities[index] as PDFActivity;
+  const intro = act.puzzle?.intro ?? "";
+  const stock = Array.from({ length: 4 }, (_, i) => stockIntro(f.childName.split(" ")[0], content.mascot_name, i));
+  if (!ENDS_A_SENTENCE.test(intro)) fail(`${label}: intro doesn't end a sentence: "${intro}"`);
+  if (!stock.includes(intro) && !sourceIntro.startsWith(intro)) fail(`${label}: intro isn't the model's own opening sentences: "${intro}"`);
+  if (act.fun_fact) {
+    if (!ENDS_A_SENTENCE.test(act.fun_fact)) fail(`${label}: Did You Know doesn't end a sentence: "${act.fun_fact}"`);
+    if (!sourceFact.startsWith(act.fun_fact)) fail(`${label}: Did You Know isn't the model's own opening sentences`);
+  }
+  if (variant === "overflow") {
+    if (!stock.includes(intro)) fail(`${label}: an intro over the cap should become a stock line`);
+    if (act.fun_fact) fail(`${label}: a Did You Know over the cap should be left out`);
+    if (act.puzzle?.joke) fail(`${label}: a joke over the cap should be dropped`);
+    if (!act.encouragement) fail(`${label}: no encouragement in place of the dropped joke`);
+  }
 
   const buf = await renderPacketPdf(propsFor(content, f, mascot), `render-puzzles ${label}`);
   const pdfPath = path.join(OUT_DIR, `${name}.pdf`);
@@ -244,11 +328,18 @@ async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: str
   const doc = await loadPdf(pdfPath);
   // Same page count as the same packet with the old one page word search, at
   // the same grade: a puzzle that spilled onto a second page would add one.
-  const oldPageCount = await oldPageCountAt(packet, f.gradeLevel, mascot);
-  if (doc.numPages !== oldPageCount) fail(`${label}: ${doc.numPages} pages, expected ${oldPageCount} (puzzle on exactly one page)`);
-  const PUZZLE_PAGE = await findPage(doc, /JOKEOFTHEDAY/i);
+  // Same kid page count as the same packet with the old one page word search,
+  // at the same grade: a puzzle that spilled onto a second page would add one.
+  const old = await oldPageCountAt(packet, f.gradeLevel, mascot);
+  const now = await pageCounts(doc);
+  if (now.kid !== old.kid) fail(`${label}: ${now.kid} kid pages, expected ${old.kid} (puzzle on exactly one page)`);
+  // The parent sheet gains the puzzle's entry; it must not gain a page.
+  if (now.sheet !== old.sheet) fail(`${label}: parent sheet is ${now.sheet} pages, was ${old.sheet} without the puzzle entry`);
+  const joke = act.puzzle?.joke ?? null;
+  const marker = joke ? /JOKEOFTHEDAY/i : new RegExp((act.encouragement ?? "").replace(/\s+/g, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 30));
+  const PUZZLE_PAGE = await findPage(doc, marker);
   if (PUZZLE_PAGE === -1) {
-    fail(`${label}: no page with the Joke of the Day`);
+    fail(`${label}: can't find the puzzle page`);
     return "";
   }
   const { png } = await rasterPage(doc, PUZZLE_PAGE);
@@ -267,20 +358,45 @@ async function renderPuzzle(f: PuzzleFixture, packet: PacketContent, mascot: str
       fail(`${label}: text "${it.str.slice(0, 30)}" at ${it.x.toFixed(0)},${it.y.toFixed(0)} is outside the page content`);
     }
   }
-  const kidPages = oldPageCount - 1; // the parent sheet isn't counted
+  const kidPages = now.kid; // the parent sheet isn't counted
   if (!items.some((it) => it.str.trim() === `${PUZZLE_PAGE} of ${kidPages}`)) fail(`${label}: page number "${PUZZLE_PAGE} of ${kidPages}" missing from the footer`);
-  const joke = (content.activities[index] as PDFActivity).puzzle?.joke;
+  const pageString = items.map((i) => i.str).join("").replace(/\s+/g, "");
   if (joke) {
     const firstWord = joke.punchline.split(/\s+/)[0];
     const flipped = items.filter((i) => i.a < 0 && i.d < 0);
     if (!flipped.some((i) => i.str.includes(firstWord) || joke.punchline.includes(i.str.trim()))) fail(`${label}: punchline not found drawn upside down`);
     const upright = items.filter((i) => i.a > 0 && i.str.includes(joke.punchline));
     if (upright.length) fail(`${label}: punchline printed right side up on the kid page`);
-  } else {
-    fail(`${label}: no joke`);
+  } else if (!pageString.includes((act.encouragement ?? "").replace(/\s+/g, ""))) {
+    fail(`${label}: no joke and no encouragement callout`);
+  }
+
+  // Parent sheet: saved as answer-keys/<band>-<type>.png (one file per page).
+  if (variant === "normal" && now.sheet > 0) {
+    await mkdir(path.join(OUT_DIR, "answer-keys"), { recursive: true });
+    let sheetText = "";
+    const sheetItems: TextItem[] = [];
+    for (let p = now.kid + 1; p <= doc.numPages; p++) {
+      const { png: sheetPng } = await rasterPage(doc, p);
+      const suffix = now.sheet > 1 ? `-p${p - now.kid}` : "";
+      const sheetPath = path.join(OUT_DIR, "answer-keys", `${f.band}-${f.type}${suffix}.png`);
+      await writeFile(sheetPath, sheetPng);
+      answerKeyPaths.push(path.relative(REPO_ROOT, sheetPath));
+      const t = await pageText(doc, p);
+      sheetItems.push(...t.items);
+      sheetText += t.items.map((i) => i.str).join("");
+    }
+    const flat = sheetText.replace(/\s+/g, "");
+    if (!/PUZZLEBREAK/i.test(flat)) fail(`${label}: no Puzzle Break entry on the parent sheet`);
+    if (joke) {
+      if (!flat.includes(joke.punchline.replace(/\s+/g, ""))) fail(`${label}: punchline missing from the parent sheet`);
+      if (sheetItems.some((i) => i.a < 0)) fail(`${label}: something is upside down on the parent sheet`);
+    }
   }
   return path.relative(REPO_ROOT, pngPath);
 }
+
+const answerKeyPaths: string[] = [];
 
 async function main() {
   const baseline = process.argv.includes("--baseline");
@@ -294,17 +410,21 @@ async function main() {
   const written: string[] = [];
   void oldPageCount;
   for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot));
-  // Worst case: every text block at its cap. Saved as <band>-<type>-stress.png.
-  for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot, true));
+  // Worst cases: every text block at its cap ("-max.png"), and every block
+  // over its cap ("-overflow.png").
+  for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot, "max"));
+  for (const f of fx.puzzles) written.push(await renderPuzzle(f, fx.oldPacket.content, mascot, "overflow"));
   console.log("\nPuzzle pages:");
   for (const w of written) console.log(`  ${w}`);
+  console.log("\nParent sheets:");
+  for (const w of answerKeyPaths) console.log(`  ${w}`);
 
   if (failures.length) {
     process.stderr.write(`\nPUZZLE RENDER CHECK FAILED (${failures.length}):\n`);
     for (const f of failures) process.stderr.write(`  ${f}\n`);
     process.exit(1);
   }
-  console.log(`\nAll ${fx.puzzles.length} puzzle pages and their worst case versions: one page each, nothing outside the margins, punchline upside down.`);
+  console.log(`\nAll ${fx.puzzles.length} puzzle pages and their max and overflow versions: one page each, nothing outside the margins, whole sentences only, punchline upside down or the encouragement callout.`);
 }
 
 main().catch((err) => {
