@@ -65,7 +65,7 @@ export default function SampleFlipbook({ pages, width, height }: Props) {
         {pages.map((page, i) => (
           <li
             key={page.src}
-            className="w-full shrink-0 snap-center snap-always px-1"
+            className="relative w-full shrink-0 snap-center snap-always px-1"
             aria-roledescription="slide"
             aria-label={i === last ? "Parent answer key" : `Page ${i + 1} of ${pages.length}`}
           >

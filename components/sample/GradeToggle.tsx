@@ -70,11 +70,11 @@ export default function GradeToggle({ samples, defaultGrade, width, height }: Pr
             { label: "Reading page", image: active.reading },
             { label: "Puzzle page", image: active.puzzle },
           ].map(({ label, image }) => (
-            <figure key={image.src} className="w-[75%] shrink-0 snap-center md:w-auto">
+            <figure key={image.src} className="relative w-[75%] shrink-0 snap-center md:w-auto">
               <button
                 type="button"
                 onClick={() => setOpenPage({ src: image.src, alt: image.alt, label: `Grade ${active.grade} ${label.toLowerCase()}` })}
-                className="block w-full cursor-zoom-in overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                className="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-dark/10 bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
               >
                 <Image
                   src={image.src}
