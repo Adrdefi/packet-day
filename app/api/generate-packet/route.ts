@@ -473,8 +473,10 @@ export async function POST(req: NextRequest) {
   let packetNumber: number | null = null;
   let recentTitles: string[] = [];
   let previousStyle: TitleStyle = "classic";
-  // Puzzle history: the child's last 10 FULL DAY packets (half day packets
-  // have no puzzle break). A missing type counts as word search.
+  // Puzzle history: the child's last 10 packets, half and full day sharing
+  // one history. A full day packet with no type had the old word search, so
+  // it counts as word search. A half day packet with no type predates half
+  // day puzzles (or fell back to nothing), so it is skipped.
   let previousPuzzleType: unknown = null;
   let recentJokes: PuzzleJoke[] = [];
   try {
@@ -491,9 +493,8 @@ export async function POST(req: NextRequest) {
         .limit(10),
       supabase
         .from("packets")
-        .select("generated_content->puzzle_type, generated_content->joke")
+        .select("packet_length, generated_content->puzzle_type, generated_content->joke")
         .eq("child_id", child.id)
-        .eq("packet_length", "full")
         .order("created_at", { ascending: false })
         .limit(10),
     ]);
@@ -514,7 +515,9 @@ export async function POST(req: NextRequest) {
     if (puzzleResult.error) {
       console.error("[generate-packet] Puzzle history query failed:", puzzleResult.error.message);
     } else if (puzzleResult.data) {
-      const rows = puzzleResult.data as { puzzle_type: unknown; joke: unknown }[];
+      const rows = (
+        puzzleResult.data as { packet_length: unknown; puzzle_type: unknown; joke: unknown }[]
+      ).filter((r) => !(r.packet_length === "half" && r.puzzle_type == null));
       if (rows.length > 0) previousPuzzleType = rows[0].puzzle_type;
       recentJokes = rows.map((r) => normalizeJoke(r.joke)).filter((j): j is PuzzleJoke => j !== null);
     }
@@ -532,11 +535,9 @@ export async function POST(req: NextRequest) {
   }
 
   // The server picks the puzzle type before the AI call, never the child's
-  // previous one. Half day packets have no puzzle break.
+  // previous one. Half and full day packets both get a puzzle break.
   const requestedPuzzleType =
-    typedPacketLength === "full"
-      ? devPuzzleTypeOverride(req.headers.get("x-dev-puzzle-type")) ?? pickPuzzleType(previousPuzzleType)
-      : null;
+    devPuzzleTypeOverride(req.headers.get("x-dev-puzzle-type")) ?? pickPuzzleType(previousPuzzleType);
 
   const userPrompt = buildUserPrompt(
     child as Child,

@@ -9,7 +9,7 @@ import { PUZZLE_GENERATOR_VERSION, type PuzzleType, type PuzzleWordInput, type S
 import { normalizeWord } from "./words";
 
 export interface AttachPuzzleResult {
-  /** False when the packet has no puzzle break activity (half day, or the model left it out). */
+  /** False when the packet has no puzzle break activity (the model left it out). */
   found: boolean;
   requestedType: PuzzleType;
   /** The type actually stored, or null for no puzzle (the old word search renders). */

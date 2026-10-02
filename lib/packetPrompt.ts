@@ -169,7 +169,7 @@ The puzzle_break uses content_type "puzzle_break" and subject "Puzzle Break".
 The app has already picked the puzzle type and builds the grid itself from your words. The <puzzle_brief> in the user message says which type and exactly what to write.
 On top of the usual activity fields, the puzzle_break has "puzzle_intro" (string) and "joke" ({"question": "...", "punchline": "..."}), and "clues" (an object keyed by word) only when the brief asks for a crossword.
 Every grid is printed on the page and fully solvable — never tell parents to make or print a puzzle elsewhere, and never mention page numbers.
-Do NOT include a puzzle_break in half-day packets.
+For HALF-DAY packets (4 activities), include a puzzle_break as the 4th and final activity, after the 3 subject activities.
 </puzzle_break_rules>
 
 <movement_break_rules>
@@ -191,15 +191,15 @@ export function buildUserPrompt(
   specialNotes: string | undefined,
   date: string | undefined,
   titleBrief: string,
-  /** The <puzzle_brief> block; null for half day packets, which have no puzzle break. */
+  /** The <puzzle_brief> block. Half and full day packets both have a puzzle break. */
   puzzleBrief: string | null = null
 ): string {
   const gradeDisplay =
     child.grade_level === "K" ? "Kindergarten" : `Grade ${child.grade_level}`;
-  const activityCount = packetLength === "half" ? 3 : 6;
+  const activityCount = packetLength === "half" ? 4 : 6;
   const subjectList =
     packetLength === "half"
-      ? "math, reading, one creative or PE activity"
+      ? "math, reading, one creative or PE activity, puzzle_break (activity 4)"
       : "math, reading, writing, puzzle_break (activity 4), movement_break (activity 5), science or history or PE";
 
   // Explicit reading word-count reminder keyed to grade

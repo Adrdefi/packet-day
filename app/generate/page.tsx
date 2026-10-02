@@ -998,7 +998,7 @@ function GenerateContent() {
                 {
                   value: "half",
                   label: "Half Day",
-                  desc: "3 to 4 activities · 1 to 2 hours",
+                  desc: "4 activities · 1 to 2 hours",
                   emoji: "🌤",
                 },
                 {

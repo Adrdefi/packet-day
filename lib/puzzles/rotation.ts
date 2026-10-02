@@ -1,13 +1,16 @@
 import type { BandKey } from "@/lib/pdf-tokens";
 import { PUZZLE_TYPES, type PuzzleType } from "./types";
 
-// Rotating puzzle break. The server picks a type for each full day packet,
-// never the child's previous one (same pattern as lib/titleStyles.ts).
+// Rotating puzzle break. The server picks a type for every packet, half or
+// full day, never the child's previous one (same pattern as
+// lib/titleStyles.ts).
 //
-// "Previous" means the child's last FULL DAY packet; half day packets have no
-// puzzle break and are ignored. A full day packet with no puzzle_type (every
+// "Previous" means the child's last packet with a puzzle break; half and full
+// day packets share one history. A full day packet with no puzzle_type (every
 // packet made before rotation, plus any whose puzzle fell back to nothing)
-// had the old word search, so a missing value counts as "word_search".
+// had the old word search, so a missing value counts as "word_search". A half
+// day packet with no puzzle_type predates half day puzzles (or fell back to
+// nothing) and is skipped by the caller, never counted as a word search.
 
 export function isPuzzleType(value: unknown): value is PuzzleType {
   return typeof value === "string" && (PUZZLE_TYPES as readonly string[]).includes(value);
