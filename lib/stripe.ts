@@ -54,13 +54,34 @@ export function getPriceIdForPlan(plan: PlanSlug): string {
 // app/checkout-redirect/page.tsx (post-signup/login handoff) so the
 // customer-lookup-or-create + session-create logic isn't duplicated.
 
+/** The parts of the Stripe client checkout uses. Tests pass a fake. */
+export type CheckoutStripe = {
+  customers: Pick<Stripe["customers"], "create">;
+  checkout: { sessions: Pick<Stripe["checkout"]["sessions"], "create"> };
+};
+
 interface CreateCheckoutSessionArgs {
   supabase: SupabaseClient;
   userId: string;
   userEmail: string | null | undefined;
   priceId: string;
   baseUrl: string;
+  stripe?: CheckoutStripe;
 }
+
+/**
+ * True when Stripe says the customer we passed doesn't exist in this mode:
+ * a test mode customer saved during sandbox testing, or a deleted one.
+ */
+export function isMissingCustomerError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const { code, param } = err as { code?: unknown; param?: unknown };
+  return code === "resource_missing" && param === "customer";
+}
+
+/** Shown by the billing portal when the saved customer isn't in live Stripe. */
+export const MISSING_BILLING_ACCOUNT_MESSAGE =
+  "We couldn't find your billing account. Email us at hello@packetday.com and we'll sort it out.";
 
 export async function createCheckoutSessionUrl({
   supabase,
@@ -68,6 +89,7 @@ export async function createCheckoutSessionUrl({
   userEmail,
   priceId,
   baseUrl,
+  stripe = getStripe(),
 }: CreateCheckoutSessionArgs): Promise<string | null> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -76,28 +98,40 @@ export async function createCheckoutSessionUrl({
     .single();
 
   if (!profile) return null;
+  const email: string | undefined = profile.email ?? userEmail ?? undefined;
 
-  const stripe = getStripe();
-  let customerId: string | null = profile.stripe_customer_id;
-
-  if (!customerId) {
+  async function createCustomer(): Promise<string> {
     const customer = await stripe.customers.create({
-      email: profile.email ?? userEmail ?? undefined,
+      email,
       metadata: { supabase_user_id: userId },
     });
-    customerId = customer.id;
-
-    await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
+    await supabase.from("profiles").update({ stripe_customer_id: customer.id }).eq("id", userId);
+    return customer.id;
   }
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    mode: "subscription",
-    success_url: `${baseUrl}/dashboard?upgraded=true`,
-    cancel_url: `${baseUrl}/pricing`,
-    allow_promotion_codes: true,
-  });
+  function createSession(customerId: string) {
+    return stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${baseUrl}/dashboard?upgraded=true`,
+      cancel_url: `${baseUrl}/pricing`,
+      allow_promotion_codes: true,
+    });
+  }
 
-  return session.url;
+  const savedCustomerId: string | null = profile.stripe_customer_id;
+  const customerId = savedCustomerId ?? (await createCustomer());
+
+  try {
+    const session = await createSession(customerId);
+    return session.url;
+  } catch (err) {
+    // Only a saved customer that Stripe can't find gets replaced, and only
+    // once. A valid saved ID never reaches here, and any other error is
+    // rethrown unchanged.
+    if (!savedCustomerId || !isMissingCustomerError(err)) throw err;
+    const session = await createSession(await createCustomer());
+    return session.url;
+  }
 }

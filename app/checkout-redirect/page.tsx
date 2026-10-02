@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import Link from "next/link";
+import PublicHeader from "@/components/layout/PublicHeader";
+import Footer from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/server";
-import { createCheckoutSessionUrl, getPriceIdForPlan } from "@/lib/stripe";
+import { getPriceIdForPlan } from "@/lib/stripe";
+import { resolveCheckoutRedirect } from "@/lib/checkoutRedirect";
 import { isPlanSlug } from "@/lib/plans";
 import { getBaseUrl } from "@/lib/config";
 
@@ -10,6 +14,8 @@ import { getBaseUrl } from "@/lib/config";
  * email confirmation) or /login, both carrying a validated plan slug —
  * never a raw Stripe price ID — so the plan a user picked on /pricing
  * survives the auth detour instead of dropping them on the dashboard.
+ * A paid account goes to the dashboard instead of a second checkout, and a
+ * failure shows a friendly message instead of the error page.
  */
 export default async function CheckoutRedirectPage({
   searchParams,
@@ -27,7 +33,7 @@ export default async function CheckoutRedirectPage({
 
   if (!user) redirect("/pricing");
 
-  const url = await createCheckoutSessionUrl({
+  const result = await resolveCheckoutRedirect({
     supabase,
     userId: user.id,
     userEmail: user.email,
@@ -35,7 +41,31 @@ export default async function CheckoutRedirectPage({
     baseUrl: getBaseUrl(await headers()),
   });
 
-  if (!url) redirect("/pricing");
+  // redirect() works by throwing, so it stays outside the helper's try/catch.
+  if (result.kind === "redirect") redirect(result.to);
 
-  redirect(url);
+  return (
+    <div className="min-h-screen flex flex-col bg-cream">
+      <PublicHeader />
+
+      <main className="flex-1 flex items-center justify-center px-6 py-16">
+        <div className="max-w-md text-center">
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-dark leading-tight mb-4">
+            Something went sideways.
+          </h1>
+          <p className="text-dark/70 leading-relaxed mb-8">
+            Let&apos;s try that again. Nothing was charged.
+          </p>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center h-12 bg-sage text-cream font-bold px-8 rounded-full hover:bg-sage-dark transition-colors"
+          >
+            Back to the plans
+          </Link>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
 }
