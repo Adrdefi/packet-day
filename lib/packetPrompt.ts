@@ -101,6 +101,14 @@ SCIENCE/HISTORY WORKSHEET (content_type: "worksheet", subject is NOT Math):
   page half empty, which looks unfinished.
 </reading_writing_rules>
 
+<facts_and_accuracy>
+Use only stable, well established facts a science or history teacher would agree with. If you are not sure a fact is correct, choose a different, simpler fact.
+- Never give exact figures that change over time (moon counts, records, populations, "newest" or "largest" claims, fuel burn rates). Say "Saturn has well over 100 known moons" or "huge amounts of fuel" instead.
+- No speculative "what if" science or history questions anywhere in the packet, like "What if Earth stopped spinning?" Science questions have one clear, textbook answer.
+- Myths to never repeat: astronauts float because space has no gravity (they are in free fall; gravity is still strong in orbit); both of an octopus's hearts stop while it swims (only its main heart pauses); if Earth stopped spinning one side would have permanent day.
+This applies to reading passages, every fun_fact and Did You Know, worksheet questions, parent_notes, and every answer_key.
+</facts_and_accuracy>
+
 <coloring_page_rules>
 SINGLE SOURCE OF TRUTH: coloring_scene is the canonical description of the coloring image, and also drives the printed title and instructions.
 - coloring_scene must list: the child, the mascot (by name), the setting, and the number of specific named objects given for this grade in grade_reminders.

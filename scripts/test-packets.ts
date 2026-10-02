@@ -525,6 +525,15 @@ async function main() {
       };
     });
     if (singleGrade) cases = cases.filter((c) => c.gradeLevel === singleGrade || c.gradeBand === singleGrade);
+    // Any other single grade (1, 2, 3, 5, 6, 8) gets one packet of its own.
+    if (singleGrade && cases.length === 0 && /^(K|[1-8])$/.test(singleGrade)) {
+      const band = bandForGrade(singleGrade);
+      cases = [{
+        gradeBand: band, gradeLevel: singleGrade, gradeDisplay: GRADE_DISPLAY(singleGrade), childName: NAMES[band], theme,
+        puzzleType: (forcedType as PuzzleType | null) ?? pickPuzzleType(null),
+        packetLength,
+      }];
+    }
   }
 
   console.log("\nPacket Day — Generation Quality Test");
