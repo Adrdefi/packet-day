@@ -12,7 +12,7 @@
     "description": "A printable polar animals unit study on how penguins and polar bears stay warm, with a blubber glove experiment and grade 3 math. Free to start."
   },
   "h1": "Polar Animals Unit Study Packet for Kids",
-  "answerCapsule": "A polar animals unit study packet is a printable school day about how penguins and polar bears survive the cold, for kids in K to 8. This grade 3 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, movement, science, coloring and a certificate, about 117 minutes of activities, plus breaks. Free to start.",
+  "answerCapsule": "A polar animals unit study packet is a printable school day about how penguins and polar bears survive the cold, for kids in K to 8. This grade 3 sample has 14 pages plus a parent answer key: math, reading, writing, a crossword, movement, science, coloring and a certificate, about 117 minutes of activities, plus breaks. Free to start.",
   "sample": {
     "childFirstName": "Ezra",
     "grade": 3,
@@ -48,8 +48,8 @@
     },
     {
       "file": "puzzle.png",
-      "alt": "Puzzle page, Frozen Word Hunt: a 10 by 10 grid hiding penguin, polar, blubber, Arctic, huddle, feathers, iceberg, snow and fur.",
-      "caption": "Feathers is the tricky one.",
+      "alt": "Puzzle page, Pebble's Frosty Polar Crossword: nine clues for penguin, polar, blubber, Arctic, huddle, feathers, iceberg, snow and fur, a fact about polar bear skin and fur, and a penguin joke of the day.",
+      "caption": "Nine clues, every one from the cold.",
       "width": 1200,
       "height": 1553,
       "kind": "puzzle"
@@ -105,8 +105,8 @@
     },
     {
       "subject": "Puzzle break",
-      "activity": "Frozen Word Hunt",
-      "detail": "Nine cold weather words hidden in the grid, blubber and iceberg included."
+      "activity": "Pebble's Frosty Polar Crossword",
+      "detail": "Nine clues for cold weather words, blubber and iceberg included, plus a joke of the day."
     },
     {
       "subject": "Movement break",

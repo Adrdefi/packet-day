@@ -9,10 +9,10 @@
   },
   "meta": {
     "title": "Printable Pumpkins Unit Study for Kids (K-8) | Packet Day",
-    "description": "A printable pumpkin unit study that follows one pumpkin from seed to jack-o-lantern, with a float test, skip counting and a word search. Free to start."
+    "description": "A printable pumpkin unit study that follows one pumpkin from seed to jack-o-lantern, with a float test, skip counting and a shape sudoku. Free to start."
   },
   "h1": "Pumpkins Unit Study Packet for Kids",
-  "answerCapsule": "A pumpkin unit study packet is a printable school day about the pumpkin life cycle for kids in K to 8. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, a movement break, a science lab, coloring and a certificate, about 112 minutes of activities, plus breaks. Free to start.",
+  "answerCapsule": "A pumpkin unit study packet is a printable school day about the pumpkin life cycle for kids in K to 8. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a shape sudoku, a movement break, a science lab, coloring and a certificate, about 112 minutes of activities, plus breaks. Free to start.",
   "sample": {
     "childFirstName": "Theo",
     "grade": 2,
@@ -48,8 +48,8 @@
     },
     {
       "file": "puzzle.png",
-      "alt": "Puzzle page, Patch's Pumpkin Word Search: a 10 by 10 grid hiding pumpkin, seed, sprout, vine, flower, stem, soil, orange, harvest and lantern.",
-      "caption": "Ten words, every one from the life cycle.",
+      "alt": "Puzzle page, Patch's Pumpkin Patch Shape Sudoku: a 4 by 4 grid where every row, column and box gets one circle, square, triangle and star, a fact about the word pumpkin, and a pumpkin joke of the day.",
+      "caption": "Shapes instead of numbers, made for second graders.",
       "width": 1200,
       "height": 1553,
       "kind": "puzzle"
@@ -105,8 +105,8 @@
     },
     {
       "subject": "Puzzle break",
-      "activity": "Patch's Pumpkin Word Search",
-      "detail": "Ten life cycle words hidden in the grid, harvest and lantern included."
+      "activity": "Patch's Pumpkin Patch Shape Sudoku",
+      "detail": "A 4 by 4 sudoku with circles, squares, triangles and stars, plus a joke of the day."
     },
     {
       "subject": "Movement break",
