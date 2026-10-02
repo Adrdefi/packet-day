@@ -36,7 +36,7 @@ const OG_IMAGE = {
   url: `${SITE_URL}/og/sample`,
   width: 1200,
   height: 630,
-  alt: "The cover of Kai's Outer Space Adventure Day, a real sample packet",
+  alt: "The cover of Episode 5: Kai Lands on Mars, a real sample packet",
 };
 
 export const metadata: Metadata = {
@@ -147,6 +147,10 @@ export default function SamplePage() {
               Swipe, tap the arrows or use your arrow keys. This is exactly what {SAMPLE_CHILD}&apos;s packet looks
               like, down to the last page, which is just for you.
             </p>
+            <p className="mx-auto -mt-6 mb-10 max-w-2xl text-center text-sm text-dark/60 leading-relaxed">
+              This was Kai&apos;s fifth packet, which is why it says Episode 5. Packet Day keeps count, so each
+              kid&apos;s packets start to feel like a little series of their own.
+            </p>
             <SampleFlipbook pages={SAMPLE_PAGES} width={PAGE_WIDTH} height={PAGE_HEIGHT} />
           </div>
         </section>
@@ -181,30 +185,29 @@ export default function SamplePage() {
           </div>
         </section>
 
-        {/* Meet Orbit */}
+        {/* Meet Nova */}
         <section className="px-6 py-20 bg-cream-deep">
           <div className="max-w-5xl mx-auto grid gap-8 md:grid-cols-[23.5rem_1fr] md:gap-12 md:items-center">
-            {/* Orbit on her own, from the packet's cover art. Above the heading on mobile, left of it on desktop. */}
+            {/* Nova on their own, from the packet's cover art. Above the heading on mobile, left of it on desktop. */}
             <div className="mx-auto w-[17rem] md:w-full overflow-hidden rounded-3xl border border-border bg-white p-3 shadow-sm">
               <Image
-                src="/sample/orbit.png"
-                alt="Orbit the otter astronaut in a silver spacesuit, reaching for a ringed planet."
+                src="/sample/nova-rover.png"
+                alt="Nova the robot rover, with big round eyes, a tiny astronaut helmet and a blinking antenna, rolling on chunky wheels."
                 width={742}
-                height={741}
+                height={742}
                 sizes="(min-width: 768px) 352px, 248px"
                 loading="lazy"
                 className="h-auto w-full"
               />
             </div>
             <div>
-              <SectionHeading>Meet Orbit</SectionHeading>
+              <SectionHeading>Meet Nova</SectionHeading>
               <p className="mb-5 text-dark/70 leading-relaxed">
                 {/* Plain text on purpose: built from constants, this paragraph came out of
                     the build with words missing (a string folding bug), so it names Kai directly. */}
-                Orbit is an otter astronaut in a silver spacesuit, and she guides Kai through the whole day. On the
-                cover she gives Kai a mission: fuel the rocket with math, read her flight log and write a report. In
-                the reading she laughs when she figures out that her name means the path something takes around the
-                Sun, and the certificate ends with &ldquo;Orbit is proud of you, Kai.&rdquo;
+                Nova is a little robot rover with big round eyes and a blinking antenna. On the cover Nova gives Kai
+                the mission: land safely on Mars and collect rock samples. In the reading Nova scoops up rocks while
+                Kai bounces in the low gravity, and the certificate ends with &ldquo;Nova is proud of you, Kai.&rdquo;
               </p>
               <p className="font-semibold text-dark">Every packet invents its own character.</p>
             </div>
@@ -216,8 +219,8 @@ export default function SamplePage() {
           <div className="max-w-4xl mx-auto">
             <SectionHeading center>Same theme, different grade</SectionHeading>
             <p className="mx-auto mb-10 max-w-2xl text-center text-dark/70 leading-relaxed">
-              We made the same outer space packet for three kids in three grades. Tap a grade to see how the math and
-              the reading change.
+              We made the same outer space packet for three kids in three grades. Tap a grade to see how the math, the
+              reading and the puzzle change.
             </p>
             <GradeToggle samples={GRADE_SAMPLES} defaultGrade={DEFAULT_GRADE} width={PAGE_WIDTH} height={PAGE_HEIGHT} />
           </div>

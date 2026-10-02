@@ -28,6 +28,13 @@ Packet Day generates personalized, printable daily learning packets for homescho
 - **Keep factual copy honest.** `/sample` features Kai (grade 4), with Mia (grade 1) and Jonah (grade 7) in its grade toggle. None of them is Natalie's child. Label them as sample packets and never imply a real family used them unless Andy confirms it.
 - **Never add, edit, or mark testimonials as verified in `lib/testimonials.ts`** without Andy confirming the person and quote are real.
 
+### Sample packet fact check (`/sample` and any other showcase)
+
+- Before keeping any packet as a sample, check every science, history, and number claim in it: the reading, every Did You Know, puzzle clues and words, science steps, the parent notes, and the answer key. Work every math answer yourself.
+- Also flag loose wording a careful parent could call wrong, even if it is technically defensible. Examples that slipped through once: "Pluto was renamed in 2006" (it was reclassified, not renamed) and "more massive planets mean heavier surface weight" (surface gravity depends on mass and radius; Uranus is the counterexample).
+- Report every flag to Andy, including ones you decided to keep, and say why.
+- If anything is wrong, or loose enough that you would not defend it to a careful parent, regenerate the packet with the same forced puzzle type. Never hand edit a sample packet. Fact check the new one the same way.
+
 ---
 
 ## Tech stack
@@ -251,18 +258,20 @@ Examples:
    - changing production environment variables
    - changing anything outside this repo
 
-3. **Commits, branches, and definition of done.** A task is done when the build passes and there is a working preview link Andy can click to test. Include the link in the final report. To get there, work on a non-`main` preview branch and push it so Vercel builds a preview. Pushing a preview branch is part of the job, not a hard stop. If the prompt says not to push (or not to commit), follow the prompt and say in the report that there is no preview link yet and why.
+3. **Commits, branches, and definition of done.** A task is done when the build passes. Work on a non-`main` branch and push it; pushing a branch is part of the job, not a hard stop. If the prompt says not to push (or not to commit), follow the prompt and say so in the report.
 
-4. **Subagents.** Use subagents and parallel workflows however you judge best, especially for audits, sitewide sweeps, and large reviews.
+4. **Previews cost build minutes, so make them only when needed.** Pushing a branch does NOT build a Vercel preview: `vercel.json`'s `git.deploymentEnabled` builds only `main`. Make a preview only when Andy asks for one or when a change needs his visual review, and then run `npm run preview` (optionally `npm run preview -- /some-path`). It builds on this machine, uploads with `vercel deploy --prebuilt`, and prints the preview URL plus a 7 day share link that works without a Vercel login; put that share link in the report. It needs the Vercel CLI logged in (`npx vercel login`). Production still builds on Vercel when `main` is pushed.
 
-5. **Final report.** End every task with three headings:
+5. **Subagents.** Use subagents and parallel workflows however you judge best, especially for audits, sitewide sweeps, and large reviews.
+
+6. **Final report.** End every task with three headings:
    - **Blocked on me:** anything waiting on Andy's decision or approval.
    - **Changed:** what you changed, briefly.
    - **Found:** issues or risks you noticed. Clearly mark anything you could not verify yourself, and say why.
 
    Keep it in plain English (see "Andy is a beginner" above).
 
-6. **Copy rule reminder.** Never use em dashes or hyphens as punctuation in any user facing copy. This adds to the Brand voice & tone rules at the top of this file.
+7. **Copy rule reminder.** Never use em dashes or hyphens as punctuation in any user facing copy. This adds to the Brand voice & tone rules at the top of this file.
 
 ---
 
