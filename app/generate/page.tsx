@@ -11,6 +11,7 @@ import { isPaidStatus } from "@/lib/isPaid";
 import { nextFreeDateLabel } from "@/lib/nextFreeDate";
 import { safeNext } from "@/lib/safeNext";
 import { cleanThemeParam } from "@/lib/themeParam";
+import { HOURS_RANGE_TEXT } from "@/lib/situations/figures";
 import UpgradeModal from "@/components/UpgradeModal";
 import PacketResultView, { type SavedPacket } from "@/components/packet/PacketResultView";
 
@@ -998,13 +999,13 @@ function GenerateContent() {
                 {
                   value: "half",
                   label: "Half Day",
-                  desc: "4 activities with a puzzle, plus a coloring page · 1\u00A0to\u00A02\u00A0hours",
+                  desc: "4 activities with a puzzle, plus a coloring page ·\u00A01\u00A0to\u00A02\u00A0hours",
                   emoji: "🌤",
                 },
                 {
                   value: "full",
                   label: "Full Day",
-                  desc: "6 activities with a puzzle, plus a coloring page · 3\u00A0to\u00A04\u00A0hours",
+                  desc: `6 activities with a puzzle, plus a coloring page ·\u00A0${HOURS_RANGE_TEXT.replaceAll(" ", "\u00A0")}`,
                   emoji: "☀️",
                 },
               ] as const
