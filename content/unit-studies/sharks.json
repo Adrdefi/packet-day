@@ -1,0 +1,188 @@
+{
+  "slug": "sharks",
+  "status": "draft",
+  "theme": {
+    "name": "Sharks",
+    "keyword": "shark unit study",
+    "inputUsed": "Sharks: shark anatomy, the ocean food chain and famous species",
+    "season": "evergreen"
+  },
+  "meta": {
+    "title": "Printable Shark Unit Study for Kids (K-8) | Packet Day",
+    "description": "A printable shark unit study on cartilage skeletons, gills, denticles and the ocean food chain, shown as a grade 3 sample with a reef maze. Free to start."
+  },
+  "h1": "Shark Unit Study Packet for Kids",
+  "answerCapsule": "A shark unit study packet is a printable school day about shark bodies, the ocean food chain and famous species, for kids in K to 8. This grade 3 sample has 14 pages plus a parent answer key: math, reading, writing, a maze, movement, science, coloring and a certificate. About 127 minutes of activities. Free to start.",
+  "sample": {
+    "childFirstName": "Max",
+    "grade": 3,
+    "pageCount": 14,
+    "characterName": "Hank the hammerhead",
+    "characterDescription": "A friendly gray hammerhead shark in an explorer's hat, carrying rolled up maps, who leads Max on an expedition to map the Deep Reef.",
+    "generatedOn": "2026-10-02"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Max's Deep Reef Expedition: Hank the gray hammerhead shark in an explorer's hat, waving and holding rolled maps, chips for 6 activities, 127 minutes and grade 3, and Hank's mission note about mapping the reef.",
+      "caption": "Hank shows up with a hat, a stack of maps and a plan.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Hank's Reef Math Dive: six quick problems like 236 + 158 and 72 divided by 8, then word problems about 6 rows of shark teeth, a school of 48 fish, a nurse shark's swim and sharing 56 shells.",
+      "caption": "Three digit adding, times tables and sharing shells fairly.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Find Your Way Through the Reef: a square maze from START at the top left to FINISH at the bottom right, a Did You Know that sharks lived long before the first dinosaurs, and a jawsome joke.",
+      "caption": "One path through the reef. Trace it with a finger first.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, Hank's Shark Swim Workout: five moves, from a hand fin on your head and swishing hips like a tail to a hammerhead arm stretch, a fast school of fish jog and resting like a nurse shark.",
+      "caption": "Rest like a nurse shark. Best last move ever invented.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, Inside a Shark: Bodies and Food Chains: label a shark drawing, press your nose and ear to feel cartilage, explain how gills take oxygen from water, and order a food chain from plankton to shark.",
+      "caption": "The page where your kid feels shark skeleton material on their own nose.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Max's Deep Reef Expedition with Hank at the top, signature lines for a grown up and the child, and the line Hank is proud of you, Max.",
+      "caption": "Expedition logged. Hank is proud, and says so.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Hank's Reef Math Dive",
+      "detail": "Three digit adding and subtracting, times tables and division facts, shark tooth word problems, then drawing 4 sharks with 5 gill slits each."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Mapping the Deep Reef",
+      "detail": "A story about exploring with Hank, meeting a resting nurse shark and a whale shark, then six questions about cartilage, denticles and the food chain."
+    },
+    {
+      "subject": "Writing",
+      "activity": "Max's Expedition Field Journal",
+      "detail": "A journal entry that starts Dear Journal: what you see when you dive in, one shark discovery, and where you and Hank explore next."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Find Your Way Through the Reef",
+      "detail": "A square maze from start to finish with one true path, plus a shark joke of the day."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Hank's Shark Swim Workout",
+      "detail": "Fin walking, tail swishes, hammerhead turns, a fast school of fish jog and slow breathing on the floor like a nurse shark."
+    },
+    {
+      "subject": "Science",
+      "activity": "Inside a Shark: Bodies and Food Chains",
+      "detail": "Labeling fins and gills, feeling cartilage, explaining gills, building a food chain and comparing a whale shark with a great white."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Hank",
+    "body": "Hank is a hammerhead shark in an explorer's hat who never goes anywhere without his maps. His whole plan for the day is to chart the Deep Reef with Max and draw an arrow for every animal they find.\n\nHe narrates the reading story, lets Max feel his sandpaper skin, counts teeth in the math problems and asks for help through the maze. In the science section, Max studies Hank's body piece by piece, from his fins to his gills.\n\nA hammerhead is a smart pick for a guide. The writing page even has a Did You Know about why his eyes sit so far apart."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child gets a full grade 3 day: adding and subtracting three digit numbers, multiplication and division facts, reading a story for evidence, writing a journal entry with a clear beginning and end, and explaining how a body works.\n\nThe science is all shark anatomy. A shark's skeleton is cartilage, the same bendy material in the tip of your nose, and it is lighter than bone. Its skin is covered in denticles, tiny tooth shaped scales. Gills take oxygen out of the water. Max feels the difference between cartilage and bone on his own nose and elbow.\n\nThen comes the food chain: plankton feed small fish, small fish feed squid, squid feed sharks. Max writes it with arrows and explains why sharks sit near the top."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "For the youngest kids, the same shark theme comes with shorter reading, easier words, math at their level and shorter writing. We have not seen a grades K to 2 shark packet, so we are not describing one here."
+    },
+    {
+      "band": "3-5",
+      "body": "This sample is grade 3, so we can be specific. The story runs about 300 words. The math covers three digit adding and subtracting, multiplication facts like 7 x 9 and division facts. The journal asks for a full entry built around four prompts."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect longer reading, harder vocabulary, math at their grade and more writing. We have not seen a middle school shark packet, so we will leave it there. The sharks and the guide stay, and the work gets harder."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: Oliver once asked for only Megalodons three days in a row. What was that stretch like at your house, and is there a shark moment from it you would be happy to share?]\n\nShark kids tend to show up already knowing a lot. This packet meets them there. It skips the scary stuff and goes straight to how a shark is built, which turns out to be the part most kids find coolest anyway.",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "Is a shark skeleton really not made of bone?",
+      "a": "Right, a shark's skeleton is made of cartilage, the same bendy material in the tip of your nose and the top of your ear. It is lighter than bone, which helps a shark twist and turn. The science page has your kid press their nose and then their elbow to feel the difference for themselves."
+    },
+    {
+      "q": "How does a nurse shark breathe while it rests on the bottom?",
+      "a": "A nurse shark can pump water over its gills while lying still on the sandy floor. Many other sharks have to keep swimming so water keeps flowing over their gills. The story makes that contrast, reading question three asks about it, and the movement break ends with your kid resting on the floor like a nurse shark."
+    },
+    {
+      "q": "What are denticles?",
+      "a": "Denticles are tiny scales shaped like teeth that cover a shark's skin. They point back toward the tail, so the skin feels smooth one way and rough like sandpaper the other way. The science page asks your kid to predict how it would feel both ways and explain how that shape helps a shark glide."
+    },
+    {
+      "q": "Does this shark packet have anything scary in it?",
+      "a": "No. There are no attacks and no scary pictures. The closest it gets is a hungry squid chasing small fish, and that becomes a food chain lesson. Great white sharks show up as top predators that very few animals hunt, which is a fact, not a fright. It is a good fit for a cautious kid."
+    },
+    {
+      "q": "How long have sharks been around?",
+      "a": "A very long time. Sharks were swimming in the oceans long before the first dinosaurs walked on land, and the maze page says exactly that. If your kid wants more, it pairs well with our dinosaur packet. Ask them which they think came first before they turn to that page and read the answer."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes each one from scratch, around your kid's grade and the theme you type in. We are a homeschool family, we test packets on our own kids, and we fact check every sample on this site. They are good and not perfect, so skim the story first. The answer key covers the rest."
+    }
+  ],
+  "related": ["ocean-animals", "dinosaurs", "human-body"],
+  "useCaseLinks": ["/road-trip", "/screen-free"],
+  "factsToVerify": [
+    {
+      "claim": "Shark skeletons are made of cartilage, the same material in the human nose tip and outer ear, and cartilage is lighter than bone (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Denticles are tiny tooth shaped scales on shark skin that point toward the tail; skin feels smooth head to tail and rough tail to head (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Nurse sharks can pump water over their gills while resting; many other sharks must keep swimming to breathe (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Sharks were swimming in the oceans long before the first dinosaurs (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Great white sharks are top predators that very few animals hunt (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Hammerhead sharks have eyes at the far ends of their wide heads, which helps them see a wide area (packet fact).",
+      "verified": false
+    }
+  ],
+  "datePublished": "2026-10-02",
+  "dateModified": "2026-10-02"
+}

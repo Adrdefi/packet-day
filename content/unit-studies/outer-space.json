@@ -1,0 +1,192 @@
+{
+  "slug": "outer-space",
+  "status": "draft",
+  "theme": {
+    "name": "Outer Space",
+    "keyword": "outer space unit study",
+    "inputUsed": "Outer space: the solar system, planets and rockets",
+    "season": "evergreen"
+  },
+  "meta": {
+    "title": "Printable Outer Space Unit Study for Kids (K-8) | Packet Day",
+    "description": "A printable outer space unit study: the Sun, all eight planets, day and night and rocket math, shown here as a grade 2 sample. Free to start."
+  },
+  "h1": "Outer Space Unit Study Packet for Kids",
+  "answerCapsule": "An outer space unit study packet is a printable school day about the Sun, the eight planets and rockets for kids in K to 8. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a shape sudoku, movement, science, coloring and a certificate. About 108 minutes of activities. Free to start.",
+  "sample": {
+    "childFirstName": "Leo",
+    "grade": 2,
+    "pageCount": 14,
+    "characterName": "Cosmo the astronaut cat",
+    "characterDescription": "An orange tabby cat in a white space suit and a bubble helmet who flies Leo past the Sun and every planet in a shiny red rocket.",
+    "generatedOn": "2026-10-02"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Leo's Tour of the Solar System: Cosmo the orange astronaut cat waving in a bubble helmet, chips for 6 activities, 108 minutes and grade 2, and Cosmo's mission note about touring from the Sun out to Neptune.",
+      "caption": "Cosmo waves Leo aboard for a tour of the whole solar system.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Cosmo's Rocket Math Launch: six quick problems like 37 + 45 and 10 x 4, then four space word problems about stars, rocket bolts, snack bags and moon craters.",
+      "caption": "Adding and subtracting within 100, plus a first taste of times tables.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, Leo and Cosmo Tour the Planets: a short story about a red rocket flying past the Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus and Neptune.",
+      "caption": "Every planet in order, in a story short enough for a second grader.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "movement.png",
+      "alt": "Movement break, Blast Off Body Break: six numbered moves, from a countdown jump and orbiting a chair to bouncy Moon steps and three calm breaths.",
+      "caption": "Orbit a chair five times. It counts as science and PE.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "movement"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, Cosmo's Sun and Planet Lab: go outside in the morning and the afternoon with a grown up without looking at the Sun, explain day and night, and predict a lunchtime shadow.",
+      "caption": "The science happens in the yard, twice, with a grown up.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Leo's Tour of the Solar System, with Cosmo at the top, signature lines for a grown up and the child, and the line Cosmo is proud of you, Leo.",
+      "caption": "Tour complete. Cosmo signs off, you sign the line.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Cosmo's Rocket Math Launch",
+      "detail": "Six warm up problems, four word problems about counting stars and tightening rocket bolts, then drawing 3 rockets with 5 windows each to find 3 x 5."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Leo and Cosmo Tour the Planets",
+      "detail": "A short story that flies past the Sun and all eight planets, then five questions, including what the word rusty means."
+    },
+    {
+      "subject": "Writing",
+      "activity": "Packing for a Space Trip",
+      "detail": "Three to five sentences about a rocket trip: three things to pack and why, color words for the view, and a drawing of the landing."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Leo's Space Shape Sudoku",
+      "detail": "A four by four grid filled with circles, squares, triangles and stars instead of numbers, plus a planet joke of the day."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Blast Off Body Break",
+      "detail": "A countdown jump, five laps around a chair like a planet, slow Moon steps, star reaches and a calm rocket landing."
+    },
+    {
+      "subject": "Science",
+      "activity": "Cosmo's Sun and Planet Lab",
+      "detail": "Noticing where the Sun is in the morning and afternoon, explaining day and night, predicting shadows, and comparing Earth with Mars."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Cosmo",
+    "body": "Cosmo is an orange tabby in a white space suit and a round bubble helmet, and he is the pilot of the day. He opens the packet with a mission: tour the whole solar system, from the hot, bright Sun out to faraway Neptune.\n\nHe flies the red rocket in the reading story, packs the space snacks in the math problems and waves from the coloring page right next to Leo. The movement break even ends with Cosmo asking Leo to land the rocket and take three calm breaths.\n\nFor a second grader, a cat in a helmet does a lot of heavy lifting. Planets are big, abstract ideas. Cosmo makes them a trip you take with a friend."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child gets a full grade 2 day built around the solar system: adding and subtracting two digit numbers, a first look at multiplication as equal groups, reading a short story for details, writing a few connected sentences and some real observation outside.\n\nThe story names all eight planets in order and gives each one a simple fact a second grader can hold onto: Mercury is closest to the Sun, Jupiter is the biggest, Saturn's rings are ice and rock. A Did You Know adds that more than 1,000 Earths could fit inside Jupiter.\n\nIn science, Leo learns that the Sun only seems to move across the sky because Earth is spinning. That one idea explains day and night, and the shadow question lets him test it at lunchtime."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "This sample is grade 2, so we can be specific. The story is short, with one or two simple sentences per planet. Math stays within 100, with 3 x 5 drawn as rockets and windows. Writing asks for three to five sentences and a picture."
+    },
+    {
+      "band": "3-5",
+      "body": "Older elementary kids get the same theme with longer reading, harder vocabulary, math at their grade and more writing. Our sample page has a grade 4 space packet you can flip through, and it is a different packet with its own guide."
+    },
+    {
+      "band": "6-8",
+      "body": "Middle schoolers get longer passages, tougher words, math matched to their grade and longer written answers. We are only describing what we have actually seen, so the details stop there. The space theme and a friendly guide stay put."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: What is a space question Oliver or Vivian asked you that you could not answer on the spot, and what did you do about it?]\n\nIf the planets are brand new at your house, this is a gentle first lap around the solar system. It is short on reading, long on doing, and the yard counts as a classroom.",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "Is this space packet too hard for a second grader?",
+      "a": "No, it is pitched right at grade 2. The math stays within 100, with two problems that introduce multiplication as equal groups. The reading story is short and names each planet with one simple fact. Writing asks for three to five sentences. If your kid is a younger second grader, you can read the story aloud together."
+    },
+    {
+      "q": "Is it safe to send my kid outside to look at the Sun?",
+      "a": "Yes, because the packet never asks them to look at it. The science page says never look right at the Sun, and it asks a grown up to go outside too. Leo only notices which side of the yard or street the Sun is on, morning and afternoon, and watches how his shadow changes."
+    },
+    {
+      "q": "Why does the science page say the Sun only seems to move?",
+      "a": "Because Earth is the one spinning. As it turns, the side facing the Sun has day and the side facing away has night, so the Sun looks like it crosses the sky. The packet asks Leo to explain that in his own words, then predict that his shadow will be shorter at lunchtime, when the Sun is high."
+    },
+    {
+      "q": "How is this different from the space packet on your sample page?",
+      "a": "It is a separate packet with a different guide, a different kid and a younger grade. Our sample page lets you see a space packet at three grade levels, grade 1, grade 4 and grade 7, so you can compare. This one is the grade 2 tour, with Cosmo flying past every planet in one day."
+    },
+    {
+      "q": "What do I need besides paper and a pencil?",
+      "a": "Not much. Crayons help with the writing picture and the coloring page. The movement break uses a chair to orbit around and a little open floor. The science page needs two short trips outside, one in the morning and one in the afternoon. That is the whole supply list, and most of it is already in your house."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes each packet fresh from your kid's grade and the theme you type. We test them on our own kids and check the facts on every sample we show. They are good and not perfect, so skim the reading before you hand it over. The answer key makes checking quick."
+    }
+  ],
+  "related": ["weather", "volcanoes", "human-body"],
+  "useCaseLinks": ["/road-trip", "/screen-free", "/sick-day"],
+  "factsToVerify": [
+    {
+      "claim": "The Sun is a star and the closest star to Earth (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "In order from the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Mercury is closest, Venus is the hottest, Jupiter is the biggest (packet facts).",
+      "verified": false
+    },
+    {
+      "claim": "Saturn's rings are made of ice and rock (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "More than 1,000 Earths could fit inside Jupiter (packet Did You Know, quoted on this page).",
+      "verified": false
+    },
+    {
+      "claim": "Day and night happen because Earth spins; the Sun only seems to move across the sky. Shadows are shortest around midday when the Sun is high (packet science answers).",
+      "verified": false
+    },
+    {
+      "claim": "Mars looks red because its dust contains rust (iron oxide) (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "The /sample page shows outer space packets at grade 1, grade 4 and grade 7 (site fact, lib/sample/content.ts).",
+      "verified": false
+    }
+  ],
+  "datePublished": "2026-10-02",
+  "dateModified": "2026-10-02"
+}

@@ -1,0 +1,196 @@
+{
+  "slug": "kitchen-science",
+  "status": "draft",
+  "theme": {
+    "name": "Baking Science",
+    "keyword": "baking science unit study",
+    "inputUsed": "Baking science: how heat, yeast and ingredients change food",
+    "season": "evergreen"
+  },
+  "meta": {
+    "title": "Printable Baking Science Unit Study (K-8) | Packet Day",
+    "description": "A printable baking science unit study on yeast, gluten and oven heat, with a two cup yeast experiment and bakery math in a grade 4 sample. Free to start."
+  },
+  "h1": "Baking Science Unit Study Packet for Kids",
+  "answerCapsule": "A baking science unit study packet is a printable school day about how yeast, gluten and oven heat turn ingredients into food, for kids in K to 8. This grade 4 sample has 14 pages plus a parent answer key: reading, math, a yeast experiment, a number sudoku, movement, writing, coloring and a certificate. About 132 minutes. Free to start.",
+  "sample": {
+    "childFirstName": "Ruby",
+    "grade": 4,
+    "pageCount": 14,
+    "characterName": "Crumble the muffin",
+    "characterDescription": "A blueberry muffin in a chef's hat and a red apron, waving a wooden spoon, who runs a kitchen full of science with Ruby.",
+    "generatedOn": "2026-10-02"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Ruby's Baking Science Adventure Day: Crumble the blueberry muffin in a chef's hat and red apron holding a wooden spoon, chips for 6 activities, 132 minutes and grade 4, and Crumble's mission note.",
+      "caption": "Crumble the muffin, ready to run the kitchen.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "reading.png",
+      "alt": "Reading page, The Bread That Grew: a story about Ruby and Crumble baking a loaf, from foamy yeast and kneading to the dough doubling and the oven setting the bubbles in place.",
+      "caption": "One loaf of bread, start to finish, with the science in every step.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "reading"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Crumble's Bakery Math: six quick problems like 36 x 14 and 47 x 23, then word problems about 12 trays of cookies, 2/8 and 3/8 cup of sugar, 156 dinner rolls and an elapsed time question.",
+      "caption": "Two digit multiplication with a cookie tray attached.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, The Great Yeast Bubble Test: two clear cups of yeast and sugar, one warm and one cold, with steps to predict, observe after 10 minutes, explain the foam and compare yeast with baking soda.",
+      "caption": "Two cups, one packet of yeast, ten minutes of waiting.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Crumble's Muffin Tin Sudoku: a six by six number sudoku, a Did You Know that the holes in bread were once carbon dioxide bubbles, and a kneading joke.",
+      "caption": "A six by six sudoku and a very bad bread joke.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page, Ruby and Crumble Bake Together: a girl in an apron at a kitchen counter with a big bowl of dough, Crumble in a chef's hat, a tray of cookies, a rolling pin, a whisk and an oven mitt.",
+      "caption": "Golden dough, fresh cookies and a whisk to color.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Ruby's Baking Science Adventure Day with Crumble at the top, the date, 6 activities and 132 minutes, signature lines and the line Crumble is proud of you, Ruby.",
+      "caption": "Signed, dated and possibly smelling faintly of yeast.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Reading",
+      "activity": "The Bread That Grew",
+      "detail": "A story about baking one loaf, from foamy yeast to a golden crust, then five questions about yeast, kneading and gluten."
+    },
+    {
+      "subject": "Math",
+      "activity": "Crumble's Bakery Math",
+      "detail": "Three digit adding and subtracting, two digit multiplication, fractions with like denominators, bagging 156 rolls and an elapsed time problem."
+    },
+    {
+      "subject": "Science",
+      "activity": "The Great Yeast Bubble Test",
+      "detail": "A warm cup and a cold cup of yeast and sugar, a prediction, ten minutes of watching, then butter versus pancakes and a loaf with no yeast."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Crumble's Muffin Tin Sudoku",
+      "detail": "A six by six number sudoku, a fact about the holes in bread and a joke about kneading."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Crumble's Rising Dough Dance",
+      "detail": "Curl up like dough and rise, knead the air, whisk your arms, pop like yeast bubbles and melt like butter."
+    },
+    {
+      "subject": "Writing",
+      "activity": "Ruby's Bakery Invention",
+      "detail": "Inventing a brand new treat in at least six sentences, using two science words from the day to explain what the oven does to it."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Crumble",
+    "body": "Crumble is a blueberry muffin in a tall chef's hat and a red apron, usually waving a wooden spoon. He hops onto the counter in the reading story and announces that today they bake bread and watch science happen in the bowl.\n\nHe explains yeast and gluten while Ruby kneads, runs the bakery in the math problems and stands beside Ruby at the counter on the coloring page. The writing prompt ends by asking what Crumble would say after the first bite of Ruby's invention.\n\nA talking muffin is silly, and that is the point. The science in this packet is the real kind, and Crumble keeps it from feeling like a lecture."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child gets a full grade 4 day: two digit by two digit multiplication, division, adding fractions with like denominators, elapsed time, reading a passage for cause and effect, and writing a descriptive paragraph that uses science vocabulary.\n\nThe science is how baking works. Yeast is a tiny living thing. It eats sugar and gives off carbon dioxide gas. Kneading builds gluten, a stretchy web of flour proteins that traps those bubbles. In the oven, the bubbles grow, the heat stops the yeast and sets the inside, and the crust browns.\n\nThe experiment turns that into something Ruby can watch. She predicts which cup of yeast will foam more, waits ten minutes, then explains the difference. Later questions sort changes you can undo, like melting butter, from changes you cannot, like cooking batter."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "Little bakers get the same theme with shorter reading, simpler words, math at their grade and less writing. We have not seen a grades K to 2 baking packet, so we will not guess at what is in one."
+    },
+    {
+      "band": "3-5",
+      "body": "This sample is grade 4, so we can be specific. The story runs about 280 words. The math reaches 47 x 23, dividing 156 rolls into bags of 6 and adding eighths. The writing asks for a paragraph of at least six sentences."
+    },
+    {
+      "band": "6-8",
+      "body": "For grades 6 to 8, expect longer passages, harder vocabulary, math at their grade and longer writing. We have not seen a middle school baking packet, so that is where we stop. The kitchen theme stays and the work grows up."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: Tell the story of baking with Vivian. What did you make, what happened, and what did she say or do that you still remember?]\n\nThis is the rare packet that practically begs you to finish the day in the kitchen. The parent note even suggests baking a simple loaf or a batch of muffins together sometime that week, so every idea on paper gets a real test.",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "What do I need for the yeast experiment?",
+      "a": "Two clear cups, warm and cold water, one packet of active dry yeast, sugar, measuring spoons and a measuring cup. Each cup gets half a cup of water, a teaspoon of yeast and a teaspoon of sugar. Help with the warm cup. It should feel like comfortable bath water, because very hot water can harm the yeast."
+    },
+    {
+      "q": "Why does the warm cup foam more than the cold one?",
+      "a": "Yeast is alive, and it works faster when it is warm. In the warm cup it eats the sugar quickly and gives off carbon dioxide gas, which makes the foam. The cold cup slows it down, so you see little or no foam after ten minutes. Your kid explains this using the words yeast, sugar and carbon dioxide."
+    },
+    {
+      "q": "What is gluten, in kid words?",
+      "a": "Gluten is a stretchy web made from proteins in flour. Kneading the dough builds it, which is why the dough turns from lumpy to smooth and stretchy. The web works like a net that traps the gas bubbles from the yeast. That is why bread rises, and why a slice of bread is full of little holes."
+    },
+    {
+      "q": "Do we have to actually bake something?",
+      "a": "No. The only hands on part is the two cup yeast test, and the rest is paper and pencil. That said, the parent note suggests baking a simple loaf or muffins together that week, and it is a lovely way to see the reading story happen for real. A batch of muffins counts."
+    },
+    {
+      "q": "Who invented chocolate chip cookies?",
+      "a": "Chocolate chip cookies were invented in the United States in the 1930s, when a baker stirred chopped chocolate into her cookie dough. That fact sits on the writing page, right where your kid is inventing a brand new treat of their own. It is a nice nudge that every famous recipe started as somebody's idea."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes every packet from scratch, around your kid's grade and the theme you type. We are a homeschool family and we test them on our own kids. We also fact check each sample we show you. They are good and not perfect, so read the story first. The answer key keeps checking fast."
+    }
+  ],
+  "related": ["pumpkins", "human-body", "thanksgiving"],
+  "useCaseLinks": ["/fun-friday", "/multiple-kids", "/screen-free"],
+  "factsToVerify": [
+    {
+      "claim": "Yeast is a living single celled fungus; it eats sugar and gives off carbon dioxide gas (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Kneading develops gluten, a stretchy network of flour proteins that traps gas bubbles (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Oven heat expands the bubbles, kills the yeast and sets the crumb; the brown crust comes from sugars and proteins reacting in heat (packet facts).",
+      "verified": false
+    },
+    {
+      "claim": "Warm water (about bath temperature) activates yeast faster than cold; very hot water can kill it (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Baking soda is not alive and makes carbon dioxide when it meets an acid such as buttermilk or lemon juice (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Chocolate chip cookies were invented in the United States in the 1930s by a baker who stirred chopped chocolate into cookie dough (Ruth Wakefield, Toll House Inn) (packet fact).",
+      "verified": false
+    }
+  ],
+  "datePublished": "2026-10-02",
+  "dateModified": "2026-10-02"
+}

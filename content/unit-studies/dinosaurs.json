@@ -1,0 +1,188 @@
+{
+  "slug": "dinosaurs",
+  "status": "draft",
+  "theme": {
+    "name": "Dinosaurs",
+    "keyword": "dinosaur unit study",
+    "inputUsed": "Dinosaurs: Tyrannosaurus rex, Triceratops and how fossils form",
+    "season": "evergreen"
+  },
+  "meta": {
+    "title": "Printable Dinosaur Unit Study for Kids (K-8) | Packet Day",
+    "description": "A printable dinosaur unit study on T. rex, Triceratops and how a bone turns into a fossil, shown as a grade 5 sample with dig site math. Free to start."
+  },
+  "h1": "Dinosaur Unit Study Packet for Kids",
+  "answerCapsule": "A dinosaur unit study packet is a printable school day about Tyrannosaurus rex, Triceratops and how fossils form, for kids in K to 8. This grade 5 sample has 14 pages plus a parent answer key: math, reading, writing, a number sudoku, movement, science, coloring and a certificate. About 132 minutes of activities. Free to start.",
+  "sample": {
+    "childFirstName": "Ava",
+    "grade": 5,
+    "pageCount": 14,
+    "characterName": "Rory the T. rex",
+    "characterDescription": "A small green T. rex in a safari hat with a brush in one hand and a tool belt full of digging gear, who turns Ava into a paleontologist for the day.",
+    "generatedOn": "2026-10-02"
+  },
+  "gallery": [
+    {
+      "file": "cover.png",
+      "alt": "Cover of Ava's Dinosaur Adventure Day: Rory the green T. rex in a safari hat holding a paintbrush, with a tool belt, chips for 6 activities, 132 minutes and grade 5, and Rory's mission note about becoming a paleontologist.",
+      "caption": "Rory hands Ava a brush and a job title: paleontologist.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "cover"
+    },
+    {
+      "file": "math.png",
+      "alt": "Math page, Measuring the Fossil Dig Site: six quick problems with fractions, decimals and percents like 3/4 + 1/8 and 25% of 80, then word problems about an 8.5 by 6 meter dig site, plaster casts and museum visitors.",
+      "caption": "Fractions, decimals and percents, all measured at a dig site.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "math"
+    },
+    {
+      "file": "science.png",
+      "alt": "Science page, How Does a Bone Become a Fossil: press a shell or toy into play dough, explain why quick burial matters, put the five fossil steps in order, and explain why hard parts fossilize more often than soft parts.",
+      "caption": "Play dough, a shell and the five steps from bone to stone.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "science"
+    },
+    {
+      "file": "puzzle.png",
+      "alt": "Puzzle page, Rory's Fossil Number Dig: a six by six sudoku with 13 starting numbers, a Did You Know that Triceratops means three horned face, and a sleepy dinosaur joke.",
+      "caption": "A six by six sudoku and the meaning of the name Triceratops.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "puzzle"
+    },
+    {
+      "file": "coloring.png",
+      "alt": "Coloring page, Ava and Rory at the Dinosaur Dig Site: a girl brushing dirt in a rocky dig site beside Rory in a bandana, with a Triceratops skull and its three horns, a big tooth, a bucket and a magnifying glass.",
+      "caption": "A Triceratops skull to color, with Rory supervising.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "coloring"
+    },
+    {
+      "file": "certificate.png",
+      "alt": "Certificate of completion for Ava's Dinosaur Adventure Day with Rory at the top, the date, 6 activities and 132 minutes, signature lines and the line Rory is proud of you, Ava.",
+      "caption": "Proof of a full day in the field, signed by you.",
+      "width": 1200,
+      "height": 1553,
+      "kind": "certificate"
+    }
+  ],
+  "inside": [
+    {
+      "subject": "Math",
+      "activity": "Measuring the Fossil Dig Site",
+      "detail": "Fractions, decimals and percents, the area and perimeter of a dig site, then shading 3/4 of a 7 by 4 grid of squares."
+    },
+    {
+      "subject": "Reading",
+      "activity": "Secrets in the Stone",
+      "detail": "A story about uncovering a T. rex tooth and a Triceratops frill on a dusty hillside, then six questions about sediment, rock layers and fossils."
+    },
+    {
+      "subject": "Writing",
+      "activity": "My Paleontologist Field Journal",
+      "detail": "Two full paragraphs: the dig site, the tools and weather, the fossil you find and the clues that tell you which dinosaur it came from."
+    },
+    {
+      "subject": "Puzzle break",
+      "activity": "Rory's Fossil Number Dig",
+      "detail": "A six by six number sudoku, the meaning of the name Triceratops and a joke about a sleeping dinosaur."
+    },
+    {
+      "subject": "Movement break",
+      "activity": "Dinosaur Stomp and Stretch",
+      "detail": "T. rex stomps, tiny arm flaps with a roar, a slow Triceratops crawl with horn nods, dig and jump squats and a tall stretch."
+    },
+    {
+      "subject": "Science",
+      "activity": "How Does a Bone Become a Fossil",
+      "detail": "A play dough imprint, why quick burial matters, the fossil steps in order, what teeth tell us about diet and which rock layer is older."
+    }
+  ],
+  "characterSection": {
+    "heading": "Meet Rory",
+    "body": "Rory is a young T. rex in a safari hat, holding a brush, with a tool belt slung around his middle. He is not a dinosaur on display. He is a dinosaur who digs, which is a fun twist for a kid who already knows every name in the museum.\n\nHe plans the dig site in the math problems, walks the hillside with Ava in the reading story and explains how a buried bone slowly fills with minerals. He kneels next to her on the coloring page, right beside a Triceratops skull.\n\nRory keeps a fifth grade day light without making it babyish. The science is real. The guide just happens to be wearing a hat."
+  },
+  "learning": {
+    "heading": "What will my child learn?",
+    "body": "Your child gets a full grade 5 day: adding fractions with unlike denominators, working with decimals and percents, finding area and perimeter, reading closely for vocabulary, writing two organized paragraphs and explaining a real science process step by step.\n\nThe heart of the day is fossilization. An animal dies, is buried quickly by mud or sand, more layers pile on top, and over a very long time water carries minerals into the bone until it turns to stone. Ava puts those steps in order, explains why soft parts almost never fossilize, and uses tooth shapes to tell a meat eater from a plant eater.\n\nThe rock layer question introduces a big idea in plain words: deeper layers are usually older, so the fossil lower down is most likely the older one."
+  },
+  "gradeBands": [
+    {
+      "band": "K-2",
+      "body": "Younger kids get the same dinosaurs with shorter reading, simpler words, math at their grade and shorter writing. We have not looked at a grades K to 2 dinosaur packet yet, so we are not going to describe one."
+    },
+    {
+      "band": "3-5",
+      "body": "This sample is grade 5, so we can be specific. The story is about 300 words, with the word sediment explained right in the text. The math reaches fractions with unlike denominators, decimals, percents, area and perimeter. The journal asks for two full paragraphs."
+    },
+    {
+      "band": "6-8",
+      "body": "For middle school, expect longer passages, harder vocabulary, math at their grade and longer writing. We have not seen a grades 6 to 8 dinosaur packet, so that is all we will say. The dig site theme and Rory both stay."
+    }
+  ],
+  "natalieNote": {
+    "body": "[NATALIE: Has Oliver or Vivian ever gone through a real dinosaur phase, and what did it look like at your house?]\n\nIf you have a dinosaur kid, you already know the facts are not the hard part. They know the facts. This packet gives them something to do with them: measure, sort, explain and write it all down like a real scientist would.",
+    "basedOn": "natalie-supplied"
+  },
+  "faqs": [
+    {
+      "q": "Did T. rex and Triceratops really live at the same time?",
+      "a": "Yes. Both lived in the same part of western North America near the very end of the age of dinosaurs, about 66 million years ago. That is why the reading story can put a T. rex tooth and a Triceratops frill on the same hillside."
+    },
+    {
+      "q": "How does a bone turn into a fossil?",
+      "a": "The animal has to be buried quickly by mud or sand, called sediment, before scavengers and weather break it down. Soft parts rot away. Over a very long time, more layers pile on top and water seeping through the ground carries minerals into the bone, which slowly turn it to stone. The science page walks through each step."
+    },
+    {
+      "q": "What hands on activity is in the science section?",
+      "a": "Your kid presses a shell, a leaf or a small toy into flattened play dough or clay, lifts it out and describes the print it leaves behind. Then they connect it to fossil footprints and imprints found in rock. Have the play dough and one small object ready before you start, and the rest is pencil and paper."
+    },
+    {
+      "q": "Is grade 5 dinosaur math actually grade 5 math?",
+      "a": "Yes. The dinosaurs are the setting, not a shortcut. Ava adds 3/4 and 1/8, multiplies 12.4 by 3, divides 2.5 kilograms of plaster into 0.25 kilogram casts, finds 30 percent of 60 visitors and works out the area and perimeter of an 8.5 by 6 meter dig site. The answer key shows every answer."
+    },
+    {
+      "q": "What does Triceratops mean?",
+      "a": "Triceratops means three horned face. It had two long horns above its eyes and a shorter one on its nose, plus the big bony frill Ava uncovers in the story. It was a plant eater, and the science page asks your kid to explain how its slicing teeth prove it, next to the jagged meat eating teeth of T. rex."
+    },
+    {
+      "q": "Are these made by AI, and are they any good?",
+      "a": "Yes, AI writes every packet new, around your kid's grade and the theme you choose. We are a homeschool family, we try them on our own kids, and we fact check every sample we put on this site. They are good and not perfect, so read the story first. The answer key keeps the math quick."
+    }
+  ],
+  "related": ["volcanoes", "dragons", "insects"],
+  "useCaseLinks": ["/multiple-kids", "/sick-day", "/fun-friday"],
+  "factsToVerify": [
+    {
+      "claim": "Tyrannosaurus rex and Triceratops lived in the same part of western North America near the end of the Cretaceous, about 66 million years ago (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Fossilization: quick burial in sediment, soft parts decay, layers build up, and minerals carried by groundwater fill and replace bone over a very long time (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Triceratops means three horned face; two long brow horns and one short nose horn; it was a plant eater with teeth for slicing plants (packet facts).",
+      "verified": false
+    },
+    {
+      "claim": "T. rex teeth had serrated edges like a steak knife and were made for meat (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "In undisturbed rock layers, deeper layers are usually older (the law of superposition) (packet fact).",
+      "verified": false
+    },
+    {
+      "claim": "Footprints, eggs and dinosaur droppings can also become fossils (packet fact, not quoted on this page).",
+      "verified": false
+    }
+  ],
+  "datePublished": "2026-10-02",
+  "dateModified": "2026-10-02"
+}
