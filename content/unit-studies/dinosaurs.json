@@ -109,7 +109,7 @@
   },
   "learning": {
     "heading": "What will my child learn?",
-    "body": "Your child gets a full grade 5 day: adding fractions with unlike denominators, working with decimals and percents, finding area and perimeter, reading closely for vocabulary, writing two organized paragraphs and explaining a real science process step by step.\n\nThe heart of the day is fossilization. An animal dies, is buried quickly by mud or sand, more layers pile on top, and over a very long time water carries minerals into the bone until it turns to stone. Ava puts those steps in order, explains why soft parts almost never fossilize, and uses tooth shapes to tell a meat eater from a plant eater.\n\nThe rock layer question introduces a big idea in plain words: deeper layers are usually older, so the fossil lower down is most likely the older one."
+    "body": "Your child gets a full grade 5 day: adding fractions with unlike denominators, working with decimals and percents, finding area and perimeter, reading closely for vocabulary, writing two organized paragraphs and explaining a real science process step by step.\n\nThe heart of the day is fossilization. An animal dies, is buried quickly by mud or sand, more layers pile on top, and water seeping through the ground carries minerals into the bone until it turns to stone. Ava puts those steps in order, explains why soft parts almost never fossilize, and uses tooth shapes to tell a meat eater from a plant eater.\n\nThe rock layer question introduces a big idea in plain words: deeper layers are usually older, so the fossil lower down is most likely the older one."
   },
   "gradeBands": [
     {
@@ -136,7 +136,7 @@
     },
     {
       "q": "How does a bone turn into a fossil?",
-      "a": "The animal has to be buried quickly by mud or sand, called sediment, before scavengers and weather break it down. Soft parts rot away. Over a very long time, more layers pile on top and water seeping through the ground carries minerals into the bone, which slowly turn it to stone. The science page walks through each step."
+      "a": "The animal has to be buried quickly by mud or sand, called sediment, before scavengers and weather break it down. Soft parts rot away, leaving the hard bones. More layers pile on top, and water seeping through the ground carries minerals into the bone. The minerals fill its tiny spaces and harden it into stone. The science page walks through each step."
     },
     {
       "q": "What hands on activity is in the science section?",
@@ -148,39 +148,53 @@
     },
     {
       "q": "What does Triceratops mean?",
-      "a": "Triceratops means three horned face. It had two long horns above its eyes and a shorter one on its nose, plus the big bony frill Ava uncovers in the story. It was a plant eater, and the science page asks your kid to explain how its slicing teeth prove it, next to the jagged meat eating teeth of T. rex."
+      "a": "Triceratops means three horned face. It had two long horns above its eyes and a shorter one on its nose, plus the big bony frill Ava uncovers in the story. It was a plant eater, and the science page asks your kid to explain how its rows of plant chewing teeth prove it, next to the jagged meat eating teeth of T. rex."
     },
     {
       "q": "Are these made by AI, and are they any good?",
       "a": "Yes, AI writes every packet new, around your kid's grade and the theme you choose. We are a homeschool family, we try them on our own kids, and we fact check every sample we put on this site. They are good and not perfect, so read the story first. The answer key keeps the math quick."
     }
   ],
-  "related": ["volcanoes", "dragons", "insects"],
-  "useCaseLinks": ["/multiple-kids", "/sick-day", "/fun-friday"],
+  "related": [
+    "volcanoes",
+    "dragons",
+    "insects"
+  ],
+  "useCaseLinks": [
+    "/multiple-kids",
+    "/sick-day",
+    "/fun-friday"
+  ],
   "factsToVerify": [
     {
-      "claim": "Tyrannosaurus rex and Triceratops lived in the same part of western North America near the end of the Cretaceous, about 66 million years ago (packet fact).",
-      "verified": false
+      "claim": "Tyrannosaurus rex and Triceratops both lived in the Hell Creek Formation of Montana, among the last dinosaurs, about 66 million years ago (T. rex lived 68 to 66 million years ago in what is now Canada and the USA) (packet fact).",
+      "source": "https://museumoftherockies.org/exhibitions/siebel-dinosaur-complex and https://australian.museum/learn/dinosaurs/fact-sheets/tyrannosaurus-rex/",
+      "verified": true
     },
     {
-      "claim": "Fossilization: quick burial in sediment, soft parts decay, layers build up, and minerals carried by groundwater fill and replace bone over a very long time (packet fact).",
-      "verified": false
+      "claim": "Fossilization: the animal is quickly buried by sediment, soft tissue decomposes leaving bones, more layers build up on top, and minerals carried by groundwater fill the spaces in the bone (packet fact; page no longer says how long the mineral step takes).",
+      "source": "https://australian.museum/learn/australia-over-time/fossils/how-do-fossils-form/",
+      "verified": true
     },
     {
-      "claim": "Triceratops means three horned face; two long brow horns and one short nose horn; it was a plant eater with teeth for slicing plants (packet facts).",
-      "verified": false
+      "claim": "Triceratops means three horned face; two long horns above the eyes and a short one above the mouth; it was a plant eater with rows of sharp teeth (packet facts).",
+      "source": "https://www.nationalgeographic.com/animals/facts/triceratops-horridus",
+      "verified": true
     },
     {
-      "claim": "T. rex teeth had serrated edges like a steak knife and were made for meat (packet fact).",
-      "verified": false
+      "claim": "T. rex teeth were serrated like a steak knife, and T. rex was a meat eater (packet fact).",
+      "source": "https://australian.museum/learn/dinosaurs/fact-sheets/tyrannosaurus-rex/",
+      "verified": true
     },
     {
-      "claim": "In undisturbed rock layers, deeper layers are usually older (the law of superposition) (packet fact).",
-      "verified": false
+      "claim": "The oldest rock layers are at the bottom and the youngest at the top (the law of superposition) (packet fact).",
+      "source": "https://education.nationalgeographic.org/resource/superposition/",
+      "verified": true
     },
     {
-      "claim": "Footprints, eggs and dinosaur droppings can also become fossils (packet fact, not quoted on this page).",
-      "verified": false
+      "claim": "Footprints, eggs and dinosaur droppings (coprolites) can also be fossils (packet fact, not quoted on this page).",
+      "source": "https://www.nps.gov/subjects/fossils/dinosaurs-in-the-fossil-record.htm",
+      "verified": true
     }
   ],
   "datePublished": "2026-10-02",

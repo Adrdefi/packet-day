@@ -109,7 +109,7 @@
   },
   "learning": {
     "heading": "What will my child learn?",
-    "body": "Your child gets a full grade 2 day built around the solar system: adding and subtracting two digit numbers, a first look at multiplication as equal groups, reading a short story for details, writing a few connected sentences and some real observation outside.\n\nThe story names all eight planets in order and gives each one a simple fact a second grader can hold onto: Mercury is closest to the Sun, Jupiter is the biggest, Saturn's rings are ice and rock. A Did You Know adds that more than 1,000 Earths could fit inside Jupiter.\n\nIn science, Leo learns that the Sun only seems to move across the sky because Earth is spinning. That one idea explains day and night, and the shadow question lets him test it at lunchtime."
+    "body": "Your child gets a full grade 2 day built around the solar system: adding and subtracting two digit numbers, a first look at multiplication as equal groups, reading a short story for details, writing a few connected sentences and some real observation outside.\n\nThe story names all eight planets in order and gives each one a simple fact a second grader can hold onto: Mercury is closest to the Sun, Jupiter is the biggest, Saturn's rings are ice and rock. Jupiter is so big that about 1,000 Earths could fit inside it.\n\nIn science, Leo learns that the Sun only seems to move across the sky because Earth is spinning. That one idea explains day and night, and the shadow question lets him test it at lunchtime."
   },
   "gradeBands": [
     {
@@ -155,36 +155,56 @@
       "a": "Yes, AI writes each packet fresh from your kid's grade and the theme you type. We test them on our own kids and check the facts on every sample we show. They are good and not perfect, so skim the reading before you hand it over. The answer key makes checking quick."
     }
   ],
-  "related": ["weather", "volcanoes", "human-body"],
-  "useCaseLinks": ["/road-trip", "/screen-free", "/sick-day"],
+  "related": [
+    "weather",
+    "volcanoes",
+    "human-body"
+  ],
+  "useCaseLinks": [
+    "/road-trip",
+    "/screen-free",
+    "/sick-day"
+  ],
   "factsToVerify": [
     {
       "claim": "The Sun is a star and the closest star to Earth (packet fact).",
-      "verified": false
+      "source": "https://www.esa.int/kids/en/learn/Our_Universe/The_Sun/Our_nearest_star",
+      "verified": true
     },
     {
-      "claim": "In order from the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Mercury is closest, Venus is the hottest, Jupiter is the biggest (packet facts).",
-      "verified": false
+      "claim": "In order from the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune; Mercury is nearest the Sun (packet facts).",
+      "source": "https://science.nasa.gov/solar-system/planets/",
+      "verified": true
     },
     {
-      "claim": "Saturn's rings are made of ice and rock (packet fact).",
-      "verified": false
+      "claim": "Venus is the hottest planet in our solar system (packet fact).",
+      "source": "https://science.nasa.gov/venus/venus-facts/",
+      "verified": true
     },
     {
-      "claim": "More than 1,000 Earths could fit inside Jupiter (packet Did You Know, quoted on this page).",
-      "verified": false
+      "claim": "Jupiter is the largest planet, and about 1,000 Earths could fit inside it (packet Did You Know says more than 1,000; the page uses NASA's figure and no longer quotes the Did You Know).",
+      "source": "https://science.nasa.gov/jupiter/jupiter-facts/",
+      "verified": true
     },
     {
-      "claim": "Day and night happen because Earth spins; the Sun only seems to move across the sky. Shadows are shortest around midday when the Sun is high (packet science answers).",
-      "verified": false
+      "claim": "Saturn's rings are made of chunks of ice and rock (packet fact).",
+      "source": "https://science.nasa.gov/saturn/facts/",
+      "verified": true
     },
     {
-      "claim": "Mars looks red because its dust contains rust (iron oxide) (packet fact).",
-      "verified": false
+      "claim": "Day and night happen because Earth spins, so the Sun only seems to move across the sky; shadows are shortest at midday when the Sun is highest (packet science answers).",
+      "source": "https://hea-www.harvard.edu/ECT/the_book/Chap1/Chapter1.html",
+      "verified": true
     },
     {
-      "claim": "The /sample page shows outer space packets at grade 1, grade 4 and grade 7 (site fact, lib/sample/content.ts).",
-      "verified": false
+      "claim": "Mars looks red because iron minerals in its dirt and dust rust (packet fact).",
+      "source": "https://science.nasa.gov/mars/facts/",
+      "verified": true
+    },
+    {
+      "claim": "The /sample page shows outer space packets at grade 1, grade 4 and grade 7 (site fact).",
+      "source": "https://www.packetday.com/sample",
+      "verified": true
     }
   ],
   "datePublished": "2026-10-02",

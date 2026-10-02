@@ -126,7 +126,7 @@
     }
   ],
   "natalieNote": {
-    "body": "[NATALIE: Oliver once asked for only Megalodons three days in a row. What was that stretch like at your house, and is there a shark moment from it you would be happy to share?]\n\nShark kids tend to show up already knowing a lot. This packet meets them there. It skips the scary stuff and goes straight to how a shark is built, which turns out to be the part most kids find coolest anyway.",
+    "body": "[NATALIE: Has Oliver or Vivian ever gone through a shark or ocean animal phase? What did that look like at your house?]\n\nShark kids tend to show up already knowing a lot. This packet meets them there. It skips the scary stuff and goes straight to how a shark is built, which turns out to be the part most kids find coolest anyway.",
     "basedOn": "natalie-supplied"
   },
   "faqs": [
@@ -144,7 +144,7 @@
     },
     {
       "q": "Does this shark packet have anything scary in it?",
-      "a": "No. There are no attacks and no scary pictures. The closest it gets is a hungry squid chasing small fish, and that becomes a food chain lesson. Great white sharks show up as top predators that very few animals hunt, which is a fact, not a fright. It is a good fit for a cautious kid."
+      "a": "No. There are no attacks and no scary pictures. The closest it gets is a hungry squid chasing small fish, and that becomes a food chain lesson. Great white sharks show up as top predators at the top of the ocean food chain, which is a fact, not a fright. It is a good fit for a cautious kid."
     },
     {
       "q": "How long have sharks been around?",
@@ -155,32 +155,45 @@
       "a": "Yes, AI writes each one from scratch, around your kid's grade and the theme you type in. We are a homeschool family, we test packets on our own kids, and we fact check every sample on this site. They are good and not perfect, so skim the story first. The answer key covers the rest."
     }
   ],
-  "related": ["ocean-animals", "dinosaurs", "human-body"],
-  "useCaseLinks": ["/road-trip", "/screen-free"],
+  "related": [
+    "ocean-animals",
+    "dinosaurs",
+    "human-body"
+  ],
+  "useCaseLinks": [
+    "/road-trip",
+    "/screen-free"
+  ],
   "factsToVerify": [
     {
-      "claim": "Shark skeletons are made of cartilage, the same material in the human nose tip and outer ear, and cartilage is lighter than bone (packet fact).",
-      "verified": false
+      "claim": "Shark skeletons are made of cartilage, the same material as the human ear and nose tip, and cartilage is about half as dense as bone (packet fact).",
+      "source": "https://www.nhm.ac.uk/discover/quick-questions/do-sharks-have-bones.html",
+      "verified": true
     },
     {
-      "claim": "Denticles are tiny tooth shaped scales on shark skin that point toward the tail; skin feels smooth head to tail and rough tail to head (packet fact).",
-      "verified": false
+      "claim": "Denticles are tiny tooth like scales on shark skin that point toward the tail; the skin feels like sandpaper (packet fact). Smooth head to tail and rough tail to head follows from the scales pointing tailward.",
+      "source": "https://www.fisheries.noaa.gov/feature-story/12-shark-facts-may-surprise-you",
+      "verified": true
     },
     {
-      "claim": "Nurse sharks can pump water over their gills while resting; many other sharks must keep swimming to breathe (packet fact).",
-      "verified": false
+      "claim": "Nurse sharks can rest on the bottom and pump water over their gills (buccal pumping); many other sharks must keep moving to breathe (packet fact).",
+      "source": "https://www.neaq.org/fun-facts-about-nurse-sharks/",
+      "verified": true
     },
     {
-      "claim": "Sharks were swimming in the oceans long before the first dinosaurs (packet fact).",
-      "verified": false
+      "claim": "Sharks evolved long before dinosaurs walked on land, over 450 million years ago (packet fact).",
+      "source": "https://australian.museum/publications/sharks/ancient-ones/",
+      "verified": true
     },
     {
-      "claim": "Great white sharks are top predators that very few animals hunt (packet fact).",
-      "verified": false
+      "claim": "The white shark is an apex predator at the top of the food chain (packet fact; page reworded from 'very few animals hunt them').",
+      "source": "https://www.fisheries.noaa.gov/species/white-shark/science",
+      "verified": true
     },
     {
-      "claim": "Hammerhead sharks have eyes at the far ends of their wide heads, which helps them see a wide area (packet fact).",
-      "verified": false
+      "claim": "Hammerhead eyes sit at the far tips of the wide head, which widens their binocular field of view (packet fact).",
+      "source": "https://journals.biologists.com/jeb/article/212/24/4010/9615/Enhanced-visual-fields-in-hammerhead-sharks",
+      "verified": true
     }
   ],
   "datePublished": "2026-10-02",

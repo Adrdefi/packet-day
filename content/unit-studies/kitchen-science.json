@@ -163,32 +163,51 @@
       "a": "Yes, AI writes every packet from scratch, around your kid's grade and the theme you type. We are a homeschool family and we test them on our own kids. We also fact check each sample we show you. They are good and not perfect, so read the story first. The answer key keeps checking fast."
     }
   ],
-  "related": ["pumpkins", "human-body", "thanksgiving"],
-  "useCaseLinks": ["/fun-friday", "/multiple-kids", "/screen-free"],
+  "related": [
+    "pumpkins",
+    "human-body",
+    "thanksgiving"
+  ],
+  "useCaseLinks": [
+    "/fun-friday",
+    "/multiple-kids",
+    "/screen-free"
+  ],
   "factsToVerify": [
     {
-      "claim": "Yeast is a living single celled fungus; it eats sugar and gives off carbon dioxide gas (packet fact).",
-      "verified": false
+      "claim": "Yeast is a single cell organism in the fungi kingdom; it eats sugar and gives off carbon dioxide (packet fact).",
+      "source": "https://www.kingarthurbaking.com/blog/2023/05/10/guide-to-baking-with-yeast",
+      "verified": true
     },
     {
-      "claim": "Kneading develops gluten, a stretchy network of flour proteins that traps gas bubbles (packet fact).",
-      "verified": false
+      "claim": "Kneading develops gluten, a web formed from flour proteins, and the web traps gas bubbles (packet fact).",
+      "source": "https://www.kingarthurbaking.com/blog/2021/08/18/a-beginners-guide-to-gluten",
+      "verified": true
     },
     {
-      "claim": "Oven heat expands the bubbles, kills the yeast and sets the crumb; the brown crust comes from sugars and proteins reacting in heat (packet facts).",
-      "verified": false
+      "claim": "In the oven the gas pockets expand, the yeast dies from the heat and the dough sets (packet fact).",
+      "source": "https://annex.exploratorium.edu/cooking/bread/bread_science.html",
+      "verified": true
     },
     {
-      "claim": "Warm water (about bath temperature) activates yeast faster than cold; very hot water can kill it (packet fact).",
-      "verified": false
+      "claim": "The brown crust comes from sugars and proteins (amino acids) reacting in heat, the Maillard reaction (packet fact).",
+      "source": "https://www.kingarthurbaking.com/blog/2022/02/15/understanding-the-maillard-reaction-in-baking",
+      "verified": true
     },
     {
-      "claim": "Baking soda is not alive and makes carbon dioxide when it meets an acid such as buttermilk or lemon juice (packet fact).",
-      "verified": false
+      "claim": "Warmer dough rises faster than cool dough, and water hotter than about 139 F kills yeast; comfortably warm water is safe (packet fact).",
+      "source": "https://www.kingarthurbaking.com/blog/2018/05/29/desired-dough-temperature and https://www.kingarthurbaking.com/blog/2023/05/10/guide-to-baking-with-yeast",
+      "verified": true
     },
     {
-      "claim": "Chocolate chip cookies were invented in the United States in the 1930s by a baker who stirred chopped chocolate into cookie dough (Ruth Wakefield, Toll House Inn) (packet fact).",
-      "verified": false
+      "claim": "Baking soda makes carbon dioxide when it mixes with an acid such as buttermilk or lemon juice (packet fact).",
+      "source": "https://www.kingarthurbaking.com/blog/2021/09/10/difference-between-baking-soda-and-baking-powder-substitutions",
+      "verified": true
+    },
+    {
+      "claim": "Ruth Wakefield created chocolate chip cookies in the late 1930s at the Toll House Inn in Massachusetts by chopping a chocolate bar and stirring it into cookie dough; the recipe was printed in 1938 (packet fact).",
+      "source": "https://www.thehenryford.org/collections/explore/sets/detail/ruth-wakefield-and-americas-favorite-cookie",
+      "verified": true
     }
   ],
   "datePublished": "2026-10-02",
