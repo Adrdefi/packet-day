@@ -48,7 +48,7 @@
     },
     {
       "file": "puzzle.png",
-      "alt": "Puzzle page, Patch's Pumpkin Patch Shape Sudoku: a 4 by 4 grid where every row, column and box gets one circle, square, triangle and star, a fact about the word pumpkin, and a pumpkin joke of the day.",
+      "alt": "Puzzle page, Patch's Pumpkin Patch Shape Sudoku: a 4 by 4 grid where every row, column and box gets one circle, square, triangle and star, a fact about the word pumpkin, and a joke of the day about a pumpkin that guards the beach.",
       "caption": "Shapes instead of numbers, made for second graders.",
       "width": 1200,
       "height": 1553,
@@ -225,5 +225,5 @@
   ],
   "natalieReviewedOn": "2026-09-29",
   "datePublished": "2026-09-29",
-  "dateModified": "2026-09-29"
+  "dateModified": "2026-10-01"
 }
