@@ -23,6 +23,7 @@
     "check-puzzle-rotation": "node scripts/run-ts.mjs scripts/check-puzzle-rotation.ts",
     "render-puzzles": "node scripts/run-ts.mjs scripts/render-puzzle-fixtures.ts",
     "indexnow": "node scripts/run-ts.mjs scripts/indexnow.ts",
+    "check-stripe-customer": "node scripts/run-ts.mjs scripts/check-stripe-customer.ts",
     "check-unit-studies": "node scripts/run-ts.mjs scripts/check-unit-studies.ts"
   },
   "dependencies": {

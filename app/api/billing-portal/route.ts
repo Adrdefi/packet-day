@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, isMissingCustomerError, MISSING_BILLING_ACCOUNT_MESSAGE } from "@/lib/stripe";
 import { getBaseUrl } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
+    // The saved customer doesn't exist in live Stripe (for example a test mode
+    // one from sandbox testing). Don't make a new one here: a paying customer
+    // must keep the account their subscription lives on, so a person sorts it.
+    if (isMissingCustomerError(err)) {
+      console.error("[billing-portal] saved customer not found in Stripe", err);
+      return NextResponse.json({ error: MISSING_BILLING_ACCOUNT_MESSAGE }, { status: 404 });
+    }
     console.error("[billing-portal]", err);
     return NextResponse.json(
       { error: "Something went sideways. Let's try that again." },

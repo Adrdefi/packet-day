@@ -10,6 +10,8 @@ import { isPaidStatus } from "@/lib/isPaid";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+const BILLING_ERROR_FALLBACK = "Couldn't open billing. Try that again in a sec.";
+
 function getGreeting(): { text: string; emoji: string } {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return { text: "Good morning", emoji: "🌞" };
@@ -46,7 +48,7 @@ export default function TopBar({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
-  const [billingError, setBillingError] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { text: greetingText, emoji: greetingEmoji } = getGreeting();
@@ -74,21 +76,21 @@ export default function TopBar({
 
   async function handleManageBilling() {
     setBillingLoading(true);
-    setBillingError(false);
+    setBillingError(null);
 
     try {
       const res = await fetch("/api/billing-portal", { method: "POST" });
       const data = await res.json();
 
       if (!res.ok || !data.url) {
-        setBillingError(true);
+        setBillingError(typeof data.error === "string" ? data.error : BILLING_ERROR_FALLBACK);
         setBillingLoading(false);
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      setBillingError(true);
+      setBillingError(BILLING_ERROR_FALLBACK);
       setBillingLoading(false);
     }
   }
@@ -187,7 +189,7 @@ export default function TopBar({
               )}
               {billingError && (
                 <p className="px-4 pb-2 text-xs text-coral">
-                  Couldn&apos;t open billing. Try that again in a sec.
+                  {billingError}
                 </p>
               )}
 
