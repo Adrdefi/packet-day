@@ -1,6 +1,6 @@
 {
   "slug": "outer-space",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Outer Space",
     "keyword": "outer space unit study",
@@ -118,11 +118,11 @@
     },
     {
       "band": "3-5",
-      "body": "Older elementary kids get the same theme with longer reading, harder vocabulary, math at their grade and more writing. Our sample page has a grade 4 space packet you can flip through, and it is a different packet with its own guide."
+      "body": "Older elementary kids get the same space theme with longer reading, harder vocabulary, math at their grade and more writing. Every packet is written fresh for your kid's exact grade."
     },
     {
       "band": "6-8",
-      "body": "Middle schoolers get longer passages, tougher words, math matched to their grade and longer written answers. We are only describing what we have actually seen, so the details stop there. The space theme and a friendly guide stay put."
+      "body": "Middle schoolers get planets and rockets too, with longer passages, tougher words, grade level math and longer written answers. Each packet is made new for the grade you choose."
     }
   ],
   "natalieNote": {
@@ -208,5 +208,6 @@
     }
   ],
   "datePublished": "2026-10-02",
-  "dateModified": "2026-10-02"
+  "dateModified": "2026-10-02",
+  "natalieReviewedOn": "2026-10-02"
 }

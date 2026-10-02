@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { coverOf, gallerySrc } from "@/lib/unit-studies/loader";
-import { gradePhrase, themeInSentence } from "@/lib/unit-studies/format";
+import { gradePhrase, themeLabel } from "@/lib/unit-studies/format";
 import type { UnitStudyPage } from "@/lib/unit-studies/schema";
 
 /**
@@ -41,7 +41,7 @@ export default function UnitStudyCard({ page }: { page: UnitStudyPage }) {
         </p>
         <p className="mb-4 flex-1 text-sm leading-relaxed text-dark/70">{page.meta.description}</p>
         <span className="text-sm font-bold text-sage group-hover:underline">
-          See the {themeInSentence(page)} packet →
+          See the {themeLabel(page)} packet →
         </span>
       </div>
     </Link>

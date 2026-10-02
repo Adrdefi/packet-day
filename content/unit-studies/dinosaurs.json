@@ -1,11 +1,12 @@
 {
   "slug": "dinosaurs",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Dinosaurs",
     "keyword": "dinosaur unit study",
     "inputUsed": "Dinosaurs: Tyrannosaurus rex, Triceratops and how fossils form",
-    "season": "evergreen"
+    "season": "evergreen",
+    "packetLabel": "dinosaur"
   },
   "meta": {
     "title": "Printable Dinosaur Unit Study for Kids (K-8) | Packet Day",
@@ -114,7 +115,7 @@
   "gradeBands": [
     {
       "band": "K-2",
-      "body": "Younger kids get the same dinosaurs with shorter reading, simpler words, math at their grade and shorter writing. We have not looked at a grades K to 2 dinosaur packet yet, so we are not going to describe one."
+      "body": "The youngest dinosaur fans get the same theme with shorter reading, simpler words, math at their grade and lighter writing. Every packet is built from scratch for your kid's grade, kindergarten included."
     },
     {
       "band": "3-5",
@@ -122,7 +123,7 @@
     },
     {
       "band": "6-8",
-      "body": "For middle school, expect longer passages, harder vocabulary, math at their grade and longer writing. We have not seen a grades 6 to 8 dinosaur packet, so that is all we will say. The dig site theme and Rory both stay."
+      "body": "For middle school, the dinosaur theme comes with longer passages, harder vocabulary, math at their grade and more writing. Each packet is written fresh for the exact grade you pick."
     }
   ],
   "natalieNote": {
@@ -198,5 +199,6 @@
     }
   ],
   "datePublished": "2026-10-02",
-  "dateModified": "2026-10-02"
+  "dateModified": "2026-10-02",
+  "natalieReviewedOn": "2026-10-02"
 }

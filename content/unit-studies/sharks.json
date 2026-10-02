@@ -1,11 +1,12 @@
 {
   "slug": "sharks",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Sharks",
     "keyword": "shark unit study",
     "inputUsed": "Sharks: shark anatomy, the ocean food chain and famous species",
-    "season": "evergreen"
+    "season": "evergreen",
+    "packetLabel": "shark"
   },
   "meta": {
     "title": "Printable Shark Unit Study for Kids (K-8) | Packet Day",
@@ -114,7 +115,7 @@
   "gradeBands": [
     {
       "band": "K-2",
-      "body": "For the youngest kids, the same shark theme comes with shorter reading, easier words, math at their level and shorter writing. We have not seen a grades K to 2 shark packet, so we are not describing one here."
+      "body": "Younger kids get sharks too, with shorter reading, easier words, math at their grade and short writing. Every packet is made new for the grade you choose."
     },
     {
       "band": "3-5",
@@ -122,7 +123,7 @@
     },
     {
       "band": "6-8",
-      "body": "For grades 6 to 8, expect longer reading, harder vocabulary, math at their grade and more writing. We have not seen a middle school shark packet, so we will leave it there. The sharks and the guide stay, and the work gets harder."
+      "body": "Middle schoolers get the same shark theme with longer reading, tougher vocabulary, grade level math and longer written answers. Each packet is written from scratch for your kid's exact grade."
     }
   ],
   "natalieNote": {
@@ -144,7 +145,7 @@
     },
     {
       "q": "Does this shark packet have anything scary in it?",
-      "a": "No. There are no attacks and no scary pictures. The closest it gets is a hungry squid chasing small fish, and that becomes a food chain lesson. Great white sharks show up as top predators at the top of the ocean food chain, which is a fact, not a fright. It is a good fit for a cautious kid."
+      "a": "No. There are no attacks and no scary pictures. The closest it gets is a hungry squid chasing small fish, and that becomes a food chain lesson. Great white sharks show up as top predators in the ocean food chain, which is a fact, not a fright. It is a good fit for a cautious kid."
     },
     {
       "q": "How long have sharks been around?",
@@ -197,5 +198,6 @@
     }
   ],
   "datePublished": "2026-10-02",
-  "dateModified": "2026-10-02"
+  "dateModified": "2026-10-02",
+  "natalieReviewedOn": "2026-10-02"
 }

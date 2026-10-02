@@ -24,6 +24,7 @@ import {
   primaryCtaLabel,
   sampleLabel,
   themeInSentence,
+  themeLabel,
   signupHref,
   updatedDate,
 } from "@/lib/unit-studies/format";
@@ -92,7 +93,8 @@ export default async function UnitStudyPage({ params }: Params) {
   const cover = coverOf(page);
   const updated = updatedDate(page);
   const themeLower = themeInSentence(page);
-  const article = indefiniteArticle(themeLower);
+  const label = themeLabel(page);
+  const article = indefiniteArticle(label);
   const visibleSlugs = new Set(getVisibleUnitStudies().map((entry) => entry.slug));
   const related = page.related
     .filter((relatedSlug) => visibleSlugs.has(relatedSlug))
@@ -168,10 +170,10 @@ export default async function UnitStudyPage({ params }: Params) {
         <section className="px-6 py-20 bg-white">
           <div className="max-w-5xl mx-auto">
             <SectionHeading>
-              What is inside {article} {themeLower} packet?
+              What is inside {article} {label} packet?
             </SectionHeading>
             <p className="max-w-3xl text-dark/70 leading-relaxed mb-10">
-              {article === "an" ? "An" : "A"} {themeLower} packet is a full school day on paper: {PAGE_RANGE_TEXT} built around{" "}
+              {article === "an" ? "An" : "A"} {label} packet is a full school day on paper: {PAGE_RANGE_TEXT} built around{" "}
               {themeLower}, roughly {HOURS_RANGE_TEXT} with breaks. This sample has{" "}
               {page.sample.pageCount} pages plus a parent answer key, and {page.sample.characterName} guides the whole day.
             </p>
@@ -246,7 +248,7 @@ export default async function UnitStudyPage({ params }: Params) {
         {/* i: FAQ, every answer in the HTML and always visible */}
         <section className="px-6 py-20 bg-white">
           <div className="max-w-3xl mx-auto">
-            <SectionHeading>Questions parents ask about {themeLower} packets</SectionHeading>
+            <SectionHeading>Questions parents ask about {label} packets</SectionHeading>
             <div className="divide-y divide-border">
               {page.faqs.map((faq) => (
                 <div key={faq.q} className="py-6">
@@ -298,7 +300,7 @@ export default async function UnitStudyPage({ params }: Params) {
         {/* k: closing CTA and pricing line */}
         <SituationClosingCTA
           content={{
-            heading: `Ready for your own ${themeLower} day?`,
+            heading: `Ready for your own ${label} day?`,
             line: ENTITY_SENTENCE,
             ctaLabel: primaryCtaLabel(page),
             ctaHref: signupHref(page),

@@ -37,6 +37,8 @@ export const unitStudyPageSchema = z
         season: z.enum(["fall", "winter", "spring", "summer", "evergreen"]),
         /** True for a name that keeps its capitals mid sentence ("Thanksgiving", "Ancient Egypt"). */
         properNoun: z.boolean().optional(),
+        /** The theme as a label before "packet" or "day" when it differs from the name ("dinosaur" for Dinosaurs). */
+        packetLabel: text.optional(),
       })
       .strict(),
     meta: z

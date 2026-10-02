@@ -1,6 +1,6 @@
 {
   "slug": "kitchen-science",
-  "status": "draft",
+  "status": "live",
   "theme": {
     "name": "Baking Science",
     "keyword": "baking science unit study",
@@ -122,7 +122,7 @@
   "gradeBands": [
     {
       "band": "K-2",
-      "body": "Little bakers get the same theme with shorter reading, simpler words, math at their grade and less writing. We have not seen a grades K to 2 baking packet, so we will not guess at what is in one."
+      "body": "Little bakers get the same baking theme with shorter reading, simpler words, math at their grade and less writing. Every packet is written fresh for the grade you pick."
     },
     {
       "band": "3-5",
@@ -130,7 +130,7 @@
     },
     {
       "band": "6-8",
-      "body": "For grades 6 to 8, expect longer passages, harder vocabulary, math at their grade and longer writing. We have not seen a middle school baking packet, so that is where we stop. The kitchen theme stays and the work grows up."
+      "body": "Middle schoolers get the same baking theme with longer passages, harder vocabulary, math at their grade and more writing. Every packet is written fresh for your kid's exact grade."
     }
   ],
   "natalieNote": {
@@ -211,5 +211,6 @@
     }
   ],
   "datePublished": "2026-10-02",
-  "dateModified": "2026-10-02"
+  "dateModified": "2026-10-02",
+  "natalieReviewedOn": "2026-10-02"
 }

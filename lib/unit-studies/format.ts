@@ -17,12 +17,17 @@ export function themeInSentence(page: UnitStudyPage): string {
   return page.theme.properNoun ? page.theme.name : page.theme.name.toLowerCase();
 }
 
+/** The theme as a label before "packet" or "day": "a dinosaur packet", "your own shark day". */
+export function themeLabel(page: UnitStudyPage): string {
+  return page.theme.packetLabel ?? themeInSentence(page);
+}
+
 export function signupHref(page: UnitStudyPage): string {
   return `/signup?from=unit-studies-${page.slug}`;
 }
 
 export function primaryCtaLabel(page: UnitStudyPage): string {
-  return `Make your own ${themeInSentence(page)} packet free`;
+  return `Make your own ${themeLabel(page)} packet free`;
 }
 
 /** The date shown as "Updated": dateModified, else datePublished. */
