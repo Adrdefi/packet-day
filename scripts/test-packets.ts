@@ -1,7 +1,7 @@
 /**
  * Packet generation quality test script.
  *
- * Generates full day packets with the REAL packet writer prompt
+ * Generates full (or, with --length half, half) day packets with the REAL packet writer prompt
  * (lib/packetPrompt.ts, the same one app/api/generate-packet/route.ts uses)
  * and validates: no emoji in text fields, division renders correctly,
  * passage in its own field, content_type present, math uses || separator,
@@ -16,6 +16,7 @@
  *
  *   --matrix         12 packets: each puzzle type in each grade band, varied themes
  *   --puzzle-type    force one type (word_search | maze | sudoku | crossword); default random
+ *   --length         half | full (default full). Half expects 4 activities, puzzle_break last, no movement break
  *   --out DIR        save each raw model response as JSON (carries test names; keep it outside the repo)
  */
 
@@ -51,6 +52,7 @@ interface TestCase {
   childName: string;
   theme: string;
   puzzleType: PuzzleType;
+  packetLength: "half" | "full";
 }
 
 interface ValidationResult {
@@ -239,7 +241,13 @@ function validatePuzzleActivity(parsed: Record<string, unknown>, tc: TestCase): 
   const act = findPuzzleActivity(parsed);
   if (!act) return { failures: ["no puzzle_break activity"], warnings };
   const acts = parsed.activities as Record<string, unknown>[];
-  if (acts.indexOf(act) !== 3) warnings.push(`puzzle_break is activity ${acts.indexOf(act) + 1}, not 4`);
+  if (tc.packetLength === "half") {
+    if (acts.length !== 4) failures.push(`half day packet has ${acts.length} activities, not 4`);
+    if (acts.indexOf(act) !== 3 || acts.indexOf(act) !== acts.length - 1) {
+      failures.push(`puzzle_break is activity ${acts.indexOf(act) + 1} of ${acts.length}, not the 4th and last`);
+    }
+    if (acts.some((a) => a.content_type === "movement_activity")) failures.push("half day packet has a movement_activity");
+  } else if (acts.indexOf(act) !== 3) warnings.push(`puzzle_break is activity ${acts.indexOf(act) + 1}, not 4`);
 
   const words = Array.isArray(act.instructions) ? (act.instructions as unknown[]) : [];
   if (words.length < 10) failures.push(`only ${words.length} puzzle words`);
@@ -297,7 +305,19 @@ interface GenerationResult {
   parsed: Record<string, unknown>;
   usage: { input: number; output: number };
   seconds: number;
+  meta: CallMeta;
 }
+
+/** What was sent and how the model stopped, logged for every packet. */
+interface CallMeta {
+  model: string;
+  maxTokens: number;
+  outputTokens: number;
+  stopReason: string | null;
+}
+
+const describeMeta = (m: CallMeta) =>
+  `model ${m.model}, max_tokens ${m.maxTokens}, ${m.outputTokens} output tokens, stop_reason ${m.stopReason ?? "none"}`;
 
 async function generateTestPacket(tc: TestCase): Promise<GenerationResult> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
@@ -312,7 +332,7 @@ async function generateTestPacket(tc: TestCase): Promise<GenerationResult> {
   const userPrompt = buildUserPrompt(
     child,
     tc.theme,
-    "full",
+    tc.packetLength,
     undefined,
     undefined,
     buildTitleBrief({
@@ -334,15 +354,32 @@ async function generateTestPacket(tc: TestCase): Promise<GenerationResult> {
 
   const started = Date.now();
   const legacyModel = MODELS_WITH_TEMPERATURE.has(MODEL);
+  // Same cap the real route sends (callClaude in generate-packet/route.ts).
+  const maxTokens = legacyModel ? (tc.packetLength === "half" ? 5000 : 8500) : THINKING_MODEL_MAX_TOKENS;
   // Streamed, like the real route, so a long thinking response can't time out.
   const stream = client.messages.stream({
     model: MODEL,
-    max_tokens: legacyModel ? 8500 : THINKING_MODEL_MAX_TOKENS,
+    max_tokens: maxTokens,
     ...(legacyModel ? { temperature: 0.7 } : {}),
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
   const response = await stream.finalMessage();
+  const meta: CallMeta = {
+    model: response.model,
+    maxTokens,
+    outputTokens: response.usage.output_tokens,
+    stopReason: response.stop_reason,
+  };
+  try {
+    return { ...parseResponse(response), usage: { input: response.usage.input_tokens, output: response.usage.output_tokens }, seconds: (Date.now() - started) / 1000, meta };
+  } catch (err) {
+    // A cut off response usually fails to parse; say how the model stopped.
+    throw new Error(`${err instanceof Error ? err.message : String(err)} (${describeMeta(meta)})`);
+  }
+}
+
+function parseResponse(response: Anthropic.Message): { parsed: Record<string, unknown> } {
 
   // Thinking models put a thinking block first; the JSON is in the text block.
   const content = response.content.find((b) => b.type === "text");
@@ -367,11 +404,7 @@ async function generateTestPacket(tc: TestCase): Promise<GenerationResult> {
   }
   if (end === -1) throw new Error("Unterminated JSON");
 
-  return {
-    parsed: JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>,
-    usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
-    seconds: (Date.now() - started) / 1000,
-  };
+  return { parsed: JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown> };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -405,17 +438,20 @@ interface Outcome {
 }
 
 async function runCase(tc: TestCase, outDir: string | null): Promise<Outcome> {
-  const tag = `${tc.gradeBand} ${tc.puzzleType} (${tc.theme}, ${GRADE_DISPLAY(tc.gradeLevel)})`;
+  const tag = `${tc.packetLength === "half" ? "half " : ""}${tc.gradeBand} ${tc.puzzleType} (${tc.theme}, ${GRADE_DISPLAY(tc.gradeLevel)})`;
+  // Full day files keep their old names; half day files are prefixed.
+  const fileBase = `${tc.packetLength === "half" ? "half-" : ""}${tc.gradeBand}-${tc.puzzleType}`;
   try {
     const gen = await generateTestPacket(tc);
     const parsed = gen.parsed;
-    if (outDir) writeFileSync(join(outDir, `${tc.gradeBand}-${tc.puzzleType}.json`), JSON.stringify(parsed, null, 2));
+    if (outDir) writeFileSync(join(outDir, `${fileBase}.json`), JSON.stringify(parsed, null, 2));
 
     const result = validatePacket(parsed, tc.gradeBand);
     const titleResult = validateTitle(parsed, tc.childName);
     const puzzleResult = validatePuzzleActivity(parsed, tc);
     result.failures.push(...titleResult.failures, ...puzzleResult.failures);
     result.warnings.push(...titleResult.warnings, ...puzzleResult.warnings);
+    if (gen.meta.stopReason === "max_tokens") result.failures.push(`stop_reason is max_tokens: the response hit the ${gen.meta.maxTokens} token cap`);
     result.pass = result.failures.length === 0;
 
     // The same build step the route runs after parsing.
@@ -427,9 +463,10 @@ async function runCase(tc: TestCase, outDir: string | null): Promise<Outcome> {
       theme: tc.theme,
       seed: Math.floor(Math.random() * 4294967296) >>> 0,
     });
-    if (outDir) writeFileSync(join(outDir, `${tc.gradeBand}-${tc.puzzleType}.built.json`), JSON.stringify(content, null, 2));
+    if (outDir) writeFileSync(join(outDir, `${fileBase}.built.json`), JSON.stringify(content, null, 2));
 
     const lines = [`\n[${result.pass ? "PASS" : "FAIL"}] ${tag}  ${gen.seconds.toFixed(0)}s, ${gen.usage.input} in / ${gen.usage.output} out tokens`];
+    lines.push(`  Call: ${describeMeta(gen.meta)}`);
     lines.push(`  Title: ${String(parsed.packet_title ?? "")} (${String(parsed.title_style ?? "no style")})`);
     lines.push(
       `  Puzzle: asked ${attach.requestedType}, built ${attach.builtType ?? "nothing (old word search)"}${attach.fellBack ? " (FELL BACK)" : ""}, ` +
@@ -464,6 +501,11 @@ async function main() {
     console.error("--puzzle-type must be one of word_search, maze, sudoku, crossword");
     process.exit(1);
   }
+  const packetLength = arg("--length") ?? "full";
+  if (packetLength !== "half" && packetLength !== "full") {
+    console.error("--length must be half or full");
+    process.exit(1);
+  }
   const concurrency = Math.max(1, Number(arg("--concurrency") ?? 1));
   const outDir = arg("--out");
   if (outDir) mkdirSync(outDir, { recursive: true });
@@ -471,7 +513,7 @@ async function main() {
   let cases: TestCase[];
   if (args.includes("--matrix")) {
     cases = MATRIX.map(([band, grade, type, t]) => ({
-      gradeBand: band, gradeLevel: grade, gradeDisplay: GRADE_DISPLAY(grade), childName: NAMES[band], theme: t, puzzleType: type,
+      gradeBand: band, gradeLevel: grade, gradeDisplay: GRADE_DISPLAY(grade), childName: NAMES[band], theme: t, puzzleType: type, packetLength,
     }));
   } else {
     cases = (["K", "4", "7"] as const).map((grade) => {
@@ -479,13 +521,14 @@ async function main() {
       return {
         gradeBand: band, gradeLevel: grade, gradeDisplay: GRADE_DISPLAY(grade), childName: NAMES[band], theme,
         puzzleType: (forcedType as PuzzleType | null) ?? pickPuzzleType(null),
+        packetLength,
       };
     });
     if (singleGrade) cases = cases.filter((c) => c.gradeLevel === singleGrade || c.gradeBand === singleGrade);
   }
 
   console.log("\nPacket Day — Generation Quality Test");
-  console.log(`Model: ${MODEL}  |  ${cases.length} full day packet${cases.length === 1 ? "" : "s"}, ${concurrency} at a time`);
+  console.log(`Model: ${MODEL}  |  ${cases.length} ${packetLength} day packet${cases.length === 1 ? "" : "s"}, ${concurrency} at a time`);
   console.log("=".repeat(60));
 
   const outcomes: Outcome[] = [];
