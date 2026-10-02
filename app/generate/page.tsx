@@ -998,13 +998,13 @@ function GenerateContent() {
                 {
                   value: "half",
                   label: "Half Day",
-                  desc: "4 activities with a puzzle, plus a coloring page · 1 to 2 hours",
+                  desc: "4 activities with a puzzle, plus a coloring page · 1\u00A0to\u00A02\u00A0hours",
                   emoji: "🌤",
                 },
                 {
                   value: "full",
                   label: "Full Day",
-                  desc: "5 to 6 activities · 3 to 4 hours",
+                  desc: "6 activities with a puzzle, plus a coloring page · 3\u00A0to\u00A04\u00A0hours",
                   emoji: "☀️",
                 },
               ] as const
