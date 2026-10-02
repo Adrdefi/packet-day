@@ -41,7 +41,7 @@
     },
     {
       "file": "puzzle.png",
-      "alt": "Puzzle page, Barnaby's Harvest Word Search: a 10 by 10 grid hiding Mayflower, Wampanoag, harvest, voyage, feast, corn, squash, ocean and sails.",
+      "alt": "Puzzle page, Barnaby's Harvest Word Search: a 14 by 14 grid hiding 14 words such as Mayflower, Wampanoag, Massasoit, Squanto and Plymouth, and a Pilgrim joke of the day.",
       "caption": "Wampanoag is in the grid. Nine letters, go.",
       "width": 1200,
       "height": 1553,
@@ -91,7 +91,7 @@
     {
       "subject": "Puzzle break",
       "activity": "Barnaby's Harvest Word Search",
-      "detail": "Nine words from the voyage and the harvest, Mayflower and Wampanoag included."
+      "detail": "Fourteen words from the voyage and the harvest, Mayflower and Wampanoag included, plus a joke of the day."
     },
     {
       "subject": "Movement break",
@@ -235,5 +235,5 @@
   ],
   "natalieReviewedOn": "2026-09-30",
   "datePublished": "2026-09-30",
-  "dateModified": "2026-09-30"
+  "dateModified": "2026-10-01"
 }

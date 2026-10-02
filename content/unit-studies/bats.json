@@ -9,10 +9,10 @@
   },
   "meta": {
     "title": "Printable Bats Unit Study for Kids (K-8) | Packet Day",
-    "description": "A printable bats unit study with a bug counting math page, a short echolocation story, a word search and a clap test you can try at home. Free to start."
+    "description": "A printable bats unit study with a bug counting math page, a short echolocation story, a maze and a clap test you can try at home. Free to start."
   },
   "h1": "Bats Unit Study Packet for Kids",
-  "answerCapsule": "A bats unit study packet is a printable school day about bats and echolocation for kids in kindergarten through 8th grade. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a word search, a movement break, science, a coloring page and a certificate, about 105 minutes of activities, plus breaks. Free to start.",
+  "answerCapsule": "A bats unit study packet is a printable school day about bats and echolocation for kids in kindergarten through 8th grade. This grade 2 sample has 14 pages plus a parent answer key: math, reading, writing, a maze, a movement break, science, a coloring page and a certificate, about 105 minutes of activities, plus breaks. Free to start.",
   "sample": {
     "childFirstName": "Maya",
     "grade": 2,
@@ -48,8 +48,8 @@
     },
     {
       "file": "puzzle.png",
-      "alt": "Puzzle page, Echo's Hidden Night Words: a 10 by 10 word search hiding bat, echo, cave, night, wings, moth, owl, moon and squeak.",
-      "caption": "The quiet ten minutes. You know the ones.",
+      "alt": "Puzzle page, Help Echo Find the Cave: a maze from START to FINISH, a fact about mother bats finding their pups, and a joke of the day about a bat at school.",
+      "caption": "The quiet ten minutes, now with a joke of the day.",
       "width": 1200,
       "height": 1553,
       "kind": "puzzle"
@@ -105,8 +105,8 @@
     },
     {
       "subject": "Puzzle break",
-      "activity": "Echo's Hidden Night Words",
-      "detail": "Nine night words hiding in the grid, squeak and moth included."
+      "activity": "Help Echo Find the Cave",
+      "detail": "A maze from START to FINISH, a fact about mother bats and a joke of the day."
     },
     {
       "subject": "Movement break",
@@ -227,12 +227,12 @@
       "verified": true
     },
     {
-      "claim": "Word search puzzles became popular in newspapers in the 1960s (packet fact on the puzzle page). The first known one ran in the Selenby Digest in 1968 and spread quickly; true, but only just.",
-      "source": "https://en.wikipedia.org/wiki/Word_search",
+      "claim": "Mother bats can find their own pup among thousands of pups in a crowded cave (packet fact on the puzzle page). Mexican free-tailed bat mothers find their pup by smell and by knowing the sound of its call.",
+      "source": "https://tpwd.texas.gov/education/resources/keep-texas-wild/hanging-around-with-bats/a-year-in-the-life-of-a-mexican-free-tailed-bat",
       "verified": true
     }
   ],
   "natalieReviewedOn": "2026-09-29",
   "datePublished": "2026-09-29",
-  "dateModified": "2026-09-29"
+  "dateModified": "2026-10-01"
 }
