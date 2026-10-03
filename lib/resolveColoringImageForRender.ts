@@ -16,6 +16,8 @@
 // coloring image on this render," not a reason to slow down a download or a
 // fleet sweep.
 
+import { isHostedPacketImageUrl } from "@/lib/hostedImageUrl";
+
 export async function resolveColoringImageForRender(
   coloringImageUrl: string | null,
   packetId: string
@@ -25,16 +27,17 @@ export async function resolveColoringImageForRender(
   // Old rows hold base64 directly — already in memory, nothing to fetch.
   if (coloringImageUrl.startsWith("data:")) return coloringImageUrl;
 
-  if (!coloringImageUrl.startsWith("https://")) {
+  // Only our own Storage buckets (lib/hostedImageUrl.ts).
+  if (!isHostedPacketImageUrl(coloringImageUrl)) {
     console.error(
-      "[resolveColoringImageForRender] Unrecognized coloring_image_url shape — skipping",
+      "[resolveColoringImageForRender] coloring_image_url is not a hosted packet image — skipping",
       { packetId, preview: coloringImageUrl.slice(0, 60) }
     );
     return null;
   }
 
   try {
-    const response = await fetch(coloringImageUrl);
+    const response = await fetch(coloringImageUrl, { redirect: "error" });
     if (!response.ok) {
       console.error("[resolveColoringImageForRender] Coloring fetch failed", {
         packetId,

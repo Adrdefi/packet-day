@@ -22,6 +22,8 @@
 // Single attempt, no retry — a transient failure here just means "no mascot
 // on this render," not a reason to slow down a download or a fleet sweep.
 
+import { isHostedPacketImageUrl } from "@/lib/hostedImageUrl";
+
 export async function resolveMascotImageForRender(
   mascotImageUrl: string | null,
   packetId: string
@@ -31,16 +33,17 @@ export async function resolveMascotImageForRender(
   // Old rows hold base64 directly — already in memory, nothing to fetch.
   if (mascotImageUrl.startsWith("data:")) return mascotImageUrl;
 
-  if (!mascotImageUrl.startsWith("https://")) {
+  // Only our own Storage buckets (lib/hostedImageUrl.ts).
+  if (!isHostedPacketImageUrl(mascotImageUrl)) {
     console.error(
-      "[resolveMascotImageForRender] Unrecognized mascot_image_url shape — skipping",
+      "[resolveMascotImageForRender] mascot_image_url is not a hosted packet image — skipping",
       { packetId, preview: mascotImageUrl.slice(0, 60) }
     );
     return null;
   }
 
   try {
-    const response = await fetch(mascotImageUrl);
+    const response = await fetch(mascotImageUrl, { redirect: "error" });
     if (!response.ok) {
       console.error("[resolveMascotImageForRender] Mascot fetch failed", {
         packetId,

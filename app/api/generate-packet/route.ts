@@ -645,7 +645,10 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const { data: savedPacket, error: insertError } = await supabase
+        // Packet rows are written with the service client. user_id is the
+        // verified session user, and child was loaded above with
+        // .eq("user_id", user.id), so the row can only belong to this user.
+        const { data: savedPacket, error: insertError } = await serviceClient
           .from("packets")
           .insert({
             user_id: user.id,
@@ -768,10 +771,10 @@ export async function POST(req: NextRequest) {
           ));
 
           if (mascotImageUrl) {
-            hostedMascotUrl = await uploadMascotImage(supabase, mascotImageUrl, user.id, packetId);
+            hostedMascotUrl = await uploadMascotImage(serviceClient, mascotImageUrl, user.id, packetId);
           }
           if (coloringImageUrl) {
-            hostedColoringUrl = await uploadColoringImage(supabase, coloringImageUrl, user.id, packetId);
+            hostedColoringUrl = await uploadColoringImage(serviceClient, coloringImageUrl, user.id, packetId);
           }
 
           const updates: Record<string, string> = {};
@@ -785,10 +788,11 @@ export async function POST(req: NextRequest) {
             // error here must not fall through to the outer catch and turn
             // a good packet into an error screen with no PDF and no email.
             try {
-              const { error: updateError } = await supabase
+              const { error: updateError } = await serviceClient
                 .from("packets")
                 .update(updates)
-                .eq("id", packetId);
+                .eq("id", packetId)
+                .eq("user_id", user.id);
               if (updateError) {
                 console.error("[generate-packet] Failed to save image URLs:", {
                   message: updateError.message,
