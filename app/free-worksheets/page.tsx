@@ -6,7 +6,6 @@ import JsonLd from "@/components/JsonLd";
 import SituationHero from "@/components/landing/SituationHero";
 import SituationTextSection from "@/components/landing/SituationTextSection";
 import SituationFAQ from "@/components/landing/SituationFAQ";
-import SituationClosingCTA from "@/components/landing/SituationClosingCTA";
 import ComparisonTable from "@/components/landing/ComparisonTable";
 import UnitStudyCard from "@/components/unit-studies/UnitStudyCard";
 import { buildFaqJsonLd } from "@/lib/situations/faq-schema";
@@ -60,17 +59,19 @@ export default function FreeWorksheetsPage() {
     .filter((page) => page !== undefined);
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream">
+    <div className="min-h-screen flex flex-col bg-cream-deep">
       <JsonLd data={faqJsonLd} />
 
       <PublicHeader />
 
       <main className="flex-1">
-        <SituationHero content={hero} bgClassName="bg-cream" />
+        {/* Same rhythm as the homepage and unit study pages: cream-deep and
+            white alternate, and the page closes on solid sage. */}
+        <SituationHero content={hero} bgClassName="bg-cream-deep" />
 
         <SituationTextSection content={huntSection} bgClassName="bg-white" />
 
-        <section className="py-24 px-6 bg-paper">
+        <section className="py-24 px-6 bg-cream-deep">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight">
               {doesntExistSection.heading}
@@ -82,7 +83,7 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-cream">
+        <section className="py-24 px-6 bg-white">
           <div className="max-w-5xl mx-auto">
             <h2 className="sr-only">
               {comparison.freeHeading} vs {comparison.packetDayHeading}
@@ -91,7 +92,7 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-white">
+        <section className="py-24 px-6 bg-cream-deep">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight">
               {anyDaySection.heading}
@@ -99,7 +100,7 @@ export default function FreeWorksheetsPage() {
             <p className="text-dark/70 leading-relaxed">
               {anyDaySection.segments.map((segment, i) =>
                 segment.href ? (
-                  <Link key={i} href={segment.href} className="font-semibold text-sage underline hover:text-sage-dark">
+                  <Link key={i} href={segment.href} className="font-semibold text-sage-dark underline hover:text-dark">
                     {segment.text}
                   </Link>
                 ) : (
@@ -110,9 +111,9 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <SituationTextSection content={fairSection} bgClassName="bg-paper" />
+        <SituationTextSection content={fairSection} bgClassName="bg-white" />
 
-        <section className="py-24 px-6 bg-cream">
+        <section className="py-24 px-6 bg-cream-deep">
           <div className="max-w-6xl mx-auto">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight text-center">
               {seeRealSection.heading}
@@ -135,7 +136,20 @@ export default function FreeWorksheetsPage() {
 
         <SituationFAQ content={faq} bgClassName="bg-white" />
 
-        <SituationClosingCTA content={closing} />
+        <section className="py-24 px-6 bg-sage text-center">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-cream leading-tight mb-6">
+              {closing.heading}
+            </h2>
+            <p className="text-cream text-lg leading-relaxed mb-10">{closing.line}</p>
+            <Link
+              href={closing.ctaHref}
+              className="inline-block bg-cream text-sage font-bold text-base px-8 py-4 rounded-full hover:bg-cream-dark transition-colors shadow-sm"
+            >
+              {closing.ctaLabel}
+            </Link>
+          </div>
+        </section>
       </main>
 
       <Footer />

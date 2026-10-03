@@ -62,15 +62,17 @@ export const comparison = {
 };
 
 /**
- * "Any day works" body, split so each day with a matching use case page
- * becomes a link. A segment with no href renders as plain text.
+ * "Any day works" body, split so each day with a matching page (a use case
+ * page, or the burnout blog post) becomes a link. A segment with no href renders as plain text.
  */
 export const anyDaySection = {
   heading: "Homeschool day or any other day",
   segments: [
     { text: "A regular homeschool day. " },
     { text: "A sick day", href: "/sick-day" },
-    { text: ". A burnt out day. " },
+    { text: ". " },
+    { text: "A burnt out day", href: "/blog/homeschool-burnout-permission-slip" },
+    { text: ". " },
     { text: "A road trip", href: "/road-trip" },
     { text: ". An after school afternoon at Grandma's. Any day works with Packet Day." },
   ] as { text: string; href?: string }[],

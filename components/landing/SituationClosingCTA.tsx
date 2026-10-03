@@ -31,9 +31,7 @@ export default function SituationClosingCTA({ content }: Props) {
             </span>
           )}
         </Link>
-        {content.trustLine && (
-          <p className="mt-5 text-sm font-semibold text-sage-dark">{content.trustLine}</p>
-        )}
+        <p className="mt-5 text-sm font-semibold text-sage-dark">{content.trustLine}</p>
       </div>
     </section>
   );

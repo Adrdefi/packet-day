@@ -66,6 +66,5 @@ export interface ClosingCTAContent {
   ctaLabel: string;
   ctaEmoji?: string;
   ctaHref: string;
-  /** Optional small line under the button. */
-  trustLine?: string;
+  trustLine: string;
 }

@@ -17,6 +17,11 @@ const PAGES = [
     description: "Every page of a real outer space packet made for a grade 4 learner named Kai, answer key included, plus the same theme at grades 1 and 7.",
   },
   { path: "/pricing", name: "Pricing", description: "The Free and Unlimited plans." },
+  {
+    path: "/free-worksheets",
+    name: "Free worksheets vs Packet Day",
+    description: "Comparison of free printable worksheets vs Packet Day's custom, theme based school days.",
+  },
   { path: "/about", name: "About", description: "The homeschool family who built Packet Day." },
   { path: "/blog", name: "Blog", description: "Homeschool ideas for the good days and the hard ones." },
 ];
