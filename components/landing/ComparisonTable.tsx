@@ -64,9 +64,10 @@ function PacketDayValue({ text }: { text: string }) {
 /**
  * Light, friendly two-column comparison: the "them" side on cream-deep with
  * a muted x, the Packet Day side on the soft sage tint (sage/10) with a sage
- * check. A real <table> from md up; below that each row is its own card with
- * one shared legend above the list instead of repeated column labels (each
- * card keeps screen-reader-only labels). Data-driven, no page copy here.
+ * check, under a honey "✨ Packet Day" header. A real <table> from md up;
+ * below that, one rounded card with a row per line and one shared legend
+ * above it instead of repeated column labels (each row keeps
+ * screen-reader-only labels). Data-driven, no page copy here.
  */
 export default function ComparisonTable({ freeHeading, packetDayHeading, rows }: Props) {
   return (
@@ -81,7 +82,13 @@ export default function ComparisonTable({ freeHeading, packetDayHeading, rows }:
               <th scope="col" className="w-[37.5%] bg-cream-deep px-6 py-5 font-display text-xl font-bold text-dark">
                 {freeHeading}
               </th>
-              <th scope="col" className="w-[37.5%] bg-sage px-6 py-5 font-display text-xl font-bold text-cream">
+              <th
+                scope="col"
+                className="w-[37.5%] border-b-4 border-honey bg-honey-light px-6 py-5 font-display text-xl font-bold text-dark"
+              >
+                <span className="mr-1.5" aria-hidden="true">
+                  ✨
+                </span>
                 {packetDayHeading}
               </th>
             </tr>
@@ -115,15 +122,15 @@ export default function ComparisonTable({ freeHeading, packetDayHeading, rows }:
             {packetDayHeading}
           </span>
         </p>
-        <ul className="space-y-4">
+        <ul className="divide-y divide-sage/20 overflow-hidden rounded-2xl border border-sage/20 bg-white shadow-sm">
           {rows.map((row) => (
-            <li key={row.label} className="overflow-hidden rounded-2xl border border-sage/20 bg-white shadow-sm">
-              <h3 className="px-5 pt-4 pb-3 font-display text-lg font-bold text-dark">{row.label}</h3>
-              <div className="bg-cream-deep px-5 py-3">
+            <li key={row.label} className="space-y-2.5 px-5 py-5">
+              <h3 className="font-display text-lg font-bold text-dark">{row.label}</h3>
+              <div className="px-3">
                 <span className="sr-only">{freeHeading}: </span>
                 <FreeValue text={row.free} />
               </div>
-              <div className="bg-sage/10 px-5 py-3.5">
+              <div className="rounded-xl bg-sage/10 px-3 py-2.5">
                 <span className="sr-only">{packetDayHeading}: </span>
                 <PacketDayValue text={row.packetDay} />
               </div>

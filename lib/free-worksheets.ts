@@ -39,6 +39,12 @@ export const doesntExistSection = {
   pullLine: "We looked. It doesn't exist. So we built it.",
 };
 
+export const pileVsPacket = {
+  pileCaption: "6 sites. 6 styles. No story.",
+  packetCaption: "One day. One story. Made for your kid.",
+};
+
+/** Six rows. Grade level, answer keys and cost live in the FAQ instead. */
 export interface ComparisonRow {
   label: string;
   free: string;
@@ -53,11 +59,8 @@ export const comparison = {
     { label: "Made for", free: "Every kid gets the same page", packetDay: "Your kid's name, grade and current obsession" },
     { label: "How it fits together", free: "Random pages from random sites", packetDay: "One story and one character guide through every subject" },
     { label: "More than one interest", free: "Good luck", packetDay: "Combine them in one packet" },
-    { label: "Grade level", free: "Hit or miss", packetDay: "Matched to K to 8th grade" },
-    { label: "Answer keys", free: "Sometimes", packetDay: "Always included" },
     { label: "Fresh every time", free: "The same worksheet everyone downloaded", packetDay: "Brand new content every packet" },
     { label: "The fun part", free: "Rarely", packetDay: "A rotating puzzle break and a corny Joke of the Day" },
-    { label: "Cost", free: "Free, but it costs you hours", packetDay: "Free to start. Unlimited is $9 a month, billed annually" },
   ] satisfies ComparisonRow[],
 };
 

@@ -7,6 +7,7 @@ import SituationHero from "@/components/landing/SituationHero";
 import SituationTextSection from "@/components/landing/SituationTextSection";
 import SituationFAQ from "@/components/landing/SituationFAQ";
 import ComparisonTable from "@/components/landing/ComparisonTable";
+import PileVsPacket from "@/components/landing/PileVsPacket";
 import UnitStudyCard from "@/components/unit-studies/UnitStudyCard";
 import { buildFaqJsonLd } from "@/lib/situations/faq-schema";
 import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
@@ -17,6 +18,7 @@ import {
   hero,
   huntSection,
   doesntExistSection,
+  pileVsPacket,
   comparison,
   anyDaySection,
   fairSection,
@@ -83,7 +85,14 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-white">
+        <section className="py-24 px-6 bg-white overflow-hidden">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="sr-only">Free worksheets pile vs a Packet Day packet</h2>
+            <PileVsPacket {...pileVsPacket} />
+          </div>
+        </section>
+
+        <section className="py-24 px-6 bg-cream-deep">
           <div className="max-w-5xl mx-auto">
             <h2 className="sr-only">
               {comparison.freeHeading} vs {comparison.packetDayHeading}
@@ -92,7 +101,7 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-cream-deep">
+        <section className="py-24 px-6 bg-white">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight">
               {anyDaySection.heading}
@@ -111,9 +120,9 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <SituationTextSection content={fairSection} bgClassName="bg-white" />
+        <SituationTextSection content={fairSection} bgClassName="bg-cream-deep" />
 
-        <section className="py-24 px-6 bg-cream-deep">
+        <section className="py-24 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-dark mb-6 leading-tight text-center">
               {seeRealSection.heading}
@@ -134,7 +143,7 @@ export default function FreeWorksheetsPage() {
           </div>
         </section>
 
-        <SituationFAQ content={faq} bgClassName="bg-white" />
+        <SituationFAQ content={faq} bgClassName="bg-cream-deep" />
 
         <section className="py-24 px-6 bg-sage text-center">
           <div className="max-w-2xl mx-auto">
