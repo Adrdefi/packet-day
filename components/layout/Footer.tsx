@@ -11,6 +11,7 @@ interface FooterLink {
 function footerLinks(): FooterLink[] {
   return [
     ...(getLiveUnitStudies().length > 0 ? [{ label: "Unit studies", href: "/unit-studies" }] : []),
+    { label: "Free worksheets vs Packet Day", href: "/free-worksheets" },
     { label: "About", href: "/about" },
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },

@@ -4,6 +4,7 @@ import { SITUATIONS } from "@/lib/situations/registry";
 import { SITUATION_UPDATED } from "@/lib/situations/sitemap-dates";
 import { SITE_URL } from "@/lib/site";
 import { getLiveUnitStudies } from "@/lib/unit-studies/loader";
+import { PATH as FREE_WORKSHEETS_PATH, metadata as freeWorksheetsMeta } from "@/lib/free-worksheets";
 
 // Not NEXT_PUBLIC_APP_URL: this is a static build-time file, and the
 // sitemap must always state the canonical production domain no matter which
@@ -38,6 +39,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/sample`,
       // Rebuilt around Kai's outer space packet.
       lastModified: new Date("2026-09-30"),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}${FREE_WORKSHEETS_PATH}`,
+      lastModified: new Date(freeWorksheetsMeta.updated),
       changeFrequency: "monthly",
       priority: 0.7,
     },
