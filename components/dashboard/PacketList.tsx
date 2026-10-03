@@ -172,7 +172,7 @@ export default function PacketList({ packets, kids }: PacketListProps) {
             href={`/generate?child=${firstChild.id}`}
             className="inline-block bg-sage text-cream font-bold text-sm py-3 px-6 rounded-xl hover:bg-sage-dark transition-colors"
           >
-            Generate Today&apos;s Packet →
+            Make {firstChild.name}&apos;s first packet →
           </a>
         )}
       </div>

@@ -124,19 +124,15 @@ function OnboardingContent() {
   const upgraded = searchParams.get("upgraded") === "true";
   // Carried here from app/auth/confirm/route.ts (?next=...) for a
   // brand-new user, or present directly if someone deep-links straight to
-  // /onboarding. Only the "Go to my dashboard first" link honors it — the
-  // "Generate {child}'s First Packet" link is an explicit alternate action
-  // the user chose on purpose and always goes to /generate.
+  // /onboarding. An already-onboarded visitor is sent to it. On step 3 only
+  // the first packet button can follow it (below); "Go to my dashboard
+  // first" always means /dashboard.
   const nextPath = safeNext(searchParams.get("next"));
   // The first packet button follows `next` only when it is /generate (for
   // example /generate?theme=dinosaurs from /sample). safeNext has already
   // limited it to a same site path.
   const firstPacketHref =
     nextPath && (nextPath === "/generate" || nextPath.startsWith("/generate?")) ? nextPath : "/generate";
-
-  // Guards the effect below so the completion write + event fire at most
-  // once per user, even if the effect re-runs (e.g. React Strict Mode).
-  const onboardingMarkedRef = useRef(false);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [userId, setUserId] = useState<string | null>(null);
@@ -148,6 +144,10 @@ function OnboardingContent() {
     avatar: string;
   } | null>(null);
   const [nameError, setNameError] = useState("");
+  const [childError, setChildError] = useState("");
+  // Set once the child row exists, so a retry after a failed completion
+  // write doesn't insert the same child twice.
+  const childSavedRef = useRef(false);
 
   // Load profile on mount — prefill name, guard against already-onboarded users
   useEffect(() => {
@@ -164,7 +164,9 @@ function OnboardingContent() {
         .eq("id", user.id)
         .single();
 
-      if (profile?.onboarding_completed) return router.replace(nextPath ?? "/dashboard");
+      // Full page load for the same reason as the step 3 dashboard link:
+      // a client side replace could reuse a cached redirect back to here.
+      if (profile?.onboarding_completed) return window.location.replace(nextPath ?? "/dashboard");
 
       if (profile?.full_name) {
         // Pre-fill with first name only
@@ -174,28 +176,6 @@ function OnboardingContent() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Mark onboarding complete as soon as we reach step 3
-  useEffect(() => {
-    if (step === 3 && userId && !onboardingMarkedRef.current) {
-      onboardingMarkedRef.current = true;
-
-      (async () => {
-        const { error } = await supabase
-          .from("profiles")
-          .update({ onboarding_completed: true })
-          .eq("id", userId);
-
-        if (error) {
-          console.error("[onboarding] Failed to mark onboarding complete:", error.message);
-          return;
-        }
-
-        track("onboarding_completed");
-      })();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, userId]);
 
   async function handleStep1(e: React.FormEvent) {
     e.preventDefault();
@@ -216,17 +196,44 @@ function OnboardingContent() {
     setStep(2);
   }
 
+  // Onboarding counts as complete the moment the first child is saved. Both
+  // writes finish before step 3 shows, so its dashboard link can never reach
+  // the proxy while onboarding_completed is still false.
   async function handleStep2(data: ChildFormData) {
+    setChildError("");
     setSavingChild(true);
-    await supabase.from("children").insert({
-      user_id: userId!,
-      name: data.name,
-      grade_level: data.grade_level,
-      learning_style: data.learning_style,
-      favorite_subjects: data.favorite_subjects,
-      special_notes: data.special_notes || null,
-      avatar_emoji: data.avatar_emoji,
-    });
+
+    if (!childSavedRef.current) {
+      const { error } = await supabase.from("children").insert({
+        user_id: userId!,
+        name: data.name,
+        grade_level: data.grade_level,
+        learning_style: data.learning_style,
+        favorite_subjects: data.favorite_subjects,
+        special_notes: data.special_notes || null,
+        avatar_emoji: data.avatar_emoji,
+      });
+      if (error) {
+        setSavingChild(false);
+        return setChildError(
+          `We couldn't save ${data.name}'s profile just now. Let's try that again.`
+        );
+      }
+      childSavedRef.current = true;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ onboarding_completed: true })
+      .eq("id", userId!);
+    if (error) {
+      setSavingChild(false);
+      return setChildError(
+        `${data.name} is saved, but we couldn't finish setting up your account. Tap the button again and we'll pick up right here.`
+      );
+    }
+
+    track("onboarding_completed");
     setSavedChild({ name: data.name, avatar: data.avatar_emoji });
     setSavingChild(false);
     setStep(3);
@@ -325,6 +332,11 @@ function OnboardingContent() {
                 loading={savingChild}
                 submitLabel="Save and Continue →"
               />
+              {childError && (
+                <p className="mt-4 text-sm text-coral bg-coral/10 rounded-xl px-4 py-3 leading-snug">
+                  {childError}
+                </p>
+              )}
             </div>
           )}
 
@@ -351,17 +363,23 @@ function OnboardingContent() {
 
                 <Link
                   href={firstPacketHref}
+                  prefetch={false}
                   className="block w-full bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-sm mb-4"
                 >
                   Generate {savedChild.name}&apos;s First Packet →
                 </Link>
 
-                <Link
-                  href={nextPath ?? "/dashboard"}
+                {/* A plain <a> on purpose: a full page load always asks the
+                    proxy again. A client side <Link> can reuse a /dashboard
+                    redirect to /onboarding that the router cached minutes
+                    ago (e.g. a PublicHeader prefetch while onboarding was
+                    still incomplete), which sent parents back to step 1. */}
+                <a
+                  href="/dashboard"
                   className="text-sm text-muted hover:text-dark transition-colors underline underline-offset-2"
                 >
                   Go to my dashboard first
-                </Link>
+                </a>
               </div>
             </div>
           )}
