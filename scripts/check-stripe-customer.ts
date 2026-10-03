@@ -37,7 +37,7 @@ interface FakeProfile {
   subscription_status?: string;
 }
 
-function fakeSupabase(profile: FakeProfile | null) {
+function fakeSupabase(profile: FakeProfile | null, updateError: Error | null = null) {
   const updates: { values: Record<string, unknown>; id: unknown }[] = [];
   const client = {
     from() {
@@ -49,7 +49,7 @@ function fakeSupabase(profile: FakeProfile | null) {
           return {
             eq: async (_column: string, id: unknown) => {
               updates.push({ values, id });
-              return { error: null };
+              return { error: updateError };
             },
           };
         },
@@ -99,7 +99,7 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
 {
   const { supabase, updates } = fakeSupabase({ stripe_customer_id: "cus_live", email: "parent@example.com" });
   const fake = fakeStripe();
-  const url = await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+  const url = await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("valid ID: returns the checkout URL", url === "https://checkout.stripe.com/c/cus_live", String(url));
   expect("valid ID: one session call with the saved ID", JSON.stringify(fake.sessionCustomers) === '["cus_live"]', JSON.stringify(fake.sessionCustomers));
   expect("valid ID: no new customer", fake.customersCreated.length === 0);
@@ -110,7 +110,7 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
 {
   const { supabase, updates } = fakeSupabase({ stripe_customer_id: "cus_testmode", email: "parent@example.com" });
   const fake = fakeStripe({ missing: ["cus_testmode"] });
-  const url = await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+  const url = await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("missing ID: returns the new customer's checkout URL", url === "https://checkout.stripe.com/c/cus_new1", String(url));
   expect("missing ID: tried the saved ID, then the new one", JSON.stringify(fake.sessionCustomers) === '["cus_testmode","cus_new1"]', JSON.stringify(fake.sessionCustomers));
   expect("missing ID: exactly one new customer", fake.customersCreated.length === 1);
@@ -127,7 +127,7 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
 {
   const { supabase, updates } = fakeSupabase({ stripe_customer_id: "cus_deleted", email: null });
   const fake = fakeStripe({ missing: ["cus_deleted"] });
-  const url = await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+  const url = await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("deleted customer: returns a checkout URL", url === "https://checkout.stripe.com/c/cus_new1", String(url));
   expect("deleted customer: falls back to the login email", fake.customersCreated[0]?.email === "kid@example.com");
   expect("deleted customer: new ID saved", updates.length === 1 && updates[0].values.stripe_customer_id === "cus_new1");
@@ -145,7 +145,7 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
   const fake = fakeStripe({ otherError: priceError });
   let thrown: unknown = null;
   try {
-    await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+    await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   } catch (err) {
     thrown = err;
   }
@@ -158,7 +158,7 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
 {
   const { supabase, updates } = fakeSupabase({ stripe_customer_id: null, email: "parent@example.com" });
   const fake = fakeStripe();
-  const url = await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+  const url = await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("no saved ID: creates one customer and checks out", url === "https://checkout.stripe.com/c/cus_new1" && fake.customersCreated.length === 1 && updates.length === 1);
 }
 {
@@ -166,11 +166,28 @@ const base = { userId: "user_1", userEmail: "kid@example.com", priceId: "price_m
   const fake = fakeStripe({ missing: ["cus_new1"] });
   let thrown = false;
   try {
-    await createCheckoutSessionUrl({ ...base, supabase, stripe: fake.stripe });
+    await createCheckoutSessionUrl({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   } catch {
     thrown = true;
   }
   expect("no loop: a missing brand new customer is rethrown, not retried", thrown && fake.customersCreated.length === 1);
+}
+
+// 5b. The new customer ID can't be saved: stop before checkout.
+{
+  const { supabase: reader } = fakeSupabase({ stripe_customer_id: null, email: "parent@example.com" });
+  const saveError = new Error("save failed");
+  const { supabase: admin, updates } = fakeSupabase(null, saveError);
+  const fake = fakeStripe();
+  let thrown: unknown = null;
+  try {
+    await createCheckoutSessionUrl({ ...base, supabase: reader, adminSupabase: admin, stripe: fake.stripe });
+  } catch (err) {
+    thrown = err;
+  }
+  expect("save fails: error rethrown", thrown === saveError);
+  expect("save fails: the write went through the admin client", updates.length === 1 && updates[0].values.stripe_customer_id === "cus_new1");
+  expect("save fails: no checkout session", fake.sessionCustomers.length === 0);
 }
 
 // 6. The error check itself, on a real Stripe error object.
@@ -187,14 +204,14 @@ expect("isMissingCustomerError: plain errors are not", !isMissingCustomerError(n
 {
   const { supabase } = fakeSupabase({ stripe_customer_id: "cus_live", email: "parent@example.com", subscription_status: "pro" });
   const fake = fakeStripe();
-  const result = await resolveCheckoutRedirect({ ...base, supabase, stripe: fake.stripe });
+  const result = await resolveCheckoutRedirect({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("paid user: sent to the dashboard", result.kind === "redirect" && result.to === "/dashboard", JSON.stringify(result));
   expect("paid user: no Stripe calls", fake.sessionCustomers.length === 0 && fake.customersCreated.length === 0);
 }
 {
   const { supabase } = fakeSupabase({ stripe_customer_id: "cus_live", email: "parent@example.com", subscription_status: "free" });
   const fake = fakeStripe();
-  const result = await resolveCheckoutRedirect({ ...base, supabase, stripe: fake.stripe });
+  const result = await resolveCheckoutRedirect({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   expect("free user: sent to checkout", result.kind === "redirect" && result.to === "https://checkout.stripe.com/c/cus_live", JSON.stringify(result));
 }
 {
@@ -202,7 +219,7 @@ expect("isMissingCustomerError: plain errors are not", !isMissingCustomerError(n
   const fake = fakeStripe({ otherError: new Error("Stripe is down") });
   const original = console.error;
   console.error = () => {};
-  const result = await resolveCheckoutRedirect({ ...base, supabase, stripe: fake.stripe });
+  const result = await resolveCheckoutRedirect({ ...base, supabase, adminSupabase: supabase, stripe: fake.stripe });
   console.error = original;
   expect("failure: friendly error instead of a crash", result.kind === "error", JSON.stringify(result));
 }

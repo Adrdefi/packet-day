@@ -1,3 +1,4 @@
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { claimEmailSend, markEmailSendFailed, markEmailSendSent } from "@/lib/emailSends";
 import { buildMarketingEmailHeaders } from "@/lib/emailFooter";
@@ -12,6 +13,15 @@ import { isPaidStatus } from "@/lib/isPaid";
 // this request's own response.
 const WELCOME_1_SEND_TIMEOUT_MS = 3000;
 
+// Stamps sequence_started_at. Same local getServiceClient() pattern as
+// lib/emailSends.ts, which records the send itself.
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env vars");
+  return createSupabaseClient(url, key);
+}
+
 /**
  * Stamps sequence_started_at for a freshly confirmed, eligible signup, and
  * — only when EMAIL_SEQUENCE_ENABLED is "true" — attempts the Email 1
@@ -23,7 +33,6 @@ const WELCOME_1_SEND_TIMEOUT_MS = 3000;
  * here must never break confirmation.
  */
 export async function attemptWelcome1(params: {
-  supabase: Awaited<ReturnType<typeof createClient>>;
   userId: string;
   email: string;
   fullName: string | null;
@@ -32,7 +41,7 @@ export async function attemptWelcome1(params: {
   sequenceStartedAt: string | null;
   subscriptionStatus: string | null;
 }): Promise<void> {
-  const { supabase, userId, email, fullName, createdAt, marketingOptOut, sequenceStartedAt, subscriptionStatus } = params;
+  const { userId, email, fullName, createdAt, marketingOptOut, sequenceStartedAt, subscriptionStatus } = params;
 
   // EMAIL_LAUNCH_AT unset means nobody is enrolled, on purpose. Test
   // accounts (adrdefi), internal and packetday addresses, anyone already
@@ -47,7 +56,7 @@ export async function attemptWelcome1(params: {
 
   try {
     if (!sequenceStartedAt) {
-      const { error: stampError } = await supabase
+      const { error: stampError } = await getServiceClient()
         .from("profiles")
         .update({ sequence_started_at: new Date().toISOString() })
         .eq("id", userId);
@@ -111,7 +120,6 @@ export async function enrollNewSignup(
   if (!profile) return;
 
   await attemptWelcome1({
-    supabase,
     userId: user.id,
     email: user.email,
     fullName: profile.full_name,

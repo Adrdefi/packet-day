@@ -1,6 +1,15 @@
 import Stripe from "stripe";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type PlanSlug, PLAN_PRICE } from "@/lib/plans";
+
+// Saves stripe_customer_id. Same local getServiceClient() pattern as
+// lib/emailSends.ts and lib/unsubscribe.ts. Server only.
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env vars");
+  return createSupabaseClient(url, key);
+}
 
 // ─── Lazy client ──────────────────────────────────────────────────────────────
 
@@ -67,6 +76,8 @@ interface CreateCheckoutSessionArgs {
   priceId: string;
   baseUrl: string;
   stripe?: CheckoutStripe;
+  /** Writes stripe_customer_id. Defaults to the service client; tests pass a fake. */
+  adminSupabase?: SupabaseClient;
 }
 
 /**
@@ -90,6 +101,7 @@ export async function createCheckoutSessionUrl({
   priceId,
   baseUrl,
   stripe = getStripe(),
+  adminSupabase,
 }: CreateCheckoutSessionArgs): Promise<string | null> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -105,7 +117,13 @@ export async function createCheckoutSessionUrl({
       email,
       metadata: { supabase_user_id: userId },
     });
-    await supabase.from("profiles").update({ stripe_customer_id: customer.id }).eq("id", userId);
+    // The Stripe webhook finds the profile by this ID, so never send anyone
+    // to checkout unless it was saved.
+    const { error } = await (adminSupabase ?? getServiceClient())
+      .from("profiles")
+      .update({ stripe_customer_id: customer.id })
+      .eq("id", userId);
+    if (error) throw error;
     return customer.id;
   }
 

@@ -11,6 +11,7 @@ interface ResolveCheckoutRedirectArgs {
   priceId: string;
   baseUrl: string;
   stripe?: CheckoutStripe;
+  adminSupabase?: SupabaseClient;
 }
 
 /**
@@ -26,6 +27,7 @@ export async function resolveCheckoutRedirect({
   priceId,
   baseUrl,
   stripe,
+  adminSupabase,
 }: ResolveCheckoutRedirectArgs): Promise<CheckoutRedirectResult> {
   try {
     const { data: profile } = await supabase
@@ -36,7 +38,7 @@ export async function resolveCheckoutRedirect({
 
     if (isPaidStatus(profile?.subscription_status)) return { kind: "redirect", to: "/dashboard" };
 
-    const url = await createCheckoutSessionUrl({ supabase, userId, userEmail, priceId, baseUrl, stripe });
+    const url = await createCheckoutSessionUrl({ supabase, userId, userEmail, priceId, baseUrl, stripe, adminSupabase });
     return { kind: "redirect", to: url ?? "/pricing" };
   } catch (err) {
     console.error("[checkout-redirect]", err);
