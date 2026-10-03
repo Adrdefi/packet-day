@@ -6,6 +6,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import PublicHeader from "@/components/layout/PublicHeader";
+import Footer from "@/components/layout/Footer";
 import JsonLd from "@/components/JsonLd";
 import { getAllPosts, getPostBySlug, stripMarkdown } from "@/lib/blog";
 import { SITE_URL, DEFAULT_TWITTER, NATALIE_ID, NATALIE_PATH } from "@/lib/site";
@@ -298,6 +299,8 @@ export default async function BlogPostPage({
           </div>
         </section>
       </main>
+
+      <Footer />
     </div>
   );
 }

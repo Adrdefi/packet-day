@@ -7,48 +7,90 @@ interface FooterLink {
   href: string;
 }
 
+interface FooterGroup {
+  heading: string;
+  links: FooterLink[];
+}
+
 /** The unit studies link only appears once at least one unit study page is live. */
-function footerLinks(): FooterLink[] {
+function footerGroups(): FooterGroup[] {
   return [
-    ...(getLiveUnitStudies().length > 0 ? [{ label: "Unit studies", href: "/unit-studies" }] : []),
-    { label: "Free worksheets vs Packet Day", href: "/free-worksheets" },
-    { label: "About", href: "/about" },
-    { label: "Privacy", href: "/privacy" },
-    { label: "Terms", href: "/terms" },
-    { label: "Contact", href: "/contact" },
+    {
+      heading: "Explore",
+      links: [
+        { label: "Sample", href: "/sample" },
+        ...(getLiveUnitStudies().length > 0 ? [{ label: "Unit studies", href: "/unit-studies" }] : []),
+        { label: "Blog", href: "/blog" },
+      ],
+    },
+    {
+      heading: "Company",
+      links: [
+        { label: "About", href: "/about" },
+        { label: "Contact", href: "/contact" },
+      ],
+    },
   ];
 }
 
+const LEGAL_LINKS: FooterLink[] = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+];
+
+// Warm charcoal with cream text. Every cream shade here is /65 or stronger,
+// which clears WCAG AA on charcoal (cream/50 does not, at 4.22:1).
 export default function Footer() {
   return (
-    <footer className="bg-dark px-6 py-14">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="text-center md:text-left">
-          <div className="flex items-center gap-2 font-display font-bold text-cream mb-2 justify-center md:justify-start">
-            <Wordmark size="lg" />
+    <footer className="bg-charcoal px-6 pt-14 pb-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-xs">
+            <Link href="/" className="inline-flex font-display font-bold text-cream">
+              <Wordmark size="lg" variant="cream" />
+            </Link>
+            <p className="mt-3 text-sm leading-relaxed text-cream/80">
+              Learning packets made for one kid at a time. Built by a homeschool family, tested on
+              real kids, powered by coffee.
+            </p>
           </div>
-          <p className="text-cream/50 text-xs max-w-xs">
-            AI-powered learning packets, built by a homeschool family, tested on real kids,
-            powered by coffee.
-          </p>
+
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-16 gap-y-8">
+            {footerGroups().map((group) => (
+              <div key={group.heading}>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-cream/70">
+                  {group.heading}
+                </h2>
+                <ul className="space-y-2">
+                  {group.links.map((link) => (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-cream/80 hover:text-cream hover:underline transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {footerLinks().map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-cream/50 hover:text-cream text-sm transition-colors"
-              >
+        <p className="mt-12 border-t border-cream/15 pt-6 text-xs text-cream/65">
+          © 2026 Packet Day
+          {LEGAL_LINKS.map((link) => (
+            <span key={link.href}>
+              <span className="mx-2" aria-hidden="true">
+                ·
+              </span>
+              <Link href={link.href} className="hover:text-cream hover:underline transition-colors">
                 {link.label}
               </Link>
-            ))}
-          </div>
-          <p className="text-cream/30 text-xs">
-            © 2026 Packet Day. All rights reserved.
-          </p>
-        </div>
+            </span>
+          ))}
+        </p>
       </div>
     </footer>
   );

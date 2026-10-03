@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PublicHeader from "@/components/layout/PublicHeader";
+import Footer from "@/components/layout/Footer";
 import { getAllPosts } from "@/lib/blog";
 import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from "@/lib/site";
 
@@ -101,6 +102,8 @@ export default function BlogIndexPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
