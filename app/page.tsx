@@ -581,7 +581,7 @@ export default function Home() {
             >
               Start Free, No Card Needed →
             </Link>
-            <p className="text-cream/60 text-sm mt-5">
+            <p className="text-cream text-sm mt-5">
               Free forever plan available. Upgrade only when your kids start asking for more
               packets. (They will.)
             </p>

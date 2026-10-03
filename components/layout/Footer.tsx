@@ -39,34 +39,35 @@ const LEGAL_LINKS: FooterLink[] = [
 ];
 
 // Warm charcoal with cream text. Every cream shade here is /65 or stronger,
-// which clears WCAG AA on charcoal (cream/50 does not, at 4.22:1).
+// which clears WCAG AA on charcoal (cream/50 does not, at 4.22:1). Links are
+// at least 44px tall on phones (tap targets) and 24px from md up.
 export default function Footer() {
   return (
-    <footer className="bg-charcoal px-6 pt-14 pb-8">
+    <footer className="bg-charcoal px-6 pt-8 pb-5">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-xs">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-10">
+          <div className="max-w-md">
             <Link href="/" className="inline-flex font-display font-bold text-cream">
               <Wordmark size="lg" variant="cream" />
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-cream/80">
+            <p className="mt-2 text-xs leading-relaxed text-cream/80">
               Learning packets made for one kid at a time. Built by a homeschool family, tested on
               real kids, powered by coffee.
             </p>
           </div>
 
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-16 gap-y-8">
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-16">
             {footerGroups().map((group) => (
               <div key={group.heading}>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-cream/70">
+                <h2 className="mb-0.5 text-xs font-bold uppercase tracking-widest text-cream/70 md:mb-1.5">
                   {group.heading}
                 </h2>
-                <ul className="space-y-2">
+                <ul className="md:space-y-1">
                   {group.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-sm text-cream/80 hover:text-cream hover:underline transition-colors"
+                        className="inline-flex min-h-11 items-center text-sm text-cream/80 hover:text-cream hover:underline transition-colors md:min-h-6"
                       >
                         {link.label}
                       </Link>
@@ -78,14 +79,17 @@ export default function Footer() {
           </nav>
         </div>
 
-        <p className="mt-12 border-t border-cream/15 pt-6 text-xs text-cream/65">
+        <p className="mt-4 border-t border-cream/15 pt-3 text-xs text-cream/65 md:mt-6">
           © 2026 Packet Day
           {LEGAL_LINKS.map((link) => (
             <span key={link.href}>
               <span className="mx-2" aria-hidden="true">
                 ·
               </span>
-              <Link href={link.href} className="hover:text-cream hover:underline transition-colors">
+              <Link
+                href={link.href}
+                className="inline-flex min-h-11 items-center hover:text-cream hover:underline transition-colors md:min-h-6"
+              >
                 {link.label}
               </Link>
             </span>

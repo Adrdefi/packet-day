@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import PublicHeader from "@/components/layout/PublicHeader";
+import Footer from "@/components/layout/Footer";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -375,6 +376,8 @@ export default async function SharePage({
             <span> · Learning packets made for one kid at a time</span>
           </div>
         </div>
+
+        <Footer />
       </div>
     </>
   );
