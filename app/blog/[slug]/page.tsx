@@ -32,8 +32,10 @@ function MarkdownLink({
   href,
   ...props
 }: ComponentPropsWithoutRef<"a">) {
+  // sage-dark, not sage: half the bands are cream-deep, where sage text
+  // misses WCAG AA (4.24:1); sage-dark clears it on both band colors.
   const linkClass =
-    "text-sage underline underline-offset-2 hover:text-sage-dark transition-colors";
+    "text-sage-dark underline underline-offset-2 hover:text-dark transition-colors";
   if (href && href.startsWith("/")) {
     return <Link href={href} className={linkClass} {...props} />;
   }
@@ -58,7 +60,7 @@ function MarkdownList({
 const markdownComponents: Components = {
   h2: (props) => (
     <h2
-      className="font-display font-bold text-2xl md:text-3xl tracking-[-0.02em] leading-[1.2] text-dark mt-12 mb-4"
+      className="font-display font-bold text-3xl md:text-4xl tracking-[-0.02em] leading-[1.15] text-sage-dark mt-12 mb-6 first:mt-0"
       {...props}
     />
   ),
@@ -147,6 +149,27 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Splits a post body into bands: the intro (everything before the first
+ * H2), then one chunk per H2 section. A `---` divider that ends a chunk is
+ * dropped, since the band boundary now does that job (every current post
+ * has one right before its FAQ section). Posts have no code blocks, so a
+ * line starting with "## " is always a heading.
+ */
+function splitIntoSections(content: string): string[] {
+  const sections: string[][] = [[]];
+  for (const line of content.split("\n")) {
+    if (line.startsWith("## ")) sections.push([]);
+    sections[sections.length - 1].push(line);
+  }
+  return sections
+    .map((lines) => lines.join("\n").replace(/\n\s*---\s*$/, "").trim())
+    .filter((chunk) => chunk.length > 0);
+}
+
+/** Bands alternate cream-deep and white, starting with the header and intro. */
+const BAND_BACKGROUNDS = ["bg-cream-deep", "bg-white"] as const;
+
 export default async function BlogPostPage({
   params,
 }: {
@@ -159,6 +182,7 @@ export default async function BlogPostPage({
   }
 
   const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const sections = splitIntoSections(post.content);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -205,49 +229,62 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-paper">
+    <div className="min-h-screen flex flex-col bg-cream-deep">
       <JsonLd data={articleJsonLd} />
       {/* Only posts with a FAQ section get FAQPage schema. */}
       {post.faqs.length > 0 && <JsonLd data={faqJsonLd} />}
 
       <PublicHeader />
 
+      {/* Same rhythm as the homepage and unit study pages: full width bands
+          alternating cream-deep and white, the text column kept at the
+          same readable width inside each, ending on a solid sage band. */}
       <main className="flex-1">
-        <div className="max-w-2xl mx-auto px-6 py-16 md:py-24">
-          <Link
-            href="/blog"
-            className="text-sm font-semibold text-sage hover:text-sage-dark transition-colors"
+        {sections.map((section, i) => (
+          <section
+            key={i}
+            className={`px-6 py-14 md:py-20 ${BAND_BACKGROUNDS[i % BAND_BACKGROUNDS.length]}`}
           >
-            ← Back to all posts
-          </Link>
+            <div className="max-w-2xl mx-auto [&>*:last-child]:mb-0">
+              {i === 0 && (
+                <header className="mb-10">
+                  <Link
+                    href="/blog"
+                    className="text-sm font-semibold text-sage-dark hover:text-dark transition-colors"
+                  >
+                    ← Back to all posts
+                  </Link>
 
-          <h1 className="mt-6 font-display font-extrabold text-4xl md:text-5xl tracking-[-0.02em] leading-[1.2] text-dark">
-            {post.title}
-          </h1>
+                  <h1 className="mt-6 font-display font-extrabold text-4xl md:text-5xl tracking-[-0.02em] leading-[1.2] text-dark">
+                    {post.title}
+                  </h1>
 
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-sage-dark">
-            <span>{formatPublishDate(post.publishDate)}</span>
-            <span aria-hidden="true">·</span>
-            <span>{post.readingTime} min read</span>
-          </div>
-          <p className="mt-1 text-sm font-semibold text-sage-dark">
-            By{" "}
-            <Link href={NATALIE_PATH} className="text-sage hover:text-sage-dark transition-colors">
-              Natalie Riggs
-            </Link>
-          </p>
+                  <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-sage-dark">
+                    <span>{formatPublishDate(post.publishDate)}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{post.readingTime} min read</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-sage-dark">
+                    By{" "}
+                    <Link href={NATALIE_PATH} className="text-sage-dark underline underline-offset-2 hover:text-dark transition-colors">
+                      Natalie Riggs
+                    </Link>
+                  </p>
+                </header>
+              )}
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
+                {section}
+              </ReactMarkdown>
+            </div>
+          </section>
+        ))}
 
-          <div className="mt-10">
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
-              {post.content}
-            </ReactMarkdown>
-          </div>
-
-          <div className="mt-16 rounded-2xl bg-sage p-10 md:p-14 text-center">
+        <section className="px-6 py-16 md:py-24 bg-sage text-center">
+          <div className="max-w-2xl mx-auto">
             <h2 className="font-display font-bold text-3xl md:text-4xl tracking-[-0.02em] leading-[1.2] text-cream">
               Like what you just read? 📝
             </h2>
-            <p className="mt-4 text-base leading-[1.6] text-cream/80 max-w-xl mx-auto">
+            <p className="mt-4 text-base leading-[1.6] text-cream max-w-xl mx-auto">
               Packet Day turns an idea like this into a real, printable day.
               Pick a grade, pick an obsession, and it&apos;s ready in a minute or
               two.
@@ -259,7 +296,7 @@ export default async function BlogPostPage({
               Try Packet Day Free
             </Link>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );
