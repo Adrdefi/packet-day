@@ -570,7 +570,7 @@ export default function Home() {
               <br />
               You&apos;ll be ready.
             </h2>
-            <p className="text-cream/80 text-lg leading-relaxed mb-10">
+            <p className="text-cream text-lg leading-relaxed mb-10">
               Join the parents who stopped guilt-spiraling on &ldquo;off&rdquo; days and started
               handing their kids something they actually love, created by AI, powered by their
               imagination.
