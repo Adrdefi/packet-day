@@ -1,4 +1,4 @@
-# I Spent Hours Hunting Free Worksheets. Here's Why We Built Packet Day.
+# I Spent Hours Hunting Free Worksheets. Here's Why We Built Packet Day. ⏱️
 
 **Slug:** `/blog/free-worksheets-hunt`
 **Meta description:** A homeschool mom on the hours spent searching, printing and piecing together free worksheets that never connect, and why she built something better. (148 chars)
