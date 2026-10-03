@@ -207,7 +207,8 @@ export default async function BlogPostPage({
   return (
     <div className="min-h-screen flex flex-col bg-paper">
       <JsonLd data={articleJsonLd} />
-      <JsonLd data={faqJsonLd} />
+      {/* Only posts with a FAQ section get FAQPage schema. */}
+      {post.faqs.length > 0 && <JsonLd data={faqJsonLd} />}
 
       <PublicHeader />
 

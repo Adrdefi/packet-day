@@ -294,6 +294,12 @@ export default async function UnitStudyPage({ params }: Params) {
                 See a full sample packet
               </Link>
             </p>
+            <p className="mt-4 text-center text-sm text-dark/70">
+              Tired of hunting down free worksheets?{" "}
+              <Link href="/free-worksheets" className="font-semibold text-sage hover:underline">
+                See the difference.
+              </Link>
+            </p>
           </div>
         </section>
 

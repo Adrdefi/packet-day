@@ -124,4 +124,8 @@ export const closing = {
   line: "Learning material as unique as your little learner.",
   ctaLabel: "Make your first packet free",
   ctaHref: "/signup",
+  storyLink: {
+    text: "Read Natalie's story: I spent hours hunting free worksheets",
+    href: "/blog/free-worksheets-hunt",
+  },
 };

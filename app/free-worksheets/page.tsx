@@ -157,6 +157,11 @@ export default function FreeWorksheetsPage() {
             >
               {closing.ctaLabel}
             </Link>
+            <p className="mt-8 text-sm">
+              <Link href={closing.storyLink.href} className="font-semibold text-cream underline hover:no-underline">
+                {closing.storyLink.text}
+              </Link>
+            </p>
           </div>
         </section>
       </main>

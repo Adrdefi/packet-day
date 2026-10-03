@@ -145,27 +145,28 @@ function parsePost(fileName: string, raw: string): BlogPost {
 
   // FAQs: parse the "## Frequently asked questions" section, which stays
   // in `content` for rendering but is also extracted structurally here.
+  // The section is optional (a personal story post may not have one), but
+  // if the heading is there it must hold at least one question.
   const faqHeadingPattern = /^## Frequently asked questions\s*$/m;
   const faqHeadingMatch = content.match(faqHeadingPattern);
-  if (!faqHeadingMatch || faqHeadingMatch.index === undefined) {
-    fail(fileName, "missing the `## Frequently asked questions` section");
-  }
-  const faqSection = content.slice(
-    faqHeadingMatch.index + faqHeadingMatch[0].length
-  );
-
-  const faqPattern = /\*\*(.+?)\*\*\n([^\n]+)/g;
   const faqs: BlogFaq[] = [];
-  let faqMatch: RegExpExecArray | null;
-  while ((faqMatch = faqPattern.exec(faqSection)) !== null) {
-    faqs.push({
-      question: faqMatch[1].trim(),
-      answer: faqMatch[2].trim(),
-    });
-  }
+  if (faqHeadingMatch && faqHeadingMatch.index !== undefined) {
+    const faqSection = content.slice(
+      faqHeadingMatch.index + faqHeadingMatch[0].length
+    );
 
-  if (faqs.length === 0) {
-    fail(fileName, "found the FAQ heading but parsed zero question/answer pairs");
+    const faqPattern = /\*\*(.+?)\*\*\n([^\n]+)/g;
+    let faqMatch: RegExpExecArray | null;
+    while ((faqMatch = faqPattern.exec(faqSection)) !== null) {
+      faqs.push({
+        question: faqMatch[1].trim(),
+        answer: faqMatch[2].trim(),
+      });
+    }
+
+    if (faqs.length === 0) {
+      fail(fileName, "found the FAQ heading but parsed zero question/answer pairs");
+    }
   }
 
   const wordCount = content.split(/\s+/).filter(Boolean).length;
