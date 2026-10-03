@@ -297,11 +297,14 @@ export function resolveSequenceDecision(
 
   // ─── Day-based sequence (welcome_1 backstop, checkin_day1, schedule) ──────
   // Requires actual enrollment — cap_followup and packet_back_monthly above
-  // never do.
+  // never do. Paying users never get any sequence email (cap_followup above
+  // and packet_back_monthly already exclude them too), so someone who
+  // upgrades mid-sequence stops getting them on the very next run.
   let dayN: number | null = null;
   if (state.sequenceStartedAtISO) {
     dayN = pacificCalendarDaysBetween(now.toISOString(), state.sequenceStartedAtISO);
-
+  }
+  if (state.sequenceStartedAtISO && dayN !== null && !state.isPaid) {
     // Backstop for a welcome_1 the confirm route stamped but never
     // successfully sent (timeout, transient Resend error,
     // EMAIL_SEQUENCE_ENABLED was off at signup time, etc.). Treated as due
@@ -309,8 +312,12 @@ export function resolveSequenceDecision(
     // email — not unconditional — so that turning EMAIL_SEQUENCE_ENABLED on
     // never floods a backlog of stale welcomes accumulated while it was
     // off: any stamp that's aged past the window simply stops being
-    // backstop-eligible, permanently.
-    if (!state.attemptedKeys.has("welcome_1") && dayN <= CATCH_UP_DAYS) {
+    // backstop-eligible, permanently. Also skipped for anyone who has
+    // already made a packet: welcome_1 is "make your first packet," which
+    // is wrong for them (e.g. a backfilled pre-launch user, or a signup
+    // whose confirm-time send failed and who made a packet before the
+    // backstop ran). Their later emails are unaffected.
+    if (!activated && !state.attemptedKeys.has("welcome_1") && dayN <= CATCH_UP_DAYS) {
       candidates.push({
         emailKey: "welcome_1",
         sendKey: "welcome_1",
@@ -324,7 +331,14 @@ export function resolveSequenceDecision(
     if (activated) {
       const firstActivatedDayN = pacificCalendarDaysBetween(state.firstActivatedPacketAtISO!, state.sequenceStartedAtISO);
 
+      // A first packet made before enrollment (a backfilled pre-launch
+      // user) isn't a fresh "how did it go?" moment, so it never triggers
+      // checkin_day1. Compared as instants, not Pacific days, so a packet
+      // made earlier on the same day as the stamp still counts as before.
+      const activatedAfterEnrollment =
+        new Date(state.firstActivatedPacketAtISO!).getTime() >= new Date(state.sequenceStartedAtISO).getTime();
       const checkinEligible =
+        activatedAfterEnrollment &&
         firstActivatedDayN < ACTIVATION_WINDOW_DAYS &&
         !state.attemptedKeys.has("checkin_day1") &&
         !state.sentCapFollowupAtISO; // rule c: skip checkin_day1 if cap_followup was already sent
@@ -347,7 +361,6 @@ export function resolveSequenceDecision(
         if (state.attemptedKeys.has(entry.emailKey)) continue;
         if (dayN < entry.dueDay || dayN > entry.dueDay + CATCH_UP_DAYS) continue;
         if (entry.emailKey === "plans_4") {
-          if (state.isPaid) continue; // rule f: never send plans_4 to paying users
           if (state.sentCapFollowupAtISO && withinLastNDays(state.sentCapFollowupAtISO, now, 7)) continue; // rule d
         }
         candidates.push({

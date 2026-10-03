@@ -9,6 +9,7 @@ import { buildMarketingEmailHeaders } from "@/lib/emailFooter";
 import { sendMarketingEmail } from "@/lib/resend";
 import { buildWelcome1Email } from "@/lib/emails/templates";
 import { passesSequenceGate } from "@/lib/emailSequenceGate";
+import { isPaidStatus } from "@/lib/isPaid";
 
 // Bounds the welcome_1 send call below — see lib/resend.ts's
 // sendMarketingEmail for how this is a real AbortController cancellation,
@@ -34,17 +35,19 @@ async function attemptWelcome1(params: {
   createdAt: string;
   marketingOptOut: boolean;
   sequenceStartedAt: string | null;
+  subscriptionStatus: string | null;
 }): Promise<void> {
-  const { supabase, userId, email, fullName, createdAt, marketingOptOut, sequenceStartedAt } = params;
+  const { supabase, userId, email, fullName, createdAt, marketingOptOut, sequenceStartedAt, subscriptionStatus } = params;
 
   // EMAIL_LAUNCH_AT unset means nobody is enrolled, on purpose. Test
-  // accounts (adrdefi) and anyone already opted out are excluded with no
-  // exception, per CLAUDE.md's Phase 4 rules (g/h) — except an address on
-  // EMAIL_TEST_ALLOWLIST, which bypasses the adrdefi exclusion and the
-  // launch cutoff (but never the opt-out check). Shared with the cron
-  // route's cap_followup eligibility via lib/emailSequenceGate.ts so the
+  // accounts (adrdefi), internal and packetday addresses, anyone already
+  // opted out, and paying users are excluded, per CLAUDE.md's Phase 4
+  // rules (f/g/h/i) — except an address on EMAIL_TEST_ALLOWLIST, which
+  // bypasses the adrdefi exclusion and the launch cutoff (but never the
+  // internal list, opt-out, or paid checks). Shared with the cron route
+  // via lib/emailSequenceGate.ts and lib/emailInternalAccounts.ts so the
   // two can never drift.
-  const eligible = passesSequenceGate(email, createdAt) && !marketingOptOut;
+  const eligible = passesSequenceGate(email, createdAt) && !marketingOptOut && !isPaidStatus(subscriptionStatus);
   if (!eligible) return;
 
   try {
@@ -58,12 +61,16 @@ async function attemptWelcome1(params: {
 
     if (process.env.EMAIL_SEQUENCE_ENABLED !== "true") return; // stamped; sending itself waits for the switch
 
+    // Built BEFORE the claim: if building throws (e.g. the mailing address
+    // safety lock), no email_sends row exists, so the cron backstop can
+    // still retry welcome_1 later instead of finding it permanently failed.
+    const content = buildWelcome1Email({ userId, fullName });
+    const headers = buildMarketingEmailHeaders(userId);
+
     const claimed = await claimEmailSend(userId, "welcome_1");
     if (!claimed) return; // already claimed (race, or a prior attempt already exists) — nothing to do
 
     try {
-      const content = buildWelcome1Email({ userId, fullName });
-      const headers = buildMarketingEmailHeaders(userId);
       const result = await sendMarketingEmail({
         to: email,
         subject: content.subject,
@@ -158,7 +165,7 @@ export async function GET(req: NextRequest) {
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("onboarding_completed, created_at, marketing_opt_out, sequence_started_at, full_name")
+            .select("onboarding_completed, created_at, marketing_opt_out, sequence_started_at, full_name, subscription_status")
             .eq("id", user.id)
             .single();
 
@@ -171,6 +178,7 @@ export async function GET(req: NextRequest) {
               createdAt: profile.created_at,
               marketingOptOut: profile.marketing_opt_out,
               sequenceStartedAt: profile.sequence_started_at,
+              subscriptionStatus: profile.subscription_status,
             });
           }
 

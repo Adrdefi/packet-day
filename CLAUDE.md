@@ -350,10 +350,12 @@ Examples:
   c. Skip `checkin_day1` if `cap_followup` was already sent, any period.
   d. Skip `plans_4` if `cap_followup` was sent in the last 7 days.
   e. Anything else that collides waits until the next day (or the next eligible run).
-  f. Never send upgrade emails (`plans_4`, `cap_followup`) to paying users (`isPaidStatus`).
+  f. Paying users (`isPaidStatus`) never get any marketing email: no day-based sequence email, no `cap_followup`, no `packet_back_monthly`. The confirm route checks it before `welcome_1`, and the cron re-reads `subscription_status` and `marketing_opt_out` right before every send, so an upgrade or unsubscribe mid-sequence stops the very next email.
   g. The launch cutoff (`profiles.created_at >= launch date`) applies to every marketing email **except** `packet_back_monthly`, which goes to all free users who have made at least one completed packet — including users who signed up before launch.
   h. Test accounts (any email containing `adrdefi`) are always excluded from every marketing email, **except** an address on `EMAIL_TEST_ALLOWLIST` — see below.
-  i. Internal accounts listed in `lib/emailInternalAccounts.ts` (Andy and Natalie's own non-adrdefi addresses) are always excluded from every cron-sent marketing email, case-insensitively. `EMAIL_TEST_ALLOWLIST` does **not** bypass this list.
+  i. Internal accounts listed in `lib/emailInternalAccounts.ts` (Andy and Natalie's own non-adrdefi addresses), plus any address containing "packetday", are always excluded from every marketing email, case-insensitively, in the confirm route and the cron alike (one shared helper, `isExcludedFromMarketing`). `EMAIL_TEST_ALLOWLIST` does **not** bypass this list.
+  j. The `welcome_1` backstop is skipped for anyone who has already made a packet (its copy is "make your first packet"). `checkin_day1` only fires for a first packet made after `sequence_started_at` (compared as instants), so a backfilled user who already had a packet never gets it.
+  k. Both send paths build the email (body and headers) before claiming the `email_sends` row, so a build failure (such as the mailing address lock) leaves no row and the next cron run can retry.
 
 **`scripts/send-packet-back-email.ts` (branch `feat/packet-back-email`) is retired and must never be run.** It was never actually scheduled — checked directly against Resend's send history, zero emails with any `scheduled_at` exist in the account. `packet_back_monthly` (below) is its real replacement, on the shared ledger instead of that script's local JSON dedupe file.
 

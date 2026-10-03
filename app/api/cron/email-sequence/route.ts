@@ -17,7 +17,7 @@ import { claimEmailSend, getEmailSendRowsForUsers, markEmailSendFailed, markEmai
 import { buildMarketingEmailHeaders, isMailingAddressConfigured } from "@/lib/emailFooter";
 import { sendMarketingEmail } from "@/lib/resend";
 import { isEmailTestAllowlisted } from "@/lib/emailTestAllowlist";
-import { isInternalExcludedEmail } from "@/lib/emailInternalAccounts";
+import { isExcludedFromMarketing } from "@/lib/emailInternalAccounts";
 import { passesSequenceGate } from "@/lib/emailSequenceGate";
 import {
   buildCapFollowupEmail,
@@ -105,17 +105,30 @@ async function loadEmailEligibleProfiles(): Promise<ProfileRow[]> {
     .eq("marketing_opt_out", false);
   if (error) throw error;
 
-  // adrdefi exclusion happens here, client-side, rather than as a DB
-  // filter, so an EMAIL_TEST_ALLOWLIST address (typically an adrdefi
-  // address, backdated for Phase 6 testing) isn't excluded by the same
-  // filter it's specifically meant to bypass. See lib/emailTestAllowlist.ts.
-  // Internal addresses (lib/emailInternalAccounts.ts) are excluded
-  // unconditionally — the allowlist never brings them back.
-  return ((data ?? []) as ProfileRow[]).filter(
-    (p) =>
-      !isInternalExcludedEmail(p.email) &&
-      (isEmailTestAllowlisted(p.email) || !p.email.toLowerCase().includes("adrdefi"))
-  );
+  // Exclusion happens here, client-side, rather than as a DB filter, so an
+  // EMAIL_TEST_ALLOWLIST address (typically an adrdefi address, backdated
+  // for Phase 6 testing) isn't excluded by the same filter it's
+  // specifically meant to bypass. Internal and packetday addresses are
+  // excluded unconditionally. Same helper the confirm route uses (via
+  // lib/emailSequenceGate.ts), so the two can never drift.
+  return ((data ?? []) as ProfileRow[]).filter((p) => !isExcludedFromMarketing(p.email));
+}
+
+/**
+ * Fresh, per-send re-read of the two fields that can change mid-run (or
+ * since the run's bulk load): an upgrade to paid or an unsubscribe must
+ * stop the very next send. Returns the reason to skip, or null to send.
+ */
+async function sendTimeSkipReason(userId: string): Promise<string | null> {
+  const { data, error } = await getServiceClient()
+    .from("profiles")
+    .select("subscription_status, marketing_opt_out")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  if (data.marketing_opt_out) return "opted out of marketing email (checked at send time)";
+  if (isPaidStatus(data.subscription_status as string)) return "paying user, never gets marketing email (checked at send time)";
+  return null;
 }
 
 interface PacketActivationRow {
@@ -181,6 +194,7 @@ interface ResultEntry {
     | "already_claimed"
     | "due_not_ready"
     | "skipped_run_cap"
+    | "skipped_at_send_time"
     | "none_due";
   emailKey: EmailKey | null;
   reason: string;
@@ -346,7 +360,7 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // ─── Real send: claim first, then send, then finalize the ledger row ───
+    // ─── Real send: build, re-check, claim, send, then finalize the ledger row ───
     sendsThisRun += 1;
 
     try {
@@ -375,6 +389,29 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
+      // Built before the claim below (like the body above), so a build
+      // failure leaves no email_sends row and the next run can retry.
+      // winner.sendKey is the composed periodic key for cap_followup /
+      // packet_back_monthly, the bare key otherwise — lib/emailFooter.ts
+      // uses it to let packet_back_monthly (and only it) send without a
+      // mailing address.
+      const headers = buildMarketingEmailHeaders(profile.id, winner.sendKey);
+
+      const skipReason = await sendTimeSkipReason(profile.id);
+      if (skipReason) {
+        results.push({
+          userId: profile.id,
+          email: profile.email,
+          dayN,
+          activated,
+          status: "skipped_at_send_time",
+          emailKey: winner.emailKey,
+          reason: skipReason,
+          candidates,
+        });
+        continue;
+      }
+
       const claimed = await claimEmailSend(profile.id, winner.sendKey);
       if (!claimed) {
         results.push({
@@ -390,11 +427,6 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      // winner.sendKey is the composed periodic key for cap_followup /
-      // packet_back_monthly, the bare key otherwise — lib/emailFooter.ts
-      // uses it to let packet_back_monthly (and only it) send without a
-      // mailing address.
-      const headers = buildMarketingEmailHeaders(profile.id, winner.sendKey);
       const sendResult = await sendMarketingEmail({
         to: profile.email,
         subject: content.subject,
