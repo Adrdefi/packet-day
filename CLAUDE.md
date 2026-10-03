@@ -108,6 +108,8 @@ There is no separate `subscriptions` table. Subscription and quota state (`subsc
 
 ## Database migrations
 
+New tables and buckets: always set explicit grants and RLS policies in the same migration. Never rely on Supabase default grants.
+
 After any `GRANT`, `REVOKE`, or RLS policy migration, never treat "applied without error" as proof of effect. `REVOKE` is set-based and succeeds silently when the grant it targets does not exist. Always verify by querying `pg_proc.proacl` (for function privileges) or `pg_policies` plus `pg_class.relrowsecurity` (for RLS) directly, then re-run the Supabase security advisor. `has_function_privilege` tells you whether a role can execute; `proacl` tells you why. Check `proacl`.
 
 Two independent mechanisms can leave a new function publicly callable, and closing one does not close the other:
