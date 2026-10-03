@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSafeNextPath } from "@/lib/safe-redirect";
 import { NextRequest, NextResponse } from "next/server";
+import { enrollNewSignup } from "@/lib/welcomeEmail";
 
 /**
  * Handles the OAuth / magic-link / email-confirmation callback from Supabase.
@@ -20,15 +21,23 @@ export async function GET(req: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // Same welcome sequence enrollment as app/auth/confirm, in case a
+      // signup confirmation ever lands here instead (a PKCE ?code= link).
+      // A no-op for anyone who isn't a new, eligible signup.
+      if (user) {
+        await enrollNewSignup(supabase, user);
+      }
+
       // Honour an explicit `next` param (e.g. password-reset redirects)
       if (next) {
         return NextResponse.redirect(`${origin}${next}`);
       }
 
       // Route based on whether the user has completed onboarding
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
       if (user) {
         const { data: profile } = await supabase

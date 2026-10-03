@@ -236,7 +236,13 @@ export async function GET(req: NextRequest) {
   // isStillCapped correctly see a real prior-month packets_reset_date as
   // rolled over, instead of only shifting the month packet_back_monthly
   // itself evaluates against while everything else stays on the real clock.
-  const now = forceMonthly ? simulateNextMonthFirstAt8amPacific(realNow) : realNow;
+  // ?at=<ISO> evaluates the run as if it were that instant — honored ONLY
+  // together with ?dryRun=1, so it can never cause a real send. Used to
+  // preview a future run (e.g. "who gets what at 8am tomorrow?") through
+  // this exact route on real data.
+  const atParam = req.nextUrl.searchParams.get("at");
+  const simulatedAt = queryDryRun && atParam && !Number.isNaN(Date.parse(atParam)) ? new Date(atParam) : null;
+  const now = forceMonthly ? simulateNextMonthFirstAt8amPacific(realNow) : (simulatedAt ?? realNow);
   const currentPacificHour = pacificHour(now);
   const isScheduledHour = currentPacificHour === 8;
   const currentPeriod = utcQuotaMonth(now);
@@ -493,7 +499,7 @@ export async function GET(req: NextRequest) {
     monthlyEnabled,
     forceMonthly,
     ranAt: realNow.toISOString(),
-    simulatedNow: forceMonthly ? now.toISOString() : null,
+    simulatedNow: forceMonthly || simulatedAt ? now.toISOString() : null,
     currentPacificHour,
     isScheduledHour,
     currentPeriod,

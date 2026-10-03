@@ -304,7 +304,12 @@ export function resolveSequenceDecision(
   if (state.sequenceStartedAtISO) {
     dayN = pacificCalendarDaysBetween(now.toISOString(), state.sequenceStartedAtISO);
   }
-  if (state.sequenceStartedAtISO && dayN !== null && !state.isPaid) {
+  // Nothing from the day-based sequence before the stamp instant itself —
+  // not even the any-hour welcome_1 backstop. A stamp can be set in the
+  // future (a scheduled backfill), and without this its negative/zero dayN
+  // would make welcome_1 due on the very next hourly run.
+  const enrolledYet = state.sequenceStartedAtISO !== null && now.getTime() >= new Date(state.sequenceStartedAtISO).getTime();
+  if (state.sequenceStartedAtISO && dayN !== null && enrolledYet && !state.isPaid) {
     // Backstop for a welcome_1 the confirm route stamped but never
     // successfully sent (timeout, transient Resend error,
     // EMAIL_SEQUENCE_ENABLED was off at signup time, etc.). Treated as due
