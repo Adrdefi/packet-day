@@ -2,7 +2,7 @@
 
 import { useOpenUpgrade } from "@/components/dashboard/UpgradeModalController";
 
-// Rendered by server components (ChildCard, app/dashboard/page.tsx) only for
+// Rendered by server components (ChildCard, app/dashboard/(home)/page.tsx) only for
 // free accounts, where UpgradeModalController provides the modal. The server
 // already decided who sees these; the modal still re-checks isPaid itself.
 

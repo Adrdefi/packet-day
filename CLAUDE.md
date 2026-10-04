@@ -87,7 +87,7 @@ Route gating lives in **`proxy.ts`** at the repo root (Next.js 16 renamed `middl
 - Redirects logged-in users away from `/login`, `/signup`, and `/check-email` to `/dashboard`.
 - Redirects `/dashboard` to `/onboarding` if `profiles.onboarding_completed` is false (done in the proxy because it keeps the query string, such as `?upgraded=true`; `app/dashboard/layout.tsx` repeats the check as a backup but can't preserve the query).
 
-Its matcher skips `_next/static`, `_next/image`, `api/`, `auth/`, `og`, icons, and `.png`/`.ico` files. Public pages like `/about`, `/sample`, and `/unsubscribe` still pass through it, but it only refreshes the session there and never redirects. Protected pages (e.g. `app/dashboard/page.tsx`) also check their own session server-side, so don't remove those checks on the assumption that the proxy covers it.
+Its matcher skips `_next/static`, `_next/image`, `api/`, `auth/`, `og`, icons, and `.png`/`.ico` files. Public pages like `/about`, `/sample`, and `/unsubscribe` still pass through it, but it only refreshes the session there and never redirects. Protected pages (e.g. `app/dashboard/(home)/page.tsx`) also check their own session server-side, so don't remove those checks on the assumption that the proxy covers it.
 
 ---
 
@@ -173,6 +173,7 @@ See `.env.local.example` for all variables and where to find them.
 - `lib/packetPdfRender.ts` requires a session-bound Supabase client, never service role — RLS is what catches a wrong `userId`.
 - Claude API JSON responses: strip markdown code fences before parsing.
 - The generation model is set in `lib/config.ts` (`MODEL`).
+- A `loading.tsx` streams the response, so any page under it that calls `notFound()` returns HTTP 200, not 404. Keep loading boundaries off routes that can 404 (that's why the dashboard skeleton lives in `app/dashboard/(home)/`).
 - Stripe checkout only accepts the two price IDs in the server-side allow list (monthly and yearly). Never loosen or bypass that check.
 
 ---

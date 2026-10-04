@@ -16,7 +16,7 @@ import { getLatestMascotUrl, getPlanState } from "@/lib/packetUsage";
  * fresh database read, never client state alone.
  *
  * capped, packetsUsed and resetDate come from lib/packetUsage.ts's
- * getPlanState, the same read app/dashboard/page.tsx uses, so the generate
+ * getPlanState, the same read app/dashboard/(home)/page.tsx uses, so the generate
  * page, the result screen and the dashboard all agree on who is out of
  * packets this month.
  *

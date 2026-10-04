@@ -6,15 +6,13 @@ import Image from "next/image";
 import type { Child, Packet } from "@/types";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { useToast } from "@/hooks/useToast";
+import { useLocalDate } from "@/hooks/useLocalDate";
+import { copyLink } from "@/lib/copyLink";
+import { possessive } from "@/lib/possessive";
+import ManualCopyLink from "@/components/ui/ManualCopyLink";
 import { ToastContainer } from "@/components/ui/Toast";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+const ROW_DATE_FORMAT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
 
 // ─── Single packet row ────────────────────────────────────────────────────────
 
@@ -29,16 +27,19 @@ function PacketRow({
 }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const createdDate = useLocalDate(packet.created_at, ROW_DATE_FORMAT);
+  const [manualUrl, setManualUrl] = useState<string | null>(null);
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   async function copyShareLink() {
     const url = `${window.location.origin}/packets/${packet.share_token}`;
-    try {
-      await navigator.clipboard.writeText(url);
+    const result = await copyLink(url, `${possessive(packet.child_name)} ${packet.theme} packet`);
+    if (result === "copied") {
+      setManualUrl(null);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: select text manually isn't needed in modern browsers, silently ignore
+    } else if (result === "failed") {
+      setManualUrl(url);
     }
   }
 
@@ -101,45 +102,52 @@ function PacketRow({
           <span className="text-muted font-normal">· {packet.theme}</span>
         </p>
         <p className="text-xs text-muted mt-0.5">
-          {formatDate(packet.created_at)}
+          {createdDate}
         </p>
       </div>
     </>
   );
 
   return (
-    <div className="flex items-center gap-3 py-3.5 border-b border-border last:border-0">
-      {/* Tapping the row opens the packet's result screen. The PDF and Share
-          buttons sit outside the link so they keep working on their own.
-          A packet whose generation never finished has nothing to show. */}
-      {packet.generated_content ? (
-        <Link
-          href={`/dashboard/packets/${packet.id}`}
-          className="flex flex-1 min-w-0 items-center gap-3 -my-1.5 py-1.5 rounded-lg hover:bg-sage/5 transition-colors"
-        >
-          {summary}
-        </Link>
-      ) : (
-        <div className="flex flex-1 min-w-0 items-center gap-3">{summary}</div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={downloadPDF}
-          disabled={downloading}
-          title={isIOS ? "Opens in Safari. Tap share to save" : "Download PDF"}
-          className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2.5 rounded-lg transition-colors"
-        >
-          {downloading ? "Building..." : isIOS ? "Open PDF" : "PDF ↓"}
-        </button>
-        <button
-          onClick={copyShareLink}
-          className="text-xs font-semibold text-muted border border-border hover:border-sage/50 hover:text-sage px-3 py-2.5 rounded-lg transition-colors min-w-[60px]"
-        >
-          {copied ? "Copied!" : "Share"}
-        </button>
+    <div className="py-3.5 border-b border-border last:border-0">
+      <div className="flex items-center gap-3">
+        {/* Tapping the row opens the packet's result screen. The PDF and Share
+            buttons sit outside the link so they keep working on their own.
+            A packet whose generation never finished has nothing to show. */}
+        {packet.generated_content ? (
+          <Link
+            href={`/dashboard/packets/${packet.id}`}
+            className="flex flex-1 min-w-0 items-center gap-3 -my-1.5 py-1.5 rounded-lg hover:bg-sage/5 transition-colors"
+          >
+            {summary}
+          </Link>
+        ) : (
+          <div className="flex flex-1 min-w-0 items-center gap-3">{summary}</div>
+        )}
+  
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={downloadPDF}
+            disabled={downloading}
+            title={isIOS ? "Opens in Safari. Tap share to save" : "Download PDF"}
+            className="text-xs font-semibold text-sage border border-sage/30 bg-sage/5 hover:bg-sage/15 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2.5 rounded-lg transition-colors"
+          >
+            {downloading ? "Building..." : isIOS ? "Open PDF" : "PDF ↓"}
+          </button>
+          <button
+            onClick={copyShareLink}
+            className="text-xs font-semibold text-muted border border-border hover:border-sage/50 hover:text-sage px-3 py-2.5 rounded-lg transition-colors min-w-[60px]"
+          >
+            {copied ? "Copied!" : "Share"}
+          </button>
+        </div>
       </div>
+      {manualUrl && (
+        <div className="mt-3 flex justify-end">
+          <ManualCopyLink url={manualUrl} />
+        </div>
+      )}
     </div>
   );
 }

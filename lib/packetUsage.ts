@@ -15,7 +15,7 @@ export interface PlanState {
 
 /**
  * The one shared read of plan + this month's usage, for server code only
- * (app/dashboard/page.tsx calls it directly; client pages get it through
+ * (app/dashboard/(home)/page.tsx calls it directly; client pages get it through
  * GET /api/plans). Reads the same month boundary check_and_increment_packet_usage
  * uses (get_my_packet_usage, migration 014): profiles.packets_used_this_month
  * and packets_reset_date only actually reset on a user's next generation, so

@@ -7,6 +7,7 @@ import { SITE_URL, DEFAULT_OPEN_GRAPH, DEFAULT_TWITTER, DEFAULT_OG_IMAGE } from 
 import { PAGE_RANGE_TEXT } from "@/lib/situations/figures";
 import { getVisibleUnitStudies } from "@/lib/unit-studies/loader";
 import { ENTITY_SENTENCE } from "@/lib/unit-studies/entity";
+import { HUB_SIGNUP_HREF } from "@/lib/unit-studies/format";
 
 const TITLE = "Printable Unit Study Packets for Kids (K-8) | Packet Day";
 const DESCRIPTION =
@@ -84,7 +85,7 @@ export default function UnitStudiesHubPage() {
           <div className="max-w-2xl mx-auto">
             <p className="text-dark/70 leading-relaxed mb-8">{ENTITY_SENTENCE}</p>
             <Link
-              href="/signup?from=unit-studies-hub"
+              href={HUB_SIGNUP_HREF}
               className="inline-block bg-sage text-cream font-bold text-base px-8 py-4 rounded-full hover:bg-sage-dark transition-colors shadow-sm"
             >
               Make your first packet free

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -12,12 +12,12 @@ import { isPaidStatus } from "@/lib/isPaid";
 
 const BILLING_ERROR_FALLBACK = "Couldn't open billing. Try that again in a sec.";
 
-function getGreeting(): { text: string; emoji: string } {
+function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return { text: "Good morning", emoji: "🌞" };
-  if (hour >= 12 && hour < 17) return { text: "Good afternoon", emoji: "☀️" };
-  if (hour >= 17 && hour < 22) return { text: "Good evening", emoji: "🌙" };
-  return { text: "Hey there", emoji: "⭐" };
+  if (hour >= 5 && hour < 12) return "Good morning|🌞";
+  if (hour >= 12 && hour < 17) return "Good afternoon|☀️";
+  if (hour >= 17 && hour < 22) return "Good evening|🌙";
+  return "Hey there|⭐";
 }
 
 function formatDate(): string {
@@ -27,6 +27,13 @@ function formatDate(): string {
     day: "numeric",
   });
 }
+
+// The greeting and date depend on the parent's own clock, which the server
+// (UTC) can't know. Server HTML uses the neutral fallback (null), and the
+// browser fills in the real value after hydration, so React never sees a
+// mismatch. Snapshots are strings, which compare by value, so they're stable.
+const subscribeNever = () => () => {};
+const serverValue = () => null;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +58,9 @@ export default function TopBar({
   const [billingError, setBillingError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { text: greetingText, emoji: greetingEmoji } = getGreeting();
+  const greeting = useSyncExternalStore(subscribeNever, getGreeting, serverValue);
+  const today = useSyncExternalStore(subscribeNever, formatDate, serverValue);
+  const [greetingText, greetingEmoji] = greeting ? greeting.split("|") : ["Hi", ""];
   const firstName = fullName?.split(" ")[0] ?? "there";
   const initial = firstName[0]?.toUpperCase() ?? "?";
   const isFree = subscriptionStatus === "free";
@@ -109,13 +118,13 @@ export default function TopBar({
         {/* Greeting */}
         <div className="flex-1 px-2">
           <p className="font-semibold text-dark text-sm sm:text-base leading-tight">
-            {greetingText}, {firstName}! {greetingEmoji}
+            {greetingText}, {firstName}!{greetingEmoji ? ` ${greetingEmoji}` : ""}
           </p>
         </div>
 
         {/* Date — desktop only */}
         <p className="hidden md:block text-sm text-muted shrink-0">
-          {formatDate()}
+          {today}
         </p>
 
         {/* Avatar / user menu */}

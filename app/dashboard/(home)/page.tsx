@@ -113,16 +113,18 @@ export default async function DashboardPage({
             <ChildCard key={child.id} child={child} capped={capped} />
           ))}
 
-          {atChildLimit ? (
-            <AddChildUpgradeButton />
-          ) : (
-            <Link
-              href="/dashboard/children/new"
-              className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-border bg-white hover:border-sage/50 hover:bg-sage/5 text-muted hover:text-sage font-semibold text-sm py-4 rounded-xl transition-colors"
-            >
-              + Add Another Child
-            </Link>
-          )}
+          {/* The empty state above already has "Add My First Child". */}
+          {childList.length > 0 &&
+            (atChildLimit ? (
+              <AddChildUpgradeButton />
+            ) : (
+              <Link
+                href="/dashboard/children/new"
+                className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-border bg-white hover:border-sage/50 hover:bg-sage/5 text-muted hover:text-sage font-semibold text-sm py-4 rounded-xl transition-colors"
+              >
+                + Add Another Child
+              </Link>
+            ))}
         </section>
 
         {/* ── Right: Recent Packets ───────────────────────────────────── */}

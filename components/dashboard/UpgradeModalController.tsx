@@ -34,7 +34,7 @@ export function useOpenUpgrade() {
 
 interface Props {
   children: React.ReactNode;
-  /** Fresh server read in app/dashboard/page.tsx. Paid accounts get no banner and no modal. */
+  /** Fresh server read in app/dashboard/(home)/page.tsx. Paid accounts get no banner and no modal. */
   isFree: boolean;
   used: number;
   limit: number;
@@ -43,7 +43,7 @@ interface Props {
   capped: boolean;
   /** Non-null only when a fresh server read already confirmed this user is
    * not paid and the ?upgrade= value was "yearly" or "monthly" — see
-   * app/dashboard/page.tsx. */
+   * app/dashboard/(home)/page.tsx. */
   deepLinkPlan: Plan | null;
 }
 

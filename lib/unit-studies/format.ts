@@ -1,5 +1,6 @@
 import { PLANS } from "@/lib/stripe";
 import { PLAN_PRICE } from "@/lib/plans";
+import { sampleSignupHref } from "@/lib/sample/links";
 import type { UnitStudyPage } from "./schema";
 
 /** "grade 3", or "kindergarten" for grade 0. */
@@ -22,9 +23,17 @@ export function themeLabel(page: UnitStudyPage): string {
   return page.theme.packetLabel ?? themeInSentence(page);
 }
 
+/**
+ * /signup that ends on Generate with this theme filled in, the same way /sample
+ * does: a new parent carries it through signup, confirmation and onboarding,
+ * and a signed in parent is sent straight there by proxy.ts.
+ */
 export function signupHref(page: UnitStudyPage): string {
-  return `/signup?from=unit-studies-${page.slug}`;
+  return sampleSignupHref(`unit-studies-${page.slug}`, themeInSentence(page));
 }
+
+/** The hub has no single theme, so its button ends on an empty Generate page. */
+export const HUB_SIGNUP_HREF = `/signup?${new URLSearchParams({ from: "unit-studies-hub", next: "/generate" }).toString()}`;
 
 export function primaryCtaLabel(page: UnitStudyPage): string {
   return `Make your own ${themeLabel(page)} packet free`;

@@ -10,6 +10,9 @@ import { SITE_URL } from "@/lib/site";
 import { resolveMascotUrl } from "@/lib/resolveMascotUrl";
 import { possessive } from "@/lib/possessive";
 import PostPacketNudge from "@/components/PostPacketNudge";
+import { useLocalDate } from "@/hooks/useLocalDate";
+import { copyLink } from "@/lib/copyLink";
+import ManualCopyLink from "@/components/ui/ManualCopyLink";
 
 // The packet result screen: shown right after generation on /generate, and
 // again when a parent reopens a packet from the dashboard
@@ -56,13 +59,7 @@ function subjectEmoji(subject: string): string {
   return "📖";
 }
 
-function formatResultDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
+const RESULT_DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" };
 
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
@@ -191,6 +188,8 @@ export default function PacketResultView({
 }) {
   const [downloading, setDownloading] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const createdDate = useLocalDate(packet.created_at, RESULT_DATE_FORMAT);
+  const [manualShareUrl, setManualShareUrl] = useState<string | null>(null);
   const { toasts, toast, dismiss } = useToast();
 
   useEffect(() => {
@@ -301,12 +300,13 @@ export default function PacketResultView({
   }
 
   async function copyShareLink() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
+    const result = await copyLink(shareUrl, `${possessive(packet.child_name)} ${packet.theme} packet`);
+    if (result === "copied") {
+      setManualShareUrl(null);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 3500);
-    } catch {
-      // fallback: ignore
+    } else if (result === "failed") {
+      setManualShareUrl(shareUrl);
     }
   }
 
@@ -399,7 +399,7 @@ export default function PacketResultView({
               {packet.generated_content.packet_title ?? packet.generated_content.title}
             </h1>
             <p className="text-muted text-sm">
-              {formatResultDate(packet.created_at)}
+              {createdDate}
             </p>
           </div>
 
@@ -440,6 +440,7 @@ export default function PacketResultView({
                 <span>Link copied! Share it with a friend who needs a good day.</span>
               </div>
             )}
+            {manualShareUrl && <ManualCopyLink url={manualShareUrl} />}
           </div>
 
           {/* Activity cards */}

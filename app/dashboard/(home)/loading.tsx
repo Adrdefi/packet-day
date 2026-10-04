@@ -1,4 +1,7 @@
-// Next.js will render this automatically while the dashboard server component loads
+// Next.js will render this automatically while the dashboard server component loads.
+// It lives in the (home) route group so it only wraps /dashboard itself: a
+// loading boundary above /dashboard/packets/[id] or /dashboard/children/[id]/edit
+// would start streaming before their notFound(), and they'd return 200, not 404.
 
 function SkeletonCard() {
   return (
