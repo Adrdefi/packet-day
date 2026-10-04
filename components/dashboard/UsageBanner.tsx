@@ -70,7 +70,7 @@ export default function UsageBanner({ used, limit, resetDate, onUpgradeClick }: 
         <button
           type="button"
           onClick={onUpgradeClick}
-          className="shrink-0 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors text-center bg-sage text-cream hover:bg-sage-dark"
+          className="tap-44 shrink-0 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors text-center bg-sage text-cream hover:bg-sage-dark"
         >
           Upgrade to Unlimited →
         </button>

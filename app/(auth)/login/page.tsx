@@ -111,7 +111,7 @@ function LoginForm() {
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs text-sage hover:underline font-semibold"
+              className="tap-44 text-xs text-sage hover:underline font-semibold"
             >
               Forgot your password?
             </Link>
@@ -149,7 +149,7 @@ function LoginForm() {
         New here?{" "}
         <Link
           href={signupHref}
-          className="text-sage font-semibold hover:underline"
+          className="tap-44 text-sage font-semibold hover:underline"
         >
           Create a free account
         </Link>

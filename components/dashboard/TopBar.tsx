@@ -110,7 +110,7 @@ export default function TopBar({
         {/* Logo */}
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors shrink-0"
+          className="tap-44 flex items-center gap-2 font-display font-bold text-dark hover:text-sage transition-colors shrink-0"
         >
           <Wordmark size="lg" hideTextOnMobile />
         </Link>

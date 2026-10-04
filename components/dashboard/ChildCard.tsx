@@ -74,7 +74,7 @@ export default function ChildCard({
       <div className="text-center">
         <Link
           href={`/dashboard/children/${child.id}/edit`}
-          className="text-xs text-muted hover:text-dark transition-colors underline underline-offset-2"
+          className="tap-44 text-xs text-muted hover:text-dark transition-colors underline underline-offset-2"
         >
           Edit profile
         </Link>

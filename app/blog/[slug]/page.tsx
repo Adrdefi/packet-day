@@ -251,7 +251,7 @@ export default async function BlogPostPage({
                 <header className="mb-10">
                   <Link
                     href="/blog"
-                    className="text-sm font-semibold text-sage-dark hover:text-dark transition-colors"
+                    className="tap-44 text-sm font-semibold text-sage-dark hover:text-dark transition-colors"
                   >
                     ← Back to all posts
                   </Link>
@@ -267,7 +267,7 @@ export default async function BlogPostPage({
                   </div>
                   <p className="mt-1 text-sm font-semibold text-sage-dark">
                     By{" "}
-                    <Link href={NATALIE_PATH} className="text-sage-dark underline underline-offset-2 hover:text-dark transition-colors">
+                    <Link href={NATALIE_PATH} className="tap-44 text-sage-dark underline underline-offset-2 hover:text-dark transition-colors">
                       Natalie Riggs
                     </Link>
                   </p>

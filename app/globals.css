@@ -51,6 +51,37 @@ body {
 }
 
 /*
+  tap-44: a tap area of at least 44x44px around a small control, without
+  changing how it looks or moving anything. An invisible ::after box is
+  centered on the control and grows to 44px where the control is smaller.
+  Don't use it on an element that is already positioned (absolute, fixed)
+  or already draws its own ::after, and leave room so the box doesn't cover
+  a neighbor.
+*/
+@utility tap-44 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/*
+  Signed in hint for static pages. An inline script in app/layout.tsx adds
+  .signed-in to <html> before first paint when a Supabase auth cookie exists,
+  so PublicHeader shows the right buttons without a "Try it free" flash.
+*/
+.signed-in .guest-only,
+html:not(.signed-in) .member-only {
+  display: none !important;
+}
+
+/*
   Prevent iOS Safari from auto-zooming when tapping inputs.
   iOS zooms when font-size < 16px; this overrides only on small screens
   while preserving the visual text-sm size on desktop via Tailwind classes.

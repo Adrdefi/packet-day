@@ -47,7 +47,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-10">
           <div className="max-w-md">
-            <Link href="/" className="inline-flex font-display font-bold text-cream">
+            <Link href="/" className="tap-44 inline-flex font-display font-bold text-cream">
               <Wordmark size="lg" variant="cream" />
             </Link>
             <p className="mt-2 text-xs leading-relaxed text-cream/80">
@@ -67,7 +67,7 @@ export default function Footer() {
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="inline-flex min-h-11 items-center text-sm text-cream/80 hover:text-cream hover:underline transition-colors md:min-h-6"
+                        className="tap-44 inline-flex min-h-11 items-center text-sm text-cream/80 hover:text-cream hover:underline transition-colors md:min-h-6"
                       >
                         {link.label}
                       </Link>

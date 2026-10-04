@@ -981,7 +981,7 @@ function GenerateContent() {
           <button
             type="button"
             onClick={() => setTheme(suggestion.text)}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-sage bg-sage/8 hover:bg-sage/15 px-3.5 py-1.5 rounded-full transition-colors border border-sage/20"
+            className="tap-44 inline-flex items-center gap-1.5 text-sm font-semibold text-sage bg-sage/8 hover:bg-sage/15 px-3.5 py-1.5 rounded-full transition-colors border border-sage/20"
           >
             <span>{suggestion.emoji}</span>
             <span>Try: {suggestion.text}</span>

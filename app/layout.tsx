@@ -82,6 +82,13 @@ export const metadata: Metadata = {
   },
 };
 
+// Runs before first paint: marks <html> as signed in when a Supabase auth
+// cookie exists (sb-<ref>-auth-token, sometimes split into .0/.1 chunks), so
+// PublicHeader's static HTML shows "My dashboard" with no "Try it free" flash.
+// It only checks that the cookie exists; PublicHeader confirms the session
+// after hydration. See .signed-in in globals.css.
+const SIGNED_IN_HINT = `try{if(/(?:^|; )sb-[a-z0-9]+-auth-token(?:\\.\\d+)?=/.test(document.cookie))document.documentElement.classList.add("signed-in")}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -91,7 +98,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${nunito.variable} ${fraunces.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SIGNED_IN_HINT }} />
+      </head>
       <body className="min-h-full flex flex-col bg-cream text-dark">
         {children}
         <AnalyticsProvider />

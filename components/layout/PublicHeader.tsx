@@ -13,26 +13,27 @@ const NAV_LINKS = [
   { label: "About", href: "/about" },
 ];
 
-// Marketing pages are static, so the session is read in the browser.
-// getSession() reads the local auth cookie rather than calling Supabase.
-function useIsLoggedIn() {
-  const [loggedIn, setLoggedIn] = useState(false);
-
+// Marketing pages are static, so which buttons show (guest-only or
+// member-only) is decided by the .signed-in class on <html>: app/layout.tsx
+// sets it from the auth cookie before first paint, so a signed in parent never
+// sees "Try it free" flash. This keeps it right once the real session is
+// known, and when they log in or out in another tab. getSession() reads the
+// local auth cookie rather than calling Supabase.
+function useSignedInClass() {
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
+    const mark = (signedIn: boolean) => document.documentElement.classList.toggle("signed-in", signedIn);
+    supabase.auth.getSession().then(({ data }) => mark(!!data.session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoggedIn(!!session);
+      mark(!!session);
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  return loggedIn;
 }
 
 export default function PublicHeader() {
   const pathname = usePathname();
-  const loggedIn = useIsLoggedIn();
+  useSignedInClass();
   const [scrolled, setScrolled] = useState(false);
   // The menu remembers the path it was opened on, so any route change closes it.
   const [openedOn, setOpenedOn] = useState<string | null>(null);
@@ -96,29 +97,24 @@ export default function PublicHeader() {
 
           {/* Right side */}
           <div className="flex items-center justify-end gap-2 md:gap-5">
-            {loggedIn ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center h-11 shrink-0 bg-sage text-cream text-sm font-bold px-4 md:px-5 rounded-full hover:bg-sage-dark transition-colors"
-              >
-                My dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden md:inline-flex items-center h-11 shrink-0 text-sm font-semibold text-dark/70 hover:text-sage transition-colors"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center h-11 shrink-0 bg-sage text-cream text-sm font-bold px-4 md:px-5 rounded-full hover:bg-sage-dark transition-colors"
-                >
-                  Try it free
-                </Link>
-              </>
-            )}
+            <Link
+              href="/dashboard"
+              className="member-only inline-flex items-center h-11 shrink-0 bg-sage text-cream text-sm font-bold px-4 md:px-5 rounded-full hover:bg-sage-dark transition-colors"
+            >
+              My dashboard
+            </Link>
+            <Link
+              href="/login"
+              className="guest-only hidden md:inline-flex items-center h-11 shrink-0 text-sm font-semibold text-dark/70 hover:text-sage transition-colors"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="guest-only inline-flex items-center h-11 shrink-0 bg-sage text-cream text-sm font-bold px-4 md:px-5 rounded-full hover:bg-sage-dark transition-colors"
+            >
+              Try it free
+            </Link>
 
             {/* Hamburger, mobile only */}
             <button
@@ -184,32 +180,27 @@ export default function PublicHeader() {
 
           {/* Bottom CTAs */}
           <div className="px-6 pb-10 space-y-3">
-            {loggedIn ? (
-              <Link
-                href="/dashboard"
-                onClick={closeMobile}
-                className="block w-full text-center bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-base"
-              >
-                My dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/signup"
-                  onClick={closeMobile}
-                  className="block w-full text-center bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-base"
-                >
-                  Try It Free, No Card Needed ✨
-                </Link>
-                <Link
-                  href="/login"
-                  onClick={closeMobile}
-                  className="block w-full text-center border border-border text-dark font-semibold py-4 rounded-xl hover:bg-cream-dark transition-colors text-base"
-                >
-                  Log in
-                </Link>
-              </>
-            )}
+            <Link
+              href="/dashboard"
+              onClick={closeMobile}
+              className="member-only block w-full text-center bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-base"
+            >
+              My dashboard
+            </Link>
+            <Link
+              href="/signup"
+              onClick={closeMobile}
+              className="guest-only block w-full text-center bg-sage text-cream font-bold py-4 rounded-xl hover:bg-sage-dark transition-colors text-base"
+            >
+              Try It Free, No Card Needed ✨
+            </Link>
+            <Link
+              href="/login"
+              onClick={closeMobile}
+              className="guest-only block w-full text-center border border-border text-dark font-semibold py-4 rounded-xl hover:bg-cream-dark transition-colors text-base"
+            >
+              Log in
+            </Link>
           </div>
         </div>
       )}

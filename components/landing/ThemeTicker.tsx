@@ -89,7 +89,7 @@ function TickerRow({
                     key={theme}
                     href={`/unit-studies/${slug}`}
                     tabIndex={isCopy ? -1 : undefined}
-                    className={`${CHIP_CLASS} hover:border-sage hover:text-sage transition-colors`}
+                    className={`tap-44 ${CHIP_CLASS} hover:border-sage hover:text-sage transition-colors`}
                   >
                     {theme}
                   </Link>

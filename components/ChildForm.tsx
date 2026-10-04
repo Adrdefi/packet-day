@@ -300,7 +300,7 @@ export default function ChildForm({
                 type="button"
                 onClick={() => toggleSubject(subject)}
                 className={`
-                  px-4 py-2 rounded-full border text-sm font-semibold transition-all duration-150
+                  tap-44 px-4 py-2 rounded-full border text-sm font-semibold transition-all duration-150
                   ${
                     selected
                       ? "bg-sage text-cream border-sage"
